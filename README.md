@@ -6,7 +6,7 @@
 
 ## 当前可用能力
 
-自 R01 起提供可独立安装的最小 Python 包 `hvs-catalog`：安装后可用 `hvs-catalog --help` 查询命令行帮助、`hvs-catalog --version` 查询软件版本，也支持 `python -m hvs_catalog` 调用。文献处理、星表数据和正式发布功能尚未提供，命令行只列出已实现的操作。
+目前提供可独立安装的最小 Python 包 `hvs-catalog`，支持命令行帮助、版本查询及 `python -m hvs_catalog` 调用。文献处理、星表数据和正式发布功能尚未提供。
 
 ## 安装与验证
 
@@ -28,7 +28,7 @@ uv pip install --python /path/to/env dist/hvs_catalog-*.whl
 /path/to/env/bin/python -m hvs_catalog --version
 ```
 
-开发环境同样使用 uv 与锁文件：`uv sync` 安装依赖后，用 `uv run ruff check .`、`uv run ruff format --check .` 和 `uv run pytest` 检查；`uv run python tools/check_distribution.py` 自动完成构建、发行内容检查、仓库外安装和独立子进程验证，可传入 Python 版本号（如 `3.12`）指定安装环境的解释器。
+开发环境与检查命令见 [验证要求](CONTRIBUTING.md#验证要求)。
 
 实测平台：macOS（Apple Silicon，darwin 25.6.0）上的 CPython 3.11.15、3.12.13 和 3.13.1。安装包为纯 Python wheel，无运行时第三方依赖；其他平台未实测。
 
