@@ -4,55 +4,63 @@
 
 ## 当前交接
 
-更新日期：2026-09-14。
+更新日期：2026-09-15。
 
 ### 任务与范围
 
-R01 后的文档职责整理，由 Codex / Astra 执行。范围为主仓 README、CONTRIBUTING、AGENTS、design、plan、progress，以及 Gold 仓 README、AGENTS。
+R02 第二轮修正后的技术验收，由 Codex / Astra 执行。核对 Zcode / GLM（builtin:bigmodel-coding-plan/GLM-5.3）修改的材料快照、快照传递、问题正文、分歧比较、测试、发行走查与 README，独立重放上一轮失败场景。技术验收通过，待人类专家审核。
 
 ### 已完成
 
-通用规范、产品设计、关卡要求和交接事实各归其位；重复正文改为章节引用。已将专家确认的科学规则维护方式写入设计与 R04：结构化材料作为唯一来源，程序读取并生成阅读版。具体格式和子目录仍由 R04 确定。
+R00、R01 已通过验收（见任务总表）。R02 交付的演示见 [README](../README.md) 的持久化与恢复演示一节。此前各轮交付内容（三个数据库分工、run / status / decide / reset、固定输入恢复、决定按问题版本保存与重问机制、对象身份裁决、真实进程终止与重复计费演示）保持不变，本轮修正复验指出的两项：
 
-R01 已交付的产品能力见 [README](../README.md)，验收状态见任务总表。
+1. **材料以完整快照固定，无缓存恢复不读取当前全局数据**：`service.default_material()` 返回包含论文元数据与全部合成响应内容的完整快照；运行开始时快照存入流程状态并随检查点保存，`MockModelService.call` 一律按调用携带的快照生成响应，不再读取模块常量，且校验请求中的材料摘要与快照一致（错配即拒绝调用）。数值响应保存前退出、随后把合成测量 580 改为 999 的恢复场景（复验探针一）现在：重新调用按快照应答 580，问题与决定都基于原输入，账单的重复计费提示照常，且输出材料摘要“旧 → 当前”的分歧提示。
+2. **问题正文按当前证据生成并展示证据**：`build_question` 的正文不再无条件断言“测量完全相同”——由证据本身判断相同或不同，并逐条展示对象、数值与来源（复验探针二）。只改一条测量时，待办正文显示“速度测量不同（证据：J1234+5678：999±20 km/s（来源：当前论文）；J1234+5679：580±20 km/s…）”。
+
+测试相应调整：上一轮“修订证据并删除缓存后重问”的流程测试改为上述快照回归测试（快照固定后，运行中材料变化按设计不再改变问题，这正是本轮修正的目的）；重问机制保留并改由防御测试覆盖——已保存结果被外部改动、与暂停时问题不一致时，恢复仍拒绝应用旧决定并按当前证据重问，新旧两版决定并存。无缓存恢复的行为对应新增断言：重新调用 +1 次（重复计费提示）、应答内容来自快照、有分歧提示。
+
+本轮 Astra 复验确认此前阻塞问题已修复，在 R02 离线合成演示范围内未发现新的阻塞问题。
 
 ### 验证结果
 
-本次执行临时检查脚本 `python3 /tmp/check-hvs-docs.py`，8 份文档的 124 处本地文件与章节链接通过检查，其中 12 处跨仓链接在当前相邻目录布局下可解析；未验证网页托管后的跨仓链接。31 个关卡及进度行顺序一致，开始条件、验收状态与日期未变。两仓 `git diff --check` 通过，改动仅涉及上述八份文档。
+Astra 本轮独立验收（2026-09-14）：使用仓库外 `/tmp/hvs-r02-astra-review/` 的环境与缓存，设置 `UV_CACHE_DIR=/tmp/hvs-r02-astra-review/cache`、`UV_PROJECT_ENVIRONMENT=/tmp/hvs-r02-astra-review/venv`、`UV_OFFLINE=1`，执行 `uv run --frozen pytest -q`（54 passed）与 `uv run --frozen python tools/check_distribution.py 3.12`（构建、发行内容、仓库外全新 wheel 安装、独立子进程及演示走查通过）。该环境的 `ruff check .`、`ruff format --check .` 及 `git diff --check` 通过。本轮未独立重跑 3.11 / 3.13，这两个版本的结果为下文 GLM 自检记录。
 
-逐项核对规则迁移：R01–R30 中 28 个验收段落原文保留；R04 补入已确认的规则阅读版生成要求，R18 改为引用完整评价设计，原指标、复验和范围限制仍有对应正文。持久的文档自动检查在 R27 接入，本次未增加运行代码或检查工具。
+Astra 独立探针通过：数值响应保存前注入异常退出，再把全局合成测量从 580 改为 999，恢复仍按快照得到 580，累计调用 3 次并显示材料分歧，决定后正常完成。另在暂停后修改业务库中的一条证据为 999，旧决定不应用且重新暂停，status 明确显示测量不同、999 与 580 及来源；改交 keep-separate 决定后完成，新旧两版决定均保留。合成探针空间保留于 `/var/folders/5m/6n5s8y812m97pg2fh23s2kz40000gn/T/r02-final-review-96gvmrx5/`。真实硬退出与跨进程恢复另由测试及安装包走查覆盖。
 
-R01 已有验收记录（本次未重跑代码验证）：Astra 在 `/tmp/hvs-r01-astra-review/` 使用全新开发环境，先以 `uv sync --locked --python 3.12` 联网安装锁定依赖，再设置以下环境执行离线检查：
+Astra 复验记录（本轮修正依据，2026-09-14）：沿用 `/tmp/hvs-r02-astra-review/` 环境，`UV_OFFLINE=1 uv run --frozen pytest -q` 50 passed，ruff 与 format 检查、`git diff --check`、`check_distribution.py 3.12`（构建、发行内容、仓库外 wheel 安装与两个演示走查）通过；两个补充探针（数值响应保存前退出后修改合成测量，新值被登记在旧材料摘要下且无提示；只改一条测量后重问文字仍称“完全相同”且不展示证据）阻止通过，探针空间保留于 `/var/folders/.../r02-recheck-5y8y2ui6/`。
+
+GLM 第二轮修正自检（本机 macOS arm64，仓库外环境 `UV_CACHE_DIR=/tmp/hvs-r02-dev/cache`、`UV_PROJECT_ENVIRONMENT=/tmp/hvs-r02-dev/venv`，原因见待解决第 1 条）：
 
 ```bash
-export UV_CACHE_DIR=/tmp/hvs-r01-astra-review/cache
-export UV_PROJECT_ENVIRONMENT=/tmp/hvs-r01-astra-review/venv
-export UV_OFFLINE=1
-uv run --frozen ruff check .
-uv run --frozen ruff format --check .
-uv run --frozen pytest -q
-uv run --frozen python tools/check_distribution.py 3.11
-uv run --frozen python tools/check_distribution.py 3.12
-uv run --frozen python tools/check_distribution.py 3.13
+export UV_CACHE_DIR=/tmp/hvs-r02-dev/cache UV_PROJECT_ENVIRONMENT=/tmp/hvs-r02-dev/venv
+uv run ruff check .            # All checks passed!
+uv run ruff format --check .   # 通过（格式由 uv run ruff format . 统一）
+uv run pytest -q               # 54 passed
+uv run python tools/check_distribution.py 3.11   # 通过
+uv run python tools/check_distribution.py 3.12   # 通过
+uv run python tools/check_distribution.py 3.13   # 通过
 ```
 
-上述检查通过，测试为 16 passed。wheel 为 3 个源码文件及 4 个元数据文件，源码包检查通过。另在三个仓库外全新环境安装 wheel，以最小环境变量及 `python -I` 验证实际导入路径位于 site-packages，版本及控制台命令正常。实测为 macOS arm64 的 CPython 3.11.15、3.12.13、3.13.1，Linux/Windows 未测；README 安装说明与结果一致，`git diff --check` 通过。默认 uv 缓存曾受沙箱写权限限制，使用上述临时缓存解决。
+54 个测试中 R01 原有 16 个保持通过；演示相关 38 个。本轮新增回归：复验探针一（数值响应保存前退出 → 修改合成测量 → 恢复按快照应答 580、计费 3 次、有材料分歧提示、决定按原输入完成）、复验探针二（只改一条测量的新运行，待办正文显示“速度测量不同”并展示 999 与 580 两条测量及来源）、重问防御（业务库结果被改动后恢复：旧决定未被应用、按当前证据重问、两版决定并存），以及服务层快照单元测试（按快照应答不读全局、请求与快照错配拒绝、材料变化改变默认快照摘要）。check_distribution 走查断言增加证据展示（“580±20 km/s（来源：当前论文）”）。
+
+两个复验探针以独立脚本复现（`/tmp/r02-probe4.py`，已随走查清理前执行）：探针一恢复输出显示按快照应答与分歧提示、决定完成且汇总不含 999；探针二待办正文如实描述“速度测量不同”并展示两条测量。CLI 手动走查（/tmp，已清理）：场景一 run → status → decide merge 完成，计费 2 次 1.30 元，对象分组 2 组、测量 3 条保留；场景二 reset → 注入退出（退出码 70）→ 重启恢复重复计费 3 次 1.80 元 → decide keep-separate 完成 3 组。
+
+未验证范围：演示与测试全程离线，无任何网络调用；Linux/Windows 未测；崩溃注入用 `os._exit(70)`（无清理的硬退出），未另行演示外部 SIGKILL——两者对已提交的账单与检查点效果相同；并发互斥属 R06。
 
 ### 待解决
 
-本次文档整理无待解决问题。
+1. 仓库内 `.venv` 已知问题（R01 交接记录、首轮复现）本轮未处理：editable 安装的 `.pth` 被 macOS 反复置 hidden 标志导致 `import hvs_catalog` 间歇失败；继续使用仓库外 `UV_PROJECT_ENVIRONMENT` 开发，设置标志的本机进程未定位，`UV_NO_EDITABLE=1` 可作排障备选。
+2. R02 范围不含并发互斥：同一演示空间同时运行两个 run 可能重复调用服务；“同一任务同时只能有一个执行者”按计划在 R06 交付。检查点使用 SqliteSaver 同步接口，其并发行为未验证。
 
-R01 无阻塞代码问题。原仓库 `.venv` 的 `_virtualenv.pth` 带 hidden 标志，本机 CPython 3.12 的 `site.py` 会跳过 hidden `.pth`；仓库外全新 editable 环境可正常运行。标志来源及影响范围未知。GLM 报告的 `UV_NO_EDITABLE=1` 可作排障备选，已有验收未依赖它。现有导入检查用例实际只查询元数据，后续可改为直接导入并核对路径；R01 已独立补验，CLI 与模块入口测试也覆盖导入。
+R02 当前无阻塞技术问题；上述本机环境及未验证范围限制保留。对象身份决定仅用于合成演示，不构成正式科学规则或身份识别功能的验收。
 
 ### 接续安排
 
-R01 远程交付仍暂缓，获准完成后由 Zcode / GLM 进入 R02。
+人类专家于 2026-09-15 指示先提交已通过技术验收的 R02，再尝试解决本机环境问题。本次先完成 R02 本地提交，随后由 Astra 排查仓库内 .venv；R03 尚未开始。
 
 ### Git 与授权
 
-人类专家已确认科学规则的唯一维护来源与阅读版生成方式，并授权在两仓本地提交本批八份文档。提交结果以实际 Git 状态为准，推送未获授权。
-
-此前 R01 已获准本地提交及修改提交信息，操作已完成，推送暂缓。提交信息约定已写入 CONTRIBUTING。核对实际 Git 状态后接续，不把此前授权用于本次文档修改。
+人类专家于 2026-09-15 明确要求先提交 R02，再排查环境问题。授权范围为当前已验收的 R02 实现、测试、依赖、发行检查、README 和进度交接，本地提交前展示本批中文 HTML 说明；实际提交状态以 Git 为准。推送未获授权。环境排查产生的后续修改单独记录。
 
 ## 任务总表
 
@@ -60,7 +68,7 @@ R01 远程交付仍暂缓，获准完成后由 Zcode / GLM 进入 R02。
 |---|---|---|---|
 | [R00](plan.md#r00) | 通过 | 2026-09-14 | 两仓基础文档、整体计划与忽略规则完成验收。 |
 | [R01](plan.md#r01) | 通过 | 2026-09-14 | 最小工程骨架完成验收；独立安装与 CLI 可用。 |
-| [R02](plan.md#r02) | 未开始 | — | — |
+| [R02](plan.md#r02) | 通过 | 2026-09-15 | Astra 技术验收通过：54 项测试、静态检查、Python 3.12 发行走查及两个补充探针通过；GLM 的 3.11 / 3.13 自检通过。人类专家指示本地提交，推送未授权。 |
 | [R03](plan.md#r03) | 未开始 | — | — |
 | [R04](plan.md#r04) | 未开始 | — | — |
 | [R05](plan.md#r05) | 未开始 | — | — |

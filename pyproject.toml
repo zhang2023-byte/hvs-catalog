@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "从高速星研究文献整理对象、判断与测量值，形成可回查依据的星表系统"
 readme = "README.md"
 requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=1.2.11",
+    "langgraph-checkpoint-sqlite>=3.1.1",
+]
 
 [project.scripts]
 hvs-catalog = "hvs_catalog.cli:main"

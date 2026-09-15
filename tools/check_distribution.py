@@ -6,7 +6,10 @@
 2. 检查两个包的内容只含构建安装所需文件，排除正式数据、开发材料与运行产物；
 3. 用 uv 在仓库外创建全新虚拟环境并安装 wheel；
 4. 以独立子进程验证 ``hvs-catalog --help``、``--version``、``python -m`` 与包导入，
-   子进程在仓库外目录运行并清除 PYTHONPATH。
+   子进程在仓库外目录运行并清除 PYTHONPATH；
+5. 用安装后的 ``hvs-catalog demo`` 在仓库外走查持久化恢复演示：重启找回待办
+   与复用结果、同一决定只生效一次、冲突决定被拒绝、真实进程终止后的重复
+   调用与计费。
 
 用法：uv run python tools/check_distribution.py [Python 版本]
 
@@ -161,6 +164,114 @@ def verify_installation(venv_dir: Path, work_dir: Path, version: str) -> list[st
     return problems
 
 
+def verify_demo(script: Path, work_dir: Path) -> list[str]:
+    """在仓库外用独立子进程走查演示：重启恢复、结果复用、决定规则与重复计费。
+
+    退出码 70 与 hvs_catalog.demo.runner.CRASH_EXIT_CODE 一致，代表
+    “收到响应但尚未保存”的真实进程终止。
+    """
+    problems: list[str] = []
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+
+    def run_demo(args: Sequence[object]) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [str(script), "demo", *[str(arg) for arg in args]],
+            cwd=work_dir,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def expect(
+        step: str,
+        args: Sequence[object],
+        *,
+        code: int = 0,
+        includes: Sequence[str] = (),
+        stderr_includes: str | None = None,
+    ) -> None:
+        result = run_demo(args)
+        if result.returncode != code:
+            problems.append(
+                f"演示步骤 {step} 退出码 {result.returncode}（期望 {code}）："
+                f"demo {' '.join(str(a) for a in args)}\n{result.stdout}{result.stderr}"
+            )
+            return
+        for text in includes:
+            if text not in result.stdout:
+                problems.append(
+                    f"演示步骤 {step} 输出缺少 {text!r}，实际输出 {result.stdout!r}"
+                )
+        if stderr_includes is not None and stderr_includes not in result.stderr:
+            problems.append(
+                f"演示步骤 {step} 错误输出缺少 {stderr_includes!r}，"
+                f"实际错误输出 {result.stderr!r}"
+            )
+
+    space = work_dir / "demo-space"
+    crash_space = work_dir / "demo-crash-space"
+
+    # 场景一：暂停 → 新进程找回待办与已保存结果 → 决定并复用结果
+    expect(
+        "run",
+        ["run", "--space", space],
+        includes=(
+            "[暂停]",
+            "是否识别为同一天体",
+            "580±20 km/s（来源：当前论文）",
+            "累计调用 2 次",
+        ),
+    )
+    expect(
+        "status",
+        ["status", "--space", space],
+        includes=("[固定输入]", "等待裁决", "已保存结果 2 项"),
+    )
+    expect(
+        "decide",
+        ["decide", "--space", space, "--choice", "merge"],
+        includes=("[复用]", "[完成]", "对象分组：2 组", "累计调用 2 次"),
+    )
+    # 同一决定重复提交只生效一次；冲突决定被拒绝
+    expect(
+        "decide-again",
+        ["decide", "--space", space, "--choice", "merge"],
+        includes=("未重复生效", "累计调用 2 次"),
+    )
+    expect(
+        "decide-conflict",
+        ["decide", "--space", space, "--choice", "keep-separate"],
+        code=2,
+        stderr_includes="[拒绝]",
+    )
+
+    # 场景二：真实终止进程后恢复，展示重复调用与重复计费
+    expect(
+        "crash",
+        ["run", "--space", crash_space, "--crash-after-response"],
+        code=70,
+        includes=("尚未保存",),
+    )
+    expect(
+        "status-after-crash",
+        ["status", "--space", crash_space],
+        includes=("累计调用 1 次",),
+    )
+    expect(
+        "resume",
+        ["run", "--space", crash_space],
+        includes=("重复计费", "累计调用 3 次"),
+    )
+    expect(
+        "crash-decide",
+        ["decide", "--space", crash_space, "--choice", "keep-separate"],
+        includes=("[完成]", "累计调用 3 次"),
+    )
+    return problems
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="check_distribution",
@@ -224,8 +335,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             for problem in problems:
                 print(f"  - {problem}")
             return 1
+        script = venv_dir / ("Scripts" if os.name == "nt" else "bin") / "hvs-catalog"
+        problems = verify_demo(script, work_dir)
+        if problems:
+            print("[失败] 仓库外演示走查未通过：")
+            for problem in problems:
+                print(f"  - {problem}")
+            return 1
     print(
-        f"[通过] 仓库外全新环境安装 wheel，独立子进程查询帮助与版本均正常（{version}）"
+        f"[通过] 仓库外全新环境安装 wheel，独立子进程查询帮助与版本均正常（{version}）；"
+        "持久化恢复演示走查通过（重启恢复、结果复用、决定规则、重复计费）"
     )
     return 0
 
