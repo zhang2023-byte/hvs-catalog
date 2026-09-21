@@ -60,11 +60,11 @@ hvs-catalog demo run --space SPACE --crash-after-response   # 收到响应后、
 hvs-catalog demo run --space SPACE   # 重启恢复：业务库没有该结果，重新调用服务，账单再次计费
 ```
 
-保存与恢复的完整规则见[产品设计](docs/design.md#保存恢复与版本)。`hvs-catalog demo reset --space SPACE` 清空空间后可重新演示。
+保存与恢复的完整规则见[产品设计](docs/design/architecture.md#保存恢复与版本)。`hvs-catalog demo reset --space SPACE` 清空空间后可重新演示。
 
 ## 阅读入口
 
-- [产品设计](docs/design.md)：科学目标、系统各部分负责什么，以及两仓和运行工作空间怎样存放文件。
+- [设计总览](docs/design.md)：共用科学边界和按任务阅读的入口；架构、工作流程、裁决、提取、数据格式与评价各有独立正文。
 - [文献提取规则（英文）](docs/science-rules.md)：已获专家审定的七条主规则、定义与合成例子；中文说明在审阅时按需提供，正式提取功能按后续计划交付。
 - [开发与文档维护](CONTRIBUTING.md)：怎样开发、检查和执行 Git 操作，以及怎样保持文档与实际工作一致。
 - [Agent 入口](AGENTS.md)：执行仓库任务前的阅读要求。
