@@ -1,0 +1,386 @@
+{
+  "$defs": {
+    "AffectedItem": {
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Contribution item affected by the gap, when identifiable.",
+          "title": "Item Id"
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Quantity path affected by the gap, when the scope names one.",
+          "title": "Quantity"
+        },
+        "judgment": {
+          "anyOf": [
+            {
+              "enum": [
+                "inclusion",
+                "identity"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Roster-level judgment the gap affects: inclusion (whether the object belongs to the roster) or identity (whether printed names denote one object). Mutually exclusive with quantity in one item; null when the item names quantities only.",
+          "title": "Judgment"
+        }
+      },
+      "required": [
+        "item_id",
+        "quantity",
+        "judgment"
+      ],
+      "title": "AffectedItem",
+      "type": "object"
+    },
+    "AffectedTargets": {
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "enum": [
+            "known",
+            "unknown"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/AffectedItem"
+          },
+          "minItems": 0,
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "scope",
+        "items"
+      ],
+      "title": "AffectedTargets",
+      "type": "object"
+    },
+    "ArxivOrigin": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "arxiv",
+          "title": "Kind",
+          "type": "string"
+        },
+        "arxiv_id": {
+          "minLength": 1,
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "retrieval": {
+          "description": "How and when the source package was retrieved, e.g. the download basis.",
+          "minLength": 1,
+          "title": "Retrieval",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "arxiv_id",
+        "retrieval"
+      ],
+      "title": "ArxivOrigin",
+      "type": "object"
+    },
+    "Gap": {
+      "additionalProperties": false,
+      "properties": {
+        "gap_id": {
+          "minLength": 1,
+          "title": "Gap Id",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "missing",
+            "unreadable",
+            "unparsed",
+            "external_not_included"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "file_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Omitted for gaps without a specific package file.",
+          "title": "File Id"
+        },
+        "mention_evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Mention Evidence Refs",
+          "type": "array"
+        },
+        "affected_targets": {
+          "$ref": "#/$defs/AffectedTargets"
+        }
+      },
+      "required": [
+        "gap_id",
+        "reason",
+        "description",
+        "file_id",
+        "mention_evidence_refs",
+        "affected_targets"
+      ],
+      "title": "Gap",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "SchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "SchemaTag",
+      "type": "object"
+    },
+    "SourceFile": {
+      "additionalProperties": false,
+      "properties": {
+        "file_id": {
+          "minLength": 1,
+          "title": "File Id",
+          "type": "string"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "role": {
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "read_state": {
+          "enum": [
+            "ready",
+            "unparsed",
+            "unreadable"
+          ],
+          "title": "Read State",
+          "type": "string"
+        },
+        "derived_from": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Derived From",
+          "type": "array"
+        }
+      },
+      "required": [
+        "file_id",
+        "path",
+        "sha256",
+        "media_type",
+        "role",
+        "read_state",
+        "derived_from"
+      ],
+      "title": "SourceFile",
+      "type": "object"
+    },
+    "SourcePackageData": {
+      "additionalProperties": false,
+      "properties": {
+        "paper_key": {
+          "minLength": 1,
+          "title": "Paper Key",
+          "type": "string"
+        },
+        "origin": {
+          "discriminator": {
+            "mapping": {
+              "arxiv": "#/$defs/ArxivOrigin",
+              "synthetic": "#/$defs/SyntheticOrigin"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SyntheticOrigin"
+            },
+            {
+              "$ref": "#/$defs/ArxivOrigin"
+            }
+          ],
+          "title": "Origin"
+        },
+        "source_version": {
+          "minLength": 1,
+          "title": "Source Version",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/SourceFile"
+          },
+          "minItems": 0,
+          "title": "Files",
+          "type": "array"
+        },
+        "gaps": {
+          "items": {
+            "$ref": "#/$defs/Gap"
+          },
+          "minItems": 0,
+          "title": "Gaps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "paper_key",
+        "origin",
+        "source_version",
+        "files",
+        "gaps"
+      ],
+      "title": "SourcePackageData",
+      "type": "object"
+    },
+    "SyntheticOrigin": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "synthetic",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "SyntheticOrigin",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/SchemaTag"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Execution Id"
+    },
+    "data": {
+      "$ref": "#/$defs/SourcePackageData"
+    }
+  },
+  "required": [
+    "schema",
+    "record_id",
+    "revision",
+    "created_at",
+    "execution_id",
+    "data"
+  ],
+  "title": "SourcePackageRecord",
+  "type": "object"
+}

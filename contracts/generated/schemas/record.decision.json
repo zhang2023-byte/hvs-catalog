@@ -1,0 +1,259 @@
+{
+  "$defs": {
+    "Actor": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "human",
+            "model"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "title": "Actor",
+      "type": "object"
+    },
+    "DecisionData": {
+      "additionalProperties": false,
+      "properties": {
+        "question_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "question_fingerprint": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Question Fingerprint",
+          "type": "string"
+        },
+        "actor": {
+          "$ref": "#/$defs/Actor"
+        },
+        "decided_at": {
+          "format": "date-time",
+          "title": "Decided At",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "resolved",
+            "unresolved"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "answer_original": {
+          "minLength": 1,
+          "title": "Answer Original",
+          "type": "string"
+        },
+        "answer_en": {
+          "minLength": 1,
+          "title": "Answer En",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "result_patch": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DecisionPatch"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "question_ref",
+        "question_fingerprint",
+        "actor",
+        "decided_at",
+        "outcome",
+        "answer_original",
+        "answer_en",
+        "reason",
+        "evidence_refs",
+        "result_patch"
+      ],
+      "title": "DecisionData",
+      "type": "object"
+    },
+    "DecisionPatch": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/ItemRef"
+        },
+        "changes": {
+          "items": {
+            "$ref": "#/$defs/PatchChange"
+          },
+          "minItems": 1,
+          "title": "Changes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "target",
+        "changes"
+      ],
+      "title": "DecisionPatch",
+      "type": "object"
+    },
+    "ItemRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "item_id": {
+          "minLength": 1,
+          "title": "Item Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision",
+        "item_id"
+      ],
+      "title": "ItemRef",
+      "type": "object"
+    },
+    "PatchChange": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "minLength": 1,
+          "title": "Field",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value"
+        }
+      },
+      "required": [
+        "field",
+        "value"
+      ],
+      "title": "PatchChange",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "SchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "SchemaTag",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/SchemaTag"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Execution Id"
+    },
+    "data": {
+      "$ref": "#/$defs/DecisionData"
+    }
+  },
+  "required": [
+    "schema",
+    "record_id",
+    "revision",
+    "created_at",
+    "execution_id",
+    "data"
+  ],
+  "title": "DecisionRecord",
+  "type": "object"
+}

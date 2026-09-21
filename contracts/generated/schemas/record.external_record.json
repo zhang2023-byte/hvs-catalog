@@ -1,0 +1,206 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "ExternalEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "entry_id": {
+          "minLength": 1,
+          "title": "Entry Id",
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/ExternalField"
+          },
+          "minItems": 1,
+          "title": "Fields",
+          "type": "array"
+        }
+      },
+      "required": [
+        "entry_id",
+        "fields"
+      ],
+      "title": "ExternalEntry",
+      "type": "object"
+    },
+    "ExternalField": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "raw_value": {
+          "minLength": 1,
+          "title": "Raw Value",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "response_selector": {
+          "minLength": 1,
+          "title": "Response Selector",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "raw_value",
+        "unit",
+        "response_selector"
+      ],
+      "title": "ExternalField",
+      "type": "object"
+    },
+    "ExternalRecordData": {
+      "additionalProperties": false,
+      "properties": {
+        "service": {
+          "minLength": 1,
+          "title": "Service",
+          "type": "string"
+        },
+        "catalog_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Catalog Version"
+        },
+        "queried_at": {
+          "format": "date-time",
+          "title": "Queried At",
+          "type": "string"
+        },
+        "query": {
+          "additionalProperties": true,
+          "title": "Query",
+          "type": "object"
+        },
+        "raw_response": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/ExternalEntry"
+          },
+          "minItems": 0,
+          "title": "Entries",
+          "type": "array"
+        }
+      },
+      "required": [
+        "service",
+        "catalog_version",
+        "queried_at",
+        "query",
+        "raw_response",
+        "entries"
+      ],
+      "title": "ExternalRecordData",
+      "type": "object"
+    },
+    "SchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "SchemaTag",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/SchemaTag"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Execution Id"
+    },
+    "data": {
+      "$ref": "#/$defs/ExternalRecordData"
+    }
+  },
+  "required": [
+    "schema",
+    "record_id",
+    "revision",
+    "created_at",
+    "execution_id",
+    "data"
+  ],
+  "title": "ExternalRecord",
+  "type": "object"
+}

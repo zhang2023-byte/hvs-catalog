@@ -1,0 +1,340 @@
+{
+  "$defs": {
+    "GapRef": {
+      "additionalProperties": false,
+      "properties": {
+        "source_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "gap_id": {
+          "minLength": 1,
+          "title": "Gap Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_ref",
+        "gap_id"
+      ],
+      "title": "GapRef",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "RosterCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "not_checked",
+            "partial",
+            "complete"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "checked_file_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "title": "Checked File Ids",
+          "type": "array"
+        },
+        "gap_refs": {
+          "items": {
+            "$ref": "#/$defs/GapRef"
+          },
+          "minItems": 0,
+          "title": "Gap Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "state",
+        "checked_file_ids",
+        "gap_refs"
+      ],
+      "title": "RosterCoverage",
+      "type": "object"
+    },
+    "RosterData": {
+      "additionalProperties": false,
+      "properties": {
+        "paper_key": {
+          "minLength": 1,
+          "title": "Paper Key",
+          "type": "string"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "method": {
+          "enum": [
+            "direct",
+            "candidate_review"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "coverage": {
+          "$ref": "#/$defs/RosterCoverage"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/RosterEntry"
+          },
+          "minItems": 0,
+          "title": "Entries",
+          "type": "array"
+        },
+        "unresolved_groups": {
+          "items": {
+            "$ref": "#/$defs/UnresolvedGroup"
+          },
+          "minItems": 0,
+          "title": "Unresolved Groups",
+          "type": "array"
+        },
+        "issue_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Issue Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "paper_key",
+        "source_ref",
+        "method",
+        "coverage",
+        "entries",
+        "unresolved_groups",
+        "issue_refs"
+      ],
+      "title": "RosterData",
+      "type": "object"
+    },
+    "RosterEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "minLength": 1,
+          "title": "Item Id",
+          "type": "string"
+        },
+        "identifiers": {
+          "items": {
+            "$ref": "#/$defs/RosterIdentifier"
+          },
+          "minItems": 1,
+          "title": "Identifiers",
+          "type": "array"
+        },
+        "disposition": {
+          "enum": [
+            "included",
+            "excluded",
+            "pending"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "issue_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Issue Refs",
+          "type": "array"
+        },
+        "contribution_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contribution Id"
+        }
+      },
+      "required": [
+        "item_id",
+        "identifiers",
+        "disposition",
+        "evidence_refs",
+        "issue_refs"
+      ],
+      "title": "RosterEntry",
+      "type": "object"
+    },
+    "RosterIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence_refs"
+      ],
+      "title": "RosterIdentifier",
+      "type": "object"
+    },
+    "SchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "SchemaTag",
+      "type": "object"
+    },
+    "UnresolvedGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "group_id": {
+          "minLength": 1,
+          "title": "Group Id",
+          "type": "string"
+        },
+        "original_range": {
+          "description": "The printed range expression, preserved as is.",
+          "minLength": 1,
+          "title": "Original Range",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "known_member_item_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "title": "Known Member Item Ids",
+          "type": "array"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "group_id",
+        "original_range",
+        "evidence_refs",
+        "known_member_item_ids",
+        "reason"
+      ],
+      "title": "UnresolvedGroup",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/SchemaTag"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Execution Id"
+    },
+    "data": {
+      "$ref": "#/$defs/RosterData"
+    }
+  },
+  "required": [
+    "schema",
+    "record_id",
+    "revision",
+    "created_at",
+    "execution_id",
+    "data"
+  ],
+  "title": "RosterRecord",
+  "type": "object"
+}

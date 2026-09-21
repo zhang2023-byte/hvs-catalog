@@ -1,0 +1,953 @@
+{
+  "$defs": {
+    "ConflictSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "minLength": 1,
+          "title": "Quantity",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "alternatives": {
+          "items": {
+            "$ref": "#/$defs/ValueSubmission"
+          },
+          "minItems": 2,
+          "title": "Alternatives",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "reason",
+        "alternatives"
+      ],
+      "title": "ConflictSubmission",
+      "type": "object"
+    },
+    "CoverageDeclaration": {
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "const": "all_requested",
+          "title": "Scope",
+          "type": "string"
+        },
+        "common": {
+          "$ref": "#/$defs/CoverageDeclarationBody"
+        },
+        "exceptions": {
+          "items": {
+            "$ref": "#/$defs/CoverageExceptionSubmission"
+          },
+          "title": "Exceptions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "scope",
+        "common",
+        "exceptions"
+      ],
+      "title": "CoverageDeclaration",
+      "type": "object"
+    },
+    "CoverageDeclarationBody": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "not_checked",
+            "partial",
+            "complete"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "checked_file_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Checked File Ids",
+          "type": "array"
+        },
+        "gap_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "title": "Gap Ids",
+          "type": "array"
+        },
+        "issue_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "title": "Issue Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "state",
+        "checked_file_ids",
+        "gap_ids",
+        "issue_ids"
+      ],
+      "title": "CoverageDeclarationBody",
+      "type": "object"
+    },
+    "CoverageExceptionSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "not_checked",
+            "partial",
+            "complete"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "checked_file_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Checked File Ids",
+          "type": "array"
+        },
+        "gap_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "title": "Gap Ids",
+          "type": "array"
+        },
+        "issue_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "title": "Issue Ids",
+          "type": "array"
+        },
+        "quantity": {
+          "minLength": 1,
+          "title": "Quantity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state",
+        "checked_file_ids",
+        "gap_ids",
+        "issue_ids",
+        "quantity"
+      ],
+      "title": "CoverageExceptionSubmission",
+      "type": "object"
+    },
+    "DataElementDecoder": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "encoding": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Encoding"
+        }
+      },
+      "required": [
+        "name",
+        "encoding"
+      ],
+      "title": "DataElementDecoder",
+      "type": "object"
+    },
+    "DataElementLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "data_element",
+          "title": "Kind",
+          "type": "string"
+        },
+        "selector": {
+          "$ref": "#/$defs/DataElementSelector"
+        },
+        "decoder": {
+          "$ref": "#/$defs/DataElementDecoder"
+        }
+      },
+      "required": [
+        "kind",
+        "selector",
+        "decoder"
+      ],
+      "title": "DataElementLocator",
+      "type": "object"
+    },
+    "DataElementSelector": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "DataElementSelector",
+      "type": "object"
+    },
+    "ErrorComponentSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "lower_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Error"
+        },
+        "upper_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper Error"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/InlineEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "evidence"
+      ],
+      "title": "ErrorComponentSubmission",
+      "type": "object"
+    },
+    "InlineEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/InlineSource"
+        },
+        "parts": {
+          "items": {
+            "$ref": "#/$defs/InlineEvidencePart"
+          },
+          "minItems": 0,
+          "title": "Parts",
+          "type": "array"
+        },
+        "context": {
+          "default": false,
+          "title": "Context",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source",
+        "parts"
+      ],
+      "title": "InlineEvidence",
+      "type": "object"
+    },
+    "InlineEvidencePart": {
+      "additionalProperties": false,
+      "properties": {
+        "part": {
+          "minLength": 1,
+          "title": "Part",
+          "type": "string"
+        },
+        "raw_fragment": {
+          "description": "The printed fragment of this component; must equal the filled numeric string of that component.",
+          "minLength": 1,
+          "title": "Raw Fragment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "part",
+        "raw_fragment"
+      ],
+      "title": "InlineEvidencePart",
+      "type": "object"
+    },
+    "InlineSource": {
+      "additionalProperties": false,
+      "properties": {
+        "file_id": {
+          "minLength": 1,
+          "title": "File Id",
+          "type": "string"
+        },
+        "locator": {
+          "discriminator": {
+            "mapping": {
+              "data_element": "#/$defs/DataElementLocator",
+              "table_cell": "#/$defs/TableCellLocator",
+              "text": "#/$defs/TextLocator"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/TextLocator"
+            },
+            {
+              "$ref": "#/$defs/TableCellLocator"
+            },
+            {
+              "$ref": "#/$defs/DataElementLocator"
+            }
+          ],
+          "title": "Locator"
+        },
+        "excerpt": {
+          "minLength": 1,
+          "title": "Excerpt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file_id",
+        "locator",
+        "excerpt"
+      ],
+      "title": "InlineSource",
+      "type": "object"
+    },
+    "ObjectQuantitySubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "quantities": {
+          "items": {
+            "$ref": "#/$defs/QuantityGroupSubmission"
+          },
+          "title": "Quantities",
+          "type": "array"
+        },
+        "quantity_conflicts": {
+          "items": {
+            "$ref": "#/$defs/ConflictSubmission"
+          },
+          "title": "Quantity Conflicts",
+          "type": "array"
+        },
+        "coverage": {
+          "$ref": "#/$defs/CoverageDeclaration"
+        },
+        "precedent_uses": {
+          "items": {
+            "$ref": "#/$defs/PrecedentUseSubmission"
+          },
+          "title": "Precedent Uses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "object_id",
+        "quantities",
+        "quantity_conflicts",
+        "coverage"
+      ],
+      "title": "ObjectQuantitySubmission",
+      "type": "object"
+    },
+    "ObjectQuestionSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "inclusion",
+            "identity",
+            "author_assessment",
+            "numeric_conflict",
+            "quantity_attribution",
+            "interpretation"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "prompt": {
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/InlineEvidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "gap_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Gap Ids",
+          "type": "array"
+        },
+        "object_id": {
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantity"
+        }
+      },
+      "required": [
+        "category",
+        "prompt",
+        "object_id"
+      ],
+      "title": "ObjectQuestionSubmission",
+      "type": "object"
+    },
+    "PrecedentUseSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "precedent_id": {
+          "minLength": 1,
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "explanation": {
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "precedent_id",
+        "explanation"
+      ],
+      "title": "PrecedentUseSubmission",
+      "type": "object"
+    },
+    "QuantityGroupSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "minLength": 1,
+          "title": "Quantity",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/ValueSubmission"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "values"
+      ],
+      "title": "QuantityGroupSubmission",
+      "type": "object"
+    },
+    "ReportedNumberSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/InlineEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "ReportedNumberSubmission",
+      "type": "object"
+    },
+    "TableCellLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "table_cell",
+          "title": "Kind",
+          "type": "string"
+        },
+        "row_key": {
+          "additionalProperties": true,
+          "minProperties": 1,
+          "title": "Row Key",
+          "type": "object"
+        },
+        "column": {
+          "minLength": 1,
+          "title": "Column",
+          "type": "string"
+        },
+        "row_number": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Row Number"
+        }
+      },
+      "required": [
+        "kind",
+        "row_key",
+        "column",
+        "row_number"
+      ],
+      "title": "TableCellLocator",
+      "type": "object"
+    },
+    "TextLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "text",
+          "title": "Kind",
+          "type": "string"
+        },
+        "start_line": {
+          "minimum": 1,
+          "title": "Start Line",
+          "type": "integer"
+        },
+        "end_line": {
+          "minimum": 1,
+          "title": "End Line",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "start_line",
+        "end_line"
+      ],
+      "title": "TextLocator",
+      "type": "object"
+    },
+    "ValueSubmission": {
+      "additionalProperties": false,
+      "description": "按适用形式填写的数值；省略的可选字段由程序补 null 或空列表。",
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "lower_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Error"
+        },
+        "upper_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper Error"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "limit_kind": {
+          "enum": [
+            "none",
+            "lower_limit",
+            "upper_limit",
+            "range"
+          ],
+          "title": "Limit Kind",
+          "type": "string"
+        },
+        "range_lower": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Range Lower"
+        },
+        "range_upper": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Range Upper"
+        },
+        "lower_inclusive": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Inclusive"
+        },
+        "upper_inclusive": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper Inclusive"
+        },
+        "interval_kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "ordinary_range",
+                "prior_support",
+                "confidence",
+                "credible",
+                "statistical_interval",
+                "unspecified"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interval Kind"
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportedNumberSubmission"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "lower_quantile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportedNumberSubmission"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "upper_quantile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportedNumberSubmission"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "error_components": {
+          "items": {
+            "$ref": "#/$defs/ErrorComponentSubmission"
+          },
+          "title": "Error Components",
+          "type": "array"
+        },
+        "condition": {
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "frame": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frame"
+        },
+        "epoch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Epoch"
+        },
+        "coordinate_format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coordinate Format"
+        },
+        "representation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Representation"
+        },
+        "purpose": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Purpose"
+        },
+        "source": {
+          "enum": [
+            "this_paper",
+            "prior_work",
+            "unclear"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "source_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Note"
+        },
+        "author_usage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author Usage"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/InlineEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "limit_kind",
+        "condition",
+        "source",
+        "evidence"
+      ],
+      "title": "ValueSubmission",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "objects": {
+      "items": {
+        "$ref": "#/$defs/ObjectQuantitySubmission"
+      },
+      "title": "Objects",
+      "type": "array"
+    },
+    "questions": {
+      "items": {
+        "$ref": "#/$defs/ObjectQuestionSubmission"
+      },
+      "title": "Questions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "objects",
+    "questions"
+  ],
+  "title": "QuantitySubmission",
+  "type": "object"
+}

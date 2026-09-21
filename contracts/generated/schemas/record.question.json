@@ -1,0 +1,260 @@
+{
+  "$defs": {
+    "GapRef": {
+      "additionalProperties": false,
+      "properties": {
+        "source_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "gap_id": {
+          "minLength": 1,
+          "title": "Gap Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_ref",
+        "gap_id"
+      ],
+      "title": "GapRef",
+      "type": "object"
+    },
+    "ItemRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "item_id": {
+          "minLength": 1,
+          "title": "Item Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision",
+        "item_id"
+      ],
+      "title": "ItemRef",
+      "type": "object"
+    },
+    "QuestionData": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "inclusion",
+            "identity",
+            "author_assessment",
+            "numeric_conflict",
+            "quantity_attribution",
+            "interpretation"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "target_refs": {
+          "items": {
+            "$ref": "#/$defs/ItemRef"
+          },
+          "minItems": 1,
+          "title": "Target Refs",
+          "type": "array"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "rules_ref": {
+          "$ref": "#/$defs/RulesRef"
+        },
+        "prompt": {
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "gap_refs": {
+          "items": {
+            "$ref": "#/$defs/GapRef"
+          },
+          "minItems": 0,
+          "title": "Gap Refs",
+          "type": "array"
+        },
+        "context_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Context Refs",
+          "type": "array"
+        },
+        "fingerprint": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "answered",
+            "superseded"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "decision_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Decision Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "category",
+        "target_refs",
+        "source_refs",
+        "rules_ref",
+        "prompt",
+        "evidence_refs",
+        "gap_refs",
+        "context_refs",
+        "fingerprint",
+        "status",
+        "decision_refs"
+      ],
+      "title": "QuestionData",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "RulesRef": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "sha256"
+      ],
+      "title": "RulesRef",
+      "type": "object"
+    },
+    "SchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "SchemaTag",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/SchemaTag"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Execution Id"
+    },
+    "data": {
+      "$ref": "#/$defs/QuestionData"
+    }
+  },
+  "required": [
+    "schema",
+    "record_id",
+    "revision",
+    "created_at",
+    "execution_id",
+    "data"
+  ],
+  "title": "QuestionRecord",
+  "type": "object"
+}

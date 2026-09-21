@@ -1,0 +1,1156 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "ConditionalAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "condition": {
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "condition",
+        "statement",
+        "evidence_refs"
+      ],
+      "title": "ConditionalAssessment",
+      "type": "object"
+    },
+    "ContributionSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "text",
+        "evidence_refs"
+      ],
+      "title": "ContributionSummary",
+      "type": "object"
+    },
+    "ContributionTypeEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "enum": [
+            "candidates_found",
+            "follow_up"
+          ],
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence_refs"
+      ],
+      "title": "ContributionTypeEntry",
+      "type": "object"
+    },
+    "CoverageReport": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "direct_evidence": {
+          "items": {
+            "$ref": "#/$defs/DirectEvidencePart"
+          },
+          "minItems": 1,
+          "title": "Direct Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "unit",
+        "direct_evidence"
+      ],
+      "title": "CoverageReport",
+      "type": "object"
+    },
+    "DirectEvidencePart": {
+      "additionalProperties": false,
+      "properties": {
+        "part": {
+          "minLength": 1,
+          "title": "Part",
+          "type": "string"
+        },
+        "evidence_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "raw_fragment": {
+          "description": "The printed fragment of this component; must equal the saved numeric string of that component.",
+          "minLength": 1,
+          "title": "Raw Fragment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "part",
+        "evidence_ref",
+        "raw_fragment"
+      ],
+      "title": "DirectEvidencePart",
+      "type": "object"
+    },
+    "ErrorComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error"
+        },
+        "lower_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lower Error"
+        },
+        "upper_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Upper Error"
+        },
+        "direct_evidence": {
+          "items": {
+            "$ref": "#/$defs/DirectEvidencePart"
+          },
+          "minItems": 1,
+          "title": "Direct Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "error",
+        "lower_error",
+        "upper_error",
+        "direct_evidence"
+      ],
+      "title": "ErrorComponent",
+      "type": "object"
+    },
+    "GapRef": {
+      "additionalProperties": false,
+      "properties": {
+        "source_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "gap_id": {
+          "minLength": 1,
+          "title": "Gap Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_ref",
+        "gap_id"
+      ],
+      "title": "GapRef",
+      "type": "object"
+    },
+    "IdentifierEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence_refs"
+      ],
+      "title": "IdentifierEntry",
+      "type": "object"
+    },
+    "ItemRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "item_id": {
+          "minLength": 1,
+          "title": "Item Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision",
+        "item_id"
+      ],
+      "title": "ItemRef",
+      "type": "object"
+    },
+    "MeasuredValue": {
+      "additionalProperties": false,
+      "description": "一组科学数值的保存形式；所有键在保存记录中必须出现，未提供的内容为 null。",
+      "properties": {
+        "value_id": {
+          "minLength": 1,
+          "title": "Value Id",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Printed value string; null only for pure intervals.",
+          "title": "Value"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Error"
+        },
+        "lower_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lower Error"
+        },
+        "upper_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Upper Error"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "limit_kind": {
+          "enum": [
+            "none",
+            "lower_limit",
+            "upper_limit",
+            "range"
+          ],
+          "title": "Limit Kind",
+          "type": "string"
+        },
+        "range_lower": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Range Lower"
+        },
+        "range_upper": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Range Upper"
+        },
+        "lower_inclusive": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lower Inclusive"
+        },
+        "upper_inclusive": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Upper Inclusive"
+        },
+        "interval_kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "ordinary_range",
+                "prior_support",
+                "confidence",
+                "credible",
+                "statistical_interval",
+                "unspecified"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Interval Kind"
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CoverageReport"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "lower_quantile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QuantileReport"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "upper_quantile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QuantileReport"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "error_components": {
+          "items": {
+            "$ref": "#/$defs/ErrorComponent"
+          },
+          "minItems": 0,
+          "title": "Error Components",
+          "type": "array"
+        },
+        "condition": {
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "frame": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Frame"
+        },
+        "epoch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Epoch"
+        },
+        "coordinate_format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Coordinate Format"
+        },
+        "representation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Representation"
+        },
+        "purpose": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Purpose"
+        },
+        "source": {
+          "enum": [
+            "this_paper",
+            "prior_work",
+            "unclear"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "source_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Note"
+        },
+        "author_usage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Author Usage"
+        },
+        "direct_evidence": {
+          "items": {
+            "$ref": "#/$defs/DirectEvidencePart"
+          },
+          "minItems": 1,
+          "title": "Direct Evidence",
+          "type": "array"
+        },
+        "context_evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Context Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value_id",
+        "value",
+        "error",
+        "lower_error",
+        "upper_error",
+        "unit",
+        "limit_kind",
+        "range_lower",
+        "range_upper",
+        "lower_inclusive",
+        "upper_inclusive",
+        "interval_kind",
+        "error_components",
+        "condition",
+        "frame",
+        "epoch",
+        "coordinate_format",
+        "representation",
+        "purpose",
+        "source",
+        "source_note",
+        "author_usage",
+        "direct_evidence",
+        "context_evidence_refs"
+      ],
+      "title": "MeasuredValue",
+      "type": "object"
+    },
+    "ObjectContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "minLength": 1,
+          "title": "Item Id",
+          "type": "string"
+        },
+        "roster_item_id": {
+          "minLength": 1,
+          "title": "Roster Item Id",
+          "type": "string"
+        },
+        "identifiers": {
+          "items": {
+            "$ref": "#/$defs/IdentifierEntry"
+          },
+          "minItems": 1,
+          "title": "Identifiers",
+          "type": "array"
+        },
+        "contribution_summary": {
+          "$ref": "#/$defs/ContributionSummary"
+        },
+        "contribution_type": {
+          "$ref": "#/$defs/ContributionTypeEntry"
+        },
+        "paper_boundness": {
+          "$ref": "#/$defs/PaperBoundness"
+        },
+        "conditional_assessments": {
+          "items": {
+            "$ref": "#/$defs/ConditionalAssessment"
+          },
+          "minItems": 0,
+          "title": "Conditional Assessments",
+          "type": "array"
+        },
+        "quantities": {
+          "items": {
+            "$ref": "#/$defs/QuantityGroup"
+          },
+          "minItems": 0,
+          "title": "Quantities",
+          "type": "array"
+        },
+        "quantity_conflicts": {
+          "items": {
+            "$ref": "#/$defs/QuantityConflict"
+          },
+          "minItems": 0,
+          "title": "Quantity Conflicts",
+          "type": "array"
+        },
+        "quantity_coverage": {
+          "items": {
+            "$ref": "#/$defs/QuantityCoverageEntry"
+          },
+          "title": "Quantity Coverage",
+          "type": "array"
+        },
+        "precedent_uses": {
+          "items": {
+            "$ref": "#/$defs/PrecedentUse"
+          },
+          "minItems": 0,
+          "title": "Precedent Uses",
+          "type": "array"
+        }
+      },
+      "required": [
+        "item_id",
+        "roster_item_id",
+        "identifiers",
+        "contribution_summary",
+        "contribution_type",
+        "paper_boundness",
+        "conditional_assessments",
+        "quantities",
+        "quantity_conflicts",
+        "quantity_coverage",
+        "precedent_uses"
+      ],
+      "title": "ObjectContribution",
+      "type": "object"
+    },
+    "PaperBoundness": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "no_overall_conclusion",
+                "unbound",
+                "possibly_unbound",
+                "possibly_bound",
+                "bound"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "issue_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Issue Refs",
+          "type": "array"
+        },
+        "gap_refs": {
+          "items": {
+            "$ref": "#/$defs/GapRef"
+          },
+          "minItems": 0,
+          "title": "Gap Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evidence_refs",
+        "issue_refs",
+        "gap_refs"
+      ],
+      "title": "PaperBoundness",
+      "type": "object"
+    },
+    "PaperData": {
+      "additionalProperties": false,
+      "properties": {
+        "paper_key": {
+          "minLength": 1,
+          "title": "Paper Key",
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/$defs/PaperMetadata"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "roster_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "object_contributions": {
+          "items": {
+            "$ref": "#/$defs/ObjectContribution"
+          },
+          "minItems": 0,
+          "title": "Object Contributions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "paper_key",
+        "metadata",
+        "source_ref",
+        "roster_ref",
+        "object_contributions"
+      ],
+      "title": "PaperData",
+      "type": "object"
+    },
+    "PaperMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "arxiv_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Arxiv Id"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Title"
+        },
+        "authors": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "title": "Authors",
+          "type": "array"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "version",
+        "title",
+        "authors"
+      ],
+      "title": "PaperMetadata",
+      "type": "object"
+    },
+    "PrecedentApproval": {
+      "additionalProperties": false,
+      "properties": {
+        "approved_by": {
+          "minLength": 1,
+          "title": "Approved By",
+          "type": "string"
+        },
+        "approved_at": {
+          "format": "date-time",
+          "title": "Approved At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "approved_by",
+        "approved_at"
+      ],
+      "title": "PrecedentApproval",
+      "type": "object"
+    },
+    "PrecedentSnapshotRef": {
+      "additionalProperties": false,
+      "properties": {
+        "precedent_id": {
+          "minLength": 1,
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "text": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "approval": {
+          "$ref": "#/$defs/PrecedentApproval"
+        }
+      },
+      "required": [
+        "precedent_id",
+        "version",
+        "text",
+        "approval"
+      ],
+      "title": "PrecedentSnapshotRef",
+      "type": "object"
+    },
+    "PrecedentUse": {
+      "additionalProperties": false,
+      "properties": {
+        "precedent_ref": {
+          "$ref": "#/$defs/PrecedentSnapshotRef"
+        },
+        "applies_to": {
+          "items": {
+            "$ref": "#/$defs/ItemRef"
+          },
+          "minItems": 1,
+          "title": "Applies To",
+          "type": "array"
+        },
+        "explanation": {
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "precedent_ref",
+        "applies_to",
+        "explanation"
+      ],
+      "title": "PrecedentUse",
+      "type": "object"
+    },
+    "QuantileReport": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "direct_evidence": {
+          "items": {
+            "$ref": "#/$defs/DirectEvidencePart"
+          },
+          "minItems": 1,
+          "title": "Direct Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "unit",
+        "direct_evidence"
+      ],
+      "title": "QuantileReport",
+      "type": "object"
+    },
+    "QuantityConflict": {
+      "additionalProperties": false,
+      "properties": {
+        "conflict_id": {
+          "minLength": 1,
+          "title": "Conflict Id",
+          "type": "string"
+        },
+        "quantity": {
+          "minLength": 1,
+          "title": "Quantity",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "alternatives": {
+          "items": {
+            "$ref": "#/$defs/MeasuredValue"
+          },
+          "minItems": 2,
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "issue_ref": {
+          "$ref": "#/$defs/RecordRef"
+        }
+      },
+      "required": [
+        "conflict_id",
+        "quantity",
+        "reason",
+        "alternatives",
+        "issue_ref"
+      ],
+      "title": "QuantityConflict",
+      "type": "object"
+    },
+    "QuantityCoverageEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "minLength": 1,
+          "title": "Quantity",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "not_checked",
+            "partial",
+            "complete"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "checked_file_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "title": "Checked File Ids",
+          "type": "array"
+        },
+        "gap_refs": {
+          "items": {
+            "$ref": "#/$defs/GapRef"
+          },
+          "minItems": 0,
+          "title": "Gap Refs",
+          "type": "array"
+        },
+        "issue_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Issue Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "state",
+        "checked_file_ids",
+        "gap_refs",
+        "issue_refs"
+      ],
+      "title": "QuantityCoverageEntry",
+      "type": "object"
+    },
+    "QuantityGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "minLength": 1,
+          "title": "Quantity",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/MeasuredValue"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "values"
+      ],
+      "title": "QuantityGroup",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "SchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "SchemaTag",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/SchemaTag"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Execution Id"
+    },
+    "data": {
+      "$ref": "#/$defs/PaperData"
+    }
+  },
+  "required": [
+    "schema",
+    "record_id",
+    "revision",
+    "created_at",
+    "execution_id",
+    "data"
+  ],
+  "title": "PaperRecord",
+  "type": "object"
+}

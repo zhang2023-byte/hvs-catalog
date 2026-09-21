@@ -1,0 +1,690 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "Attempt": {
+      "additionalProperties": false,
+      "properties": {
+        "request": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "response": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "state": {
+          "enum": [
+            "pending",
+            "succeeded",
+            "failed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Started At"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Finished At"
+        },
+        "usage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Usage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cost": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cost"
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Currency"
+        },
+        "service_request_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Service Request Id"
+        }
+      },
+      "required": [
+        "request",
+        "response",
+        "state",
+        "started_at",
+        "finished_at",
+        "usage",
+        "cost",
+        "currency",
+        "service_request_id"
+      ],
+      "title": "Attempt",
+      "type": "object"
+    },
+    "InputSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "rules": {
+          "$ref": "#/$defs/RulesRef"
+        },
+        "method": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Method"
+        },
+        "models": {
+          "items": {
+            "$ref": "#/$defs/ModelSpec"
+          },
+          "minItems": 0,
+          "title": "Models",
+          "type": "array"
+        },
+        "code_version": {
+          "minLength": 1,
+          "title": "Code Version",
+          "type": "string"
+        },
+        "dependency_versions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Dependency Versions",
+          "type": "object"
+        },
+        "expert_adjudication": {
+          "title": "Expert Adjudication",
+          "type": "boolean"
+        },
+        "prompt_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 0,
+          "title": "Prompt Refs",
+          "type": "array"
+        },
+        "example_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 0,
+          "title": "Example Refs",
+          "type": "array"
+        },
+        "precedent_refs": {
+          "items": {
+            "$ref": "#/$defs/PrecedentSnapshotRef"
+          },
+          "minItems": 0,
+          "title": "Precedent Refs",
+          "type": "array"
+        },
+        "existing_decision_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Existing Decision Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_refs",
+        "rules",
+        "method",
+        "models",
+        "code_version",
+        "dependency_versions",
+        "expert_adjudication",
+        "prompt_refs",
+        "example_refs",
+        "precedent_refs",
+        "existing_decision_refs"
+      ],
+      "title": "InputSnapshot",
+      "type": "object"
+    },
+    "ModelJudgment": {
+      "additionalProperties": false,
+      "properties": {
+        "step_id": {
+          "minLength": 1,
+          "title": "Step Id",
+          "type": "string"
+        },
+        "judgment": {
+          "minLength": 1,
+          "title": "Judgment",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step_id",
+        "judgment",
+        "created_at"
+      ],
+      "title": "ModelJudgment",
+      "type": "object"
+    },
+    "ModelSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "step_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Null for the whole-pipeline default model.",
+          "title": "Step Id"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "step_id",
+        "provider",
+        "model",
+        "parameters"
+      ],
+      "title": "ModelSpec",
+      "type": "object"
+    },
+    "PrecedentApproval": {
+      "additionalProperties": false,
+      "properties": {
+        "approved_by": {
+          "minLength": 1,
+          "title": "Approved By",
+          "type": "string"
+        },
+        "approved_at": {
+          "format": "date-time",
+          "title": "Approved At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "approved_by",
+        "approved_at"
+      ],
+      "title": "PrecedentApproval",
+      "type": "object"
+    },
+    "PrecedentSnapshotRef": {
+      "additionalProperties": false,
+      "properties": {
+        "precedent_id": {
+          "minLength": 1,
+          "title": "Precedent Id",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "text": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "approval": {
+          "$ref": "#/$defs/PrecedentApproval"
+        }
+      },
+      "required": [
+        "precedent_id",
+        "version",
+        "text",
+        "approval"
+      ],
+      "title": "PrecedentSnapshotRef",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "RulesRef": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "sha256"
+      ],
+      "title": "RulesRef",
+      "type": "object"
+    },
+    "RunData": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_id": {
+          "minLength": 1,
+          "title": "Execution Id",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "daily",
+            "evaluation",
+            "synthetic"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "input_snapshot": {
+          "$ref": "#/$defs/InputSnapshot"
+        },
+        "state": {
+          "enum": [
+            "created",
+            "running",
+            "waiting_review",
+            "finished",
+            "failed",
+            "cancelled"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/StepRecord"
+          },
+          "minItems": 0,
+          "title": "Steps",
+          "type": "array"
+        },
+        "result_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Result Refs",
+          "type": "array"
+        },
+        "model_judgments": {
+          "items": {
+            "$ref": "#/$defs/ModelJudgment"
+          },
+          "minItems": 0,
+          "title": "Model Judgments",
+          "type": "array"
+        },
+        "usage": {
+          "$ref": "#/$defs/Usage"
+        },
+        "errors": {
+          "items": {
+            "$ref": "#/$defs/RunError"
+          },
+          "minItems": 0,
+          "title": "Errors",
+          "type": "array"
+        }
+      },
+      "required": [
+        "execution_id",
+        "mode",
+        "input_snapshot",
+        "state",
+        "steps",
+        "result_refs",
+        "model_judgments",
+        "usage",
+        "errors"
+      ],
+      "title": "RunData",
+      "type": "object"
+    },
+    "RunError": {
+      "additionalProperties": false,
+      "properties": {
+        "error_id": {
+          "minLength": 1,
+          "title": "Error Id",
+          "type": "string"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "message": {
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "error_id",
+        "kind",
+        "message"
+      ],
+      "title": "RunError",
+      "type": "object"
+    },
+    "SchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "SchemaTag",
+      "type": "object"
+    },
+    "StepRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "step_id": {
+          "minLength": 1,
+          "title": "Step Id",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "created",
+            "pending",
+            "running",
+            "waiting_review",
+            "finished",
+            "failed",
+            "cancelled"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "input_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "attempts": {
+          "items": {
+            "$ref": "#/$defs/Attempt"
+          },
+          "minItems": 0,
+          "title": "Attempts",
+          "type": "array"
+        },
+        "result_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Result Refs",
+          "type": "array"
+        },
+        "error_refs": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 0,
+          "title": "Error Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "step_id",
+        "state",
+        "input_refs",
+        "attempts",
+        "result_refs",
+        "error_refs"
+      ],
+      "title": "StepRecord",
+      "type": "object"
+    },
+    "Usage": {
+      "additionalProperties": false,
+      "properties": {
+        "tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Tokens"
+        },
+        "cost": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cost"
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Currency"
+        }
+      },
+      "required": [
+        "tokens",
+        "cost",
+        "currency"
+      ],
+      "title": "Usage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/SchemaTag"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Execution Id"
+    },
+    "data": {
+      "$ref": "#/$defs/RunData"
+    }
+  },
+  "required": [
+    "schema",
+    "record_id",
+    "revision",
+    "created_at",
+    "execution_id",
+    "data"
+  ],
+  "title": "RunRecord",
+  "type": "object"
+}
