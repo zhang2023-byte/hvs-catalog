@@ -6,7 +6,7 @@
 
 ## 重构阶段入口
 
-项目处于从零建设阶段。开始前阅读 [.dev/progress.md](.dev/progress.md) 的任务总表与当前交接，以及 [.dev/plan.md](.dev/plan.md) 的分工、对应关卡和相关设计链接；计划中的其他关卡按依赖补读，核对实际文件与 Git 状态。
+项目处于从零建设阶段。先读 [.dev/progress.md](.dev/progress.md) 的任务总表与当前交接，再按标题读取 [.dev/plan.md](.dev/plan.md) 的共用分工、交接规则及当前关卡，依赖按需补读，并核对实际文件与 Git 状态。完整阅读与收尾要求见 [计划的按需阅读与压缩](CONTRIBUTING.md#开发计划的按需阅读与压缩)。
 
 执行与交接遵循计划的 [逐关实施与交接](.dev/plan.md#逐关实施与交接)。
 
