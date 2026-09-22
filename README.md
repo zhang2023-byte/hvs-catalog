@@ -12,6 +12,8 @@
 
 `hvs_catalog.workspace`、`runtime` 和 `review` 提供工作空间、运行与裁决的 Python 接口，支持固定输入、可靠保存记录和决定、中断后恢复，以及整体备份和恢复到新目录。这些能力已通过离线合成流程、独立进程和仓库外安装验证；保存与恢复规则见 [架构设计](docs/design/architecture.md#工作空间与恢复接口方案)，验收状态与验证范围见 [当前进度](.dev/progress.md)。正式提取、裁决网页与 CLI、星表和发布功能尚未提供。
 
+`hvs_catalog.evaluation` 提供 Gold 工具：读取旧 contribution Gold v4 生成迁移草稿与逐项报告，检查迁移或全新草稿（结构、PDF 材料与定位、科学待审分别报告），并把获准内容保存为带版本入口的正式答案，支持操作查询与中断恢复。命令行 `hvs-catalog gold`（`migrate`/`check`/`compare`/`prepare`/`save`/`query`）是这些接口的薄封装。Gold 标注格式的字段说明、JSON Schema 与英文填写模板由有类型定义生成，见 [生成文档](contracts/generated/gold/README.md)；保存与批准绑定规则见 [评价设计](docs/design/evaluation.md#gold-工具的格式对应方案)。当前全部流程只用合成材料验证；真实答案的读取、迁移与正式保存待获准后在 Gold 私仓进行。正式目标使用私仓 `data/` 子目录，每版答案、来源和批准放在同一版本目录；材料与草稿另置于私有工作目录。完整可解析的草稿示例见 [Gold JSON 模板](contracts/generated/gold/templates/gold-annotation.json)，人类批准要求见 [批准说明](contracts/generated/gold/templates/gold-approval.md)。标注者、原始专家及本版审批者分别追溯；论文版本和 PDF/LaTeX 对应记录须明确填写，缺少必要信息会阻断正式保存。
+
 ## 安装与验证
 
 需要 Python 3.11 或更高版本和 [uv](https://docs.astral.sh/uv/)。
@@ -34,7 +36,7 @@ uv pip install --python /path/to/env dist/hvs_catalog-*.whl
 
 开发环境与检查命令见 [验证要求](CONTRIBUTING.md#验证要求)。
 
-实测平台为 macOS（Apple Silicon）；各阶段的 Python 版本与验证范围见 [当前进度](.dev/progress.md)。安装包为纯 Python wheel，运行时依赖 LangGraph（流程编排与检查点，含 SQLite 检查点后端）和 Pydantic（记录格式定义与校验）；其他平台未实测。
+实测平台为 macOS（Apple Silicon）；各阶段的 Python 版本与验证范围见 [当前进度](.dev/progress.md)。安装包为纯 Python wheel，运行时依赖 LangGraph（流程编排与检查点，含 SQLite 检查点后端）、Pydantic（记录格式定义与校验）和 pypdf（Gold 材料的 PDF 解析）；其他平台未实测。
 
 ## 持久化与恢复演示
 

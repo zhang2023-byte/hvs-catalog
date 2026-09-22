@@ -1,0 +1,96 @@
+{
+  "$defs": {
+    "PreviousRef": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "title": "Version",
+          "type": "integer"
+        },
+        "manifest_sha256": {
+          "title": "Manifest Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "manifest_sha256"
+      ],
+      "title": "PreviousRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "专家对具体准备内容的科学审定与保存批准；工具只验证内容绑定。\n\n``target_path`` 固定批准指向的正式目标目录；同一份资料在另一个目标\n不能串用该批准，须重新准备与审定。",
+  "properties": {
+    "approved_by": {
+      "title": "Approved By",
+      "type": "string"
+    },
+    "approver_kind": {
+      "const": "human",
+      "title": "Approver Kind",
+      "type": "string"
+    },
+    "approved_at": {
+      "format": "date-time",
+      "title": "Approved At",
+      "type": "string"
+    },
+    "document_id": {
+      "title": "Document Id",
+      "type": "string"
+    },
+    "target_path": {
+      "title": "Target Path",
+      "type": "string"
+    },
+    "manifest_sha256": {
+      "title": "Manifest Sha256",
+      "type": "string"
+    },
+    "expected_old": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PreviousRef"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "rules_version": {
+      "title": "Rules Version",
+      "type": "string"
+    },
+    "rules_sha256": {
+      "title": "Rules Sha256",
+      "type": "string"
+    },
+    "basis": {
+      "title": "Basis",
+      "type": "string"
+    },
+    "accepted_pending": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Accepted Pending",
+      "type": "array"
+    }
+  },
+  "required": [
+    "approved_by",
+    "approver_kind",
+    "approved_at",
+    "document_id",
+    "target_path",
+    "manifest_sha256",
+    "expected_old",
+    "rules_version",
+    "rules_sha256",
+    "basis"
+  ],
+  "title": "SaveApproval",
+  "type": "object"
+}

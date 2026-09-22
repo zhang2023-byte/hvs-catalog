@@ -1,8 +1,9 @@
 <!-- Generated -->
-# Generated record contracts
+# Generated data contracts
 
-Everything in this directory is generated from the shared definitions in
-`hvs_catalog.records`; regenerate with
+Shared record contracts are generated from `hvs_catalog.records`.
+The [Gold contracts](gold/README.md) in `gold/` are generated from
+`hvs_catalog.evaluation`. Regenerate both with
 `uv run python tools/render_record_contracts.py` and check with
 `--check`. Do not edit by hand.
 

@@ -1,0 +1,596 @@
+{
+  "$defs": {
+    "LegacyAnnotationProcess": {
+      "additionalProperties": false,
+      "properties": {
+        "protocol": {
+          "title": "Protocol",
+          "type": "string"
+        },
+        "preannotation_agent": {
+          "default": "",
+          "title": "Preannotation Agent",
+          "type": "string"
+        },
+        "preannotation_model": {
+          "default": "",
+          "title": "Preannotation Model",
+          "type": "string"
+        },
+        "reconciliation_agent": {
+          "default": "",
+          "title": "Reconciliation Agent",
+          "type": "string"
+        },
+        "reconciliation_model": {
+          "default": "",
+          "title": "Reconciliation Model",
+          "type": "string"
+        },
+        "expert_review_scope": {
+          "const": "paper_level",
+          "default": "paper_level",
+          "title": "Expert Review Scope",
+          "type": "string"
+        },
+        "process_note": {
+          "default": "",
+          "title": "Process Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "protocol"
+      ],
+      "title": "LegacyAnnotationProcess",
+      "type": "object"
+    },
+    "LegacyContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "identifiers": {
+          "items": {
+            "$ref": "#/$defs/LegacyIdentifier"
+          },
+          "minItems": 1,
+          "title": "Identifiers",
+          "type": "array"
+        },
+        "contribution_type": {
+          "enum": [
+            "candidates_found",
+            "follow_up"
+          ],
+          "title": "Contribution Type",
+          "type": "string"
+        },
+        "contribution_summary": {
+          "title": "Contribution Summary",
+          "type": "string"
+        },
+        "contribution_evidence": {
+          "items": {
+            "$ref": "#/$defs/LegacyEvidence"
+          },
+          "minItems": 1,
+          "title": "Contribution Evidence",
+          "type": "array"
+        },
+        "paper_boundness": {
+          "$ref": "#/$defs/LegacyPaperBoundness"
+        },
+        "quantities": {
+          "items": {
+            "$ref": "#/$defs/LegacyQuantityGroup"
+          },
+          "title": "Quantities",
+          "type": "array"
+        },
+        "quantity_conflicts": {
+          "items": {
+            "$ref": "#/$defs/LegacyQuantityConflict"
+          },
+          "title": "Quantity Conflicts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "identifiers",
+        "contribution_type",
+        "contribution_summary",
+        "contribution_evidence",
+        "paper_boundness"
+      ],
+      "title": "LegacyContribution",
+      "type": "object"
+    },
+    "LegacyErrorComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "error": {
+          "default": "",
+          "title": "Error",
+          "type": "string"
+        },
+        "lower_error": {
+          "default": "",
+          "title": "Lower Error",
+          "type": "string"
+        },
+        "upper_error": {
+          "default": "",
+          "title": "Upper Error",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/LegacyEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "evidence"
+      ],
+      "title": "LegacyErrorComponent",
+      "type": "object"
+    },
+    "LegacyEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "location": {
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "default": "",
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location"
+      ],
+      "title": "LegacyEvidence",
+      "type": "object"
+    },
+    "LegacyIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/LegacyEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "LegacyIdentifier",
+      "type": "object"
+    },
+    "LegacyIntervalProbability": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "unit": {
+          "enum": [
+            "fraction",
+            "%"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/LegacyEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "unit",
+        "evidence"
+      ],
+      "title": "LegacyIntervalProbability",
+      "type": "object"
+    },
+    "LegacyPaperBoundness": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "unbound",
+            "possibly_unbound",
+            "bound",
+            "no_overall_conclusion",
+            "not_assessed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/LegacyEvidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "LegacyPaperBoundness",
+      "type": "object"
+    },
+    "LegacyQuantityConflict": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "title": "Quantity",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/LegacyEvidence"
+          },
+          "minItems": 2,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "reason",
+        "evidence"
+      ],
+      "title": "LegacyQuantityConflict",
+      "type": "object"
+    },
+    "LegacyQuantityGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "title": "Quantity",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/LegacyReportedValue"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "values"
+      ],
+      "title": "LegacyQuantityGroup",
+      "type": "object"
+    },
+    "LegacyReportedValue": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "default": "",
+          "title": "Value",
+          "type": "string"
+        },
+        "error": {
+          "default": "",
+          "title": "Error",
+          "type": "string"
+        },
+        "lower_error": {
+          "default": "",
+          "title": "Lower Error",
+          "type": "string"
+        },
+        "upper_error": {
+          "default": "",
+          "title": "Upper Error",
+          "type": "string"
+        },
+        "unit": {
+          "default": "",
+          "title": "Unit",
+          "type": "string"
+        },
+        "limit_kind": {
+          "default": "none",
+          "enum": [
+            "none",
+            "lower_limit",
+            "upper_limit",
+            "range"
+          ],
+          "title": "Limit Kind",
+          "type": "string"
+        },
+        "range_lower": {
+          "default": "",
+          "title": "Range Lower",
+          "type": "string"
+        },
+        "range_upper": {
+          "default": "",
+          "title": "Range Upper",
+          "type": "string"
+        },
+        "coordinate_format": {
+          "anyOf": [
+            {
+              "enum": [
+                "decimal_degrees",
+                "sexagesimal_hms",
+                "sexagesimal_dms",
+                "sexagesimal_colon"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coordinate Format"
+        },
+        "condition": {
+          "default": "",
+          "title": "Condition",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "this_paper",
+            "prior_work",
+            "unclear"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/LegacyEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "context_evidence": {
+          "items": {
+            "$ref": "#/$defs/LegacyEvidence"
+          },
+          "title": "Context Evidence",
+          "type": "array"
+        },
+        "source_note": {
+          "default": "",
+          "title": "Source Note",
+          "type": "string"
+        },
+        "interval_kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "ordinary_range",
+                "prior_support",
+                "confidence",
+                "credible",
+                "statistical_interval"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interval Kind"
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LegacyIntervalProbability"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "lower_quantile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LegacyIntervalProbability"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "upper_quantile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LegacyIntervalProbability"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "error_components": {
+          "items": {
+            "$ref": "#/$defs/LegacyErrorComponent"
+          },
+          "title": "Error Components",
+          "type": "array"
+        },
+        "representation": {
+          "anyOf": [
+            {
+              "enum": [
+                "linear",
+                "log10",
+                "distance_modulus"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Representation"
+        }
+      },
+      "required": [
+        "source",
+        "evidence"
+      ],
+      "title": "LegacyReportedValue",
+      "type": "object"
+    },
+    "LegacyReviewedExclusion": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/LegacyEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "reason",
+        "evidence"
+      ],
+      "title": "LegacyReviewedExclusion",
+      "type": "object"
+    },
+    "LegacySchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "LegacySchemaTag",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/LegacySchemaTag"
+    },
+    "arxiv_id": {
+      "title": "Arxiv Id",
+      "type": "string"
+    },
+    "annotator": {
+      "title": "Annotator",
+      "type": "string"
+    },
+    "annotated_at": {
+      "title": "Annotated At",
+      "type": "string"
+    },
+    "guideline_version": {
+      "title": "Guideline Version",
+      "type": "string"
+    },
+    "evidence_basis": {
+      "const": "pdf",
+      "default": "pdf",
+      "title": "Evidence Basis",
+      "type": "string"
+    },
+    "annotation_process": {
+      "$ref": "#/$defs/LegacyAnnotationProcess"
+    },
+    "canary": {
+      "default": "",
+      "title": "Canary",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "contributions_found",
+        "no_contributions"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "contributions": {
+      "items": {
+        "$ref": "#/$defs/LegacyContribution"
+      },
+      "title": "Contributions",
+      "type": "array"
+    },
+    "reviewed_exclusions": {
+      "items": {
+        "$ref": "#/$defs/LegacyReviewedExclusion"
+      },
+      "title": "Reviewed Exclusions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "arxiv_id",
+    "annotator",
+    "annotated_at",
+    "guideline_version",
+    "annotation_process",
+    "status"
+  ],
+  "title": "LegacyAnnotation",
+  "type": "object"
+}

@@ -897,10 +897,11 @@ def render_index() -> str:
         for name in RECORD_TYPE_NAMES
     )
     return f"""<!-- Generated -->
-# Generated record contracts
+# Generated data contracts
 
-Everything in this directory is generated from the shared definitions in
-`hvs_catalog.records`; regenerate with
+Shared record contracts are generated from `hvs_catalog.records`.
+The [Gold contracts](gold/README.md) in `gold/` are generated from
+`hvs_catalog.evaluation`. Regenerate both with
 `uv run python tools/render_record_contracts.py` and check with
 `--check`. Do not edit by hand.
 
@@ -945,8 +946,16 @@ def write_outputs(root: Path) -> dict[str, str]:
     return outputs
 
 
+#: 由其他定义独立维护并检查的子树（evaluation 的 Gold 格式），不当作本模块的多余文件。
+_FOREIGN_SUBTREES = frozenset({"gold"})
+
+
 def check_outputs(root: Path) -> list[str]:
-    """返回与生成结果不一致的文件列表；空列表表示同步。"""
+    """返回与生成结果不一致的文件列表；空列表表示同步。
+
+    ``gold/`` 子树由 ``hvs_catalog.evaluation.generate`` 独立维护并另行
+    检查，此处不当作多余文件。
+    """
     expected = build_outputs()
     problems: list[str] = []
     for relative, content in expected.items():
@@ -958,6 +967,8 @@ def check_outputs(root: Path) -> list[str]:
     for path in sorted(root.rglob("*")):
         if path.is_file():
             relative = str(path.relative_to(root))
+            if relative.split("/", maxsplit=1)[0] in _FOREIGN_SUBTREES:
+                continue
             if relative not in expected:
                 problems.append(f"多余：{relative}")
     return problems

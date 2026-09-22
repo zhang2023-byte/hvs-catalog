@@ -1,0 +1,1150 @@
+"""Astra 第一轮验收 F01–F09 的回归测试：每项拒绝路径都有正确预期。
+
+场景与独立诊断同构：迁移输出保护（F01）、草稿待办去向（F02）、批准
+绑定目标（F03）、目标布局归属（F04）、当前科学规则复用（F05）、成熟
+解析器 PDF 检查（F06）、逐项比较完整性（F07）、恢复前提（F08）与历
+史回执（F09）。材料全部合成；F06 使用 ReportLab 与独立构造器生成有
+效 PDF，不用被检实现自造的正则特征。
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import zlib
+from io import BytesIO
+from pathlib import Path
+
+import pytest
+from evaluation_helpers import (
+    build_approval_payload,
+    build_fresh_draft,
+    build_legacy_v4_doc,
+    write_synthetic_pdf,
+)
+
+from hvs_catalog.evaluation import (
+    GoldApprovalError,
+    GoldCheckError,
+    GoldIntegrityError,
+    GoldOutputConflictError,
+    GoldTarget,
+    GoldTargetError,
+    approved_save,
+    check_gold_annotation,
+    compare_legacy_with_current,
+    migrate_legacy_annotation,
+    parse_gold_annotation,
+    prepare_save,
+    query_operation,
+)
+from hvs_catalog.records.common import RecordRef
+from hvs_catalog.records.paper import DirectEvidencePart, ErrorComponent, MeasuredValue
+
+HELPERS = Path(__file__).parent / "evaluation_helpers.py"
+
+
+# ---- 共用准备 ----
+
+
+def _material(tmp_path, pages=None, name="paper.pdf"):
+    material = tmp_path / "materials"
+    digest = write_synthetic_pdf(material / name, pages=pages)
+    return material, digest
+
+
+def _write_draft(tmp_path, draft, name="draft.json"):
+    path = tmp_path / name
+    path.write_text(json.dumps(draft, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def _prepared_flow(tmp_path, *, draft=None, value="612.0", operation_id="op-1"):
+    material, digest = _material(tmp_path)
+    draft = draft or build_fresh_draft(pdf_sha256=digest, value=value)
+    draft_path = _write_draft(tmp_path, draft)
+    target = GoldTarget(tmp_path / "target")
+    target.initialize()
+    preparation = prepare_save(
+        draft_path=draft_path,
+        material_root=material,
+        work_dir=tmp_path / "work",
+        target=target,
+    )
+    approval_path = tmp_path / f"approval-{operation_id}.json"
+    approval_path.write_text(
+        json.dumps(build_approval_payload(preparation), ensure_ascii=False),
+        encoding="utf-8",
+    )
+    return draft_path, material, target, preparation, approval_path
+
+
+def _save(tmp_path, target, draft_path, material, preparation, approval_path, op):
+    return approved_save(
+        draft_path=draft_path,
+        material_root=material,
+        target=target,
+        preparation_dir=preparation.directory,
+        approval=approval_path,
+        operation_id=op,
+    )
+
+
+def _revise(
+    tmp_path,
+    target,
+    material,
+    *,
+    new_value,
+    expected_version,
+    operation_id,
+    work_dir,
+):
+    """按当前版本准备并批准一个修订（合成改动：数值换成 new_value）。"""
+    entry = target.read_entry("gold-synth-001")
+    assert entry is not None and entry.version == expected_version
+    draft = build_fresh_draft(pdf_sha256=entry_files_sha(material), value=new_value)
+    draft_path = _write_draft(tmp_path, draft, name=f"draft-{operation_id}.json")
+    preparation = prepare_save(
+        draft_path=draft_path,
+        material_root=material,
+        work_dir=work_dir,
+        target=target,
+        expected_old_version=expected_version,
+    )
+    approval_path = tmp_path / f"approval-{operation_id}.json"
+    approval_path.write_text(
+        json.dumps(build_approval_payload(preparation), ensure_ascii=False),
+        encoding="utf-8",
+    )
+    return draft_path, preparation, approval_path
+
+
+def entry_files_sha(material):
+    return hashlib.sha256((material / "paper.pdf").read_bytes()).hexdigest()
+
+
+def run_scenario(name: str, *args: object, timeout: float = 60.0):
+    result = subprocess.run(
+        [sys.executable, str(HELPERS), name, *map(str, args)],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        check=False,
+    )
+    payload = None
+    lines = [line for line in result.stdout.splitlines() if line.strip()]
+    if lines:
+        try:
+            payload = json.loads(lines[-1])
+        except json.JSONDecodeError:
+            payload = None
+    return result.returncode, payload
+
+
+# ---- F01 迁移输出与旧输入重合 ----
+
+
+def test_f01_migration_refuses_output_equal_to_legacy_input(tmp_path):
+    """旧 v4 恰好放在输出目录的 draft.json：拒绝写入，旧输入逐字节不变。"""
+    legacy = tmp_path / "legacy.json"
+    payload = json.dumps(build_legacy_v4_doc(), ensure_ascii=False)
+    legacy.write_text(payload, encoding="utf-8")
+    draft_dir = tmp_path
+    (draft_dir / "draft.json").write_text(payload, encoding="utf-8")
+    before = (draft_dir / "draft.json").read_bytes()
+    stat_before = (draft_dir / "draft.json").stat()
+    with pytest.raises(GoldOutputConflictError, match="只读输入"):
+        migrate_legacy_annotation(
+            legacy_path=draft_dir / "draft.json", draft_dir=draft_dir
+        )
+    after = (draft_dir / "draft.json").read_bytes()
+    assert after == before
+    stat_after = (draft_dir / "draft.json").stat()
+    assert (stat_after.st_mode, stat_after.st_mtime_ns) == (
+        stat_before.st_mode,
+        stat_before.st_mtime_ns,
+    )
+
+
+@pytest.mark.skipif(os.name != "posix", reason="硬链接与符号链接仅 POSIX 验证")
+def test_f01_migration_refuses_hardlink_and_symlink_aliases(tmp_path):
+    legacy = tmp_path / "legacy.json"
+    payload = json.dumps(build_legacy_v4_doc(), ensure_ascii=False)
+    legacy.write_text(payload, encoding="utf-8")
+    # 硬链接别名：draft.json 与旧输入同一 inode
+    hard_dir = tmp_path / "hard"
+    hard_dir.mkdir()
+    os.link(legacy, hard_dir / "draft.json")
+    with pytest.raises(GoldOutputConflictError, match="硬链接"):
+        migrate_legacy_annotation(legacy_path=legacy, draft_dir=hard_dir)
+    assert legacy.read_bytes() == payload.encode("utf-8")
+    # 符号链接别名：draft.json 指向旧输入
+    link_dir = tmp_path / "link"
+    link_dir.mkdir()
+    (link_dir / "draft.json").symlink_to(legacy)
+    with pytest.raises(GoldOutputConflictError, match="符号链接"):
+        migrate_legacy_annotation(legacy_path=legacy, draft_dir=link_dir)
+    assert legacy.read_bytes() == payload.encode("utf-8")
+
+
+def test_f01_migration_refuses_overwriting_different_existing_draft(tmp_path):
+    legacy = tmp_path / "legacy.json"
+    legacy.write_text(
+        json.dumps(build_legacy_v4_doc(), ensure_ascii=False), encoding="utf-8"
+    )
+    draft_dir = tmp_path / "draft"
+    draft_dir.mkdir()
+    existing = "不是迁移输出".encode()
+    (draft_dir / "draft.json").write_bytes(existing)
+    with pytest.raises(GoldOutputConflictError, match="内容不同"):
+        migrate_legacy_annotation(legacy_path=legacy, draft_dir=draft_dir)
+    assert (draft_dir / "draft.json").read_bytes() == existing  # 不静默截断
+
+
+def test_f01_migration_identical_existing_output_is_idempotent(tmp_path):
+    legacy = tmp_path / "legacy.json"
+    legacy.write_text(
+        json.dumps(build_legacy_v4_doc(), ensure_ascii=False), encoding="utf-8"
+    )
+    draft_dir = tmp_path / "draft"
+    first = migrate_legacy_annotation(legacy_path=legacy, draft_dir=draft_dir)
+    stat_before = first.draft_path.stat()
+    second = migrate_legacy_annotation(legacy_path=legacy, draft_dir=draft_dir)
+    assert second.draft_path.read_bytes() == first.draft_path.read_bytes()
+    stat_after = second.draft_path.stat()
+    assert stat_after.st_mtime_ns == stat_before.st_mtime_ns  # 重试不重写
+    assert legacy.read_bytes() == legacy.read_bytes()
+
+
+def test_f01_migration_output_never_overlaps_known_pdf(tmp_path):
+    legacy = tmp_path / "legacy.json"
+    legacy.write_text(
+        json.dumps(build_legacy_v4_doc(), ensure_ascii=False), encoding="utf-8"
+    )
+    # 一份恰好叫 draft.json 的 PDF 材料与迁移草稿输出同名：拒绝写入
+    work = tmp_path / "work"
+    work.mkdir()
+    pdf_bytes = write_synthetic_pdf(work / "draft.json")
+    with pytest.raises(GoldOutputConflictError, match="只读输入"):
+        migrate_legacy_annotation(
+            legacy_path=legacy,
+            draft_dir=work,
+            known_pdfs=[work / "draft.json"],
+        )
+    assert hashlib.sha256((work / "draft.json").read_bytes()).hexdigest() == pdf_bytes
+
+
+# ---- F02 草稿待办的完整去向 ----
+
+
+def _draft_with_pending(tmp_path, category):
+    material, digest = _material(tmp_path)
+    draft = build_fresh_draft(pdf_sha256=digest)
+    draft["pending"] = [
+        {
+            "item_id": "must-check-identity",
+            "category": category,
+            "subject": "contributions/c1/identifiers",
+            "description": "identity must be checked by an expert",
+        }
+    ]
+    return material, _write_draft(tmp_path, draft)
+
+
+def test_f02_science_review_pending_binds_into_approval(tmp_path):
+    material, draft_path = _draft_with_pending(tmp_path, "science_review")
+    annotation = parse_gold_annotation(draft_path)
+    report = check_gold_annotation(annotation, material_root=material)
+    assert report.blocking_count == 0
+    assert "must-check-identity" in report.pending_ids()
+    target = GoldTarget(tmp_path / "target")
+    target.initialize()
+    preparation = prepare_save(
+        draft_path=draft_path,
+        material_root=material,
+        work_dir=tmp_path / "work",
+        target=target,
+    )
+    assert "must-check-identity" in preparation.manifest.science_pending
+    # 不接受该项的批准被拒绝
+    payload = build_approval_payload(preparation, accepted_pending=[])
+    approval = tmp_path / "approval.json"
+    approval.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(GoldApprovalError, match="待核查项"):
+        approved_save(
+            draft_path=draft_path,
+            material_root=material,
+            target=target,
+            preparation_dir=preparation.directory,
+            approval=approval,
+            operation_id="op-pending",
+        )
+    assert target.read_entry("gold-synth-001") is None
+    # 显式接受后可以保存，去向保留在来源记录里
+    payload = build_approval_payload(preparation)
+    approval.write_text(json.dumps(payload), encoding="utf-8")
+    receipt = approved_save(
+        draft_path=draft_path,
+        material_root=material,
+        target=target,
+        preparation_dir=preparation.directory,
+        approval=approval,
+        operation_id="op-pending",
+    )
+    assert receipt.version == 1
+    entry, answer = target.read_current_answer("gold-synth-001")
+    assert answer.pending == []
+    provenance = json.loads(
+        (target.root / entry.files[1].path).read_text(encoding="utf-8")
+    )
+    assert "must-check-identity" in provenance["check_summary"]["science_pending"]
+
+
+@pytest.mark.parametrize("category", ["missing_info", "structural_gap"])
+def test_f02_structural_and_missing_info_pending_block_prepare(tmp_path, category):
+    material, draft_path = _draft_with_pending(tmp_path, category)
+    report = check_gold_annotation(
+        parse_gold_annotation(draft_path), material_root=material
+    )
+    assert report.blocking_count == 1
+    assert report.problems_of("structure")[0].code == f"pending_{category}"
+    target = GoldTarget(tmp_path / "target")
+    target.initialize()
+    with pytest.raises(GoldCheckError, match="阻断"):
+        prepare_save(
+            draft_path=draft_path,
+            material_root=material,
+            work_dir=tmp_path / "work",
+            target=target,
+        )
+    assert target.read_entry("gold-synth-001") is None
+
+
+# ---- F03 批准绑定正式目标 ----
+
+
+def test_f03_approval_cannot_be_reused_in_other_target(tmp_path):
+    draft_path, material, target_a, preparation, approval_path = _prepared_flow(
+        tmp_path
+    )
+    _save(tmp_path, target_a, draft_path, material, preparation, approval_path, "op-1")
+    assert target_a.read_entry("gold-synth-001").version == 1
+
+    # 同一份清单与批准交给另一个空目标：锁内拒绝
+    target_b = GoldTarget(tmp_path / "target-b")
+    with pytest.raises(GoldTargetError, match="目标目录"):
+        approved_save(
+            draft_path=draft_path,
+            material_root=material,
+            target=target_b,
+            preparation_dir=preparation.directory,
+            approval=approval_path,
+            operation_id="op-1",
+        )
+    # 目标 B 没有保存任何答案或操作记录
+    assert target_b.read_entry("gold-synth-001") is None
+    assert target_b.read_operation("op-1") is None
+    assert not (target_b.root / "annotations").exists() or not any(
+        (target_b.root / "annotations").rglob("*")
+    )
+
+
+def test_f03_approval_with_foreign_target_path_rejected(tmp_path):
+    draft_path, material, target, preparation, approval_path = _prepared_flow(tmp_path)
+    payload = json.loads(approval_path.read_text(encoding="utf-8"))
+    payload["target_path"] = str(tmp_path / "somewhere-else")
+    foreign = tmp_path / "foreign-approval.json"
+    foreign.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(GoldApprovalError, match="保存目标"):
+        approved_save(
+            draft_path=draft_path,
+            material_root=material,
+            target=target,
+            preparation_dir=preparation.directory,
+            approval=foreign,
+            operation_id="op-1",
+        )
+    assert target.read_entry("gold-synth-001") is None
+
+
+# ---- F04 目标布局归属 ----
+
+
+@pytest.mark.skipif(os.name != "posix", reason="符号链接仅 POSIX 验证")
+def test_f04_target_refuses_symlinked_managed_directory(tmp_path):
+    target_root = tmp_path / "target"
+    target_root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (target_root / "operations").symlink_to(outside)
+    with pytest.raises(GoldTargetError, match="符号链接"):
+        GoldTarget(target_root).initialize()
+    # 拒绝后目标外与已有资料保持不变
+    assert list(outside.iterdir()) == []
+    assert (target_root / "operations").is_symlink()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="符号链接仅 POSIX 验证")
+def test_f04_symlink_escape_cannot_write_outside(tmp_path):
+    draft_path, material, target, preparation, approval_path = _prepared_flow(tmp_path)
+    # 初始化完成后把 operations 换成指向外部的符号链接
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (target.root / "operations").rmdir()
+    (target.root / "operations").symlink_to(outside)
+    with pytest.raises(GoldTargetError, match="符号链接"):
+        _save(
+            tmp_path, target, draft_path, material, preparation, approval_path, "op-1"
+        )
+    assert list(outside.iterdir()) == []
+    assert not (target.root / "versions" / "gold-synth-001.json").exists()
+
+
+def test_f04_target_rejects_unknown_or_corrupt_marker(tmp_path):
+    target_root = tmp_path / "target"
+    target_root.mkdir()
+    for name in ("annotations", "versions", "operations", "staging"):
+        (target_root / name).mkdir()
+    (target_root / "gold-target.json").write_text(
+        json.dumps({"format": "unknown-format", "format_version": 99}),
+        encoding="utf-8",
+    )
+    with pytest.raises(GoldTargetError, match="未知或损坏的目标标记"):
+        GoldTarget(target_root).initialize()
+
+
+def test_f04_target_rejects_marker_not_a_file(tmp_path):
+    target_root = tmp_path / "target"
+    target_root.mkdir()
+    (target_root / "gold-target.json").mkdir()
+    with pytest.raises(GoldTargetError, match="不是普通文件"):
+        GoldTarget(target_root).initialize()
+
+
+@pytest.mark.skipif(os.name != "posix", reason="符号链接仅 POSIX 验证")
+def test_f04_publish_refuses_preplanted_version_dir_symlink(tmp_path):
+    draft_path, material, target, preparation, approval_path = _prepared_flow(tmp_path)
+    outside = tmp_path / "escaped"
+    outside.mkdir()
+    version_dir = target.root / "annotations" / "gold-synth-001"
+    version_dir.mkdir()
+    (version_dir / "v1").symlink_to(outside)
+    with pytest.raises(GoldIntegrityError, match="路径不安全"):
+        _save(
+            tmp_path, target, draft_path, material, preparation, approval_path, "op-1"
+        )
+    assert list(outside.iterdir()) == []
+
+
+# ---- F05 新 Gold 采用当前科学规则 ----
+
+
+def _draft_with_value(tmp_path, **overrides):
+    material, digest = _material(tmp_path)
+    draft = build_fresh_draft(pdf_sha256=digest)
+    draft["contributions"][0]["quantities"][0]["values"][0].update(overrides)
+    return material, draft
+
+
+def _measured_value(**kwargs):
+    """构造共同记录 MeasuredValue 的最小有效形态（证据片段与数值一致）。"""
+    base = {
+        "value_id": "v1",
+        "value": "612.0",
+        "error": None,
+        "lower_error": None,
+        "upper_error": None,
+        "unit": "km/s",
+        "limit_kind": "none",
+        "range_lower": None,
+        "range_upper": None,
+        "lower_inclusive": None,
+        "upper_inclusive": None,
+        "interval_kind": None,
+        "coverage": None,
+        "lower_quantile": None,
+        "upper_quantile": None,
+        "error_components": [],
+        "condition": "heliocentric",
+        "frame": None,
+        "epoch": None,
+        "coordinate_format": None,
+        "representation": None,
+        "purpose": None,
+        "source": "this_paper",
+        "source_note": None,
+        "author_usage": None,
+        "direct_evidence": [],
+        "context_evidence_refs": [],
+    }
+    base.update(kwargs)
+    filled = {
+        key
+        for key in ("value", "error", "lower_error", "upper_error")
+        if base[key] is not None
+    }
+    base["direct_evidence"] = [
+        DirectEvidencePart(
+            part=part,
+            evidence_ref=RecordRef(record_id="rec/evidence", revision=1),
+            raw_fragment=base[part],
+        )
+        for part in sorted(filled)
+    ]
+    return MeasuredValue.model_validate(base)
+
+
+def test_f05_one_sided_error_accepted_like_common_record(tmp_path):
+    overrides = {
+        "error": None,
+        "lower_error": "5.0",
+        "upper_error": None,
+    }
+    common = _measured_value(**overrides)
+    assert common.lower_error == "5.0"  # 当前共同规则接受单侧误差
+    _, draft = _draft_with_value(tmp_path, **overrides)
+    annotation = parse_gold_annotation(draft)
+    value = annotation.contributions[0].quantities[0].values[0]
+    assert value.lower_error == "5.0" and value.upper_error is None
+
+
+def test_f05_total_error_with_components_accepted_like_common_record(tmp_path):
+    overrides = {
+        "error": "9.0",
+        "error_components": [
+            {
+                "name": "statistical",
+                "error": "5.0",
+                "lower_error": None,
+                "upper_error": None,
+                "evidence": [
+                    {
+                        "file_id": "pdf-1",
+                        "location": "Table 2 note",
+                        "page": 2,
+                        "quote": "",
+                    }
+                ],
+            }
+        ],
+    }
+    component = ErrorComponent.model_validate(
+        {
+            "name": "statistical",
+            "error": "5.0",
+            "lower_error": None,
+            "upper_error": None,
+            "direct_evidence": [
+                DirectEvidencePart(
+                    part="error",
+                    evidence_ref=RecordRef(record_id="rec/evidence", revision=1),
+                    raw_fragment="5.0",
+                )
+            ],
+        }
+    )
+    common = _measured_value(error="9.0", error_components=[component])
+    assert common.error == "9.0"  # 当前共同规则允许总误差与分量并存
+    _, draft = _draft_with_value(tmp_path, **overrides)
+    annotation = parse_gold_annotation(draft)
+    value = annotation.contributions[0].quantities[0].values[0]
+    assert value.error == "9.0"
+    assert value.error_components[0].name == "statistical"
+
+
+def test_f05_component_one_sided_and_empty_shapes(tmp_path):
+    _, draft = _draft_with_value(
+        tmp_path,
+        error=None,
+        lower_error="5.0",
+        upper_error=None,
+        error_components=[
+            {
+                "name": "systematic",
+                "error": None,
+                "lower_error": "2.0",
+                "upper_error": None,
+                "evidence": [
+                    {
+                        "file_id": "pdf-1",
+                        "location": "Section 3",
+                        "page": 1,
+                        "quote": "",
+                    }
+                ],
+            }
+        ],
+    )
+    annotation = parse_gold_annotation(draft)
+    component = annotation.contributions[0].quantities[0].values[0].error_components[0]
+    assert component.lower_error == "2.0"
+    # 分量没有任何误差数值：拒绝
+    _, empty = _draft_with_value(
+        tmp_path,
+        error=None,
+        error_components=[
+            {
+                "name": "empty",
+                "error": None,
+                "lower_error": None,
+                "upper_error": None,
+                "evidence": [
+                    {
+                        "file_id": "pdf-1",
+                        "location": "Section 3",
+                        "page": 1,
+                        "quote": "",
+                    }
+                ],
+            }
+        ],
+    )
+    with pytest.raises(Exception, match="至少提供一个误差数值"):
+        parse_gold_annotation(empty)
+
+
+def test_f05_mixing_symmetric_and_asymmetric_still_rejected(tmp_path):
+    _, draft = _draft_with_value(
+        tmp_path, error="8.0", lower_error="5.0", upper_error="6.0"
+    )
+    with pytest.raises(Exception, match="不能同时使用"):
+        parse_gold_annotation(draft)
+
+
+def test_f05_range_without_stated_interpretation_uses_unspecified(tmp_path):
+    _, draft = _draft_with_value(
+        tmp_path,
+        value=None,
+        error=None,
+        limit_kind="range",
+        range_lower="55.0",
+        range_upper="75.0",
+        interval_kind="unspecified",
+    )
+    annotation = parse_gold_annotation(draft)
+    value = annotation.contributions[0].quantities[0].values[0]
+    assert value.interval_kind == "unspecified"
+
+
+# ---- F06 成熟解析器的 PDF 检查 ----
+
+
+def _reportlab_pdf(pages: list[list[str]], *, compress: bool = True) -> bytes:
+    from reportlab.pdfgen import canvas
+
+    buf = BytesIO()
+    maker = canvas.Canvas(buf, pagesize=(400, 300))
+    maker.setPageCompression(1 if compress else 0)
+    for lines in pages:
+        for offset, line in enumerate(lines):
+            maker.drawString(10, 250 - 20 * offset, line)
+        maker.showPage()
+    maker.save()
+    return buf.getvalue()
+
+
+def _independent_pdf(pages: list[list[str]], *, compressed: bool, reorder: bool):
+    """与被检实现独立构造的 PDF：对象可乱序、内容流可选 Flate 压缩。"""
+
+    def text_line(line: str) -> bytes:
+        escaped = line.replace("(", "\\(").replace(")", "\\)")
+        return f"({escaped}) Tj T*".encode()
+
+    objects: dict[int, bytes] = {}
+    page_numbers = [4 + 2 * index for index in range(len(pages))]
+    kids = " ".join(f"{number} 0 R" for number in page_numbers)
+    font_number = 3 if reorder else 1
+    catalog_number = 1 if reorder else 2
+    pages_number = 2 if reorder else 3
+    # 页对象与内容流固定从 4 号开始；目录、页树与字体编号可交换（重排）
+    objects[catalog_number] = f"<< /Type /Catalog /Pages {pages_number} 0 R >>".encode()
+    objects[pages_number] = (
+        f"<< /Type /Pages /Kids [{kids}] /Count {len(pages)} >>".encode()
+    )
+    objects[font_number] = b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
+    for number, lines in zip(page_numbers, pages, strict=True):
+        text = (
+            b"BT /F1 12 Tf 72 720 Td\n"
+            + b"\n".join(text_line(line) for line in lines)
+            + b"\nET"
+        )
+        if compressed:
+            stream = zlib.compress(text)
+            filter_entry = " /Filter /FlateDecode"
+        else:
+            stream = text
+            filter_entry = ""
+        objects[number] = (
+            f"<< /Type /Page /Parent {pages_number} 0 R /Contents"
+            f" {number + 1} 0 R /Resources << /Font << /F1"
+            f" {font_number} 0 R >> >> >>".encode()
+        )
+        objects[number + 1] = (
+            f"<< /Length {len(stream)}{filter_entry} >>\nstream\n".encode()
+            + stream
+            + b"\nendstream"
+        )
+    header = b"%PDF-1.5\n"
+    body = bytearray()
+    offsets: dict[int, int] = {}
+    for number in sorted(objects):
+        offsets[number] = len(header) + len(body)
+        body += f"{number} 0 obj\n".encode() + objects[number] + b"\nendobj\n"
+    xref_offset = len(header) + len(body)
+    out = bytearray(header)
+    out += body
+    out += f"xref\n0 {len(objects) + 1}\n".encode()
+    out += b"0000000000 65535 f \n"
+    for number in sorted(objects):
+        out += f"{offsets[number]:010d} 00000 n \n".encode()
+    out += (
+        f"trailer << /Size {len(objects) + 1} /Root {catalog_number} 0 R"
+        f" >>\nstartxref\n{xref_offset}\n%%EOF\n"
+    ).encode()
+    return bytes(out)
+
+
+def _analyze(data: bytes):
+    from hvs_catalog.evaluation.pdfcheck import analyze_pdf
+
+    return analyze_pdf(data)
+
+
+def test_f06_valid_pdf_with_page_marker_in_text_counts_real_pages(tmp_path):
+    """正文里印出字面 /Type /Page 的有效 PDF：按真实页树计数，不靠正则。"""
+    data = _reportlab_pdf(
+        [
+            ["introduction mentions /Type /Page literally"],
+            ["Table 2: SYN-A 612.0 +- 8.0 km/s"],
+        ]
+    )
+    analysis = _analyze(data)
+    assert analysis.openable
+    assert analysis.page_count == 2
+
+
+@pytest.mark.parametrize("compressed", [True, False])
+@pytest.mark.parametrize("reorder", [True, False])
+def test_f06_independent_pdfs_parsed_correctly(compressed, reorder):
+    data = _independent_pdf(
+        [
+            ["independent page one"],
+            ["independent page two with SYN-B 300.0 km/s"],
+        ],
+        compressed=compressed,
+        reorder=reorder,
+    )
+    analysis = _analyze(data)
+    assert analysis.openable, analysis.notes
+    assert analysis.page_count == 2
+    assert "SYN-B 300.0 km/s" in analysis.page_texts[1]
+
+
+def test_f06_fake_pdf_with_markers_rejected(tmp_path):
+    fake = b"%PDF-1.4\n3 0 obj\n<< /Type /Page /Parent 2 0 R >>\nendobj\n%%EOF\n"
+    analysis = _analyze(fake)
+    assert not analysis.openable
+    assert analysis.page_count is None
+    # 检查报告按材料问题报告，不当作通过
+    material = tmp_path / "materials"
+    material.mkdir()
+    (material / "paper.pdf").write_bytes(fake)
+    draft = build_fresh_draft(pdf_sha256=hashlib.sha256(fake).hexdigest())
+    report = check_gold_annotation(parse_gold_annotation(draft), material_root=material)
+    assert "file_not_pdf" in [item.code for item in report.problems_of("material")]
+
+
+def test_f06_truncated_pdf_reported_not_openable(tmp_path):
+    data = _reportlab_pdf([["page one"], ["page two"], ["page three"]])
+    truncated = data[: len(data) // 2]
+    analysis = _analyze(truncated)
+    assert not analysis.openable
+    assert any("截断" in note or "解析器" in note for note in analysis.notes)
+
+
+def test_f06_boundary_page_ordinals(tmp_path):
+    material, digest = _material(tmp_path)  # 3 页
+    draft = build_fresh_draft(pdf_sha256=digest, page=3)
+    report = check_gold_annotation(parse_gold_annotation(draft), material_root=material)
+    assert "page_out_of_range" not in [
+        item.code for item in report.problems_of("material")
+    ]
+    draft = build_fresh_draft(pdf_sha256=digest, page=4)
+    report = check_gold_annotation(parse_gold_annotation(draft), material_root=material)
+    assert "page_out_of_range" in [item.code for item in report.problems_of("material")]
+
+
+def test_f06_quote_checks_on_compressed_reportlab_pdf(tmp_path):
+    data = _reportlab_pdf(
+        [["title page"], ["SYN-A 612.0 +- 8.0 km/s in table"], ["conclusions"]]
+    )
+    from hvs_catalog.evaluation.pdfcheck import check_quote
+
+    result, _ = check_quote(data, page=2, quote="SYN-A 612.0 +- 8.0 km/s")
+    assert result == "matched"
+    result, _ = check_quote(data, page=2, quote="not printed anywhere")
+    assert result == "not_found"
+
+
+# ---- F07 逐项比较完整性 ----
+
+
+def _migrated(tmp_path, document=None):
+    legacy = tmp_path / "legacy.json"
+    legacy.write_text(
+        json.dumps(document or build_legacy_v4_doc(), ensure_ascii=False),
+        encoding="utf-8",
+    )
+    material, _ = _material(tmp_path)
+    result = migrate_legacy_annotation(
+        legacy_path=legacy,
+        draft_dir=tmp_path / "draft",
+        known_pdfs=[material / "paper.pdf"],
+    )
+    return legacy, result
+
+
+def test_f07_boundness_status_change_is_a_difference(tmp_path):
+    legacy, result = _migrated(tmp_path)
+    draft = json.loads(result.draft_path.read_text(encoding="utf-8"))
+    draft["contributions"][0]["paper_boundness"]["status"] = "bound"
+    changed = tmp_path / "changed.json"
+    changed.write_text(json.dumps(draft, ensure_ascii=False), encoding="utf-8")
+    report = compare_legacy_with_current(legacy_path=legacy, current_path=changed)
+    assert report.difference_count > 0
+    item = next(
+        item for item in report.items if item.subject.endswith("paper_boundness")
+    )
+    assert item.status == "different"
+    assert "unbound" in item.description and "bound" in item.description
+    assert "专家审定" in item.description
+
+
+def test_f07_context_evidence_change_is_a_difference_with_values(tmp_path):
+    legacy, result = _migrated(tmp_path)
+    draft = json.loads(result.draft_path.read_text(encoding="utf-8"))
+    value = draft["contributions"][0]["quantities"][0]["values"][0]
+    value["context_evidence"] = [
+        {
+            "file_id": "pdf-1",
+            "location": "Section 4.2, different paragraph",
+            "page": None,
+            "quote": "replaced quote text",
+        }
+    ]
+    changed = tmp_path / "changed.json"
+    changed.write_text(json.dumps(draft, ensure_ascii=False), encoding="utf-8")
+    report = compare_legacy_with_current(legacy_path=legacy, current_path=changed)
+    item = next(item for item in report.items if "radial_velocity" in item.subject)
+    assert item.status == "different"
+    # 差异说明列出旧值/新值与确切位置，不只给计数
+    assert "612.0" in item.description
+    assert "Table 2, row SYN-A" in item.description
+    assert "Section 4.2" in item.description
+
+
+def test_f07_conflict_content_differences_reported(tmp_path):
+    document = build_legacy_v4_doc()
+    document["contributions"][0]["quantity_conflicts"] = [
+        {
+            "quantity": "observed_phase_space.distance",
+            "reason": "two printed distances remain unreconciled",
+            "evidence": [
+                {"location": "Table 3", "quote": ""},
+                {"location": "Section 4.2", "quote": ""},
+            ],
+        }
+    ]
+    legacy, result = _migrated(tmp_path, document)
+    draft = json.loads(result.draft_path.read_text(encoding="utf-8"))
+    conflict = draft["contributions"][0]["quantity_conflicts"][0]
+    conflict["reason"] = "reason rewritten"
+    conflict["evidence"][0]["location"] = "Table 9"
+    changed = tmp_path / "changed.json"
+    changed.write_text(json.dumps(draft, ensure_ascii=False), encoding="utf-8")
+    report = compare_legacy_with_current(legacy_path=legacy, current_path=changed)
+    item = next(
+        item for item in report.items if item.subject.endswith("quantity_conflicts")
+    )
+    assert item.status == "different"
+    assert "原因" in item.description
+    assert "证据" in item.description
+
+
+def test_f07_conflict_added_alternatives_reported(tmp_path):
+    document = build_legacy_v4_doc()
+    document["contributions"][0]["quantity_conflicts"] = [
+        {
+            "quantity": "observed_phase_space.distance",
+            "reason": "two printed distances remain unreconciled",
+            "evidence": [
+                {"location": "Table 3", "quote": ""},
+                {"location": "Section 4.2", "quote": ""},
+            ],
+        }
+    ]
+    legacy, result = _migrated(tmp_path, document)
+    draft = json.loads(result.draft_path.read_text(encoding="utf-8"))
+    conflict = draft["contributions"][0]["quantity_conflicts"][0]
+    conflict["alternatives"] = [
+        {
+            "value": "55.0",
+            "error": None,
+            "lower_error": None,
+            "upper_error": None,
+            "unit": "kpc",
+            "limit_kind": "none",
+            "range_lower": None,
+            "range_upper": None,
+            "coordinate_format": None,
+            "condition": "photometric",
+            "interval_kind": None,
+            "coverage": None,
+            "lower_quantile": None,
+            "upper_quantile": None,
+            "error_components": [],
+            "representation": None,
+            "source": "this_paper",
+            "source_note": None,
+            "evidence": [
+                {"file_id": "pdf-1", "location": "Table 3", "page": None, "quote": ""}
+            ],
+            "context_evidence": [],
+        },
+        {
+            "value": "75.0",
+            "error": None,
+            "lower_error": None,
+            "upper_error": None,
+            "unit": "kpc",
+            "limit_kind": "none",
+            "range_lower": None,
+            "range_upper": None,
+            "coordinate_format": None,
+            "condition": "photometric",
+            "interval_kind": None,
+            "coverage": None,
+            "lower_quantile": None,
+            "upper_quantile": None,
+            "error_components": [],
+            "representation": None,
+            "source": "this_paper",
+            "source_note": None,
+            "evidence": [
+                {
+                    "file_id": "pdf-1",
+                    "location": "Section 4.2",
+                    "page": None,
+                    "quote": "",
+                }
+            ],
+            "context_evidence": [],
+        },
+    ]
+    changed = tmp_path / "changed.json"
+    changed.write_text(json.dumps(draft, ensure_ascii=False), encoding="utf-8")
+    report = compare_legacy_with_current(legacy_path=legacy, current_path=changed)
+    item = next(
+        item for item in report.items if item.subject.endswith("quantity_conflicts")
+    )
+    assert item.status == "different"
+    assert "备选" in item.description
+
+
+def test_f07_exclusions_evidence_change_reported(tmp_path):
+    document = build_legacy_v4_doc(
+        reviewed_exclusions=[
+            {
+                "reason": "not a candidate",
+                "evidence": [{"location": "Appendix A", "quote": ""}],
+            }
+        ]
+    )
+    legacy, result = _migrated(tmp_path, document)
+    draft = json.loads(result.draft_path.read_text(encoding="utf-8"))
+    draft["reviewed_exclusions"][0]["evidence"][0]["location"] = "Appendix B"
+    changed = tmp_path / "changed.json"
+    changed.write_text(json.dumps(draft, ensure_ascii=False), encoding="utf-8")
+    report = compare_legacy_with_current(legacy_path=legacy, current_path=changed)
+    item = next(item for item in report.items if item.subject == "reviewed_exclusions")
+    assert item.status == "different"
+
+
+def test_f07_pure_migration_still_compares_identical(tmp_path):
+    legacy, result = _migrated(tmp_path)
+    report = compare_legacy_with_current(
+        legacy_path=legacy, current_path=result.draft_path
+    )
+    assert report.difference_count == 0
+    assert report.matched_count >= 4
+
+
+# ---- F08 恢复验证完整前提 ----
+
+
+def test_f08_recovery_refuses_revision_when_predecessor_entry_lost(tmp_path):
+    draft_path, material, target, preparation, approval_path = _prepared_flow(tmp_path)
+    _save(tmp_path, target, draft_path, material, preparation, approval_path, "op-1")
+    draft2, prep2, approval2 = _revise(
+        tmp_path,
+        target,
+        material,
+        new_value="613.0",
+        expected_version=1,
+        operation_id="op-2",
+        work_dir=tmp_path / "work2",
+    )
+    # 独立子进程在 after_log 窗口硬退出（操作日志已写入、文件未发布）
+    code, _ = run_scenario(
+        "save-exit",
+        draft2,
+        material,
+        target.root,
+        prep2.directory,
+        approval2,
+        "op-2",
+        "after_log",
+    )
+    assert code == 9
+    # 模拟资料损坏：移走 v1 入口
+    (target.root / "versions" / "gold-synth-001.json").unlink()
+    # 重试同一操作：前驱入口缺失，不能当作新建继续发布
+    with pytest.raises(GoldIntegrityError, match="前驱入口缺失"):
+        approved_save(
+            draft_path=draft2,
+            material_root=material,
+            target=target,
+            preparation_dir=prep2.directory,
+            approval=approval2,
+            operation_id="op-2",
+        )
+    assert target.read_entry("gold-synth-001") is None  # 没有发布 v2 入口
+    assert not (target.root / "annotations" / "gold-synth-001" / "v2").exists()
+    status = query_operation(operation_id="op-2", target=target)
+    assert status.state == "inconsistent"
+    assert "前驱入口缺失" in status.detail
+
+
+def test_f08_recovery_continues_when_predecessor_intact(tmp_path):
+    """对照：前驱入口完好时，同窗口中断后重试正常完成修订。"""
+    draft_path, material, target, preparation, approval_path = _prepared_flow(tmp_path)
+    _save(tmp_path, target, draft_path, material, preparation, approval_path, "op-1")
+    draft2, prep2, approval2 = _revise(
+        tmp_path,
+        target,
+        material,
+        new_value="613.0",
+        expected_version=1,
+        operation_id="op-2",
+        work_dir=tmp_path / "work2",
+    )
+    code, _ = run_scenario(
+        "save-exit",
+        draft2,
+        material,
+        target.root,
+        prep2.directory,
+        approval2,
+        "op-2",
+        "after_log",
+    )
+    assert code == 9
+    receipt = approved_save(
+        draft_path=draft2,
+        material_root=material,
+        target=target,
+        preparation_dir=prep2.directory,
+        approval=approval2,
+        operation_id="op-2",
+    )
+    assert receipt.version == 2
+    assert target.read_entry("gold-synth-001").version == 2
+
+
+# ---- F09 历史操作回执 ----
+
+
+def _three_versions(tmp_path):
+    draft_path, material, target, preparation, approval_path = _prepared_flow(tmp_path)
+    _save(tmp_path, target, draft_path, material, preparation, approval_path, "op-1")
+    artifacts = {"op-1": (draft_path, preparation, approval_path)}
+    for index, new_value in enumerate(("613.0", "614.0"), start=2):
+        draft, prep, approval = _revise(
+            tmp_path,
+            target,
+            material,
+            new_value=new_value,
+            expected_version=index - 1,
+            operation_id=f"op-{index}",
+            work_dir=tmp_path / f"work{index}",
+        )
+        _save(tmp_path, target, draft, material, prep, approval, f"op-{index}")
+        artifacts[f"op-{index}"] = (draft, prep, approval)
+    return target, material, artifacts
+
+
+def test_f09_historical_operations_queryable_with_original_receipts(tmp_path):
+    target, _, _ = _three_versions(tmp_path)
+    assert target.read_entry("gold-synth-001").version == 3
+    for operation_id, expected_version in (("op-1", 1), ("op-2", 2), ("op-3", 3)):
+        status = query_operation(operation_id=operation_id, target=target)
+        assert status.state == "saved", (operation_id, status.detail)
+        assert status.receipt is not None
+        assert status.receipt.version == expected_version
+        assert status.receipt.operation_id == operation_id
+        # 回执引用的历史文件仍在且可核对
+        assert target.verify_files(status.receipt.files) == []
+    # 历史版本文件保留
+    versions = sorted(
+        path.name for path in (target.root / "annotations" / "gold-synth-001").iterdir()
+    )
+    assert versions == ["v1", "v2", "v3"]
+
+
+def test_f09_historical_replay_returns_original_receipt(tmp_path):
+    target, material, artifacts = _three_versions(tmp_path)
+    draft, prep, approval = artifacts["op-1"]
+    receipt = approved_save(
+        draft_path=draft,
+        material_root=material,
+        target=target,
+        preparation_dir=prep.directory,
+        approval=approval,
+        operation_id="op-1",
+    )
+    assert receipt.replayed and receipt.recovered
+    assert receipt.version == 1
+    assert target.read_entry("gold-synth-001").version == 3  # 不改动当前版本
+
+
+def test_f09_corrupt_historical_file_reported_inconsistent(tmp_path):
+    target, material, artifacts = _three_versions(tmp_path)
+    status = query_operation(operation_id="op-1", target=target)
+    answer_entry = next(
+        item for item in status.receipt.files if item.path.endswith("answer.json")
+    )
+    answer_path = target.root / answer_entry.path
+    answer_path.write_text(
+        answer_path.read_text(encoding="utf-8").replace("612.0", "999.0"),
+        encoding="utf-8",
+    )
+    # 当前 v3 入口完好，历史 v1 文件损坏：历史操作报告不一致
+    assert target.read_entry("gold-synth-001").version == 3
+    status = query_operation(operation_id="op-1", target=target)
+    assert status.state == "inconsistent"
+    assert "历史文件" in status.detail
+    # 历史重放同样拒绝并保留现场
+    draft, prep, approval = artifacts["op-1"]
+    with pytest.raises(GoldIntegrityError, match="历史文件"):
+        approved_save(
+            draft_path=draft,
+            material_root=material,
+            target=target,
+            preparation_dir=prep.directory,
+            approval=approval,
+            operation_id="op-1",
+        )
