@@ -1,0 +1,851 @@
+"""业务数据库：记录原文、当前修订索引、执行/步骤/待办绑定与操作回执。
+
+记录 JSON 是科学内容来源；索引可以重建。一次修改组装完整候选记录
+集合，按集合校验后在单次事务里追加新修订、更新索引并写入操作回执。
+操作回执（操作键、内容摘要、执行/步骤、前后引用与阶段）用于防止
+重复生效并支撑恢复核对，必须随数据库一起备份，不能当作可丢弃缓存。
+"""
+
+from __future__ import annotations
+
+import json
+import sqlite3
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from pathlib import Path
+
+from ..records.common import RecordRef, canonical_json, sha256_of
+from ..records.paper import PaperRecord
+from ..records.registry import AnyRecord
+from ..records.roster import RosterRecord
+from ..records.serialize import parse_record
+from ..records.validate import CollectionValidationError, validate_collection
+from .errors import (
+    OperationKeyConflictError,
+    RevisionStaleError,
+    WorkspaceIntegrityError,
+)
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def _record_payload(record: AnyRecord) -> str:
+    return canonical_json(record.model_dump(mode="json", by_alias=True))
+
+
+@dataclass(frozen=True)
+class Receipt:
+    operation_key: str
+    kind: str
+    content_digest: str
+    execution_id: str | None
+    step_id: str | None
+    result_refs: tuple[RecordRef, ...]
+    links: dict[str, object]
+    created_at: str
+    replayed: bool = False
+
+
+@dataclass
+class CommitRequest:
+    """一次业务修改的完整请求。
+
+    ``content`` 提供时以它计算重放比较摘要（排除程序生成的编号、时间
+    与回执字段）；否则按新记录内容计算。``expected_revisions`` 声明本
+    次修改预期的当前修订，事务内核对，不符即回滚。``question_steps``
+    把问题的执行/步骤绑定放进同一事务：问题记录必须随绑定一起提交，
+    不存在没有绑定的问题。``meta_updates`` 把运行层凭据（如框架完成
+    凭据）随同一事务写入业务库 meta 表，避免修订与凭据分离的窗口。
+    """
+
+    operation_key: str
+    kind: str
+    new_records: list[AnyRecord] = field(default_factory=list)
+    expected_revisions: dict[str, int] = field(default_factory=dict)
+    result_refs: list[RecordRef] = field(default_factory=list)
+    execution_id: str | None = None
+    step_id: str | None = None
+    input_digest: str | None = None
+    links: dict[str, object] = field(default_factory=dict)
+    content: dict[str, object] | None = None
+    question_steps: dict[str, str] = field(default_factory=dict)
+    meta_updates: dict[str, str] = field(default_factory=dict)
+
+
+def commit_request_digest(request: CommitRequest) -> str:
+    if request.content is not None:
+        return sha256_of(request.content)
+    return sha256_of(
+        {
+            "kind": request.kind,
+            "expected_revisions": request.expected_revisions,
+            "records": [
+                [
+                    record.record_id,
+                    record.revision,
+                    record.RECORD_NAME,
+                    record.model_dump(mode="json", by_alias=True)["data"],
+                ]
+                for record in request.new_records
+            ],
+            "result_refs": [ref.model_dump(mode="json") for ref in request.result_refs],
+            "execution_id": request.execution_id,
+            "step_id": request.step_id,
+            "input_digest": request.input_digest,
+            "links": request.links,
+            "question_steps": request.question_steps,
+            "meta_updates": request.meta_updates,
+        }
+    )
+
+
+@dataclass(frozen=True)
+class ReceiptRow:
+    operation_key: str
+    kind: str
+    content_digest: str
+    execution_id: str | None
+    step_id: str | None
+    result_refs: tuple[RecordRef, ...]
+    links: dict[str, object]
+    created_at: str
+
+    def to_receipt(self, *, replayed: bool = False) -> Receipt:
+        return Receipt(
+            operation_key=self.operation_key,
+            kind=self.kind,
+            content_digest=self.content_digest,
+            execution_id=self.execution_id,
+            step_id=self.step_id,
+            result_refs=self.result_refs,
+            links=dict(self.links),
+            created_at=self.created_at,
+            replayed=replayed,
+        )
+
+
+@dataclass(frozen=True)
+class StepResultRow:
+    execution_id: str
+    step_id: str
+    input_digest: str
+    operation_key: str
+    result_refs: tuple[RecordRef, ...]
+    created_at: str
+
+
+@dataclass(frozen=True)
+class ExecutionRow:
+    execution_id: str
+    request_key: str
+    input_digest: str
+    run_record_id: str
+    flow_id: str
+    flow_version: str
+    mode: str
+    state: str
+    created_at: str
+
+
+@dataclass(frozen=True)
+class QuestionIndexRow:
+    question_id: str
+    execution_id: str
+    step_id: str | None
+    latest_revision: int
+    status: str
+
+
+_SCHEMA = """
+CREATE TABLE IF NOT EXISTS meta (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS records (
+    record_id TEXT NOT NULL,
+    revision INTEGER NOT NULL,
+    schema_name TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    execution_id TEXT,
+    PRIMARY KEY (record_id, revision)
+);
+CREATE TABLE IF NOT EXISTS current_revisions (
+    record_id TEXT PRIMARY KEY,
+    revision INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS receipts (
+    operation_key TEXT PRIMARY KEY,
+    kind TEXT NOT NULL,
+    content_digest TEXT NOT NULL,
+    execution_id TEXT,
+    step_id TEXT,
+    payload_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS executions (
+    execution_id TEXT PRIMARY KEY,
+    request_key TEXT NOT NULL UNIQUE,
+    input_digest TEXT NOT NULL,
+    run_record_id TEXT NOT NULL,
+    flow_id TEXT NOT NULL,
+    flow_version TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    state TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS step_results (
+    execution_id TEXT NOT NULL,
+    step_id TEXT NOT NULL,
+    input_digest TEXT NOT NULL,
+    operation_key TEXT NOT NULL,
+    result_refs_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (execution_id, step_id, input_digest)
+);
+CREATE TABLE IF NOT EXISTS questions (
+    question_id TEXT PRIMARY KEY,
+    execution_id TEXT NOT NULL,
+    step_id TEXT,
+    latest_revision INTEGER NOT NULL,
+    status TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS counters (
+    name TEXT PRIMARY KEY,
+    value INTEGER NOT NULL
+);
+"""
+
+
+class StoreTransaction:
+    """BEGIN IMMEDIATE 之后的事务操作集合；上层用 ``transaction()`` 获取。"""
+
+    def __init__(self, conn: sqlite3.Connection) -> None:
+        self.conn = conn
+
+    # ---- 原始读写 ----
+
+    def current_revision(self, record_id: str) -> int | None:
+        row = self.conn.execute(
+            "SELECT revision FROM current_revisions WHERE record_id = ?", (record_id,)
+        ).fetchone()
+        return int(row[0]) if row else None
+
+    def record_payload(self, record_id: str, revision: int) -> str | None:
+        row = self.conn.execute(
+            "SELECT payload FROM records WHERE record_id = ? AND revision = ?",
+            (record_id, revision),
+        ).fetchone()
+        return str(row[0]) if row else None
+
+    def all_records(self) -> list[AnyRecord]:
+        rows = self.conn.execute(
+            "SELECT payload FROM records ORDER BY record_id, revision"
+        ).fetchall()
+        return [parse_record(row[0]) for row in rows]
+
+    def insert_record(self, record: AnyRecord) -> None:
+        self.conn.execute(
+            "INSERT INTO records"
+            " (record_id, revision, schema_name, payload, created_at, execution_id)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                record.record_id,
+                record.revision,
+                record.RECORD_NAME,
+                _record_payload(record),
+                record.created_at.isoformat(),
+                record.execution_id,
+            ),
+        )
+        self.conn.execute(
+            "INSERT INTO current_revisions (record_id, revision) VALUES (?, ?)"
+            " ON CONFLICT(record_id) DO UPDATE SET revision = excluded.revision",
+            (record.record_id, record.revision),
+        )
+        if record.RECORD_NAME == "question":
+            self.conn.execute(
+                "INSERT INTO questions"
+                " (question_id, execution_id, step_id, latest_revision, status)"
+                " VALUES (?, ?, ?, ?, ?)"
+                " ON CONFLICT(question_id) DO UPDATE SET"
+                " latest_revision = excluded.latest_revision,"
+                " status = excluded.status",
+                (
+                    record.record_id,
+                    record.execution_id or "",
+                    None,
+                    record.revision,
+                    record.data.status,
+                ),
+            )
+
+    def set_question_step(self, question_id: str, step_id: str) -> None:
+        self.conn.execute(
+            "UPDATE questions SET step_id = ? WHERE question_id = ?",
+            (step_id, question_id),
+        )
+
+    def find_receipt(self, operation_key: str) -> ReceiptRow | None:
+        row = self.conn.execute(
+            "SELECT operation_key, kind, content_digest, execution_id, step_id,"
+            " payload_json, created_at FROM receipts WHERE operation_key = ?",
+            (operation_key,),
+        ).fetchone()
+        return _receipt_from_row(row) if row else None
+
+    def find_receipts(
+        self,
+        *,
+        kind: str | None = None,
+        execution_id: str | None = None,
+    ) -> list[ReceiptRow]:
+        clauses, params = [], []
+        if kind is not None:
+            clauses.append("kind = ?")
+            params.append(kind)
+        if execution_id is not None:
+            clauses.append("execution_id = ?")
+            params.append(execution_id)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        rows = self.conn.execute(
+            "SELECT operation_key, kind, content_digest, execution_id, step_id,"
+            f" payload_json, created_at FROM receipts{where} ORDER BY created_at",
+            params,
+        ).fetchall()
+        return [_receipt_from_row(row) for row in rows]
+
+    def insert_receipt(self, receipt: Receipt) -> None:
+        self.conn.execute(
+            "INSERT INTO receipts"
+            " (operation_key, kind, content_digest, execution_id, step_id,"
+            " payload_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                receipt.operation_key,
+                receipt.kind,
+                receipt.content_digest,
+                receipt.execution_id,
+                receipt.step_id,
+                canonical_json(
+                    {
+                        "result_refs": [
+                            ref.model_dump(mode="json") for ref in receipt.result_refs
+                        ],
+                        "links": receipt.links,
+                    }
+                ),
+                receipt.created_at,
+            ),
+        )
+
+    def insert_step_result(
+        self,
+        *,
+        execution_id: str,
+        step_id: str,
+        input_digest: str,
+        operation_key: str,
+        result_refs: list[RecordRef],
+    ) -> None:
+        self.conn.execute(
+            "INSERT INTO step_results"
+            " (execution_id, step_id, input_digest, operation_key,"
+            " result_refs_json, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                execution_id,
+                step_id,
+                input_digest,
+                operation_key,
+                canonical_json([ref.model_dump(mode="json") for ref in result_refs]),
+                _now(),
+            ),
+        )
+
+    def find_step_result(
+        self, execution_id: str, step_id: str, input_digest: str
+    ) -> StepResultRow | None:
+        row = self.conn.execute(
+            "SELECT execution_id, step_id, input_digest, operation_key,"
+            " result_refs_json, created_at FROM step_results"
+            " WHERE execution_id = ? AND step_id = ? AND input_digest = ?",
+            (execution_id, step_id, input_digest),
+        ).fetchone()
+        if not row:
+            return None
+        return StepResultRow(
+            execution_id=row[0],
+            step_id=row[1],
+            input_digest=row[2],
+            operation_key=row[3],
+            result_refs=tuple(
+                RecordRef.model_validate(item) for item in json.loads(row[4])
+            ),
+            created_at=row[5],
+        )
+
+    def insert_execution(self, row: ExecutionRow) -> None:
+        self.conn.execute(
+            "INSERT INTO executions"
+            " (execution_id, request_key, input_digest, run_record_id, flow_id,"
+            " flow_version, mode, state, created_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                row.execution_id,
+                row.request_key,
+                row.input_digest,
+                row.run_record_id,
+                row.flow_id,
+                row.flow_version,
+                row.mode,
+                row.state,
+                row.created_at,
+            ),
+        )
+
+    def find_execution_by_request(self, request_key: str) -> ExecutionRow | None:
+        row = self.conn.execute(
+            "SELECT execution_id, request_key, input_digest, run_record_id, flow_id,"
+            " flow_version, mode, state, created_at FROM executions"
+            " WHERE request_key = ?",
+            (request_key,),
+        ).fetchone()
+        return _execution_from_row(row) if row else None
+
+    def get_execution(self, execution_id: str) -> ExecutionRow | None:
+        row = self.conn.execute(
+            "SELECT execution_id, request_key, input_digest, run_record_id, flow_id,"
+            " flow_version, mode, state, created_at FROM executions"
+            " WHERE execution_id = ?",
+            (execution_id,),
+        ).fetchone()
+        return _execution_from_row(row) if row else None
+
+    def update_execution_state(self, execution_id: str, state: str) -> None:
+        self.conn.execute(
+            "UPDATE executions SET state = ? WHERE execution_id = ?",
+            (state, execution_id),
+        )
+
+    def list_executions(self) -> list[ExecutionRow]:
+        rows = self.conn.execute(
+            "SELECT execution_id, request_key, input_digest, run_record_id, flow_id,"
+            " flow_version, mode, state, created_at FROM executions"
+            " ORDER BY created_at"
+        ).fetchall()
+        return [_execution_from_row(row) for row in rows]
+
+    def next_id(self, prefix: str) -> str:
+        row = self.conn.execute(
+            "SELECT value FROM counters WHERE name = ?", (prefix,)
+        ).fetchone()
+        value = (int(row[0]) if row else 0) + 1
+        self.conn.execute(
+            "INSERT INTO counters (name, value) VALUES (?, ?)"
+            " ON CONFLICT(name) DO UPDATE SET value = excluded.value",
+            (prefix, value),
+        )
+        return f"{prefix}-{value:06d}"
+
+    def _flush_commit(self) -> None:
+        """提交当前事务；测试故障注入可替换此方法模拟提交前退出。"""
+        self.conn.commit()
+
+    def _rollback(self) -> None:
+        self.conn.rollback()
+
+
+def _receipt_from_row(row: sqlite3.Row | tuple) -> ReceiptRow:
+    payload = json.loads(row[5])
+    return ReceiptRow(
+        operation_key=row[0],
+        kind=row[1],
+        content_digest=row[2],
+        execution_id=row[3],
+        step_id=row[4],
+        result_refs=tuple(
+            RecordRef.model_validate(item) for item in payload.get("result_refs", [])
+        ),
+        links=dict(payload.get("links", {})),
+        created_at=row[6],
+    )
+
+
+def _execution_from_row(row: sqlite3.Row | tuple) -> ExecutionRow:
+    return ExecutionRow(
+        execution_id=row[0],
+        request_key=row[1],
+        input_digest=row[2],
+        run_record_id=row[3],
+        flow_id=row[4],
+        flow_version=row[5],
+        mode=row[6],
+        state=row[7],
+        created_at=row[8],
+    )
+
+
+class RecordStore:
+    """工作空间业务数据库句柄。"""
+
+    def __init__(
+        self,
+        db_path: Path,
+        *,
+        create: bool = False,
+        space_id: str | None = None,
+        materials_root: Path | None = None,
+    ) -> None:
+        self.db_path = Path(db_path)
+        self.materials_root = Path(materials_root) if materials_root else None
+        self._conn = sqlite3.connect(self.db_path, isolation_level=None)
+        self._conn.row_factory = sqlite3.Row
+        self._conn.execute("PRAGMA journal_mode=WAL")
+        self._conn.execute("PRAGMA synchronous=FULL")
+        self._conn.execute("PRAGMA busy_timeout=5000")
+        self._conn.executescript(_SCHEMA)
+        if create:
+            if space_id is None:
+                raise WorkspaceIntegrityError("初始化业务数据库必须提供空间身份")
+            self._conn.execute(
+                "INSERT INTO meta (key, value) VALUES ('space_id', ?)"
+                " ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                (space_id,),
+            )
+        elif space_id is not None:
+            row = self._conn.execute(
+                "SELECT value FROM meta WHERE key = 'space_id'"
+            ).fetchone()
+            if row is None or row[0] != space_id:
+                raise WorkspaceIntegrityError("业务数据库身份与请求不符")
+
+    def close(self) -> None:
+        self._conn.close()
+
+    @contextmanager
+    def transaction(self) -> Iterator[StoreTransaction]:
+        """单次业务事务：成功提交，异常回滚。"""
+        self._conn.execute("BEGIN IMMEDIATE")
+        tx = StoreTransaction(self._conn)
+        try:
+            yield tx
+            tx._flush_commit()
+        except BaseException:
+            tx._rollback()
+            raise
+
+    # ---- 读取（已提交事实；只读事务，不与写事务互斥） ----
+
+    def read_record(self, ref: RecordRef) -> AnyRecord | None:
+        def fn(tx: StoreTransaction) -> AnyRecord | None:
+            payload = tx.record_payload(ref.record_id, ref.revision)
+            return parse_record(payload) if payload else None
+
+        return self.transaction_read(fn)
+
+    def read_record_current(self, record_id: str) -> AnyRecord | None:
+        with self.transaction() as tx:
+            revision = tx.current_revision(record_id)
+            if revision is None:
+                return None
+            payload = tx.record_payload(record_id, revision)
+            return parse_record(payload) if payload else None
+
+    def current_revision(self, record_id: str) -> int | None:
+        with self.transaction() as tx:
+            return tx.current_revision(record_id)
+
+    def list_records(self) -> list[AnyRecord]:
+        with self.transaction() as tx:
+            return tx.all_records()
+
+    def find_receipt(self, operation_key: str) -> ReceiptRow | None:
+        with self.transaction() as tx:
+            return tx.find_receipt(operation_key)
+
+    def find_receipts(
+        self, *, kind: str | None = None, execution_id: str | None = None
+    ) -> list[ReceiptRow]:
+        with self.transaction() as tx:
+            return tx.find_receipts(kind=kind, execution_id=execution_id)
+
+    def find_step_result(
+        self, execution_id: str, step_id: str, input_digest: str
+    ) -> StepResultRow | None:
+        with self.transaction() as tx:
+            return tx.find_step_result(execution_id, step_id, input_digest)
+
+    def get_execution(self, execution_id: str) -> ExecutionRow | None:
+        with self.transaction() as tx:
+            return tx.get_execution(execution_id)
+
+    def find_execution_by_request(self, request_key: str) -> ExecutionRow | None:
+        with self.transaction() as tx:
+            return tx.find_execution_by_request(request_key)
+
+    def list_executions(self) -> list[ExecutionRow]:
+        with self.transaction() as tx:
+            return tx.list_executions()
+
+    def list_questions(
+        self, *, execution_id: str | None = None
+    ) -> list[QuestionIndexRow]:
+        with self.transaction() as tx:
+            return _list_questions(tx, execution_id)
+
+    def transaction_read(self, fn):
+        """在只读事务中执行查询函数。"""
+        self._conn.execute("BEGIN DEFERRED")
+        tx = StoreTransaction(self._conn)
+        try:
+            result = fn(tx)
+            self._conn.commit()
+            return result
+        except BaseException:
+            self._conn.rollback()
+            raise
+
+    # ---- 运行层凭据（meta 表；随业务库整体备份恢复） ----
+
+    def set_meta(self, key: str, value: str) -> None:
+        """单独写入一条运行层凭据；与修订同事务的写入走 CommitRequest。"""
+        self.set_meta_many({key: value})
+
+    def set_meta_many(self, entries: dict[str, str]) -> None:
+        """一次事务写入多条运行层凭据（补记凭据时保持成组生效）。"""
+        if not entries:
+            return
+        with self.transaction() as tx:
+            for key, value in entries.items():
+                tx.conn.execute(
+                    "INSERT INTO meta (key, value) VALUES (?, ?)"
+                    " ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    (key, value),
+                )
+
+    def get_meta(self, key: str) -> str | None:
+        def fn(tx: StoreTransaction) -> str | None:
+            row = tx.conn.execute(
+                "SELECT value FROM meta WHERE key = ?", (key,)
+            ).fetchone()
+            return str(row[0]) if row is not None else None
+
+        return self.transaction_read(fn)
+
+    # ---- 提交协议 ----
+
+    def commit(self, request: CommitRequest) -> Receipt:
+        """按操作键提交一批记录：重放核对、预期修订核对、集合校验与回执。"""
+        digest = commit_request_digest(request)
+        with self.transaction() as tx:
+            existing = tx.find_receipt(request.operation_key)
+            if existing is not None:
+                if existing.content_digest == digest:
+                    return existing.to_receipt(replayed=True)
+                raise OperationKeyConflictError(
+                    f"操作键 {request.operation_key!r} 已用于不同内容"
+                    f"（{existing.kind}，{existing.created_at}）；"
+                    "重试须携带相同内容，或为新内容更换操作键"
+                )
+            for record_id, expected in request.expected_revisions.items():
+                actual = tx.current_revision(record_id)
+                if actual != expected:
+                    raise RevisionStaleError(
+                        f"记录 {record_id} 的预期当前修订为 {expected}，"
+                        f"实际为 {actual if actual is not None else '不存在'}；"
+                        "本次修改未提交"
+                    )
+            pending: list[AnyRecord] = []
+            for record in request.new_records:
+                payload = tx.record_payload(record.record_id, record.revision)
+                if payload is not None:
+                    if payload != _record_payload(record):
+                        raise WorkspaceIntegrityError(
+                            f"记录 {record.record_id} 修订 {record.revision}"
+                            " 已存在且内容不同；相同编号与修订只能保存相同内容"
+                        )
+                    continue
+                pending.append(record)
+            _check_question_bindings(tx, pending, request.question_steps)
+            if pending:
+                candidate = tx.all_records() + pending
+                try:
+                    validate_collection(
+                        candidate,
+                        self.materials_root if self.materials_root else None,
+                    )
+                except CollectionValidationError as exc:
+                    raise WorkspaceIntegrityError(
+                        f"候选记录集合未通过校验：{exc}"
+                    ) from exc
+                _check_run_artifacts(pending, self.materials_root)
+                _check_current_outputs(tx, pending)
+                for record in pending:
+                    tx.insert_record(record)
+                for question_id, step_id in request.question_steps.items():
+                    tx.set_question_step(question_id, step_id)
+                if request.kind == "step_result" and request.input_digest is not None:
+                    tx.insert_step_result(
+                        execution_id=request.execution_id or "",
+                        step_id=request.step_id or "",
+                        input_digest=request.input_digest,
+                        operation_key=request.operation_key,
+                        result_refs=list(request.result_refs),
+                    )
+            receipt = Receipt(
+                operation_key=request.operation_key,
+                kind=request.kind,
+                content_digest=digest,
+                execution_id=request.execution_id,
+                step_id=request.step_id,
+                result_refs=tuple(request.result_refs),
+                links=dict(request.links),
+                created_at=_now(),
+                replayed=not pending,
+            )
+            tx.insert_receipt(receipt)
+            for key, value in request.meta_updates.items():
+                tx.conn.execute(
+                    "INSERT INTO meta (key, value) VALUES (?, ?)"
+                    " ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    (key, value),
+                )
+            return receipt
+
+
+def walk_artifact_refs(value: object) -> list[dict]:
+    """收集载荷中全部文件引用形状（含 path 与 sha256）的字典。"""
+    found: list[dict] = []
+    if isinstance(value, dict):
+        if set(value) >= {"path", "sha256"} and isinstance(value.get("path"), str):
+            found.append(value)
+        else:
+            for item in value.values():
+                found.extend(walk_artifact_refs(item))
+    elif isinstance(value, list):
+        for item in value:
+            found.extend(walk_artifact_refs(item))
+    return found
+
+
+def verify_artifact_refs(records: list[AnyRecord], root: Path) -> list[str]:
+    """核对记录集合引用的全部归档文件：存在、路径在根内且哈希一致。
+
+    覆盖每次请求/响应、提示/示例/判例归档与来源文件等一切含
+    ``{path, sha256}`` 形状的引用，包括历史运行修订；提交、备份、恢复
+    与完成检查共用本函数。
+    """
+    import hashlib
+
+    from .layout import resolve_within
+
+    problems: list[str] = []
+    for record in records:
+        for ref in walk_artifact_refs(record.model_dump(mode="json")):
+            where = f"记录 {record.record_id} v{record.revision} 引用的 {ref['path']}"
+            path = root / ref["path"]
+            try:
+                resolved = resolve_within(root, ref["path"])
+            except WorkspaceIntegrityError as exc:
+                problems.append(f"{where}：{exc}")
+                continue
+            if resolved.is_symlink() or not resolved.is_file():
+                problems.append(f"{where} 缺失或不可读")
+                continue
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            if digest != ref.get("sha256"):
+                problems.append(f"{where} 哈希与记录不符")
+    return problems
+
+
+def _check_question_bindings(
+    tx: StoreTransaction, pending: list[AnyRecord], question_steps: dict[str, str]
+) -> None:
+    """问题首次保存必须与执行/步骤绑定在同一事务，不存在无绑定问题。
+
+    已绑定问题的后续修订沿用原绑定（步骤不变），不要求重新声明。
+    """
+    for record in pending:
+        if record.RECORD_NAME != "question":
+            continue
+        row = tx.conn.execute(
+            "SELECT step_id FROM questions WHERE question_id = ?",
+            (record.record_id,),
+        ).fetchone()
+        if row is None and record.record_id not in question_steps:
+            raise WorkspaceIntegrityError(
+                f"问题记录必须与步骤绑定一起提交，缺少绑定：{record.record_id}"
+            )
+    for question_id, step_id in question_steps.items():
+        if not isinstance(step_id, str) or not step_id:
+            raise WorkspaceIntegrityError(
+                f"问题 {question_id} 的步骤绑定必须是非空字符串"
+            )
+
+
+def _check_run_artifacts(pending: list[AnyRecord], root: Path | None) -> None:
+    """提交前核验新记录引用的全部归档文件；R04 的材料校验不覆盖运行归档。"""
+    if root is None:
+        return
+    problems = verify_artifact_refs(pending, root)
+    if problems:
+        raise WorkspaceIntegrityError(
+            "新记录引用的归档文件核验未通过：" + "；".join(problems)
+        )
+
+
+def _list_questions(
+    tx: StoreTransaction, execution_id: str | None
+) -> list[QuestionIndexRow]:
+    if execution_id is None:
+        rows = tx.conn.execute(
+            "SELECT question_id, execution_id, step_id, latest_revision, status"
+            " FROM questions ORDER BY question_id"
+        ).fetchall()
+    else:
+        rows = tx.conn.execute(
+            "SELECT question_id, execution_id, step_id, latest_revision, status"
+            " FROM questions WHERE execution_id = ? ORDER BY question_id",
+            (execution_id,),
+        ).fetchall()
+    return [
+        QuestionIndexRow(
+            question_id=row[0],
+            execution_id=row[1],
+            step_id=row[2],
+            latest_revision=row[3],
+            status=row[4],
+        )
+        for row in rows
+    ]
+
+
+def _check_current_outputs(tx: StoreTransaction, pending: list[AnyRecord]) -> None:
+    """本步声明的当前输出必须相互对应：当前论文引用的名单必须是当前修订。
+
+    新名单进入当前状态后，仍指向旧名单修订的当前论文构成不一致输出，
+    必须同批更新；不能借历史论文仍指向旧名单让错误的新名单通过。
+    """
+    stored = tx.all_records()
+    if not any(isinstance(record, RosterRecord) for record in pending):
+        return
+    current = {record.record_id: record.revision for record in stored}
+    for record in pending:
+        current[record.record_id] = record.revision
+    for record in [*stored, *pending]:
+        if not isinstance(record, PaperRecord):
+            continue
+        if current.get(record.record_id) != record.revision:
+            continue  # 只约束当前修订
+        roster_ref = record.data.roster_ref
+        roster_current = current.get(roster_ref.record_id)
+        if roster_current != roster_ref.revision:
+            raise WorkspaceIntegrityError(
+                f"声明的当前输出不一致：论文 {record.record_id} 当前修订"
+                f" v{record.revision} 仍引用名单 {roster_ref.record_id}"
+                f" v{roster_ref.revision}（当前修订 v{roster_current}）；"
+                "新名单必须与引用它的论文贡献一起更新"
+            )

@@ -9,7 +9,10 @@
    子进程在仓库外目录运行并清除 PYTHONPATH；
 5. 用安装后的 ``hvs-catalog demo`` 在仓库外走查持久化恢复演示：重启找回待办
    与复用结果、同一决定只生效一次、冲突决定被拒绝、真实进程终止后的重复
-   调用与计费。
+   调用与计费；
+6. 用安装后的 R05 公共接口在仓库外走查工作空间全链路：初始化空间、导入
+   合成材料、执行暂停、新进程提交专家决定并完成、备份、恢复到新目录后
+   在新进程核对已完成状态且重复提交保护仍然有效。
 
 用法：uv run python tools/check_distribution.py [Python 版本]
 
@@ -272,6 +275,158 @@ def verify_demo(script: Path, work_dir: Path) -> list[str]:
     return problems
 
 
+R05_DRIVER = '''
+"""仓库外 R05 公共接口走查：初始化、执行、裁决、备份、恢复与重放保护。
+
+只用安装后的包内公共入口，不依赖仓库源码路径。步骤：
+run（初始化+执行暂停）、decide（提交决定+完成）、verify（备份+恢复+核对）。
+"""
+
+import json
+import sys
+from pathlib import Path
+
+from hvs_catalog.records.common import RecordRef
+from hvs_catalog.runtime import resume_execution
+from hvs_catalog.synthetic import (
+    open_service,
+    start_execution,
+    submit_expert_decision,
+)
+from hvs_catalog.synthetic.flow import SyntheticFlow
+from hvs_catalog.workspace import backup_workspace, restore_workspace
+
+step, root = sys.argv[1], Path(sys.argv[2])
+space_path = root / "space"
+ledger = root / "ledger.db"
+if step == "run":
+    from hvs_catalog.workspace import initialize_workspace
+
+    space = initialize_workspace(space_path)
+    execution, flow, _ = start_execution(space, paper="A", request_key="r05-dist")
+    service = open_service(ledger)
+    report = resume_execution(
+        space, execution.execution_id, flow, service=service
+    )
+    service.close()
+    assert report.outcome == "paused", report.outcome
+    question = report.pending_question
+    print("R05-PAUSED")
+    print(
+        json.dumps(
+            question.question_ref.model_dump(mode="json"), ensure_ascii=False
+        )
+    )
+    space.close()
+elif step == "decide":
+    from hvs_catalog.workspace import open_workspace
+
+    question_ref = RecordRef.model_validate(json.loads(sys.argv[3]))
+    space = open_workspace(space_path)
+    submit_expert_decision(
+        space,
+        execution_id="exec-000001",
+        question_ref=question_ref,
+        request_key="r05-dist-dec",
+    )
+    service = open_service(ledger)
+    report = resume_execution(
+        space, "exec-000001", SyntheticFlow(paper="A"), service=service
+    )
+    service.close()
+    assert report.outcome == "finished", report.outcome
+    from hvs_catalog.synthetic import material as m
+
+    revision = space.store().current_revision(m.paper_record_id("A", "exec-000001"))
+    assert revision == 2, revision
+    print("R05-FINISHED")
+    space.close()
+elif step == "verify":
+    from hvs_catalog.workspace import open_workspace
+
+    question_ref = RecordRef.model_validate(json.loads(sys.argv[3]))
+    space = open_workspace(space_path)
+    backup_workspace(space, root / "backup")
+    restored = restore_workspace(root / "backup", root / "restored")
+    assert restored.identity.space_id == space.identity.space_id
+    report = resume_execution(
+        restored, "exec-000001", SyntheticFlow(paper="A"), service=None
+    )
+    assert report.outcome == "finished", report.outcome
+    assert report.mode == "already-finished", report.mode
+    from hvs_catalog.synthetic import material as m
+
+    paper_id = m.paper_record_id("A", "exec-000001")
+    assert restored.store().current_revision(paper_id) == 2
+    # 同一决定在恢复出的空间重复提交：回放原回执，不再生效
+    replay = submit_expert_decision(
+        restored,
+        execution_id="exec-000001",
+        question_ref=question_ref,
+        request_key="r05-dist-dec",
+    )
+    assert not replay.first_save
+    assert restored.store().current_revision(paper_id) == 2
+    print("R05-VERIFIED")
+    restored.close()
+    space.close()
+else:
+    raise SystemExit(f"未知步骤：{step}")
+'''
+
+
+def verify_r05(python: Path, work_dir: Path) -> list[str]:
+    """仓库外用安装后的 R05 公共接口走查全链路（A22 发行场景）。
+
+    三个独立子进程分别完成执行暂停、决定与完成、备份恢复与重放保护，
+    全部清除 PYTHONPATH，只依赖安装后的包。
+    """
+    problems: list[str] = []
+    driver = work_dir / "r05_check.py"
+    driver.write_text(R05_DRIVER, encoding="utf-8")
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+
+    def run_step(name: str, *args: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [str(python), str(driver), name, str(work_dir), *map(str, args)],
+            cwd=work_dir,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    run_result = run_step("run")
+    if run_result.returncode != 0:
+        problems.append(
+            f"R05 执行步骤失败（退出码 {run_result.returncode}）：\n"
+            f"{run_result.stdout}{run_result.stderr}"
+        )
+        return problems
+    lines = [line for line in run_result.stdout.splitlines() if line.strip()]
+    if not lines or lines[0] != "R05-PAUSED":
+        problems.append(f"R05 执行步骤输出异常：{run_result.stdout!r}")
+        return problems
+    question_ref = lines[1]
+
+    decide_result = run_step("decide", question_ref)
+    if decide_result.returncode != 0 or "R05-FINISHED" not in decide_result.stdout:
+        problems.append(
+            f"R05 决定步骤失败（退出码 {decide_result.returncode}）：\n"
+            f"{decide_result.stdout}{decide_result.stderr}"
+        )
+        return problems
+
+    verify_result = run_step("verify", question_ref)
+    if verify_result.returncode != 0 or "R05-VERIFIED" not in verify_result.stdout:
+        problems.append(
+            f"R05 备份恢复核对步骤失败（退出码 {verify_result.returncode}）：\n"
+            f"{verify_result.stdout}{verify_result.stderr}"
+        )
+    return problems
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="check_distribution",
@@ -342,9 +497,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             for problem in problems:
                 print(f"  - {problem}")
             return 1
+        problems = verify_r05(bin_python, work_dir)
+        if problems:
+            print("[失败] 仓库外 R05 公共接口走查未通过：")
+            for problem in problems:
+                print(f"  - {problem}")
+            return 1
     print(
         f"[通过] 仓库外全新环境安装 wheel，独立子进程查询帮助与版本均正常（{version}）；"
-        "持久化恢复演示走查通过（重启恢复、结果复用、决定规则、重复计费）"
+        "持久化恢复演示走查通过（重启恢复、结果复用、决定规则、重复计费）；"
+        "R05 公共接口走查通过（初始化、执行、裁决、备份、恢复、重放保护）"
     )
     return 0
 

@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel
-from pydantic import ValidationError as PydanticValidationError
 
 from .common import ArtifactRef, GapRef, ItemRef, RecordRef
 from .objects import ExternalRecord, ObjectChange, ObjectRecord
@@ -21,6 +20,12 @@ from .paper import (
     ObjectContribution,
     PaperRecord,
     QuantileReport,
+)
+from .patches import (
+    UNSUPPORTED_ITEM_TARGET,
+    PatchApplicationError,
+    apply_item_changes,
+    locate_patch_item,
 )
 from .questions import (
     DecisionPatch,
@@ -695,27 +700,6 @@ def _check_object_change(
             )
 
 
-_UNSUPPORTED_ITEM_TARGET = object()
-
-
-def _find_patch_item(record: AnyRecord, item_id: str) -> Any | None:
-    """解析补丁目标指向的实际条目模型；不支持条目定位的记录类型返回 sentinel。"""
-    if isinstance(record, PaperRecord):
-        return next(
-            (
-                contribution
-                for contribution in record.data.object_contributions
-                if contribution.item_id == item_id
-            ),
-            None,
-        )
-    if isinstance(record, RosterRecord):
-        return next(
-            (entry for entry in record.data.entries if entry.item_id == item_id), None
-        )
-    return _UNSUPPORTED_ITEM_TARGET
-
-
 def _check_ref_targets(
     where: str, value: Any, index: _Index, issues: list[ValidationIssue]
 ) -> None:
@@ -757,10 +741,8 @@ def _check_patch(
 ) -> None:
     """补丁目标必须属于该问题的目标范围，按目标条目整体校验最终状态与引用。
 
-    条目目标只能修改该条目模型的字段；记录级字段须由明确的记录级目标承载。
-    全部改动先合入普通数据副本，再对最终条目完整解析一次，保留字段与跨字段
-    约束（不逐字段检查中间状态）；解析成功后对补丁条目复用记录路径的全部
-    引用与科学证据核对。这里只验证补丁声明，不落盘、不产生新修订。
+    目标定位与字段应用复用 ``records.patches`` 的纯函数，与实际应用
+    共用同一解释；这里只验证补丁声明，不落盘、不产生新修订。
     """
     where = decision.record_id
     allowed = {
@@ -779,8 +761,8 @@ def _check_patch(
     target_record = index.resolve(patch.target)
     if target_record is None:
         return  # 目标缺失已由通用解析报告
-    item = _find_patch_item(target_record, patch.target.item_id)
-    if item is _UNSUPPORTED_ITEM_TARGET:
+    item = locate_patch_item(target_record, patch.target.item_id)
+    if item is UNSUPPORTED_ITEM_TARGET:
         issues.append(
             ValidationIssue(
                 where,
@@ -798,31 +780,10 @@ def _check_patch(
             )
         )
         return
-    item_model = type(item)
-    payload = item.model_dump(mode="json")
-    for change in patch.changes:
-        if change.field not in item_model.model_fields:
-            issues.append(
-                ValidationIssue(
-                    where,
-                    f"补丁字段 {change.field!r} 不在目标条目模型 {item_model.__name__} "
-                    "中；条目目标不能修改记录级字段",
-                )
-            )
-            continue
-        payload[change.field] = change.value
     try:
-        patched = item_model.model_validate(payload)
-    except PydanticValidationError as exc:
-        fields = sorted(
-            {str(error["loc"][0]) for error in exc.errors() if error["loc"]}
-        )
-        issues.append(
-            ValidationIssue(
-                where,
-                f"补丁修改后的条目不满足字段或跨字段约束（涉及 {fields}）",
-            )
-        )
+        patched = apply_item_changes(item, patch.changes)
+    except PatchApplicationError as exc:
+        issues.extend(ValidationIssue(where, reason) for reason in exc.reasons)
         return
     # 补丁携带的科学引用与记录路径执行同一套核对
     _check_ref_targets(f"{where} 补丁", patched, index, issues)
