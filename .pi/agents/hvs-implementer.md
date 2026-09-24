@@ -5,7 +5,6 @@ model: zai-coding-cn/glm-5.3
 thinking: max
 tools: read, bash, edit, write
 extensions:
-fallbackModels:
 systemPromptMode: append
 inheritProjectContext: true
 inheritSkills: false

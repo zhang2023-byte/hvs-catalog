@@ -5,15 +5,14 @@ model: openai-codex/gpt-6-sol
 thinking: high
 tools: read, bash
 extensions:
-fallbackModels:
 systemPromptMode: append
 inheritProjectContext: true
 inheritSkills: false
 defaultContext: fresh
 defaultProgress: false
 acceptanceRole: read-only
+acceptance: attested
 async: true
-completionGuard: false
 timeoutMs: 3600000
 ---
 

@@ -11,19 +11,20 @@
   "prompts": ["~/.pi/agent/prompts", "!**", "+prompts/hvs-work.md"],
   "packages": [
     {
-      "source": "npm:pi-subagents",
+      "source": "npm:pi-subagents@0.71.0",
       "autoload": false,
+      "skills": ["!**", "+skills/pi-subagents/SKILL.md"],
       "prompts": ["!**"]
     },
     {
-      "source": "npm:@narumitw/pi-btw",
+      "source": "npm:@narumitw/pi-btw@0.61.0",
       "autoload": false,
       "extensions": ["!**"],
       "skills": ["!**"],
       "prompts": ["!**"]
     },
     {
-      "source": "npm:@plannotator/pi-extension",
+      "source": "npm:@plannotator/pi-extension@0.27.17",
       "autoload": false,
       "extensions": ["!**"],
       "skills": ["!**"],
