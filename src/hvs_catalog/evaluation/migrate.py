@@ -215,6 +215,7 @@ def _map_contribution(
     contribution: LegacyContribution,
     *,
     index: int,
+    conflict_offset: int,
     file_id: str | None,
     pending: list[GoldPendingItem],
     builder: _ReportBuilder,
@@ -308,7 +309,7 @@ def _map_contribution(
                     "水平或总误差",
                 )
     for conflict_index, conflict in enumerate(contribution.quantity_conflicts):
-        conflict_id = f"k{conflict_index + 1}"
+        conflict_id = f"k{conflict_offset + conflict_index + 1}"
         builder.add(
             "science_review",
             old_path=f"{old}/quantity_conflicts[{conflict_index}]",
@@ -361,7 +362,7 @@ def _map_contribution(
         ],
         quantity_conflicts=[
             GoldConflict(
-                conflict_id=f"k{conflict_index + 1}",
+                conflict_id=f"k{conflict_offset + conflict_index + 1}",
                 quantity=conflict.quantity,
                 reason=conflict.reason,
                 evidence=[
@@ -515,16 +516,20 @@ def migrate_legacy_annotation(
         f"{canary_verified}）；不当用作科学审定凭据，不复制为新答案的批准标记",
     )
 
-    contributions = [
-        _map_contribution(
-            contribution,
-            index=index,
-            file_id=file_id,
-            pending=pending,
-            builder=builder,
+    contributions = []
+    conflict_offset = 0
+    for index, contribution in enumerate(annotation.contributions):
+        contributions.append(
+            _map_contribution(
+                contribution,
+                index=index,
+                conflict_offset=conflict_offset,
+                file_id=file_id,
+                pending=pending,
+                builder=builder,
+            )
         )
-        for index, contribution in enumerate(annotation.contributions)
-    ]
+        conflict_offset += len(contribution.quantity_conflicts)
     exclusions = [
         GoldExclusion(
             exclusion_id=f"x{index + 1}",

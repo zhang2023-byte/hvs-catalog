@@ -15,7 +15,8 @@
    在新进程核对已完成状态且重复提交保护仍然有效；
 7. 用安装后的 Gold 公共接口与 CLI 在仓库外走查 R06 链路：旧 v4 合成文档
    迁移成草稿、全新草稿检查、准备与模拟批准保存、查询与重放保护，另用
-   独立子进程在真实中断窗口后恢复保存。
+   独立子进程在真实中断窗口后恢复保存；精简 Gold v2 另验两文件包的检查、
+   科学审定批准、保存与中断恢复。
 
 用法：uv run python tools/check_distribution.py [Python 版本]
 
@@ -895,6 +896,77 @@ elif step == "recover":
     entry, annotation = target.read_current_answer("gold-synth-001")
     assert annotation.contributions[0].quantities[0].values[0].value == "612.0"
     print("R06-RECOVERED")
+elif step in {"compact", "compact-crash", "compact-recover"}:
+    from hvs_catalog.evaluation import (
+        GoldTarget, approved_save, compact_gold_annotation, load_preparation,
+        prepare_save, query_operation, read_compact_gold_pair,
+        read_gold_annotation, write_compact_gold_pair,
+    )
+
+    script = Path(sys.argv[3])
+    pair_dir = root / "compact-pair"
+    if step == "compact":
+        old = read_gold_annotation(root / "fresh.json")
+        pair = compact_gold_annotation(
+            old,
+            title="Synthetic distribution candidate paper",
+            original_annotator="synthetic-expert",
+            reviewer="synthetic-expert",
+            material_review={
+                "value": "checked", "basis": "Synthetic material check",
+                "record_sha256": "a" * 64,
+            },
+            scope_review={
+                "value": "complete", "basis": "Synthetic scope check",
+                "record_sha256": "a" * 64,
+            },
+        )
+        write_compact_gold_pair(pair, pair_dir)
+        assert read_compact_gold_pair(pair_dir).answer == pair.answer
+        check = subprocess.run(
+            [str(script), "gold", "check", "--draft", str(pair_dir / "answer.json"),
+             "--material-root", str(material)],
+            cwd=root, env=os.environ.copy(), capture_output=True, text=True,
+        )
+        assert check.returncode == 0, check.stderr
+
+    crashing = step != "compact"
+    target = GoldTarget(root / ("compact-crash-target" if crashing else "compact-target"))
+    work = root / ("compact-crash-work" if crashing else "compact-work")
+    operation_id = "compact-crash" if crashing else "compact-save"
+    approval_path = root / (operation_id + "-approval.json")
+    if step == "compact-recover":
+        preparation_dir = next((work / "preparations").iterdir())
+        assert query_operation(operation_id=operation_id, target=target).state == "recoverable"
+    else:
+        preparation = prepare_save(
+            draft_path=pair_dir / "answer.json", material_root=material,
+            target=target, work_dir=work,
+        )
+        assert preparation.manifest.format_version == 2
+        preparation_dir = preparation.directory
+        approval = approval_payload(preparation)
+        approval["scientific_review"] = True
+        approval_path.write_text(json.dumps(approval), encoding="utf-8")
+    receipt = approved_save(
+        draft_path=pair_dir / "answer.json", material_root=material,
+        target=target, preparation_dir=preparation_dir, approval=approval_path,
+        operation_id=operation_id,
+        fault_hooks={"after_files": lambda: os._exit(9)} if step == "compact-crash" else None,
+    )
+    if step == "compact-crash":
+        raise AssertionError("Compact crash hook did not terminate the process")
+    assert receipt.version == 1
+    if step == "compact-recover":
+        assert receipt.recovered
+    entry, answer = target.read_current_answer("gold-2501.00001")
+    assert entry.version == 1
+    assert answer.contributions[0].contribution_id == "2501.00001:cand01"
+    assert answer.contributions[0].quantities[0].values[0].value == "612.0"
+    version_dir = target.root / "annotations" / "gold-2501.00001" / "v1"
+    assert {p.name for p in version_dir.iterdir()} == {"answer.json", "metadata.json"}
+    assert query_operation(operation_id=operation_id, target=target).state == "saved"
+    print("COMPACT-RECOVERED" if crashing else "COMPACT-SAVED")
 elif step == "verify-import":
     import hvs_catalog.evaluation as evaluation
 
@@ -908,7 +980,7 @@ else:
 def verify_r06(python: Path, work_dir: Path, script: Path) -> list[str]:
     """仓库外用安装后的 Gold 公共接口与 CLI 走查 R06 链路。
 
-    六个独立子进程分别完成迁移、检查、全新草稿保存与重放、CLI 全流程、
+    独立子进程完成迁移、检查、全新草稿保存与重放、CLI 全流程，以及 v1/v2
     真实中断窗口硬退出与恢复，全部清除 PYTHONPATH，只依赖安装后的包。
     """
     problems: list[str] = []
@@ -935,10 +1007,13 @@ def verify_r06(python: Path, work_dir: Path, script: Path) -> list[str]:
         ("verify-import", "R06-IMPORT", 0),
         ("crash", None, 9),
         ("recover", "R06-RECOVERED", 0),
+        ("compact", "COMPACT-SAVED", 0),
+        ("compact-crash", None, 9),
+        ("compact-recover", "COMPACT-RECOVERED", 0),
     ]
     for step, marker, code in expectations:
         args: tuple[object, ...] = ()
-        if step == "cli":
+        if step == "cli" or step.startswith("compact"):
             args = (script,)
         result = run_step(step, *args)
         if result.returncode != code:
@@ -1039,7 +1114,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "持久化恢复演示走查通过（重启恢复、结果复用、决定规则、重复计费）；"
         "R05 公共接口走查通过（初始化、执行、裁决、备份、恢复、重放保护）；"
         "R06 Gold 工具走查通过（旧 v4 迁移、草稿检查、全新草稿保存、CLI、"
-        "中断窗口恢复与重放保护）"
+        "中断窗口恢复与重放保护）；精简 Gold v2 两文件包、CLI 检查、"
+        "获准保存和独立进程中断恢复通过"
     )
     return 0
 

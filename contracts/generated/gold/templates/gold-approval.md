@@ -1,9 +1,16 @@
 <!-- Generated -->
 # Human approval record
 
+For the current two-file Gold format, review both answer.json and metadata.json, plus the check report.
+Set scientific_review=true only after a human expert has reviewed the scientific
+content of that exact pair. The approved manifest hashes both files, fixed materials,
+rules and target. The approval is saved as a protected operation sidecar; the formal
+version directory contains answer.json and metadata.json only.
+
+For a historical v1 save, the prepared package included answer and provenance.
 After reviewing the prepared answer, provenance and check report, a human expert supplies
 an approval matching that preparation. This document is guidance, not an approval.
-Use schemas/gold.approval.json for the full typed contract.
+Use [the approval schema](../schemas/gold.approval.json) for the full typed contract.
 
 | Field | Required content |
 |---|---|
@@ -15,8 +22,10 @@ Use schemas/gold.approval.json for the full typed contract.
 | expected_old | Exact predecessor reference, or null for first save |
 | rules_version, rules_sha256 | Exact rules reference from the manifest |
 | basis | Human review and approval rationale |
+| scientific_review | true for a current two-file save after reviewing the exact answer and metadata; false otherwise |
 | accepted_pending | Each explicitly accepted scientific pending ID |
 
 Any change to the answer, maker, original attribution, materials or target requires a new
-preparation and approval. Each version keeps its own approval.json; never replace an old
-approval with a later expert's name. No identity provider or digital signature is implied.
+preparation and approval. Historical v1 keeps approval.json in its version directory;
+v2 keeps the approval in operations. Never replace an old approval with a later
+expert's name. No identity provider or digital signature is implied.

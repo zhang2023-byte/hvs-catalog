@@ -39,7 +39,7 @@ def test_gold_tampered_output_detected(tmp_path):
 
 def test_gold_format_document_covers_models_and_vocab():
     outputs = build_outputs()
-    doc = outputs["gold-format.md"]
+    doc = outputs["legacy/gold-format.md"]
     for name in (
         "GoldAnnotation",
         "GoldEvidence",
@@ -60,15 +60,15 @@ def test_gold_format_document_covers_models_and_vocab():
 
 def test_gold_schemas_are_valid_json_with_strict_fields():
     outputs = build_outputs()
-    for key in ("gold.annotation", "gold.legacy-v4"):
-        schema = json.loads(outputs[f"schemas/{key}.json"])
+    for key in ("gold.annotation", "gold.legacy"):
+        schema = json.loads(outputs[f"legacy/schemas/{key}.json"])
         assert schema.get("additionalProperties") is False
         assert "properties" in schema
 
 
 def test_annotation_template_lists_quantities_and_instructions():
     outputs = build_outputs()
-    template = outputs["templates/gold-annotation.md"]
+    template = outputs["legacy/templates/gold-annotation.md"]
     for path in quantity_paths():
         assert f"`{path}`" in template
     assert "evaluation.hvs_contribution_gold" in template

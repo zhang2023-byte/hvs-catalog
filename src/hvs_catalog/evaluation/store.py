@@ -54,6 +54,7 @@ OPERATIONS_DIR = "operations"
 STAGING_DIR = "staging"
 LOCK_FILENAME = ".lock"
 ANSWER_FILENAME = "answer.json"
+METADATA_FILENAME = "metadata.json"
 PROVENANCE_FILENAME = "provenance.json"
 APPROVAL_FILENAME = "approval.json"
 MANIFEST_FILENAME = "manifest.json"
@@ -161,7 +162,8 @@ class OperationRecord(Config):
     manifest_sha256: str
     approval_sha256: str
     answer_sha256: str
-    provenance_sha256: str
+    provenance_sha256: str | None = None
+    metadata_sha256: str | None = None
     expected_old: PreviousRef | None
     new_version: int
     files: list[FileEntry]
@@ -186,6 +188,7 @@ class SaveApproval(Config):
     rules_version: str
     rules_sha256: str
     basis: str
+    scientific_review: bool = False
     accepted_pending: list[str] = Field(default_factory=list)
 
 
@@ -204,8 +207,11 @@ class PreparationManifest(Config):
     draft_sha256: str
     answer_path: str
     answer_sha256: str
-    provenance_path: str
-    provenance_sha256: str
+    provenance_path: str | None = None
+    provenance_sha256: str | None = None
+    metadata_path: str | None = None
+    metadata_sha256: str | None = None
+    format_version: int = 1
     rules_version: str
     rules_sha256: str
     materials: list[FileEntry]
@@ -347,6 +353,63 @@ class GoldTarget:
                 f"版本入口 v{entry.version} 引用的文件不完整或不一致："
                 + "；".join(problems)
             )
+        if any(item.path.endswith(METADATA_FILENAME) for item in entry.files):
+            record = self.read_operation(entry.operation_id)
+            if (
+                record is None
+                or record.document_id != entry.document_id
+                or record.operation_id != entry.operation_id
+                or record.new_version != entry.version
+                or record.manifest_sha256 != entry.manifest_sha256
+                or record.expected_old != entry.previous
+                or record.metadata_sha256 is None
+                or record.state not in {"planned", "entry_published"}
+                or (record.files and record.files != entry.files)
+            ):
+                raise GoldIntegrityError(
+                    "Compact Gold version entry is not bound to an operation record"
+                )
+            expected = {
+                _answer_target_path(
+                    entry.document_id, entry.version
+                ): record.answer_sha256,
+                _metadata_target_path(
+                    entry.document_id, entry.version
+                ): record.metadata_sha256,
+            }
+            if {item.path: item.sha256 for item in entry.files} != expected:
+                raise GoldIntegrityError(
+                    "Compact Gold version files differ from the operation record"
+                )
+            approval_sidecar = _resolve_in_target(
+                self.root, _compact_approval_path(entry.operation_id)
+            )
+            if (
+                not approval_sidecar.is_file()
+                or _sha256_bytes(approval_sidecar.read_bytes())
+                != record.approval_sha256
+            ):
+                raise GoldIntegrityError(
+                    "Compact Gold human approval record is missing or changed"
+                )
+            try:
+                approval = SaveApproval.model_validate(
+                    json.loads(approval_sidecar.read_text(encoding="utf-8"))
+                )
+            except (OSError, ValueError) as exc:
+                raise GoldIntegrityError(
+                    "Compact Gold human approval record is invalid"
+                ) from exc
+            if (
+                approval.scientific_review is not True
+                or approval.approver_kind != "human"
+                or approval.document_id != entry.document_id
+                or approval.manifest_sha256 != entry.manifest_sha256
+                or approval.target_path != str(self.root)
+            ):
+                raise GoldIntegrityError(
+                    "Compact Gold human approval does not bind the version"
+                )
         return entry
 
     def verify_entry_files(self, entry: VersionEntry) -> list[str]:
@@ -378,7 +441,7 @@ class GoldTarget:
 
     def read_current_answer(
         self, document_id: str
-    ) -> tuple[VersionEntry, GoldAnnotation]:
+    ) -> tuple[VersionEntry, GoldAnnotation | object]:
         """读取当前正式答案；入口与文件核对通过才返回。"""
         entry = self.read_entry(document_id)
         if entry is None:
@@ -387,6 +450,13 @@ class GoldTarget:
             item for item in entry.files if item.path.endswith(ANSWER_FILENAME)
         )
         answer_path = _resolve_in_target(self.root, answer_entry.path)
+        if any(item.path.endswith(METADATA_FILENAME) for item in entry.files):
+            from .compact import read_compact_gold_pair
+
+            pair = read_compact_gold_pair(answer_path)
+            if document_id != f"gold-{pair.answer.arxiv_id}":
+                raise GoldIntegrityError("Compact answer identity differs from entry")
+            return entry, pair.answer
         annotation = read_gold_annotation(answer_path)
         if annotation.document_id != document_id:
             raise GoldIntegrityError(
@@ -401,8 +471,9 @@ class Preparation:
     manifest: PreparationManifest
     directory: Path
     answer_bytes: bytes
-    provenance_bytes: bytes
+    provenance_bytes: bytes | None
     check_report: GoldCheckReport
+    metadata_bytes: bytes | None = None
 
     @property
     def manifest_sha256(self) -> str:
@@ -425,6 +496,105 @@ def _answer_target_path(document_id: str, version: int) -> str:
 
 def _provenance_target_path(document_id: str, version: int) -> str:
     return f"{ANNOTATIONS_DIR}/{document_id}/v{version}/{PROVENANCE_FILENAME}"
+
+
+def _metadata_target_path(document_id: str, version: int) -> str:
+    return f"{ANNOTATIONS_DIR}/{document_id}/v{version}/{METADATA_FILENAME}"
+
+
+def _compact_approval_path(operation_id: str) -> str:
+    return f"{OPERATIONS_DIR}/{operation_id}.approval.json"
+
+
+def _derive_compact_preparation(
+    *,
+    pair,
+    target: GoldTarget,
+    expected_old_version: int | None,
+    material_root: Path,
+) -> tuple[PreparationManifest, bytes, bytes, GoldCheckReport]:
+    from .compact import (
+        check_compact_gold_pair,
+        compact_answer_to_json,
+        compact_metadata_to_json,
+        read_compact_gold_pair,
+    )
+
+    report = check_compact_gold_pair(pair, material_root=material_root)
+    if report.blocking_count:
+        details = "; ".join(
+            f"[{item.category}] {item.subject}: {item.message}"
+            for item in report.problems
+            if item.category in ("structure", "material")
+        )
+        raise GoldCheckError(
+            f"Compact Gold has {report.blocking_count} blocking problems: {details}"
+        )
+    document_id = f"gold-{pair.answer.arxiv_id}"
+    _require_safe_segment(document_id, "document_id")
+    entry = target.read_entry(document_id)
+    if expected_old_version is None:
+        if entry is not None:
+            raise GoldTargetError(
+                f"Document {document_id} already has v{entry.version}"
+            )
+        new_version = 1
+        expected_old = None
+    else:
+        if entry is None or entry.version != expected_old_version:
+            raise GoldTargetError("Expected old Gold version does not match target")
+        if not any(item.path.endswith(METADATA_FILENAME) for item in entry.files):
+            raise GoldTargetError(
+                "A v1 answer cannot be revised as v2 without explicit migration"
+            )
+        previous = read_compact_gold_pair(
+            _resolve_in_target(
+                target.root, _answer_target_path(document_id, entry.version)
+            )
+        )
+        if (
+            previous.metadata.annotation.original_annotator
+            != pair.metadata.annotation.original_annotator
+            or previous.metadata.annotation.original_annotated_at
+            != pair.metadata.annotation.original_annotated_at
+        ):
+            raise GoldTargetError(
+                "Revision cannot replace the original human annotation identity"
+            )
+        new_version = entry.version + 1
+        expected_old = PreviousRef(
+            version=entry.version, manifest_sha256=entry.manifest_sha256
+        )
+    answer_bytes = compact_answer_to_json(pair.answer).encode("utf-8")
+    metadata_bytes = compact_metadata_to_json(pair.metadata).encode("utf-8")
+    manifest_core = {
+        "format_version": 2,
+        "source_materials": [
+            {"path": pair.metadata.source.name, "sha256": pair.metadata.source.sha256}
+        ]
+        if pair.metadata.source
+        else [],
+        "document_id": document_id,
+        "target_path": str(target.root),
+        "new_version": new_version,
+        "expected_old": None
+        if expected_old is None
+        else expected_old.model_dump(mode="json"),
+        "draft_sha256": _sha256_bytes(answer_bytes + b"\n" + metadata_bytes),
+        "answer_path": _answer_target_path(document_id, new_version),
+        "answer_sha256": _sha256_bytes(answer_bytes),
+        "metadata_path": _metadata_target_path(document_id, new_version),
+        "metadata_sha256": _sha256_bytes(metadata_bytes),
+        "rules_version": pair.metadata.rules.version,
+        "rules_sha256": pair.metadata.rules.sha256,
+        "materials": [
+            {"path": item.name, "sha256": item.sha256} for item in pair.metadata.files
+        ],
+        "science_pending": sorted(set(report.pending_ids())),
+    }
+    prep_id = f"prep-{_sha256_json(manifest_core)[:16]}"
+    manifest = PreparationManifest(prep_id=prep_id, **manifest_core)
+    return manifest, answer_bytes, metadata_bytes, report
 
 
 def _build_provenance_payload(draft: GoldAnnotation, report: GoldCheckReport) -> dict:
@@ -611,6 +781,43 @@ def prepare_save(
     同一前提得到同一清单；修改内容后重新准备得到新清单。
     """
     target.initialize()
+    draft_path = Path(draft_path)
+    if (
+        draft_path.name == ANSWER_FILENAME
+        and (draft_path.parent / METADATA_FILENAME).is_file()
+    ):
+        from .compact import read_compact_gold_pair
+
+        pair = read_compact_gold_pair(draft_path)
+        manifest, answer_bytes, metadata_bytes, report = _derive_compact_preparation(
+            pair=pair,
+            target=target,
+            expected_old_version=expected_old_version,
+            material_root=Path(material_root),
+        )
+        directory = Path(work_dir) / PREPARATIONS_DIRNAME / manifest.prep_id
+        directory.mkdir(parents=True, exist_ok=True)
+        _atomic_write(directory / ANSWER_FILENAME, answer_bytes)
+        _atomic_write(directory / METADATA_FILENAME, metadata_bytes)
+        _atomic_write_json(
+            directory / MANIFEST_FILENAME,
+            manifest.model_dump(mode="json", exclude_unset=True),
+        )
+        _atomic_write(
+            directory / MANIFEST_SHA_FILENAME,
+            (_manifest_sha256(manifest) + "\n").encode(),
+        )
+        _atomic_write_json(
+            directory / CHECK_REPORT_FILENAME, report.model_dump(mode="json")
+        )
+        return Preparation(
+            manifest=manifest,
+            directory=directory,
+            answer_bytes=answer_bytes,
+            provenance_bytes=None,
+            metadata_bytes=metadata_bytes,
+            check_report=report,
+        )
     draft = read_gold_annotation(draft_path)
     manifest, _answer, answer_bytes, provenance_bytes, report = _derive_preparation(
         draft=draft,
@@ -624,7 +831,7 @@ def prepare_save(
     _atomic_write(directory / PROVENANCE_FILENAME, provenance_bytes)
     _atomic_write_json(
         directory / MANIFEST_FILENAME,
-        manifest.model_dump(mode="json"),
+        manifest.model_dump(mode="json", exclude_unset=True),
     )
     _atomic_write(
         directory / MANIFEST_SHA_FILENAME, (_manifest_sha256(manifest) + "\n").encode()
@@ -649,15 +856,45 @@ def load_preparation(preparation_dir: str | Path) -> Preparation:
         json.loads((directory / MANIFEST_FILENAME).read_text(encoding="utf-8"))
     )
     answer_bytes = (directory / ANSWER_FILENAME).read_bytes()
-    provenance_bytes = (directory / PROVENANCE_FILENAME).read_bytes()
+    provenance_bytes = (
+        (directory / PROVENANCE_FILENAME).read_bytes()
+        if manifest.format_version == 1
+        else None
+    )
+    metadata_bytes = (
+        (directory / METADATA_FILENAME).read_bytes()
+        if manifest.format_version == 2
+        else None
+    )
     report = GoldCheckReport.model_validate(
         json.loads((directory / CHECK_REPORT_FILENAME).read_text(encoding="utf-8"))
     )
     problems: list[str] = []
     if _sha256_bytes(answer_bytes) != manifest.answer_sha256:
         problems.append("答案文件与清单哈希不符")
-    if _sha256_bytes(provenance_bytes) != manifest.provenance_sha256:
-        problems.append("来源记录与清单哈希不符")
+    if manifest.format_version == 1:
+        if (
+            provenance_bytes is None
+            or _sha256_bytes(provenance_bytes) != manifest.provenance_sha256
+        ):
+            problems.append("来源记录与清单哈希不符")
+    elif manifest.format_version == 2:
+        if (
+            metadata_bytes is None
+            or _sha256_bytes(metadata_bytes) != manifest.metadata_sha256
+        ):
+            problems.append("元数据文件与清单哈希不符")
+        else:
+            from .compact import read_compact_gold_pair
+
+            try:
+                pair = read_compact_gold_pair(directory / ANSWER_FILENAME)
+                if pair.metadata.review.answer_sha256 != manifest.answer_sha256:
+                    problems.append("元数据与答案文件绑定不符")
+            except (GoldIntegrityError, ValueError) as exc:
+                problems.append(f"Compact Gold 结构或绑定不符：{exc}")
+    else:
+        problems.append(f"未知 Gold 准备格式版本 {manifest.format_version}")
     if sorted(set(report.pending_ids())) != sorted(manifest.science_pending):
         problems.append("检查报告与清单的待核查项不一致")
     sidecar = directory / MANIFEST_SHA_FILENAME
@@ -675,6 +912,7 @@ def load_preparation(preparation_dir: str | Path) -> Preparation:
         directory=directory,
         answer_bytes=answer_bytes,
         provenance_bytes=provenance_bytes,
+        metadata_bytes=metadata_bytes,
         check_report=report,
     )
 
@@ -685,6 +923,10 @@ def _verify_approval_binding(approval: SaveApproval, preparation: Preparation) -
             "批准记录必须写明操作者与审定依据；工具不自动生成 approved=true"
         )
     manifest = preparation.manifest
+    if manifest.format_version == 2 and approval.scientific_review is not True:
+        raise GoldApprovalError(
+            "Compact Gold requires explicit human scientific_review=true for this exact answer and metadata manifest"
+        )
     if approval.document_id != manifest.document_id:
         raise GoldApprovalError(
             f"批准的文档（{approval.document_id}）与准备内容"
@@ -723,7 +965,9 @@ def _verify_approval_binding(approval: SaveApproval, preparation: Preparation) -
 
 
 def _manifest_sha256(manifest: PreparationManifest) -> str:
-    return _sha256_json(manifest.model_dump(mode="json"))
+    # Preserve the exact v1 preparation hash across schema extensions: historical
+    # manifests did not contain v2-only default fields.
+    return _sha256_json(manifest.model_dump(mode="json", exclude_unset=True))
 
 
 def manifest_sha256(manifest: PreparationManifest) -> str:
@@ -867,15 +1111,28 @@ def approved_save(
             )
 
         # 新操作：以当前草稿重新推导，必须与获准清单一致（批准后改动检测）
-        draft = read_gold_annotation(draft_path)
-        current = _derive_preparation(
-            draft=draft,
-            target=target,
-            expected_old_version=(
-                manifest.expected_old.version if manifest.expected_old else None
-            ),
-            material_root=Path(material_root),
-        )[0]
+        if manifest.format_version == 2:
+            from .compact import read_compact_gold_pair
+
+            pair = read_compact_gold_pair(draft_path)
+            current = _derive_compact_preparation(
+                pair=pair,
+                target=target,
+                expected_old_version=(
+                    manifest.expected_old.version if manifest.expected_old else None
+                ),
+                material_root=Path(material_root),
+            )[0]
+        else:
+            draft = read_gold_annotation(draft_path)
+            current = _derive_preparation(
+                draft=draft,
+                target=target,
+                expected_old_version=(
+                    manifest.expected_old.version if manifest.expected_old else None
+                ),
+                material_root=Path(material_root),
+            )[0]
         if current.model_dump(mode="json") != manifest.model_dump(mode="json"):
             raise GoldApprovalError(
                 "当前草稿与获准的准备清单不一致（内容在批准后发生了变化）；"
@@ -909,6 +1166,7 @@ def approved_save(
             approval_sha256=approval_sha,
             answer_sha256=manifest.answer_sha256,
             provenance_sha256=manifest.provenance_sha256,
+            metadata_sha256=manifest.metadata_sha256,
             expected_old=manifest.expected_old,
             new_version=manifest.new_version,
             files=[],
@@ -953,12 +1211,29 @@ def _complete_entry_operation(target: GoldTarget, entry: VersionEntry) -> None:
     if record is None:
         raise GoldIntegrityError("已发布入口缺少对应操作日志；保留现场并停止")
     expected = {
-        _answer_target_path(entry.document_id, entry.version): record.answer_sha256,
-        _provenance_target_path(
-            entry.document_id, entry.version
-        ): record.provenance_sha256,
-        f"{ANNOTATIONS_DIR}/{entry.document_id}/v{entry.version}/{APPROVAL_FILENAME}": record.approval_sha256,
+        _answer_target_path(entry.document_id, entry.version): record.answer_sha256
     }
+    if record.metadata_sha256 is not None:
+        expected[_metadata_target_path(entry.document_id, entry.version)] = (
+            record.metadata_sha256
+        )
+        approval_sidecar = _resolve_in_target(
+            target.root, _compact_approval_path(record.operation_id)
+        )
+        if (
+            not approval_sidecar.is_file()
+            or _sha256_bytes(approval_sidecar.read_bytes()) != record.approval_sha256
+        ):
+            raise GoldIntegrityError(
+                "Compact Gold approval sidecar is missing or changed"
+            )
+    else:
+        expected[_provenance_target_path(entry.document_id, entry.version)] = (
+            record.provenance_sha256
+        )
+        expected[
+            f"{ANNOTATIONS_DIR}/{entry.document_id}/v{entry.version}/{APPROVAL_FILENAME}"
+        ] = record.approval_sha256
     if (
         record.document_id != entry.document_id
         or record.operation_id != entry.operation_id
@@ -1003,6 +1278,17 @@ def _reconcile_operation(
     不一致保留现场并抛出 GoldIntegrityError。
     """
     manifest = preparation.manifest
+    if manifest.format_version == 2:
+        approval_sidecar = _resolve_in_target(
+            target.root, _compact_approval_path(record.operation_id)
+        )
+        if (
+            approval_sidecar.exists()
+            and _sha256_bytes(approval_sidecar.read_bytes()) != record.approval_sha256
+        ):
+            raise GoldIntegrityError(
+                "Compact Gold approval sidecar differs from operation record"
+            )
     entry = target.read_entry(manifest.document_id)
     if (
         entry is not None
@@ -1034,6 +1320,10 @@ def _reconcile_operation(
                 f"操作 {record.operation_id!r} 已发布的历史文件不完整或不一致："
                 + "；".join(problems)
                 + "；保留现场，请人工核对"
+            )
+        if manifest.format_version == 2 and not approval_sidecar.is_file():
+            raise GoldIntegrityError(
+                "Published compact Gold approval sidecar is missing"
             )
         return SaveReceipt(
             operation_id=record.operation_id,
@@ -1077,11 +1367,20 @@ def _reconcile_operation(
 
     # 入口尚未发布：核对已发布文件是否与清单一致（部分写出不算正式答案）
     answer_final = _resolve_in_target(target.root, manifest.answer_path)
-    provenance_final = _resolve_in_target(target.root, manifest.provenance_path)
-    approval_final = answer_final.parent / APPROVAL_FILENAME
+    compact = manifest.format_version == 2
+    companion_path = manifest.metadata_path if compact else manifest.provenance_path
+    companion_hash = manifest.metadata_sha256 if compact else manifest.provenance_sha256
+    if companion_path is None or companion_hash is None:
+        raise GoldIntegrityError("Preparation companion path/hash is missing")
+    companion_final = _resolve_in_target(target.root, companion_path)
+    approval_final = (
+        _resolve_in_target(target.root, _compact_approval_path(record.operation_id))
+        if compact
+        else answer_final.parent / APPROVAL_FILENAME
+    )
     for final, digest in (
         (answer_final, manifest.answer_sha256),
-        (provenance_final, manifest.provenance_sha256),
+        (companion_final, companion_hash),
     ):
         if final.exists():
             if _sha256_bytes(final.read_bytes()) != digest:
@@ -1093,7 +1392,11 @@ def _reconcile_operation(
                 item.name
                 for item in final.parent.iterdir()
                 if item.name
-                not in {ANSWER_FILENAME, PROVENANCE_FILENAME, APPROVAL_FILENAME}
+                not in (
+                    {ANSWER_FILENAME, METADATA_FILENAME}
+                    if compact
+                    else {ANSWER_FILENAME, PROVENANCE_FILENAME, APPROVAL_FILENAME}
+                )
             ]
             if stray:
                 raise GoldIntegrityError(
@@ -1110,22 +1413,34 @@ def _reconcile_operation(
 
     staging = _resolve_in_target(target.root, f"{STAGING_DIR}/{record.operation_id}")
     # Validate all leaves before creating directories or writing the first file.
-    for name in (ANSWER_FILENAME, PROVENANCE_FILENAME, APPROVAL_FILENAME):
+    for name in (
+        (ANSWER_FILENAME, METADATA_FILENAME)
+        if compact
+        else (ANSWER_FILENAME, PROVENANCE_FILENAME, APPROVAL_FILENAME)
+    ):
         _resolve_in_target(target.root, staging.relative_to(target.root) / name)
     if entry is not None:
         # A caller may only have queried a completed-but-unacknowledged predecessor.
         # Preserve its receipt before replacing the sole current-version entry.
         _complete_entry_operation(target, entry)
     staging.mkdir(parents=True, exist_ok=True)
-    files: list[tuple[str, bytes, str]] = [
-        (ANSWER_FILENAME, preparation.answer_bytes, manifest.answer_sha256),
-        (PROVENANCE_FILENAME, preparation.provenance_bytes, manifest.provenance_sha256),
-        (
-            APPROVAL_FILENAME,
-            approval_bytes,
-            _sha256_bytes(approval_bytes),
-        ),
-    ]
+    if compact:
+        if preparation.metadata_bytes is None:
+            raise GoldIntegrityError("Compact Gold metadata was not prepared")
+        if not approval_final.exists():
+            _atomic_write(approval_final, approval_bytes)
+        files: list[tuple[str, bytes, str]] = [
+            (ANSWER_FILENAME, preparation.answer_bytes, manifest.answer_sha256),
+            (METADATA_FILENAME, preparation.metadata_bytes, companion_hash),
+        ]
+    else:
+        if preparation.provenance_bytes is None:
+            raise GoldIntegrityError("v1 provenance was not prepared")
+        files = [
+            (ANSWER_FILENAME, preparation.answer_bytes, manifest.answer_sha256),
+            (PROVENANCE_FILENAME, preparation.provenance_bytes, companion_hash),
+            (APPROVAL_FILENAME, approval_bytes, _sha256_bytes(approval_bytes)),
+        ]
     published = _publish_files(
         target=target,
         staging=staging,
@@ -1197,7 +1512,33 @@ def query_operation(
             state="unknown",
             detail=f"目标中没有操作 {operation_id!r} 的记录",
         )
-    entry = target.read_entry(record.document_id)
+    if record.metadata_sha256 is not None:
+        approval_sidecar = _resolve_in_target(
+            target.root, _compact_approval_path(operation_id)
+        )
+        if (
+            approval_sidecar.exists()
+            and _sha256_bytes(approval_sidecar.read_bytes()) != record.approval_sha256
+        ):
+            return OperationStatus(
+                operation_id=operation_id,
+                state="inconsistent",
+                detail="Compact Gold approval sidecar hash mismatch",
+            )
+        if record.state == "entry_published" and not approval_sidecar.is_file():
+            return OperationStatus(
+                operation_id=operation_id,
+                state="inconsistent",
+                detail="Compact Gold approval sidecar missing",
+            )
+    try:
+        entry = target.read_entry(record.document_id)
+    except GoldIntegrityError as exc:
+        return OperationStatus(
+            operation_id=operation_id,
+            state="inconsistent",
+            detail=f"版本入口、文件或批准记录不一致：{exc}",
+        )
     if (
         entry is not None
         and entry.operation_id == operation_id
@@ -1291,6 +1632,20 @@ def query_operation(
                 state="inconsistent",
                 detail="已发布文件与操作记录不符；保留现场，请人工核对",
             )
+        if record.metadata_sha256 is not None:
+            metadata_final = _resolve_in_target(
+                target.root,
+                _metadata_target_path(record.document_id, record.new_version),
+            )
+            if (
+                metadata_final.is_file()
+                and _sha256_bytes(metadata_final.read_bytes()) != record.metadata_sha256
+            ):
+                return OperationStatus(
+                    operation_id=operation_id,
+                    state="inconsistent",
+                    detail="Metadata differs from operation record",
+                )
         return OperationStatus(
             operation_id=operation_id,
             state="recoverable",

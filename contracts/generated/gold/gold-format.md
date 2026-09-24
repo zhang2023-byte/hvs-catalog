@@ -1,210 +1,192 @@
 <!-- Generated -->
-# Gold annotation format
+# Formal Gold format
 
-This document is generated from the typed definitions in `hvs_catalog.evaluation.models` for `evaluation.hvs_contribution_gold` v1 and the legacy v4 reader in `hvs_catalog.evaluation.legacy`. Do not edit it by hand; regenerate with `uv run python tools/render_record_contracts.py`.
+The formal scoring reference is `answer.json` together with `metadata.json`. The answer contains scientific targets, PDF evidence, explicit coverage and remaining uncertainty. Metadata binds that exact answer to the paper version, fixed PDF/source hashes, scientific rules and concise attribution. Optional empty fields are omitted; an empty `contributions` array remains explicit.
 
-## Scope
+`contribution_id` has the form `arxiv_id:candNN`; it is a generated identifier and needs no paper citation. Scientific claims use `value` and their corresponding `evidence`. The old v1 draft, migration indices, old boundness status, pending tasks and full historical provenance stay outside the formal pair.
 
-The Gold annotation captures expert judgments with PDF evidence; it shares the science vocabulary with prediction records but does not carry run fields (execution ids, framework progress, or automated extraction methods). A document is either a `draft` (may miss information required of a formal answer; explicit `pending` items and check results describe gaps) or an `answer` (its `pending` array is empty; saved only after format checks and expert approval). Explicitly accepted scientific pending items remain in the saved provenance and approval; an empty answer array does not mean all scientific questions have been resolved.
+Material and scope confirmation in metadata is distinct from final Gold approval. Formal save additionally requires `scientific_review=true` from a human approver for the exact answer and metadata manifest. The operation record retains that approval separately from the two-file package.
 
-Evidence keeps the expert's PDF discipline: a registered file with its content hash, a verbatim location description, an optional 1-based PDF page ordinal (a position in the file, distinct from a printed page number), and an optional verbatim quote. Page ordinals are never guessed from the location text.
+See [version meanings](README.md#what-the-version-numbers-mean) for the distinction between format, paper, rules and saved Gold revisions.
 
-## Vocabulary
+## Top-level typed fields
 
-Quantities reuse the 18 approved science rule paths at rules version `0.1.0`; the author overall assessment states are the current rule states (`no_overall_conclusion`, `unbound`, `possibly_unbound`, `possibly_bound`, `bound`). The legacy status vocabulary is preserved verbatim on migration via `legacy_status` (`unbound`, `possibly_unbound`, `bound`, `no_overall_conclusion`, `not_assessed`); `not_assessed` no longer exists in the current rules and is reported for expert review instead of being converted.
-
-| Vocabulary | Values |
-|---|---|
-| limit kinds | `none`, `lower_limit`, `upper_limit`, `range` |
-| interval kinds | `ordinary_range`, `prior_support`, `confidence`, `credible`, `statistical_interval`, `unspecified` |
-| representations | `linear`, `log10`, `distance_modulus` |
-| coordinate formats | `decimal_degrees`, `sexagesimal_hms`, `sexagesimal_dms`, `sexagesimal_colon` |
-
-## Fields
-
-#### `GoldAnnotation`
+#### `CompactGoldAnswer`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
-| `schema` | GoldSchemaTag | required | — | |
-| `kind` | answer \| draft | required | — | |
-| `document_id` | string | required | — |min length 1 |
-| `paper` | GoldPaper | required | — | |
-| `rules` | GoldRulesRef | required | — | |
-| `files` | array of GoldPdfFile | required | — | |
+| `arxiv_id` | string | required | — |pattern `^\d{4}\.\d{4,5}$` |
 | `status` | contributions_found \| no_contributions | required | — | |
-| `contributions` | array of GoldContribution | required | — | |
-| `reviewed_exclusions` | array of GoldExclusion | required | — | |
-| `provenance` | GoldProvenance | required | — | |
-| `material_correspondence` | GoldMaterialCorrespondence | optional | {"status": "pending", "pdf_file_ids": [], "latex": null, "checked_by": null, "checked_at": null, "basis": "", "differences": []} | |
-| `pending` | array of GoldPendingItem | optional | [] | |
+| `coverage` | CompactCoverage | required | — | |
+| `contributions` | array of CompactContribution | required | — | |
+| `reviewed_exclusions` | array of CompactExclusion | optional | [] | |
+| `unresolved` | array of CompactUnresolved | optional | [] | |
 
-### Approval
-
-#### `SaveApproval`
+#### `CompactGoldMetadata`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
-| `approved_by` | string | required | — | |
-| `approver_kind` | human | required | — | |
-| `approved_at` | AwareDatetime | required | — | |
-| `document_id` | string | required | — | |
-| `target_path` | string | required | — | |
-| `manifest_sha256` | string | required | — | |
-| `expected_old` | PreviousRef \| null | required | — | |
-| `rules_version` | string | required | — | |
-| `rules_sha256` | string | required | — | |
-| `basis` | string | required | — | |
-| `accepted_pending` | array of string | optional | [] | |
+| `schema` | CompactSchemaTag | required | — | |
+| `paper` | CompactPaper | required | — | |
+| `rules` | GoldRulesRef | required | — | |
+| `files` | array of GoldPdfFile | required | — |≥ 1 items |
+| `source` | GoldLatexSource \| null | optional | null | |
+| `annotation` | CompactAnnotationActors | required | — | |
+| `review` | CompactReview | required | — | |
 
-### Maker identity
+## Nested typed fields
 
-#### `GoldActor`
-
-Declared maker identity; AI identity never constitutes expert approval.
+#### `CompactContribution`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
-| `actor_id` | string | required | — |min length 1; pattern `\S` |
-| `kind` | ai \| human | required | — | |
-| `model` | null \| string | optional | null | |
+| `contribution_id` | string | required | — |pattern `^\d{4}\.\d{4,5}:cand\d{2,}$` |
+| `identifiers` | array of CompactIdentifier | required | — |≥ 1 items |
+| `contribution_type` | CompactClaim | required | — | |
+| `contribution_summary` | CompactClaim | required | — | |
+| `paper_boundness` | CompactBoundness | required | — | |
+| `quantities` | array of CompactQuantityGroup | optional | [] | |
+| `quantity_conflicts` | array of CompactConflict | optional | [] | |
 
-### Human expert
-
-#### `GoldHuman`
-
-Declared human expert identity; no authentication is implied.
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `actor_id` | string | required | — |min length 1; pattern `\S` |
-| `kind` | human | optional | "human" | |
-
-### Original human expert
-
-#### `GoldOriginalExpert`
-
-Historical human origin, confirmed from a cited original record.
+#### `CompactIdentifier`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
-| `expert` | GoldHuman \| null | optional | null | |
-| `annotated_at` | AwareDatetime \| null | optional | null | |
-| `basis` | string | required | — |min length 1; pattern `\S` |
-| `unknown_reason` | null \| string | optional | null | |
+| `value` | string | required | — |min length 1 |
+| `evidence` | array of GoldEvidence | optional | [] | |
 
-### Draft authorship
-
-#### `GoldPreparationAuthor`
-
-Who prepared this particular draft or revision, and why.
+#### `CompactClaim`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
-| `actor` | GoldActor | required | — | |
-| `prepared_at` | AwareDatetime | required | — | |
-| `action` | initial_draft \| migration \| revision | required | — | |
-| `description` | string | required | — |min length 1; pattern `\S` |
+| `value` | string | required | — |min length 1 |
+| `evidence` | array of GoldEvidence | optional | [] | |
 
-### Material correspondence
-
-#### `GoldMaterialCorrespondence`
-
-Expert-declared PDF/source correspondence; hashing does not prove equivalence.
+#### `CompactBoundness`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
-| `status` | checked \| pending | optional | "pending" | |
-| `pdf_file_ids` | array of string | optional | [] | |
-| `latex` | GoldLatexSource \| null | optional | null | |
-| `checked_by` | GoldHuman \| null | optional | null | |
-| `checked_at` | AwareDatetime \| null | optional | null | |
-| `basis` | string | optional | "" | |
-| `differences` | array of string | optional | [] | |
+| `value` | null \| string | required | — | |
+| `evidence` | array of GoldEvidence | optional | [] | |
 
-### LaTeX source
+#### `CompactQuantityGroup`
 
-#### `GoldLatexSource`
+| Field | Type | Presence | Default | Constraints |
+|---|---|---|---|---|
+| `quantity` | string | required | — | |
+| `values` | array of CompactValue | required | — |≥ 1 items |
 
-A fixed source file or archive under the explicitly supplied material root.
+#### `CompactValue`
+
+The v1 numeric contract, with value first and its PDF evidence last.
+
+| Field | Type | Presence | Default | Constraints |
+|---|---|---|---|---|
+| `value` | null \| string | required | — | |
+| `unit` | null \| string | optional | null | |
+| `error` | null \| string | optional | null | |
+| `lower_error` | null \| string | optional | null | |
+| `upper_error` | null \| string | optional | null | |
+| `limit_kind` | lower_limit \| none \| range \| upper_limit | optional | "none" | |
+| `range_lower` | null \| string | optional | null | |
+| `range_upper` | null \| string | optional | null | |
+| `coordinate_format` | decimal_degrees \| sexagesimal_colon \| sexagesimal_dms \| sexagesimal_hms \| null | optional | null | |
+| `condition` | null \| string | optional | null | |
+| `interval_kind` | confidence \| credible \| ordinary_range \| prior_support \| statistical_interval \| unspecified \| null | optional | null | |
+| `coverage` | GoldProbability \| null | optional | null | |
+| `lower_quantile` | GoldProbability \| null | optional | null | |
+| `upper_quantile` | GoldProbability \| null | optional | null | |
+| `error_components` | array of CompactErrorComponent | optional | [] | |
+| `representation` | distance_modulus \| linear \| log10 \| null | optional | null | |
+| `source` | prior_work \| this_paper \| unclear | required | — | |
+| `source_note` | null \| string | optional | null | |
+| `context_evidence` | array of GoldEvidence | optional | [] | |
+| `evidence` | array of GoldEvidence | optional | [] | |
+
+#### `CompactErrorComponent`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `name` | string | required | — |min length 1 |
-| `sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
-| `version` | string | required | — |min length 1; pattern `\S` |
+| `error` | null \| string | optional | null | |
+| `lower_error` | null \| string | optional | null | |
+| `upper_error` | null \| string | optional | null | |
+| `evidence` | array of GoldEvidence | required | — |≥ 1 items |
 
-### Provenance
-
-#### `GoldProvenance`
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `origin` | migration \| new_annotation | required | — | |
-| `legacy` | GoldLegacySource \| null | optional | null | |
-| `note` | string | optional | "" | |
-| `original_expert` | GoldOriginalExpert \| null | optional | null | |
-| `original_approval_version` | integer \| null | optional | null | |
-| `prepared_by` | GoldPreparationAuthor \| null | optional | null | |
-
-### Legacy source
-
-#### `GoldLegacySource`
+#### `CompactConflict`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
-| `schema_name` | string | required | — |min length 1 |
-| `schema_version` | integer | required | — |≥ 1 |
-| `file_name` | string | required | — |min length 1 |
-| `sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
-| `arxiv_id` | string | required | — |min length 1 |
-| `annotator` | string | required | — |min length 1 |
-| `annotated_at` | string | required | — |min length 1 |
-| `guideline_version` | string | required | — |min length 1 |
-| `annotation_process` | dict | optional | {} | |
-| `canary` | string | optional | "" | |
+| `conflict_id` | string | required | — |min length 1 |
+| `quantity` | string | required | — |min length 1 |
+| `reason` | CompactClaim | required | — | |
+| `alternatives` | array of CompactValue | optional | [] | |
 
-### Pending item
-
-#### `GoldPendingItem`
+#### `CompactExclusion`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
-| `item_id` | string | required | — |min length 1 |
-| `category` | missing_info \| science_review \| structural_gap | required | — | |
+| `exclusion_id` | string | required | — |min length 1 |
+| `reason` | CompactClaim | required | — | |
+
+#### `CompactCoverage`
+
+| Field | Type | Presence | Default | Constraints |
+|---|---|---|---|---|
+| `value` | complete \| partial | required | — | |
+| `limitations` | array of CompactScopeLimitation | optional | [] | |
+
+#### `CompactScopeLimitation`
+
+| Field | Type | Presence | Default | Constraints |
+|---|---|---|---|---|
 | `subject` | string | required | — |min length 1 |
-| `description` | string | required | — |min length 1 |
+| `value` | string | required | — |min length 1 |
+| `evidence` | array of GoldEvidence | optional | [] | |
 
-### Paper
-
-#### `GoldPaper`
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `paper_key` | string | required | — |min length 1 |
-| `arxiv_id` | null \| string | required | — | |
-| `version` | null \| string | optional | null | |
-
-### Rules reference
-
-#### `GoldRulesRef`
+#### `CompactUnresolved`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
+| `subject` | string | required | — |min length 1 |
+| `value` | string | required | — |min length 1 |
+| `evidence` | array of GoldEvidence | optional | [] | |
+
+#### `CompactPaper`
+
+| Field | Type | Presence | Default | Constraints |
+|---|---|---|---|---|
+| `arxiv_id` | string | required | — |pattern `^\d{4}\.\d{4,5}$` |
+| `title` | string | required | — |min length 1 |
 | `version` | string | required | — |min length 1 |
-| `sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
 
-### PDF file
-
-#### `GoldPdfFile`
+#### `CompactAnnotationActors`
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
-| `file_id` | string | required | — |min length 1 |
-| `name` | string | required | — |min length 1 |
-| `sha256` | null \| string | optional | null | |
+| `original_annotator` | string | required | — |min length 1 |
+| `original_annotated_at` | null \| string | optional | null | |
+| `original_models` | array of string \| null | optional | null | |
+| `reviewer` | string | required | — |min length 1 |
+| `review_models` | array of string \| null | optional | null | |
 
-### Evidence
+#### `CompactReview`
+
+| Field | Type | Presence | Default | Constraints |
+|---|---|---|---|---|
+| `material` | CompactReviewConfirmation | required | — | |
+| `scope` | CompactReviewConfirmation | required | — | |
+| `answer_sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
+
+#### `CompactReviewConfirmation`
+
+| Field | Type | Presence | Default | Constraints |
+|---|---|---|---|---|
+| `value` | checked \| complete \| partial | required | — | |
+| `basis` | string | required | — |min length 1 |
+| `record_sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
+| `reviewed_at` | null \| string | optional | null | |
+| `differences` | array of string | optional | [] | |
 
 #### `GoldEvidence`
 
@@ -215,79 +197,6 @@ A fixed source file or archive under the explicitly supplied material root.
 | `page` | integer \| null | optional | null | |
 | `quote` | string | optional | "" | |
 
-### Contribution
-
-#### `GoldContribution`
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `contribution_id` | string | required | — |min length 1 |
-| `legacy_index` | integer \| null | optional | null | |
-| `identifiers` | array of GoldIdentifier | required | — |≥ 1 items |
-| `contribution_type` | candidates_found \| follow_up | required | — | |
-| `contribution_summary` | string | required | — |min length 1 |
-| `contribution_evidence` | array of GoldEvidence | required | — | |
-| `paper_boundness` | GoldBoundness | required | — | |
-| `quantities` | array of GoldQuantityGroup | required | — | |
-| `quantity_conflicts` | array of GoldConflict | required | — | |
-
-### Identifier
-
-#### `GoldIdentifier`
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `value` | string | required | — |min length 1 |
-| `evidence` | array of GoldEvidence | required | — | |
-
-### Boundness
-
-#### `GoldBoundness`
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `status` | null \| string | optional | null | |
-| `legacy_status` | null \| string | optional | null | |
-| `evidence` | array of GoldEvidence | required | — | |
-
-### Quantity group
-
-#### `GoldQuantityGroup`
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `quantity` | string | required | — |min length 1 |
-| `values` | array of GoldValue | required | — |≥ 1 items |
-
-### Value
-
-#### `GoldValue`
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `value` | null \| string | required | — | |
-| `error` | null \| string | required | — | |
-| `lower_error` | null \| string | required | — | |
-| `upper_error` | null \| string | required | — | |
-| `unit` | null \| string | required | — | |
-| `limit_kind` | lower_limit \| none \| range \| upper_limit | optional | "none" | |
-| `range_lower` | null \| string | required | — | |
-| `range_upper` | null \| string | required | — | |
-| `coordinate_format` | decimal_degrees \| sexagesimal_colon \| sexagesimal_dms \| sexagesimal_hms \| null | optional | null | |
-| `condition` | null \| string | required | — | |
-| `interval_kind` | confidence \| credible \| ordinary_range \| prior_support \| statistical_interval \| unspecified \| null | optional | null | |
-| `coverage` | GoldProbability \| null | optional | null | |
-| `lower_quantile` | GoldProbability \| null | optional | null | |
-| `upper_quantile` | GoldProbability \| null | optional | null | |
-| `error_components` | array of GoldErrorComponent | required | — | |
-| `representation` | distance_modulus \| linear \| log10 \| null | optional | null | |
-| `source` | prior_work \| this_paper \| unclear | required | — | |
-| `source_note` | null \| string | required | — | |
-| `evidence` | array of GoldEvidence | required | — | |
-| `context_evidence` | array of GoldEvidence | required | — | |
-
-### Probability
-
 #### `GoldProbability`
 
 | Field | Type | Presence | Default | Constraints |
@@ -296,40 +205,27 @@ A fixed source file or archive under the explicitly supplied material root.
 | `unit` | % \| fraction | required | — | |
 | `evidence` | array of GoldEvidence | required | — |≥ 1 items |
 
-### Error component
+#### `GoldRulesRef`
 
-#### `GoldErrorComponent`
+| Field | Type | Presence | Default | Constraints |
+|---|---|---|---|---|
+| `version` | string | required | — |min length 1 |
+| `sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
+
+#### `GoldPdfFile`
+
+| Field | Type | Presence | Default | Constraints |
+|---|---|---|---|---|
+| `file_id` | string | required | — |min length 1 |
+| `name` | string | required | — |min length 1 |
+| `sha256` | null \| string | optional | null | |
+
+#### `GoldLatexSource`
+
+A fixed source file or archive under the explicitly supplied material root.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `name` | string | required | — |min length 1 |
-| `error` | null \| string | required | — | |
-| `lower_error` | null \| string | required | — | |
-| `upper_error` | null \| string | required | — | |
-| `evidence` | array of GoldEvidence | required | — |≥ 1 items |
-
-### Conflict
-
-#### `GoldConflict`
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `conflict_id` | string | required | — |min length 1 |
-| `quantity` | string | required | — |min length 1 |
-| `reason` | string | required | — |min length 1 |
-| `evidence` | array of GoldEvidence | required | — |≥ 2 items |
-| `alternatives` | array of GoldValue | required | — | |
-
-### Exclusion
-
-#### `GoldExclusion`
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `exclusion_id` | string | required | — |min length 1 |
-| `reason` | string | required | — |min length 1 |
-| `evidence` | array of GoldEvidence | required | — |≥ 1 items |
-
-## Legacy reader scope
-
-The reader accepts `benchmark.hvs_contribution_annotation` v4 only; older versions are rejected explicitly and never silently upgraded. Its vocabulary: contribution types candidates_found, follow_up, limit kinds none, lower_limit, upper_limit, range, interval kinds ordinary_range, prior_support, confidence, credible, statistical_interval, representations linear, log10, distance_modulus, coordinate formats decimal_degrees, sexagesimal_hms, sexagesimal_dms, sexagesimal_colon.
+| `sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
+| `version` | string | required | — |min length 1; pattern `\S` |

@@ -15,11 +15,18 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 
 from ..records.common import Config, canonical_json
+from .errors import GoldFormatError
 from .legacy import LegacyAnnotation, read_legacy_annotation
-from .models import GoldAnnotation, GoldContribution, read_gold_annotation
+from .models import (
+    GoldAnnotation,
+    GoldContribution,
+    GoldExclusion,
+    read_gold_annotation,
+)
 
 
 class CompareItem(Config):
@@ -38,6 +45,8 @@ class CompareReport(Config):
     difference_count: int
     unmatched_old: list[str]
     unmatched_new: list[str]
+    mapping_file: str | None = None
+    mapping_sha256: str | None = None
 
 
 _EMPTY = ("", None)
@@ -471,7 +480,10 @@ def _document_items(
 
 
 def compare_legacy_with_current(
-    *, legacy_path: str | Path, current_path: str | Path
+    *,
+    legacy_path: str | Path,
+    current_path: str | Path,
+    mapping_path: str | Path | None = None,
 ) -> CompareReport:
     """比较旧输入与草稿/新答案；两侧文件都只读。"""
     legacy_path = Path(legacy_path)
@@ -479,6 +491,23 @@ def compare_legacy_with_current(
     legacy_raw = legacy_path.read_text(encoding="utf-8")
     current_raw = current_path.read_text(encoding="utf-8")
     legacy: LegacyAnnotation = read_legacy_annotation(legacy_path)
+    if (
+        current_path.name == "answer.json"
+        and (current_path.parent / "metadata.json").is_file()
+    ):
+        if mapping_path is None:
+            raise GoldFormatError(
+                "Comparing a compact v2 answer with v4 requires an explicit --mapping "
+                "JSON file containing legacy_index_by_contribution_id; cand order is not a v4 index"
+            )
+        return _compare_legacy_with_compact(
+            legacy=legacy,
+            legacy_path=legacy_path,
+            legacy_raw=legacy_raw,
+            current_path=current_path,
+            current_raw=current_raw,
+            mapping_path=Path(mapping_path),
+        )
     current: GoldAnnotation = read_gold_annotation(current_path)
     legacy_sha = hashlib.sha256(legacy_raw.encode("utf-8")).hexdigest()
     current_sha = hashlib.sha256(current_raw.encode("utf-8")).hexdigest()
@@ -540,4 +569,188 @@ def compare_legacy_with_current(
         difference_count=len(differences),
         unmatched_old=unmatched_old,
         unmatched_new=unmatched_new,
+    )
+
+
+def _compact_as_comparable(contribution, old_status: str) -> GoldContribution:
+    """Adapt v2 science in memory; the legacy status is comparison context only."""
+    return GoldContribution.model_validate(
+        {
+            "contribution_id": contribution.contribution_id,
+            "identifiers": [
+                item.model_dump(mode="python") for item in contribution.identifiers
+            ],
+            "contribution_type": contribution.contribution_type.value,
+            "contribution_summary": contribution.contribution_summary.value,
+            "contribution_evidence": [
+                item.model_dump(mode="python")
+                for item in contribution.contribution_summary.evidence
+            ],
+            "paper_boundness": {
+                "status": contribution.paper_boundness.value,
+                "legacy_status": old_status,
+                "evidence": [
+                    item.model_dump(mode="python")
+                    for item in contribution.paper_boundness.evidence
+                ],
+            },
+            "quantities": [
+                item.model_dump(mode="python") for item in contribution.quantities
+            ],
+            "quantity_conflicts": [
+                {
+                    "conflict_id": item.conflict_id,
+                    "quantity": item.quantity,
+                    "reason": item.reason.value,
+                    "evidence": [
+                        e.model_dump(mode="python") for e in item.reason.evidence
+                    ],
+                    "alternatives": [
+                        v.model_dump(mode="python") for v in item.alternatives
+                    ],
+                }
+                for item in contribution.quantity_conflicts
+            ],
+        }
+    )
+
+
+def _compact_boundness_item(old, new) -> CompareItem:
+    subject = f"contributions/{new.contribution_id}/paper_boundness"
+    old_evidence = _evidence_set(
+        [
+            {"location": entry.location, "quote": entry.quote, "page": None}
+            for entry in old.paper_boundness.evidence
+        ]
+    )
+    new_evidence = _evidence_set(
+        [item.model_dump(mode="json") for item in new.paper_boundness.evidence]
+    )
+    same = (
+        old.paper_boundness.status == new.paper_boundness.value
+        and old_evidence == new_evidence
+    )
+    return CompareItem(
+        subject=subject,
+        status="identical" if same else "different",
+        description=(
+            f"v4 status {old.paper_boundness.status!r}; current value "
+            f"{new.paper_boundness.value!r}; evidence "
+            + ("matches" if old_evidence == new_evidence else "differs")
+            + (
+                "; status matches"
+                if old.paper_boundness.status == new.paper_boundness.value
+                else "; status changed under current rules"
+            )
+        ),
+    )
+
+
+def _compare_legacy_with_compact(
+    *,
+    legacy: LegacyAnnotation,
+    legacy_path: Path,
+    legacy_raw: str,
+    current_path: Path,
+    current_raw: str,
+    mapping_path: Path,
+) -> CompareReport:
+    from .compact import read_compact_gold_pair
+
+    pair = read_compact_gold_pair(current_path)
+    mapping_raw = mapping_path.read_text(encoding="utf-8")
+    try:
+        mapping_document = json.loads(mapping_raw)
+    except json.JSONDecodeError as exc:
+        raise GoldFormatError(f"Invalid v2 comparison mapping JSON: {exc}") from exc
+    mapping = (
+        mapping_document.get("legacy_index_by_contribution_id")
+        if isinstance(mapping_document, dict)
+        else None
+    )
+    if not isinstance(mapping, dict):
+        raise GoldFormatError(
+            "v2 comparison mapping must contain legacy_index_by_contribution_id"
+        )
+    current_ids = {item.contribution_id for item in pair.answer.contributions}
+    if set(mapping) != current_ids:
+        raise GoldFormatError(
+            f"v2 comparison mapping must cover every current ID exactly: missing={sorted(current_ids - set(mapping))}, extra={sorted(set(mapping) - current_ids)}"
+        )
+    indices = [value for value in mapping.values() if value is not None]
+    if any(
+        type(value) is not int or value < 0 or value >= len(legacy.contributions)
+        for value in indices
+    ):
+        raise GoldFormatError("v2 comparison mapping has an invalid v4 index")
+    if len(indices) != len(set(indices)):
+        raise GoldFormatError("v2 comparison mapping repeats a v4 index")
+    items: list[CompareItem] = []
+    status_same = legacy.status == pair.answer.status
+    items.append(
+        CompareItem(
+            subject="status",
+            status="identical" if status_same else "different",
+            description=f"v4 status {legacy.status!r}; current status {pair.answer.status!r}",
+        )
+    )
+    paper_same = legacy.arxiv_id == pair.answer.arxiv_id == pair.metadata.paper.arxiv_id
+    items.append(
+        CompareItem(
+            subject="paper",
+            status="identical" if paper_same else "different",
+            description=f"v4 arXiv ID {legacy.arxiv_id!r}; current arXiv ID {pair.answer.arxiv_id!r}",
+        )
+    )
+    from types import SimpleNamespace
+
+    comparable_exclusions = SimpleNamespace(
+        reviewed_exclusions=[
+            GoldExclusion.model_validate(
+                {
+                    "exclusion_id": item.exclusion_id,
+                    "reason": item.reason.value,
+                    "evidence": [
+                        e.model_dump(mode="python") for e in item.reason.evidence
+                    ],
+                }
+            )
+            for item in pair.answer.reviewed_exclusions
+        ]
+    )
+    items.append(_exclusions_item(legacy, comparable_exclusions))
+    by_id = {item.contribution_id: item for item in pair.answer.contributions}
+    reverse = {
+        index: identifier for identifier, index in mapping.items() if index is not None
+    }
+    unmatched_new = sorted(
+        identifier for identifier, index in mapping.items() if index is None
+    )
+    unmatched_old: list[str] = []
+    for index, old in enumerate(legacy.contributions):
+        identifier = reverse.get(index)
+        if identifier is None:
+            unmatched_old.append(f"contributions[{index}]")
+            continue
+        new = by_id[identifier]
+        comparable = _compact_as_comparable(new, old.paper_boundness.status)
+        items.append(_header_item(old, comparable))
+        items.append(_compact_boundness_item(old, new))
+        items.extend(_conflict_items(old, comparable, f"contributions/{identifier}"))
+        items.extend(
+            _quantity_differences(old, comparable, f"contributions/{identifier}")
+        )
+    matched = sum(item.status == "identical" for item in items)
+    return CompareReport(
+        legacy_file=legacy_path.name,
+        legacy_sha256=hashlib.sha256(legacy_raw.encode("utf-8")).hexdigest(),
+        current_file=current_path.name,
+        current_sha256=hashlib.sha256(current_raw.encode("utf-8")).hexdigest(),
+        items=items,
+        matched_count=matched,
+        difference_count=len(items) - matched,
+        unmatched_old=unmatched_old,
+        unmatched_new=unmatched_new,
+        mapping_file=mapping_path.name,
+        mapping_sha256=hashlib.sha256(mapping_raw.encode("utf-8")).hexdigest(),
     )

@@ -128,6 +128,7 @@ def test_scenario_5_conflict_kept_without_fabricated_values(tmp_path):
     )
     (contribution,) = result.draft.contributions
     (kept,) = contribution.quantity_conflicts
+    assert kept.conflict_id == "k1"
     assert kept.quantity == "observed_phase_space.distance"
     assert kept.reason == conflict["reason"]
     assert [e.location for e in kept.evidence] == ["Table 3", "Section 4.2"]
@@ -136,6 +137,98 @@ def test_scenario_5_conflict_kept_without_fabricated_values(tmp_path):
         item.code == "conflict_structure_pending"
         for item in result.check.problems_of("science_pending")
     )
+    assert any(
+        item.item_id == "p-conflict-k1"
+        and item.subject == "contributions/c1/quantity_conflicts/k1"
+        for item in result.draft.pending
+    )
+    assert any(
+        item.old_path == "contributions[0]/quantity_conflicts[0]"
+        and item.new_path == "contributions/c1/quantity_conflicts/k1"
+        for item in result.report.items
+    )
+
+
+def test_conflict_ids_unique_across_contributions_with_consistent_links(tmp_path):
+    def conflict(quantity, label):
+        return {
+            "quantity": quantity,
+            "reason": label,
+            "evidence": [
+                {"location": f"{label} Table", "quote": ""},
+                {"location": f"{label} prose", "quote": ""},
+            ],
+        }
+
+    contributions = [
+        build_legacy_contribution(
+            name="SYN-A",
+            conflicts=[
+                conflict("observed_phase_space.distance", "synthetic A distance"),
+                conflict("observed_phase_space.parallax", "synthetic A parallax"),
+            ],
+        ),
+        build_legacy_contribution(name="SYN-B"),
+        build_legacy_contribution(
+            name="SYN-C",
+            conflicts=[
+                conflict("observed_phase_space.distance", "synthetic C distance")
+            ],
+        ),
+    ]
+    legacy = _write_legacy(tmp_path, build_legacy_v4_doc(contributions=contributions))
+    original = legacy.read_bytes()
+    result = migrate_legacy_annotation(legacy_path=legacy, draft_dir=tmp_path / "draft")
+    assert legacy.read_bytes() == original
+
+    mapped = [
+        (contribution.contribution_id, item)
+        for contribution in result.draft.contributions
+        for item in contribution.quantity_conflicts
+    ]
+    assert [item.conflict_id for _, item in mapped] == ["k1", "k2", "k3"]
+    expected_paths = [
+        f"contributions/{owner}/quantity_conflicts/{item.conflict_id}"
+        for owner, item in mapped
+    ]
+    assert expected_paths == [
+        "contributions/c1/quantity_conflicts/k1",
+        "contributions/c1/quantity_conflicts/k2",
+        "contributions/c3/quantity_conflicts/k3",
+    ]
+    conflict_pending = [
+        item for item in result.draft.pending if "/quantity_conflicts/" in item.subject
+    ]
+    assert [item.item_id for item in conflict_pending] == [
+        "p-conflict-k1",
+        "p-conflict-k2",
+        "p-conflict-k3",
+    ]
+    assert [item.subject for item in conflict_pending] == expected_paths
+    report_conflicts = [
+        item
+        for item in result.report.items
+        if "/quantity_conflicts/" in (item.new_path or "")
+    ]
+    assert [item.new_path for item in report_conflicts] == expected_paths
+    assert [item.old_path for item in report_conflicts] == [
+        "contributions[0]/quantity_conflicts[0]",
+        "contributions[0]/quantity_conflicts[1]",
+        "contributions[2]/quantity_conflicts[0]",
+    ]
+
+    original_conflicts = [
+        item
+        for contribution in contributions
+        for item in contribution["quantity_conflicts"]
+    ]
+    for (_, current), old in zip(mapped, original_conflicts, strict=True):
+        assert current.quantity == old["quantity"]
+        assert current.reason == old["reason"]
+        assert [e.location for e in current.evidence] == [
+            e["location"] for e in old["evidence"]
+        ]
+        assert current.alternatives == []
 
 
 def test_exclusions_preserved_as_pending_mapping(tmp_path):

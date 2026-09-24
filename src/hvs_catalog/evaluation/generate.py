@@ -15,6 +15,30 @@ from pydantic import BaseModel
 
 from ..records.rules import load_rules
 from . import models as models_module
+from .compact import (
+    COMPACT_METADATA_SCHEMA_NAME,
+    COMPACT_SCHEMA_VERSION,
+    CompactAnnotationActors,
+    CompactBoundness,
+    CompactClaim,
+    CompactConflict,
+    CompactContribution,
+    CompactCoverage,
+    CompactErrorComponent,
+    CompactExclusion,
+    CompactGoldAnswer,
+    CompactGoldMetadata,
+    CompactIdentifier,
+    CompactPaper,
+    CompactQuantityGroup,
+    CompactReview,
+    CompactReviewConfirmation,
+    CompactScopeLimitation,
+    CompactUnresolved,
+    CompactValue,
+    compact_answer_to_json,
+    compact_metadata_to_json,
+)
 from .legacy import (
     LEGACY_AUTHOR_STATUSES,
     LEGACY_CONTRIBUTION_TYPES,
@@ -158,28 +182,34 @@ def render_gold_format_document() -> str:
     rules = load_rules()
     lines = [
         "<!-- Generated -->",
-        "# Gold annotation format",
+        "# Gold v1 working annotation format (compatibility)",
         "",
         (
-            f"This document is generated from the typed definitions in "
+            f"This compatibility document is generated from the typed definitions in "
             f"`hvs_catalog.evaluation.models` for `{GOLD_SCHEMA_NAME}` "
             f"v{GOLD_SCHEMA_VERSION} and the legacy v4 reader in "
             "`hvs_catalog.evaluation.legacy`. Do not edit it by hand; regenerate "
             "with `uv run python tools/render_record_contracts.py`."
         ),
         "",
+        (
+            "Current formal Gold uses the two-file v2 answer and metadata contract in "
+            "[current Gold format](../gold-format.md). This v1 format remains readable "
+            "for migration comparison and previously saved synthetic/historical records."
+        ),
+        "",
         "## Scope",
         "",
         (
-            "The Gold annotation captures expert judgments with PDF evidence; it "
+            "The v1 working annotation captures expert judgments with PDF evidence; it "
             "shares the science vocabulary with prediction records but does not "
             "carry run fields (execution ids, framework progress, or automated "
             "extraction methods). A document is either a `draft` (may miss "
             "information required of a formal answer; explicit `pending` items "
             "and check results describe gaps) or an `answer` (its `pending` "
-            "array is empty; saved only after format checks and expert approval). "
+            "array is empty; historical v1 saving required format checks and expert approval). "
             "Explicitly accepted scientific pending items remain in the saved "
-            "provenance and approval; an empty answer array does not mean all "
+            "provenance and approval in the v1 layout; an empty answer array does not mean all "
             "scientific questions have been resolved."
         ),
         "",
@@ -344,8 +374,10 @@ def render_annotation_template() -> str:
     quantity_list = "\n".join(f"- `{path}`" for path in rules.quantity_paths)
     skeleton = json.dumps(annotation_example(), indent=2, ensure_ascii=False)
     return (
-        "<!-- Generated -->\n# Gold annotation filling template\n\n"
-        "This is a complete synthetic JSON example of a draft, not an approved answer. "
+        "<!-- Generated -->\n# Gold v1 migration working template\n\n"
+        "This is a complete synthetic JSON example of a v1 working draft, not an approved answer. "
+        "For current formal Gold, use the [two-file format](../../gold-format.md) "
+        "and its templates in ../../templates/. "
         "Replace the example science with the actual paper. Null metadata is intentionally "
         "unresolved and blocks formal saving; never fabricate identities, dates or hashes. "
         "The companion gold-annotation.json contains the same parseable document.\n\n"
@@ -385,9 +417,16 @@ def render_approval_template() -> str:
     return """<!-- Generated -->
 # Human approval record
 
+For the current two-file Gold format, review both answer.json and metadata.json, plus the check report.
+Set scientific_review=true only after a human expert has reviewed the scientific
+content of that exact pair. The approved manifest hashes both files, fixed materials,
+rules and target. The approval is saved as a protected operation sidecar; the formal
+version directory contains answer.json and metadata.json only.
+
+For a historical v1 save, the prepared package included answer and provenance.
 After reviewing the prepared answer, provenance and check report, a human expert supplies
 an approval matching that preparation. This document is guidance, not an approval.
-Use schemas/gold.approval.json for the full typed contract.
+Use [the approval schema](../schemas/gold.approval.json) for the full typed contract.
 
 | Field | Required content |
 |---|---|
@@ -399,52 +438,232 @@ Use schemas/gold.approval.json for the full typed contract.
 | expected_old | Exact predecessor reference, or null for first save |
 | rules_version, rules_sha256 | Exact rules reference from the manifest |
 | basis | Human review and approval rationale |
+| scientific_review | true for a current two-file save after reviewing the exact answer and metadata; false otherwise |
 | accepted_pending | Each explicitly accepted scientific pending ID |
 
 Any change to the answer, maker, original attribution, materials or target requires a new
-preparation and approval. Each version keeps its own approval.json; never replace an old
-approval with a later expert's name. No identity provider or digital signature is implied.
+preparation and approval. Historical v1 keeps approval.json in its version directory;
+v2 keeps the approval in operations. Never replace an old approval with a later
+expert's name. No identity provider or digital signature is implied.
 """
 
 
 def render_gold_index() -> str:
-    return (
-        "<!-- Generated -->\n"
-        "# Generated Gold contracts\n\n"
-        "Generated from `hvs_catalog.evaluation` typed definitions by "
-        "`tools/render_record_contracts.py`; checked by its `--check`. "
-        "Do not edit by hand.\n\n"
-        "- `gold-format.md` — Gold annotation format (new format and legacy "
-        "v4 reader scope)\n"
-        "- `schemas/gold.annotation.json` — JSON Schema of the new Gold "
-        "annotation document\n"
-        "- `schemas/gold.legacy-v4.json` — JSON Schema accepted by the "
-        "legacy v4 reader\n"
-        "- `schemas/gold.approval.json` — human approval contract\n"
-        "- `templates/gold-approval.md` — human approval instructions\n"
-        "- `templates/gold-annotation.json` — complete synthetic draft\n"
-        "- `templates/gold-annotation.md` — English filling template for "
-        "new annotations\n"
-    )
+    return """<!-- Generated -->
+# Generated Gold contracts
+
+Generated from `hvs_catalog.evaluation` typed definitions by
+`tools/render_record_contracts.py`; checked by its `--check`. Do not edit by hand.
+
+## Current format
+
+- [Gold format](gold-format.md) — formal answer and metadata fields
+- [Answer schema](schemas/gold.answer.json) and [metadata schema](schemas/gold.metadata.json)
+- [Answer template](templates/gold-answer.json) and [metadata template](templates/gold-metadata.json) — synthetic, unapproved pair
+- [Approval schema](schemas/gold.approval.json) and [approval instructions](templates/gold-approval.md)
+
+## Compatibility formats
+
+The [legacy directory](legacy/gold-format.md) documents the migration working
+format and the old Stella input reader. Use it when reading or migrating those
+records. Current formal annotations use the files above.
+
+- [Working annotation schema](legacy/schemas/gold.annotation.json)
+- [Old Stella input schema](legacy/schemas/gold.legacy.json)
+- [Working draft template](legacy/templates/gold-annotation.json) and [instructions](legacy/templates/gold-annotation.md)
+
+## What the version numbers mean
+
+Filenames identify each contract's purpose. Internal versions identify the format
+that a reader must understand; they remain checked when files are read.
+
+| Version | Meaning |
+|---|---|
+| Metadata `schema.version = 2` | Current two-file format; the earlier working annotation format used 1 |
+| Old Stella `schema.version = 4` | A separate input format supported by the legacy reader |
+| Saved directory `v1/`, `v2/`, ... | Successive Gold revisions for one paper |
+| Paper or source `version` | The version of the paper or source material |
+| Rules `version` | The scientific rule set used for the annotation |
+
+These numbers advance independently. Moving contract files does not change a
+saved answer, its metadata, its hashes or its Gold revision.
+"""
 
 
 def _schema_json(model: type[BaseModel]) -> str:
     return json.dumps(model.model_json_schema(), indent=2, ensure_ascii=False) + "\n"
 
 
+def _compact_example() -> tuple[CompactGoldAnswer, CompactGoldMetadata]:
+    import hashlib
+
+    rules = load_rules()
+    evidence = {
+        "file_id": "pdf-1",
+        "location": "PDF p. 1, abstract",
+        "page": 1,
+        "quote": "Synthetic candidate SYN-A is reported.",
+    }
+    answer = CompactGoldAnswer.model_validate(
+        {
+            "arxiv_id": "0000.00000",
+            "status": "contributions_found",
+            "coverage": {"value": "complete"},
+            "contributions": [
+                {
+                    "contribution_id": "0000.00000:cand01",
+                    "identifiers": [{"value": "SYN-A", "evidence": [evidence]}],
+                    "contribution_type": {
+                        "value": "candidates_found",
+                        "evidence": [evidence],
+                    },
+                    "contribution_summary": {
+                        "value": "Synthetic candidate report.",
+                        "evidence": [evidence],
+                    },
+                    "paper_boundness": {"value": "unbound", "evidence": [evidence]},
+                    "quantities": [
+                        {
+                            "quantity": "observed_phase_space.radial_velocity",
+                            "values": [
+                                {
+                                    "value": "612.0",
+                                    "unit": "km/s",
+                                    "error": "8.0",
+                                    "condition": "Synthetic heliocentric measurement",
+                                    "source": "this_paper",
+                                    "evidence": [evidence],
+                                }
+                            ],
+                        }
+                    ],
+                }
+            ],
+        }
+    )
+    digest = hashlib.sha256(compact_answer_to_json(answer).encode("utf-8")).hexdigest()
+    metadata = CompactGoldMetadata.model_validate(
+        {
+            "schema": {
+                "name": COMPACT_METADATA_SCHEMA_NAME,
+                "version": COMPACT_SCHEMA_VERSION,
+            },
+            "paper": {
+                "arxiv_id": "0000.00000",
+                "title": "Synthetic candidate paper",
+                "version": "v1",
+            },
+            "rules": {"version": rules.version, "sha256": rules.sha256},
+            "files": [{"file_id": "pdf-1", "name": "paper.pdf", "sha256": "0" * 64}],
+            "source": {"name": "paper.tex", "sha256": "0" * 64, "version": "v1"},
+            "annotation": {
+                "original_annotator": "synthetic-expert",
+                "reviewer": "synthetic-reviewer",
+            },
+            "review": {
+                "material": {
+                    "value": "checked",
+                    "basis": "Synthetic example only; not a real material review",
+                    "record_sha256": "0" * 64,
+                },
+                "scope": {
+                    "value": "complete",
+                    "basis": "Synthetic example only; not a real scope review",
+                    "record_sha256": "0" * 64,
+                },
+                "answer_sha256": digest,
+            },
+        }
+    )
+    return answer, metadata
+
+
+def render_compact_format_document() -> str:
+    models = (CompactGoldAnswer, CompactGoldMetadata)
+    lines = [
+        "<!-- Generated -->",
+        "# Formal Gold format",
+        "",
+        (
+            "The formal scoring reference is `answer.json` together with `metadata.json`. "
+            "The answer contains scientific targets, PDF evidence, explicit coverage and "
+            "remaining uncertainty. Metadata binds that exact answer to the paper version, "
+            "fixed PDF/source hashes, scientific rules and concise attribution. Optional "
+            "empty fields are omitted; an empty `contributions` array remains explicit."
+        ),
+        "",
+        (
+            "`contribution_id` has the form `arxiv_id:candNN`; it is a generated "
+            "identifier and needs no paper citation. Scientific claims use `value` and "
+            "their corresponding `evidence`. The old v1 draft, migration indices, old "
+            "boundness status, pending tasks and full historical provenance stay outside "
+            "the formal pair."
+        ),
+        "",
+        (
+            "Material and scope confirmation in metadata is distinct from final Gold "
+            "approval. Formal save additionally requires `scientific_review=true` from a "
+            "human approver for the exact answer and metadata manifest. The operation "
+            "record retains that approval separately from the two-file package."
+        ),
+        "",
+        (
+            "See [version meanings](README.md#what-the-version-numbers-mean) for the distinction "
+            "between format, paper, rules and saved Gold revisions."
+        ),
+        "",
+        "## Top-level typed fields",
+        "",
+    ]
+    for model in models:
+        lines += _model_table(model)
+    lines += ["## Nested typed fields", ""]
+    for model in (
+        CompactContribution,
+        CompactIdentifier,
+        CompactClaim,
+        CompactBoundness,
+        CompactQuantityGroup,
+        CompactValue,
+        CompactErrorComponent,
+        CompactConflict,
+        CompactExclusion,
+        CompactCoverage,
+        CompactScopeLimitation,
+        CompactUnresolved,
+        CompactPaper,
+        CompactAnnotationActors,
+        CompactReview,
+        CompactReviewConfirmation,
+        models_module.GoldEvidence,
+        models_module.GoldProbability,
+        models_module.GoldRulesRef,
+        models_module.GoldPdfFile,
+        models_module.GoldLatexSource,
+    ):
+        lines += _model_table(model)
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def build_outputs() -> dict[str, str]:
+    compact_answer, compact_metadata = _compact_example()
     return {
         "README.md": render_gold_index(),
-        "gold-format.md": render_gold_format_document(),
-        "schemas/gold.annotation.json": _schema_json(GoldAnnotation),
-        "schemas/gold.legacy-v4.json": _schema_json(LegacyAnnotation),
-        "templates/gold-annotation.md": render_annotation_template(),
-        "templates/gold-annotation.json": json.dumps(
+        "legacy/gold-format.md": render_gold_format_document(),
+        "legacy/schemas/gold.annotation.json": _schema_json(GoldAnnotation),
+        "legacy/schemas/gold.legacy.json": _schema_json(LegacyAnnotation),
+        "legacy/templates/gold-annotation.md": render_annotation_template(),
+        "legacy/templates/gold-annotation.json": json.dumps(
             annotation_example(), indent=2, ensure_ascii=False
         )
         + "\n",
         "templates/gold-approval.md": render_approval_template(),
         "schemas/gold.approval.json": _schema_json(SaveApproval),
+        "gold-format.md": render_compact_format_document(),
+        "schemas/gold.answer.json": _schema_json(CompactGoldAnswer),
+        "schemas/gold.metadata.json": _schema_json(CompactGoldMetadata),
+        "templates/gold-answer.json": compact_answer_to_json(compact_answer),
+        "templates/gold-metadata.json": compact_metadata_to_json(compact_metadata),
     }
 
 

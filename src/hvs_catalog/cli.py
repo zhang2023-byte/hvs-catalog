@@ -154,6 +154,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--current", required=True, type=Path, help="草稿或新答案路径"
     )
     compare_command.add_argument(
+        "--mapping",
+        default=None,
+        type=Path,
+        help="比较 compact v2 answer.json 时必填：外置旧条目对应 JSON；不得按 cand 顺序推断旧索引",
+    )
+    compare_command.add_argument(
         "--report-json", default=None, type=Path, help="可选：机器可读报告输出路径"
     )
 
@@ -262,11 +268,13 @@ def _run_gold(args: argparse.Namespace) -> int:
         GoldError,
         GoldTarget,
         approved_save,
+        check_compact_gold_pair,
         check_gold_annotation,
         compare_legacy_with_current,
         migrate_legacy_annotation,
         prepare_save,
         query_operation,
+        read_compact_gold_pair,
         read_gold_annotation,
     )
 
@@ -293,10 +301,21 @@ def _run_gold(args: argparse.Namespace) -> int:
                 )
             return 0
         if args.gold_command == "check":
-            annotation = read_gold_annotation(args.draft)
-            report = check_gold_annotation(annotation, material_root=args.material_root)
+            if (
+                args.draft.name == "answer.json"
+                and (args.draft.parent / "metadata.json").is_file()
+            ):
+                pair = read_compact_gold_pair(args.draft)
+                report = check_compact_gold_pair(pair, material_root=args.material_root)
+                identity, kind = pair.answer.arxiv_id, "answer-v2"
+            else:
+                annotation = read_gold_annotation(args.draft)
+                report = check_gold_annotation(
+                    annotation, material_root=args.material_root
+                )
+                identity, kind = annotation.document_id, annotation.kind
             _dump_json(args.report_json, report.model_dump(mode="json"))
-            print(f"[检查] 文档 {annotation.document_id}（{annotation.kind}）")
+            print(f"[检查] 文档 {identity}（{kind}）")
             for category, label in (
                 ("structure", "结构与引用"),
                 ("material", "材料对应"),
@@ -320,7 +339,9 @@ def _run_gold(args: argparse.Namespace) -> int:
             return 0
         if args.gold_command == "compare":
             report = compare_legacy_with_current(
-                legacy_path=args.legacy, current_path=args.current
+                legacy_path=args.legacy,
+                current_path=args.current,
+                mapping_path=args.mapping,
             )
             _dump_json(args.report_json, report.model_dump(mode="json"))
             print(f"[比较] 旧输入 {report.legacy_file}（{report.legacy_sha256[:12]}…）")

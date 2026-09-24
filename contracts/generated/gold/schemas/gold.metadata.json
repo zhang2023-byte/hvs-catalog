@@ -1,0 +1,319 @@
+{
+  "$defs": {
+    "CompactAnnotationActors": {
+      "additionalProperties": false,
+      "properties": {
+        "original_annotator": {
+          "minLength": 1,
+          "title": "Original Annotator",
+          "type": "string"
+        },
+        "original_annotated_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Original Annotated At"
+        },
+        "original_models": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Original Models"
+        },
+        "reviewer": {
+          "minLength": 1,
+          "title": "Reviewer",
+          "type": "string"
+        },
+        "review_models": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Review Models"
+        }
+      },
+      "required": [
+        "original_annotator",
+        "reviewer"
+      ],
+      "title": "CompactAnnotationActors",
+      "type": "object"
+    },
+    "CompactPaper": {
+      "additionalProperties": false,
+      "properties": {
+        "arxiv_id": {
+          "pattern": "^\\d{4}\\.\\d{4,5}$",
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "title",
+        "version"
+      ],
+      "title": "CompactPaper",
+      "type": "object"
+    },
+    "CompactReview": {
+      "additionalProperties": false,
+      "properties": {
+        "material": {
+          "$ref": "#/$defs/CompactReviewConfirmation"
+        },
+        "scope": {
+          "$ref": "#/$defs/CompactReviewConfirmation"
+        },
+        "answer_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Answer Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "material",
+        "scope",
+        "answer_sha256"
+      ],
+      "title": "CompactReview",
+      "type": "object"
+    },
+    "CompactReviewConfirmation": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "enum": [
+            "checked",
+            "complete",
+            "partial"
+          ],
+          "title": "Value",
+          "type": "string"
+        },
+        "basis": {
+          "minLength": 1,
+          "title": "Basis",
+          "type": "string"
+        },
+        "record_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Record Sha256",
+          "type": "string"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "differences": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Differences",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "record_sha256"
+      ],
+      "title": "CompactReviewConfirmation",
+      "type": "object"
+    },
+    "CompactSchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "CompactSchemaTag",
+      "type": "object"
+    },
+    "GoldLatexSource": {
+      "additionalProperties": false,
+      "description": "A fixed source file or archive under the explicitly supplied material root.",
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sha256",
+        "version"
+      ],
+      "title": "GoldLatexSource",
+      "type": "object"
+    },
+    "GoldPdfFile": {
+      "additionalProperties": false,
+      "description": "一份固定 PDF 材料；哈希未核定时保持待补，不虚构。",
+      "properties": {
+        "file_id": {
+          "minLength": 1,
+          "title": "File Id",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        }
+      },
+      "required": [
+        "file_id",
+        "name"
+      ],
+      "title": "GoldPdfFile",
+      "type": "object"
+    },
+    "GoldRulesRef": {
+      "additionalProperties": false,
+      "description": "标注所依据的科学规则版本；旧规则版本不能替代。",
+      "properties": {
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "sha256"
+      ],
+      "title": "GoldRulesRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/CompactSchemaTag"
+    },
+    "paper": {
+      "$ref": "#/$defs/CompactPaper"
+    },
+    "rules": {
+      "$ref": "#/$defs/GoldRulesRef"
+    },
+    "files": {
+      "items": {
+        "$ref": "#/$defs/GoldPdfFile"
+      },
+      "minItems": 1,
+      "title": "Files",
+      "type": "array"
+    },
+    "source": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/GoldLatexSource"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "annotation": {
+      "$ref": "#/$defs/CompactAnnotationActors"
+    },
+    "review": {
+      "$ref": "#/$defs/CompactReview"
+    }
+  },
+  "required": [
+    "schema",
+    "paper",
+    "rules",
+    "files",
+    "annotation",
+    "review"
+  ],
+  "title": "CompactGoldMetadata",
+  "type": "object"
+}

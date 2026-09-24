@@ -64,9 +64,11 @@ def prepare(tmp_path, data, version=None):
 
 def test_generated_template_is_complete_json_and_valid_draft(tmp_path):
     outputs = build_outputs()
-    raw = json.loads(outputs["templates/gold-annotation.json"])
+    raw = json.loads(outputs["legacy/templates/gold-annotation.json"])
     markdown_raw = (
-        outputs["templates/gold-annotation.md"].split("```json\n")[1].split("```", 1)[0]
+        outputs["legacy/templates/gold-annotation.md"]
+        .split("```json\n")[1]
+        .split("```", 1)[0]
     )
     assert json.loads(markdown_raw) == raw
     parsed = GoldAnnotation.model_validate(
@@ -82,7 +84,7 @@ def test_generated_template_is_complete_json_and_valid_draft(tmp_path):
         "missing_paper_version",
         "material_correspondence_pending",
     }
-    doc = outputs["gold-format.md"]
+    doc = outputs["legacy/gold-format.md"]
     assert "{GOLD_SCHEMA_NAME}" not in doc and "PydanticUndefined" not in doc
     assert "evaluation.hvs_contribution_gold" in doc
     for section in doc.split("| Field | Type | Presence | Default | Constraints |\n")[
@@ -94,7 +96,7 @@ def test_generated_template_is_complete_json_and_valid_draft(tmp_path):
 
 
 def test_template_can_be_completed_without_changing_shape(tmp_path):
-    raw = json.loads(build_outputs()["templates/gold-annotation.json"])
+    raw = json.loads(build_outputs()["legacy/templates/gold-annotation.json"])
     raw["files"][0]["sha256"] = write_synthetic_pdf(tmp_path / "paper.pdf")
     add_synthetic_metadata(raw)
     args = prepare(tmp_path, raw)

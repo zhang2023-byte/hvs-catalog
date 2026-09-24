@@ -1,7 +1,7 @@
 <!-- Generated -->
-# Gold annotation filling template
+# Gold v1 migration working template
 
-This is a complete synthetic JSON example of a draft, not an approved answer. Replace the example science with the actual paper. Null metadata is intentionally unresolved and blocks formal saving; never fabricate identities, dates or hashes. The companion gold-annotation.json contains the same parseable document.
+This is a complete synthetic JSON example of a v1 working draft, not an approved answer. For current formal Gold, use the [two-file format](../../gold-format.md) and its templates in ../../templates/. Replace the example science with the actual paper. Null metadata is intentionally unresolved and blocks formal saving; never fabricate identities, dates or hashes. The companion gold-annotation.json contains the same parseable document.
 
 ## Instructions
 
