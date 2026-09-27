@@ -33,6 +33,7 @@ from .compact import (
     CompactQuantityGroup,
     CompactReview,
     CompactReviewConfirmation,
+    CompactRevision,
     CompactScopeLimitation,
     CompactUnresolved,
     CompactValue,
@@ -417,6 +418,10 @@ def render_approval_template() -> str:
     return """<!-- Generated -->
 # Human approval record
 
+This template applies to immutable version saves. An authorized local correction
+edits the existing answer and metadata in place and records the existing human decision;
+it does not need a new preparation approval. See the [Gold maintenance design](../../../../docs/design/evaluation.md).
+
 For the current two-file Gold format, review both answer.json and metadata.json, plus the check report.
 Set scientific_review=true only after a human expert has reviewed the scientific
 content of that exact pair. The approved manifest hashes both files, fixed materials,
@@ -481,7 +486,7 @@ that a reader must understand; they remain checked when files are read.
 |---|---|
 | Metadata `schema.version = 2` | Current two-file format; the earlier working annotation format used 1 |
 | Old Stella `schema.version = 4` | A separate input format supported by the legacy reader |
-| Saved directory `v1/`, `v2/`, ... | Successive Gold revisions for one paper |
+| Saved directory `v1/`, `v2/`, ... | Original save location; local corrections edit these files in place and Git retains history |
 | Paper or source `version` | The version of the paper or source material |
 | Rules `version` | The scientific rule set used for the annotation |
 
@@ -602,9 +607,11 @@ def render_compact_format_document() -> str:
         "",
         (
             "Material and scope confirmation in metadata is distinct from final Gold "
-            "approval. Formal save additionally requires `scientific_review=true` from a "
+            "approval. Immutable version save additionally requires `scientific_review=true` from a "
             "human approver for the exact answer and metadata manifest. The operation "
-            "record retains that approval separately from the two-file package."
+            "record retains that approval separately from the two-file package. "
+            "In-place local corrections record their preparer, human decision author and "
+            "basis in `revision`; earlier approvals apply only to the original content preserved in Git history."
         ),
         "",
         (
@@ -635,6 +642,7 @@ def render_compact_format_document() -> str:
         CompactAnnotationActors,
         CompactReview,
         CompactReviewConfirmation,
+        CompactRevision,
         models_module.GoldEvidence,
         models_module.GoldProbability,
         models_module.GoldRulesRef,

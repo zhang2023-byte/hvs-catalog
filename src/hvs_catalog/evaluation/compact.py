@@ -345,6 +345,19 @@ class CompactReview(Config):
         return self
 
 
+class CompactRevision(Config):
+    """Latest local correction; earlier revisions are retained by Git."""
+
+    revised_by: str = Field(min_length=1)
+    decided_by: str = Field(
+        min_length=1,
+        description="Human who authorized this correction; distinct from its preparer.",
+    )
+    revised_at: str = Field(min_length=1)
+    basis: str = Field(min_length=1)
+    previous_answer_sha256: str = Field(pattern=_SHA256_RE)
+
+
 class CompactGoldMetadata(Config):
     schema_tag: CompactSchemaTag = Field(alias="schema")
     paper: CompactPaper
@@ -353,6 +366,7 @@ class CompactGoldMetadata(Config):
     source: GoldLatexSource | None = None
     annotation: CompactAnnotationActors
     review: CompactReview
+    revision: CompactRevision | None = None
 
     @model_validator(mode="after")
     def metadata_shape(self) -> CompactGoldMetadata:
@@ -674,7 +688,7 @@ def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path)
                 category="science_pending",
                 code="material_differences",
                 subject="metadata/review/material/differences",
-                message="Documented PDF/source differences must be accepted in the final Gold approval",
+                message="Documented PDF/source differences must be covered by the applicable human review or decision",
             )
         )
     for index, item in enumerate(pair.answer.unresolved):

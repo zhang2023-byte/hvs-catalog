@@ -5,7 +5,7 @@ The formal scoring reference is `answer.json` together with `metadata.json`. The
 
 `contribution_id` has the form `arxiv_id:candNN`; it is a generated identifier and needs no paper citation. Scientific claims use `value` and their corresponding `evidence`. The old v1 draft, migration indices, old boundness status, pending tasks and full historical provenance stay outside the formal pair.
 
-Material and scope confirmation in metadata is distinct from final Gold approval. Formal save additionally requires `scientific_review=true` from a human approver for the exact answer and metadata manifest. The operation record retains that approval separately from the two-file package.
+Material and scope confirmation in metadata is distinct from final Gold approval. Immutable version save additionally requires `scientific_review=true` from a human approver for the exact answer and metadata manifest. The operation record retains that approval separately from the two-file package. In-place local corrections record their preparer, human decision author and basis in `revision`; earlier approvals apply only to the original content preserved in Git history.
 
 See [version meanings](README.md#what-the-version-numbers-mean) for the distinction between format, paper, rules and saved Gold revisions.
 
@@ -33,6 +33,7 @@ See [version meanings](README.md#what-the-version-numbers-mean) for the distinct
 | `source` | GoldLatexSource \| null | optional | null | |
 | `annotation` | CompactAnnotationActors | required | — | |
 | `review` | CompactReview | required | — | |
+| `revision` | CompactRevision \| null | optional | null | |
 
 ## Nested typed fields
 
@@ -187,6 +188,18 @@ The v1 numeric contract, with value first and its PDF evidence last.
 | `record_sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
 | `reviewed_at` | null \| string | optional | null | |
 | `differences` | array of string | optional | [] | |
+
+#### `CompactRevision`
+
+Latest local correction; earlier revisions are retained by Git.
+
+| Field | Type | Presence | Default | Constraints |
+|---|---|---|---|---|
+| `revised_by` | string | required | — |min length 1 |
+| `decided_by` | string | required | — |min length 1 |
+| `revised_at` | string | required | — |min length 1 |
+| `basis` | string | required | — |min length 1 |
+| `previous_answer_sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
 
 #### `GoldEvidence`
 

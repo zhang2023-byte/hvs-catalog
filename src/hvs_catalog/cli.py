@@ -222,6 +222,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="受控正式目标目录，通常为 hvs-catalog-gold/data；勿传仓库根",
     )
+    command = gold_commands.add_parser(
+        "git-refresh", help="检查并刷新原 Gold 文件，修订历史由 Git 保存"
+    )
+    command.add_argument("--target", required=True, type=Path)
+    command.add_argument("--document-id", required=True)
+    command.add_argument("--material-root", required=True, type=Path)
+    command.add_argument("--revised-by", required=True)
+    command.add_argument(
+        "--decided-by", required=True, help="已授权本次修正的人类决定者"
+    )
+    command.add_argument("--basis", required=True, help="既有科学决定的来源与修订原因")
     return parser
 
 
@@ -335,7 +346,7 @@ def _run_gold(args: argparse.Namespace) -> int:
             if report.blocking_count:
                 print(f"[结论] 存在 {report.blocking_count} 项阻断正式保存的问题")
                 return 2
-            print("[结论] 无阻断问题；科学审定与保存批准另行完成")
+            print("[结论] 无阻断问题；检查不代替科学裁定，请按适用保存或修订流程操作")
             return 0
         if args.gold_command == "compare":
             report = compare_legacy_with_current(
@@ -397,6 +408,21 @@ def _run_gold(args: argparse.Namespace) -> int:
             )
             for item in receipt.files:
                 print(f"[保存] {item.path}（{item.sha256[:12]}…）")
+            return 0
+        if args.gold_command == "git-refresh":
+            from .evaluation.git_revision import refresh_gold_in_place
+
+            entry = refresh_gold_in_place(
+                target=GoldTarget(args.target),
+                document_id=args.document_id,
+                material_root=args.material_root,
+                revised_by=args.revised_by,
+                decided_by=args.decided_by,
+                basis=args.basis,
+            )
+            print(
+                json.dumps(entry.model_dump(mode="json"), ensure_ascii=False, indent=2)
+            )
             return 0
         if args.gold_command == "query":
             status = query_operation(

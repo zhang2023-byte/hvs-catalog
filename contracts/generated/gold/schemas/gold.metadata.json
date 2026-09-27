@@ -163,6 +163,47 @@
       "title": "CompactReviewConfirmation",
       "type": "object"
     },
+    "CompactRevision": {
+      "additionalProperties": false,
+      "description": "Latest local correction; earlier revisions are retained by Git.",
+      "properties": {
+        "revised_by": {
+          "minLength": 1,
+          "title": "Revised By",
+          "type": "string"
+        },
+        "decided_by": {
+          "description": "Human who authorized this correction; distinct from its preparer.",
+          "minLength": 1,
+          "title": "Decided By",
+          "type": "string"
+        },
+        "revised_at": {
+          "minLength": 1,
+          "title": "Revised At",
+          "type": "string"
+        },
+        "basis": {
+          "minLength": 1,
+          "title": "Basis",
+          "type": "string"
+        },
+        "previous_answer_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Previous Answer Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revised_by",
+        "decided_by",
+        "revised_at",
+        "basis",
+        "previous_answer_sha256"
+      ],
+      "title": "CompactRevision",
+      "type": "object"
+    },
     "CompactSchemaTag": {
       "additionalProperties": false,
       "properties": {
@@ -304,6 +345,17 @@
     },
     "review": {
       "$ref": "#/$defs/CompactReview"
+    },
+    "revision": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CompactRevision"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [

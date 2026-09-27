@@ -1,6 +1,10 @@
 <!-- Generated -->
 # Human approval record
 
+This template applies to immutable version saves. An authorized local correction
+edits the existing answer and metadata in place and records the existing human decision;
+it does not need a new preparation approval. See the [Gold maintenance design](../../../../docs/design/evaluation.md).
+
 For the current two-file Gold format, review both answer.json and metadata.json, plus the check report.
 Set scientific_review=true only after a human expert has reviewed the scientific
 content of that exact pair. The approved manifest hashes both files, fixed materials,

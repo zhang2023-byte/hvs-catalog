@@ -30,7 +30,7 @@ that a reader must understand; they remain checked when files are read.
 |---|---|
 | Metadata `schema.version = 2` | Current two-file format; the earlier working annotation format used 1 |
 | Old Stella `schema.version = 4` | A separate input format supported by the legacy reader |
-| Saved directory `v1/`, `v2/`, ... | Successive Gold revisions for one paper |
+| Saved directory `v1/`, `v2/`, ... | Original save location; local corrections edit these files in place and Git retains history |
 | Paper or source `version` | The version of the paper or source material |
 | Rules `version` | The scientific rule set used for the annotation |
 

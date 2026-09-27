@@ -136,6 +136,17 @@ def _resolve_in_target(root: Path, relative: str | Path) -> Path:
         ) from exc
 
 
+def _reject_git_revision(target: GoldTarget, document_id: str) -> None:
+    path = target.entry_path(document_id)
+    if path.is_file():
+        entry = VersionEntry.model_validate_json(path.read_bytes())
+        if entry.storage_mode == "git":
+            raise GoldTargetError(
+                "Gold was corrected in place under Git history; prepare/save/recovery "
+                "cannot replace it. Edit the same files and use gold git-refresh."
+            )
+
+
 class FileEntry(Config):
     path: str
     sha256: str
@@ -147,6 +158,7 @@ class PreviousRef(Config):
 
 
 class VersionEntry(Config):
+    storage_mode: Literal["versioned", "git"] = "versioned"
     document_id: str
     version: int
     manifest_sha256: str
@@ -353,6 +365,15 @@ class GoldTarget:
                 f"版本入口 v{entry.version} 引用的文件不完整或不一致："
                 + "；".join(problems)
             )
+        if entry.document_id != document_id:
+            raise GoldIntegrityError(
+                "Version entry identity differs from requested document"
+            )
+        if entry.storage_mode == "git":
+            from .git_revision import validate_git_entry
+
+            validate_git_entry(self, entry)
+            return entry
         if any(item.path.endswith(METADATA_FILENAME) for item in entry.files):
             record = self.read_operation(entry.operation_id)
             if (
@@ -531,6 +552,7 @@ def _derive_compact_preparation(
             f"Compact Gold has {report.blocking_count} blocking problems: {details}"
         )
     document_id = f"gold-{pair.answer.arxiv_id}"
+    _reject_git_revision(target, document_id)
     _require_safe_segment(document_id, "document_id")
     entry = target.read_entry(document_id)
     if expected_old_version is None:
@@ -644,6 +666,7 @@ def _derive_preparation(
     expected_old_version: int | None,
     material_root: Path,
 ) -> tuple[PreparationManifest, GoldAnnotation, bytes, bytes, GoldCheckReport]:
+    _reject_git_revision(target, draft.document_id)
     if draft.kind != "draft":
         raise GoldTargetError(
             f"准备保存只接受草稿文档（kind=draft），当前 kind={draft.kind!r}；"
@@ -1081,6 +1104,7 @@ def approved_save(
     ).encode("utf-8")
 
     with target.lock():
+        _reject_git_revision(target, preparation.manifest.document_id)
         # 锁内复核目标绑定：批准与清单固定的目标必须是当前目标
         if manifest.target_path != str(target.root):
             raise GoldTargetError(
@@ -1503,7 +1527,9 @@ def query_operation(
     入口已发布且回执未曾返回时，据入口与操作记录确认已保存，不发布第
     二个版本；已成功保存并被后续版本修订的历史操作同样可查原回执，查
     询时核对相应历史文件的完整性。不能解释的不一致如实报告并保留现
-    场；修订操作的前驱入口缺失按不一致报告。
+    场；修订操作的前驱入口缺失按不一致报告。原路径已用 Git 修订时返回
+    historical：历史操作与批准不能证明当前答案，原内容须由 Git 历史核查，
+    此查询不验证原内容或当前修订内容。
     """
     record = target.read_operation(operation_id)
     if record is None:
@@ -1530,6 +1556,20 @@ def query_operation(
                 operation_id=operation_id,
                 state="inconsistent",
                 detail="Compact Gold approval sidecar missing",
+            )
+    raw_path = target.entry_path(record.document_id)
+    if raw_path.is_file():
+        raw_entry = VersionEntry.model_validate_json(raw_path.read_bytes())
+        if raw_entry.storage_mode == "git" and record.new_version == raw_entry.version:
+            return OperationStatus(
+                operation_id=operation_id,
+                state="historical",
+                detail=(
+                    "Original save and approval are historical evidence only. The same "
+                    "Gold files were corrected in place; inspect Git history for the "
+                    "original bytes. This query does not verify historical content or "
+                    "the current corrected answer."
+                ),
             )
     try:
         entry = target.read_entry(record.document_id)

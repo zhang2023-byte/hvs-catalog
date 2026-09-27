@@ -14,7 +14,9 @@
 
 `hvs_catalog.evaluation` 提供 Gold 工具：读取旧 contribution Gold v4 生成迁移草稿与逐项报告，检查科学答案、PDF 材料与定位，并在具体内容获得人类批准后保存带版本入口的正式答案，支持操作查询与中断恢复。精简格式将科学答案和对应证据放在 `answer.json`，论文与材料版本、文件指纹、标注者和审阅依据放在 `metadata.json`；旧迁移草稿仍可读取。字段说明、JSON Schema 与英文填写模板由有类型定义生成，见 [Gold 格式与模板](contracts/generated/gold/README.md)，命令和保存绑定要求见 [评价设计](docs/design/evaluation.md#gold-工具的格式对应方案)。
 
-50 篇真实论文的迁移结果已获准保存为私有 Gold，已通过用户验收并在私仓完成本地提交；尚未评分，具体进度见 [当前交接](.dev/progress.md)。正式目标使用私仓 `data/` 子目录，每版包含科学答案和元数据，保存批准与操作记录单独绑定；PDF、LaTeX、转换对照和草稿工作报告留在私有工作目录。人类批准要求见 [批准说明](contracts/generated/gold/templates/gold-approval.md)。格式转换和内容审阅不自动构成正式保存授权。
+已明确裁定的局部修正直接修改原有 Gold 文件，由 Git 保存历史；检查与修订依据要求见 [局部修正约定](docs/design/evaluation.md#gold-的局部修正与-git-历史)。
+
+50 篇真实论文的迁移结果已获准保存为私有 Gold，已通过用户验收并在私仓完成本地提交；尚未评分，具体进度见 [当前交接](.dev/progress.md)。正式目标使用私仓 `data/` 子目录。不可变保存的每版包含科学答案和元数据，批准与操作记录单独绑定；局部修正直接修改原文件，以 Git 保存历史。PDF、LaTeX、转换对照和草稿工作报告留在私有工作目录。人类批准要求见 [批准说明](contracts/generated/gold/templates/gold-approval.md)。格式转换和内容审阅不自动构成正式保存授权。
 
 ## 安装与验证
 
