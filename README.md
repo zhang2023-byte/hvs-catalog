@@ -16,7 +16,7 @@
 
 已明确裁定的局部修正直接修改原有 Gold 文件，由 Git 保存历史；检查与修订依据要求见 [局部修正约定](docs/design/evaluation.md#gold-的局部修正与-git-历史)。
 
-50 篇真实论文的迁移结果已获准保存为私有 Gold，已通过用户验收并在私仓完成本地提交；尚未评分，具体进度见 [当前交接](.dev/progress.md)。正式目标使用私仓 `data/` 子目录。不可变保存的每版包含科学答案和元数据，批准与操作记录单独绑定；局部修正直接修改原文件，以 Git 保存历史。PDF、LaTeX、转换对照和草稿工作报告留在私有工作目录。人类批准要求见 [批准说明](contracts/generated/gold/templates/gold-approval.md)。格式转换和内容审阅不自动构成正式保存授权。
+50 篇真实论文的私有 Gold 已通过验收，尚未评分，具体进度见 [当前交接](.dev/progress.md)。文件归属与工具目标见 [Gold 仓布局](docs/design/architecture.md#gold-仓目标布局)，保存授权见 [批准说明](contracts/generated/gold/templates/gold-approval.md)；格式转换和内容审阅不自动构成正式保存授权。
 
 ## 安装与验证
 
