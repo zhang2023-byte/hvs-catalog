@@ -7,28 +7,51 @@
     "openai-codex/gpt-6-sol",
     "zai-coding-cn/glm-5.3"
   ],
-  "skills": ["~/.agents/skills", "~/.pi/agent/skills", "!**"],
-  "prompts": ["~/.pi/agent/prompts", "!**", "+prompts/hvs-work.md"],
+  "skills": [
+    "~/.agents/skills",
+    "~/.pi/agent/skills",
+    "!**"
+  ],
+  "prompts": [
+    "~/.pi/agent/prompts",
+    "!**",
+    "+prompts/hvs-work.md"
+  ],
   "packages": [
+    {
+      "source": "npm:pi-web-access@0.31.0",
+      "autoload": false,
+      "extensions": [
+        "!**",
+        "+dist/index.js"
+      ],
+      "skills": [
+        "!**"
+      ],
+      "prompts": [
+        "!**"
+      ],
+      "themes": [
+        "!**"
+      ]
+    },
     {
       "source": "npm:pi-subagents@0.71.0",
       "autoload": false,
-      "skills": ["!**", "+skills/pi-subagents/SKILL.md"],
-      "prompts": ["!**"]
-    },
-    {
-      "source": "npm:@narumitw/pi-btw@0.61.0",
-      "autoload": false,
-      "extensions": ["!**"],
-      "skills": ["!**"],
-      "prompts": ["!**"]
-    },
-    {
-      "source": "npm:@plannotator/pi-extension@0.27.17",
-      "autoload": false,
-      "extensions": ["!**"],
-      "skills": ["!**"],
-      "prompts": ["!**"]
+      "extensions": [
+        "!**",
+        "+index.js"
+      ],
+      "skills": [
+        "!**",
+        "+skills/pi-subagents/SKILL.md"
+      ],
+      "prompts": [
+        "!**"
+      ],
+      "themes": [
+        "!**"
+      ]
     }
   ],
   "compaction": {
@@ -41,7 +64,9 @@
     "maxRetries": 2,
     "baseDelayMs": 2000,
     "maxAgentDelayMs": 30000,
-    "provider": { "maxRetries": 0 }
+    "provider": {
+      "maxRetries": 0
+    }
   },
   "subagents": {
     "projectRootResolution": "git-root",
@@ -50,8 +75,16 @@
     "modelScope": {
       "enforce": true,
       "strict": true,
-      "allow": ["zai-coding-cn/glm-5.3", "openai-codex/gpt-6-sol"]
+      "allow": [
+        "zai-coding-cn/glm-5.3",
+        "openai-codex/gpt-6-sol"
+      ]
     },
-    "watchdog": { "enabled": false, "children": { "enabled": false } }
+    "watchdog": {
+      "enabled": false,
+      "children": {
+        "enabled": false
+      }
+    }
   }
 }
