@@ -242,6 +242,8 @@ class StatusReport:
                     f"[流程进度] 检查点：待执行节点 {', '.join(self.checkpoint_next)}"
                     "（上次进程未跑完）"
                 )
+            elif self.summary is None:
+                out.append("[流程进度] 检查点尚未确认完成，需恢复核对（业务汇总缺失）")
             else:
                 out.append("[流程进度] 检查点：流程已全部执行完毕")
         if self.results:
@@ -319,17 +321,24 @@ def run(space_root: Path, *, after_response=None) -> RunReport:
         snapshot = graph.get_state(space.config)
         if snapshot.created_at is None:
             mode = "fresh"
-            graph.invoke(demo_graph.initial_state(), space.config)
-        elif _pending_question(snapshot) is None and snapshot.next:
+            # 下一步调用外部服务前，先保证其恢复检查点已经提交。
+            graph.invoke(demo_graph.initial_state(), space.config, durability="sync")
+        elif _pending_question(snapshot) is None and (
+            snapshot.next or space.store.find_summary(demo_service.PAPER_ID) is None
+        ):
+            # 历史异步写入可能只留下 input 检查点：next 为空不证明完成。
+            # 由框架处理已固定输入及 pending writes，不能重新构造当前材料。
             mode = "resumed-after-exit"
-            graph.invoke(None, space.config)
+            graph.invoke(None, space.config, durability="sync")
         else:
             mode = "none"
         end = graph.get_state(space.config)
         pending = _pending_question(end)
         if pending is not None:
             end_state = "awaiting-decision"
-        elif end.next == () and mode == "none":
+        elif end.next or space.store.find_summary(demo_service.PAPER_ID) is None:
+            raise ValueError("流程尚未完成且没有等待裁决的问题，不能报告完成")
+        elif mode == "none":
             end_state = "already-finished"
         else:
             end_state = "completed"
@@ -411,13 +420,17 @@ def decide(space_root: Path, choice: str, reason: str | None = None) -> DecideRe
                 }
             ),
             space.config,
+            durability="sync",
         )
         end = resumed.get_state(space.config)
         end_pending = _pending_question(end)
         superseded = (
             end_pending is not None and end_pending["question_digest"] != digest
         )
+        summary = space.store.find_summary(demo_service.PAPER_ID)
         completed = end.next == () and end_pending is None and not superseded
+        if completed and summary is None:
+            raise ValueError("裁决恢复后业务汇总缺失，不能报告完成")
         return DecideReport(
             decision_outcome=decision_outcome,
             completed=completed,
@@ -425,7 +438,7 @@ def decide(space_root: Path, choice: str, reason: str | None = None) -> DecideRe
             choice=choice,
             executions=executions,
             billing=space.service.billing_summary(),
-            summary=space.store.find_summary(demo_service.PAPER_ID),
+            summary=summary,
             divergence=_divergence_lines(end.values),
         )
     finally:

@@ -205,7 +205,8 @@ def _resume_locked(
         mode = "resumed"
         if snapshot.created_at is None:
             mode = "fresh"
-            graph.invoke(flow.initial_state(ctx), config)
+            # 外部调用前提交恢复检查点，避免硬退出丢失尚在后台写入的进度。
+            graph.invoke(flow.initial_state(ctx), config, durability="sync")
         elif _has_interrupt(snapshot):
             payload = _interrupt_payload(snapshot)
             question = _question_from_payload(review, payload)
@@ -225,6 +226,7 @@ def _resume_locked(
                         }
                     ),
                     config,
+                    durability="sync",
                 )
             else:
                 # 待答复、已答复仍未决或应用受阻：受影响步骤保留等待
@@ -236,7 +238,7 @@ def _resume_locked(
                 report.service_summary = _service_summary(service)
                 return report
         else:
-            graph.invoke(None, config)
+            graph.invoke(None, config, durability="sync")
         end = graph.get_state(config)
     except RecoveryInconsistentError:
         raise
