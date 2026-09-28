@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_serializer, model_validator
 
 from .common import ArtifactRef, Config, Record, RecordRef
 from .paper import PrecedentSnapshotRef
@@ -22,10 +22,36 @@ AttemptState = Literal["pending", "succeeded", "failed"]
 ChannelState = Literal["not_started", "succeeded", "failed"]
 
 
+def _omit_unfilled_money(data: dict) -> dict:
+    """序列化时省略未填的货币费用字段；有值字段照常输出。
+
+    运行不再计算、填报或比较货币费用。历史记录中的有值
+    ``cost``/``currency`` 仍可读取并随再输出保留；未填（null）字段
+    不在新运行的 JSON 中主动输出，也不把缺失伪装成 0。
+    """
+    if data.get("cost") is None:
+        data.pop("cost", None)
+    if data.get("currency") is None:
+        data.pop("currency", None)
+    return data
+
+
 class Usage(Config):
+    """Usage of a call or a whole run; unknown token counts stay null.
+
+    ``cost``/``currency`` are omittable: runs no longer compute, fill or
+    compare monetary costs; unfilled fields are not written to new record
+    JSON. They remain readable for historical data with values — see the
+    cost compatibility boundary in the architecture document.
+    """
+
     tokens: int | None = Field(ge=0)
-    cost: float | None = Field(ge=0)
-    currency: str | None
+    cost: float | None = Field(default=None, ge=0)
+    currency: str | None = None
+
+    @model_serializer(mode="wrap")
+    def _drop_unfilled_money(self, handler):
+        return _omit_unfilled_money(handler(self))
 
 
 class ModelSpec(Config):
@@ -58,9 +84,20 @@ class Attempt(Config):
     started_at: datetime | None
     finished_at: datetime | None
     usage: Usage | None
-    cost: float | None = Field(ge=0)
-    currency: str | None
+    cost: float | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Legacy monetary cost; new runs leave it unfilled and the "
+            "serialized output omits it."
+        ),
+    )
+    currency: str | None = None
     service_request_id: str | None
+
+    @model_serializer(mode="wrap")
+    def _drop_unfilled_money(self, handler):
+        return _omit_unfilled_money(handler(self))
 
     @model_validator(mode="after")
     def _consistent(self) -> Attempt:

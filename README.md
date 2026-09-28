@@ -14,6 +14,12 @@
 
 `hvs_catalog.evaluation` 提供 Gold 工具：读取旧 contribution Gold v4 生成迁移草稿与逐项报告，检查科学答案、PDF 材料与定位，并在具体内容获得人类批准后保存带版本入口的正式答案，支持操作查询与中断恢复。精简格式将科学答案和对应证据放在 `answer.json`，论文与材料版本、文件指纹、标注者和审阅依据放在 `metadata.json`；旧迁移草稿仍可读取。字段说明、JSON Schema 与英文填写模板由有类型定义生成，见 [Gold 格式与模板](contracts/generated/gold/README.md)，命令和保存绑定要求见 [评价设计](docs/design/evaluation.md#gold-工具的格式对应方案)。
 
+`hvs_catalog.pipeline` 提供日常与评测共用的提取入口：严格请求（不含 Gold、评分或答案通道）、可信方法与步骤登记、独立于方法与模型的专家裁决开关，以及固定输入冻结与恢复。当前只登记合成模拟实现，可用 `hvs-catalog methods` 查询实际可用方法与步骤；真实 direct/candidate_review 提取按计划在后续关卡接入，入口不会冒称它们可运行。命令行另提供两个合成演示：`hvs-catalog extract demo` 用虚构材料走名单→数值→收尾全链路，含开启专家组暂停、模拟决定与恢复，输出可保存；`hvs-catalog score demo` 读取保存的评分输入集，核对输入指纹后离线重评，可在新进程重复执行并得到相同结果，输入被改动即拒绝。
+
+`hvs_catalog.evaluation` 在 Gold 工具之外提供评分集成：既有 Gold 共同定义到评分输入的纯内存适配（绑定校验与不读文件的准备检查作为程序化就绪门禁：缺源对应、在案材料差异、缺证据、缺条件、未决待办等缺口阻止就绪；answer-only 输入被严格入口拒绝、不构成正式就绪；部分覆盖的 Gold 须显式声明封闭子范围）、合成 Gold 与评分计划，以及专家裁决开/关两组的对照实验报告。报告逐论文给出 L0/L1/L2 分层质量与完成/未决/失败、问题与专家次数、调用用量与专家用时，不合成总分；科学完成状态与运行图终止状态分开报告，单组或两组失败仍生成完整两组报告并保留分母与原始错误，未知用量与用时为 null。以上均为合成离线材料，不代表真实模型能力；正式评分需要获准的私有评分空间与 Gold 核对，评分辅助仍为 protocol_only 模拟模式，真实辅助模型验证按计划另行获准进行；适配与两组报告的完整语义见 [评价设计](docs/design/evaluation.md#提取与评分的集成入口)。
+
+运行记录不再计算、保存或比较货币费用：新记录不填写费用字段，用量统计只报告调用数与 tokens；历史有值记录与旧账本数据仍可读取，历史行不被改写。`hvs-catalog demo` 持久化演示中的模拟服务账单是保留的历史演示例外，仍会显示模拟费用，不代表新运行会产生费用。
+
 已明确裁定的局部修正直接修改原有 Gold 文件，由 Git 保存历史；检查与修订依据要求见 [局部修正约定](docs/design/evaluation.md#gold-的局部修正与-git-历史)。
 
 50 篇真实论文的私有 Gold 已通过验收，尚未评分，具体进度见 [当前交接](.dev/progress.md)。文件归属与工具目标见 [Gold 仓布局](docs/design/architecture.md#gold-仓目标布局)，保存授权见 [批准说明](contracts/generated/gold/templates/gold-approval.md)；格式转换和内容审阅不自动构成正式保存授权。

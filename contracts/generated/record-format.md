@@ -603,11 +603,18 @@ Required nullable fields must be present with `null`; only fields marked optiona
 
 #### Usage
 
+Usage of a call or a whole run; unknown token counts stay null.
+
+``cost``/``currency`` are omittable: runs no longer compute, fill or
+compare monetary costs; unfilled fields are not written to new record
+JSON. They remain readable for historical data with values — see the
+cost compatibility boundary in the architecture document.
+
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `tokens` | `integer` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `cost` | `number` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `currency` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `cost` | `number` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `currency` | `string` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
 
 #### ModelSpec
 
@@ -644,8 +651,8 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | `started_at` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `finished_at` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `usage` | `Usage` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `cost` | `number` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `currency` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `cost` | `number` | `null` | no |  | Legacy monetary cost; new runs leave it unfilled and the serialized output omits it. Nullable: absent content is `null`, never a default value. |
+| `currency` | `string` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `service_request_id` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 
 #### StepRecord

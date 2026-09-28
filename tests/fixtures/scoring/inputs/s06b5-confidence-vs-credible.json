@@ -1,0 +1,237 @@
+{
+  "auxiliary": {
+    "budget_digest": "53c4e5af9c687fc74e69dbeb3a3be1ffca0cbdf5731a6ce48d21d1cacc02c5f3",
+    "mode": "protocol_only",
+    "model_config_digest": "aabf54dc0555152955099e4271384fa458588ffbe5f50451fd2ba9c5c98f72cc",
+    "params_digest": "f3260523ac8845d96a556bc6711e83976dfe72c84d72074c1a0b8c090834a283",
+    "prompt_digest": "cae427fbf4849f2d6da636451f9b12d83b7a538b416967f84149f89d400843d1",
+    "store_directory": null,
+    "validation": null
+  },
+  "description": "B5：置信区间与可信区间解释不同",
+  "gold": [
+    {
+      "confirmed_ranges": [],
+      "coverage": "complete",
+      "objects": [
+        {
+          "author_judgment": null,
+          "contribution_type": null,
+          "identifiers": [
+            "SYN-A"
+          ],
+          "label": "A",
+          "quantities": [
+            {
+              "quantity_path": "observed_phase_space.parallax",
+              "values": [
+                {
+                  "context_evidence": [],
+                  "evidence_fragments": [],
+                  "record_id": "g1",
+                  "value": {
+                    "author_usage": null,
+                    "condition": "as reported in the paper",
+                    "context_evidence_refs": [],
+                    "coordinate_format": null,
+                    "coverage": {
+                      "direct_evidence": [
+                        {
+                          "evidence_ref": {
+                            "record_id": "synthetic-source",
+                            "revision": 1
+                          },
+                          "part": "value",
+                          "raw_fragment": "95"
+                        }
+                      ],
+                      "unit": "%",
+                      "value": "95"
+                    },
+                    "direct_evidence": [
+                      {
+                        "evidence_ref": {
+                          "record_id": "synthetic-source",
+                          "revision": 1
+                        },
+                        "part": "range_lower",
+                        "raw_fragment": "7"
+                      },
+                      {
+                        "evidence_ref": {
+                          "record_id": "synthetic-source",
+                          "revision": 1
+                        },
+                        "part": "range_upper",
+                        "raw_fragment": "9"
+                      }
+                    ],
+                    "epoch": null,
+                    "error": null,
+                    "error_components": [],
+                    "frame": null,
+                    "interval_kind": "confidence",
+                    "limit_kind": "range",
+                    "lower_error": null,
+                    "lower_inclusive": null,
+                    "lower_quantile": null,
+                    "purpose": null,
+                    "range_lower": "7",
+                    "range_upper": "9",
+                    "representation": "heliocentric",
+                    "source": "this_paper",
+                    "source_note": null,
+                    "unit": null,
+                    "upper_error": null,
+                    "upper_inclusive": null,
+                    "upper_quantile": null,
+                    "value": null,
+                    "value_id": "g1"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "paper_key": "synthetic-s06b5"
+    }
+  ],
+  "plan": {
+    "auxiliary_ref": {
+      "fingerprint": "55249a91e318f3f32bd68d50bff21b0fc228dfb380f22b8e045a8107105e1657",
+      "name": "auxiliary",
+      "version": "v1"
+    },
+    "gold_ref": {
+      "fingerprint": "c959fece3998ebb2c45d1743c8bfc78cb69f52c0e697dc18a9350dc4d3ce2878",
+      "name": "synthetic-gold",
+      "version": "v1"
+    },
+    "known_evidence_record_ids": [],
+    "materials_ref": {
+      "fingerprint": "4f0332a120352ec2b6fce8962d28108e90f207dae2061ef78622660c9f81cc7c",
+      "name": "synthetic-materials",
+      "version": "v1"
+    },
+    "paper_keys": [
+      "synthetic-s06b5"
+    ],
+    "program_ref": {
+      "fingerprint": "43b26bc6a1d49a19e5a953a63449f93d66960d3643ea95cb3d1a0348ed1edd46",
+      "name": "scoring-program",
+      "version": "v1"
+    },
+    "science_rules_ref": {
+      "fingerprint": "038ae5e18b8af783fbc3498215aa0229ffbcf7df76ee3b3e8bbaf04613b6dbd8",
+      "name": "science-rules",
+      "version": "v1"
+    },
+    "scoped_coverages": [],
+    "scopes": [
+      {
+        "paper_key": "synthetic-s06b5",
+        "quantity_paths": [
+          "observed_phase_space.parallax"
+        ]
+      }
+    ],
+    "scoring_scheme_ref": {
+      "fingerprint": "d06740f6fd3a4e8811521ec3119db7477e0345d0d3386db5d9f457826fd9b7b9",
+      "name": "scoring-scheme",
+      "version": "v1"
+    }
+  },
+  "predictions": [
+    {
+      "completion": "complete",
+      "delivered": true,
+      "errors": [],
+      "format_valid": true,
+      "objects": [
+        {
+          "author_judgment": null,
+          "contribution_type": null,
+          "identifiers": [
+            "SYN-A"
+          ],
+          "label": "A",
+          "paper_key": "synthetic-s06b5",
+          "quantities": [
+            {
+              "quantity_path": "observed_phase_space.parallax",
+              "values": [
+                {
+                  "context_evidence": [],
+                  "evidence_fragments": [],
+                  "record_id": "p1",
+                  "value": {
+                    "author_usage": null,
+                    "condition": "as reported in the paper",
+                    "context_evidence_refs": [],
+                    "coordinate_format": null,
+                    "coverage": {
+                      "direct_evidence": [
+                        {
+                          "evidence_ref": {
+                            "record_id": "synthetic-source",
+                            "revision": 1
+                          },
+                          "part": "value",
+                          "raw_fragment": "95"
+                        }
+                      ],
+                      "unit": "%",
+                      "value": "95"
+                    },
+                    "direct_evidence": [
+                      {
+                        "evidence_ref": {
+                          "record_id": "synthetic-source",
+                          "revision": 1
+                        },
+                        "part": "range_lower",
+                        "raw_fragment": "7"
+                      },
+                      {
+                        "evidence_ref": {
+                          "record_id": "synthetic-source",
+                          "revision": 1
+                        },
+                        "part": "range_upper",
+                        "raw_fragment": "9"
+                      }
+                    ],
+                    "epoch": null,
+                    "error": null,
+                    "error_components": [],
+                    "frame": null,
+                    "interval_kind": "credible",
+                    "limit_kind": "range",
+                    "lower_error": null,
+                    "lower_inclusive": null,
+                    "lower_quantile": null,
+                    "purpose": null,
+                    "range_lower": "7",
+                    "range_upper": "9",
+                    "representation": "heliocentric",
+                    "source": "this_paper",
+                    "source_note": null,
+                    "unit": null,
+                    "upper_error": null,
+                    "upper_inclusive": null,
+                    "upper_quantile": null,
+                    "value": null,
+                    "value_id": "p1"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "paper_key": "synthetic-s06b5"
+    }
+  ],
+  "sample_id": "synthetic-s06b5"
+}

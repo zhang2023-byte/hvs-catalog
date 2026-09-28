@@ -781,7 +781,7 @@ def render_quantity_template() -> str:
                 "roster, the requested quantity scope, known material gaps with "
                 "identifiers and affected targets, existing open questions with "
                 "identifiers, approved precedent snapshots, and all record identifiers, "
-                "value numbering, revisions, call states and costs."
+                "value numbering, revisions, call states and usage."
             ),
             "",
             "## Filled by the extractor",

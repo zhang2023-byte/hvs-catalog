@@ -5,7 +5,7 @@ Fill this format for the quantity extraction step, for each application-supplied
 
 ## Provided by the application
 
-Fixed paper and source context, the object identifiers of the current roster, the requested quantity scope, known material gaps with identifiers and affected targets, existing open questions with identifiers, approved precedent snapshots, and all record identifiers, value numbering, revisions, call states and costs.
+Fixed paper and source context, the object identifiers of the current roster, the requested quantity scope, known material gaps with identifiers and affected targets, existing open questions with identifiers, approved precedent snapshots, and all record identifiers, value numbering, revisions, call states and usage.
 
 ## Filled by the extractor
 

@@ -1,0 +1,3051 @@
+{
+ "_note": "固定手算样例的预期结果，按开工规格人工维护；不得由评分程序反算生成。比率为分数串（NA 表示分母为 0 的不适用），配对行为 [layer, status, gold_ref, prediction_ref, fields]。",
+ "synthetic-s01": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s01": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 1,
+     "fn": 1,
+     "precision": "1/2",
+     "recall": "1/2",
+     "f1": "1/2"
+    },
+    "l2": {
+     "correct": 1,
+     "predicted": 3,
+     "gold": 3,
+     "precision": "1/3",
+     "recall": "1/3",
+     "f1": "1/3"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 1,
+      "predicted": 2,
+      "gold": 2,
+      "precision": "1/2",
+      "recall": "1/2",
+      "f1": "1/2"
+     },
+     "observed_phase_space.radial_velocity": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "extra",
+      null,
+      "C",
+      ""
+     ],
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l1",
+      "omitted",
+      "B",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "extra_object_value",
+      null,
+      "C|observed_phase_space.distance|p3",
+      ""
+     ],
+     [
+      "l2",
+      "matched",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      ""
+     ],
+     [
+      "l2",
+      "object_omitted_value",
+      "B|observed_phase_space.distance|g3",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.radial_velocity|g2",
+      "A|observed_phase_space.radial_velocity|p2",
+      "value"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 1,
+    "fn": 1,
+    "precision": "1/2",
+    "recall": "1/2",
+    "f1": "1/2"
+   },
+   "l2": {
+    "correct": 1,
+    "predicted": 3,
+    "gold": 3,
+    "precision": "1/3",
+    "recall": "1/3",
+    "f1": "1/3"
+   }
+  }
+ },
+ "synthetic-s02": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s02": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 0,
+     "fp": 0,
+     "fn": 2,
+     "precision": "NA",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 0,
+     "gold": 3,
+     "precision": "NA",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 0,
+      "gold": 2,
+      "precision": "NA",
+      "recall": "0",
+      "f1": "0"
+     },
+     "observed_phase_space.radial_velocity": {
+      "correct": 0,
+      "predicted": 0,
+      "gold": 1,
+      "precision": "NA",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "omitted",
+      "A",
+      null,
+      ""
+     ],
+     [
+      "l1",
+      "omitted",
+      "B",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "object_omitted_value",
+      "A|observed_phase_space.distance|g1",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "object_omitted_value",
+      "A|observed_phase_space.radial_velocity|g2",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "object_omitted_value",
+      "B|observed_phase_space.distance|g3",
+      null,
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 2,
+    "precision": "NA",
+    "recall": "0",
+    "f1": "0"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 0,
+    "gold": 3,
+    "precision": "NA",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s03": {
+  "batch_provisional": false,
+  "correct_empty_papers": [
+   "synthetic-s03"
+  ],
+  "papers": {
+   "synthetic-s03": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 0,
+     "fp": 0,
+     "fn": 0,
+     "precision": "NA",
+     "recall": "NA",
+     "f1": "NA"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 0,
+     "gold": 0,
+     "precision": "NA",
+     "recall": "NA",
+     "f1": "NA"
+    },
+    "l2_provisional": false,
+    "correct_empty": true,
+    "prediction_errors": [],
+    "quantities": {},
+    "pairings": [],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "precision": "NA",
+    "recall": "NA",
+    "f1": "NA"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 0,
+    "gold": 0,
+    "precision": "NA",
+    "recall": "NA",
+    "f1": "NA"
+   }
+  }
+ },
+ "synthetic-s03-failed": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s03-failed": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 0,
+     "format_valid": 0,
+     "delivered_over_planned": "0",
+     "valid_over_delivered": "NA",
+     "valid_over_planned": "0",
+     "completion": {
+      "failed": 1
+     }
+    },
+    "l1": {
+     "tp": 0,
+     "fp": 0,
+     "fn": 0,
+     "precision": "NA",
+     "recall": "NA",
+     "f1": "NA"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 0,
+     "gold": 0,
+     "precision": "NA",
+     "recall": "NA",
+     "f1": "NA"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [
+     "simulated whole-paper failure"
+    ],
+    "quantities": {},
+    "pairings": [],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 0,
+    "format_valid": 0,
+    "delivered_over_planned": "0",
+    "valid_over_delivered": "NA",
+    "valid_over_planned": "0",
+    "completion": {
+     "failed": 1
+    }
+   },
+   "l1": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 0,
+    "precision": "NA",
+    "recall": "NA",
+    "f1": "NA"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 0,
+    "gold": 0,
+    "precision": "NA",
+    "recall": "NA",
+    "f1": "NA"
+   }
+  }
+ },
+ "synthetic-s04": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s04": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 0,
+     "format_valid": 0,
+     "delivered_over_planned": "0",
+     "valid_over_delivered": "NA",
+     "valid_over_planned": "0",
+     "completion": {
+      "failed": 1
+     }
+    },
+    "l1": {
+     "tp": 0,
+     "fp": 0,
+     "fn": 2,
+     "precision": "NA",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 0,
+     "gold": 3,
+     "precision": "NA",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [
+     "simulated whole-paper failure"
+    ],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 0,
+      "gold": 2,
+      "precision": "NA",
+      "recall": "0",
+      "f1": "0"
+     },
+     "observed_phase_space.radial_velocity": {
+      "correct": 0,
+      "predicted": 0,
+      "gold": 1,
+      "precision": "NA",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "omitted",
+      "A",
+      null,
+      ""
+     ],
+     [
+      "l1",
+      "omitted",
+      "B",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "object_omitted_value",
+      "A|observed_phase_space.distance|g1",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "object_omitted_value",
+      "A|observed_phase_space.radial_velocity|g2",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "object_omitted_value",
+      "B|observed_phase_space.distance|g3",
+      null,
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 0,
+    "format_valid": 0,
+    "delivered_over_planned": "0",
+    "valid_over_delivered": "NA",
+    "valid_over_planned": "0",
+    "completion": {
+     "failed": 1
+    }
+   },
+   "l1": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 2,
+    "precision": "NA",
+    "recall": "0",
+    "f1": "0"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 0,
+    "gold": 3,
+    "precision": "NA",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s05": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s05": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "partial": 1
+     }
+    },
+    "l1": {
+     "tp": 2,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 1,
+     "predicted": 1,
+     "gold": 3,
+     "precision": "1",
+     "recall": "1/3",
+     "f1": "1/2"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [
+     "numeric extraction step failed after roster delivery"
+    ],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 1,
+      "predicted": 1,
+      "gold": 2,
+      "precision": "1",
+      "recall": "1/2",
+      "f1": "2/3"
+     },
+     "observed_phase_space.radial_velocity": {
+      "correct": 0,
+      "predicted": 0,
+      "gold": 1,
+      "precision": "NA",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l1",
+      "matched",
+      "B",
+      "B",
+      ""
+     ],
+     [
+      "l2",
+      "matched",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      ""
+     ],
+     [
+      "l2",
+      "value_missing",
+      "A|observed_phase_space.radial_velocity|g2",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "value_missing",
+      "B|observed_phase_space.distance|g3",
+      null,
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "partial": 1
+    }
+   },
+   "l1": {
+    "tp": 2,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 1,
+    "predicted": 1,
+    "gold": 3,
+    "precision": "1",
+    "recall": "1/3",
+    "f1": "1/2"
+   }
+  }
+ },
+ "synthetic-s06a1": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06a1": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 1,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.radial_velocity": {
+      "correct": 1,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "1",
+      "recall": "1",
+      "f1": "1"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "matched",
+      "A|observed_phase_space.radial_velocity|g1",
+      "A|observed_phase_space.radial_velocity|p1",
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 1,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   }
+  }
+ },
+ "synthetic-s06a2": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06a2": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 1,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "derived_kinematics.galactocentric_vz": {
+      "correct": 1,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "1",
+      "recall": "1",
+      "f1": "1"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "matched",
+      "A|derived_kinematics.galactocentric_vz|g1",
+      "A|derived_kinematics.galactocentric_vz|p1",
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 1,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   }
+  }
+ },
+ "synthetic-s06a3": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06a3": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 1,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "derived_kinematics.tangential_velocity": {
+      "correct": 1,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "1",
+      "recall": "1",
+      "f1": "1"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "matched",
+      "A|derived_kinematics.tangential_velocity|g1",
+      "A|derived_kinematics.tangential_velocity|p1",
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 1,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   }
+  }
+ },
+ "synthetic-s06a4": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06a4": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 1,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.ra": {
+      "correct": 1,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "1",
+      "recall": "1",
+      "f1": "1"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "matched",
+      "A|observed_phase_space.ra|g1",
+      "A|observed_phase_space.ra|p1",
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 1,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   }
+  }
+ },
+ "synthetic-s06a5": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06a5": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 1,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 1,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "1",
+      "recall": "1",
+      "f1": "1"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "matched",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 1,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   }
+  }
+ },
+ "synthetic-s06b1": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06b1": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "0",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "error,unit,value"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "0",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s06b2": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06b2": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "0",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.radial_velocity": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.radial_velocity|g1",
+      "A|observed_phase_space.radial_velocity|p1",
+      "value"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "0",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s06b3a": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06b3a": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "0",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "error"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "0",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s06b3b": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06b3b": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "0",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "error"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "0",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s06b4": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06b4": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "0",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "error,lower_error,upper_error"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "0",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s06b5": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06b5": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "0",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.parallax": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.parallax|g1",
+      "A|observed_phase_space.parallax|p1",
+      "interval_kind"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "0",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s06b6": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06b6": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "0",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.parallax": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.parallax|g1",
+      "A|observed_phase_space.parallax|p1",
+      "error,interval_kind,limit_kind,range_lower,range_upper,unit,value"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "0",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s06b7": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06b7": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "0",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.radial_velocity": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.radial_velocity|g1",
+      "A|observed_phase_space.radial_velocity|p1",
+      "upper_inclusive"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "0",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s06b8": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06b8": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 2,
+     "gold": 2,
+     "precision": "0",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 2,
+      "gold": 2,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "value"
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.distance|g2",
+      "A|observed_phase_space.distance|p2",
+      "value"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 2,
+    "gold": 2,
+    "precision": "0",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s06c1": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s06c1": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "0",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "0",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "value_mismatch",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "value"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "0",
+    "recall": "0",
+    "f1": "0"
+   }
+  }
+ },
+ "synthetic-s07u1": {
+  "batch_provisional": true,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s07u1": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": null,
+     "recall": null,
+     "f1": null
+    },
+    "l2_provisional": true,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": null,
+      "recall": null,
+      "f1": null
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "unresolved_value",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "value"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": [
+     "unresolved_value"
+    ]
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": null,
+    "recall": null,
+    "f1": null
+   }
+  }
+ },
+ "synthetic-s07u1e": {
+  "batch_provisional": true,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s07u1e": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": null,
+     "recall": null,
+     "f1": null
+    },
+    "l2_provisional": true,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": null,
+      "recall": null,
+      "f1": null
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "unresolved_value",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "value"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": [
+     "unresolved_value"
+    ]
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": null,
+    "recall": null,
+    "f1": null
+   }
+  }
+ },
+ "synthetic-s07u1ei": {
+  "batch_provisional": true,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s07u1ei": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": null,
+     "recall": null,
+     "f1": null
+    },
+    "l2_provisional": true,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": null,
+      "recall": null,
+      "f1": null
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "unresolved_value",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "error"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": [
+     "unresolved_value"
+    ]
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": null,
+    "recall": null,
+    "f1": null
+   }
+  }
+ },
+ "synthetic-s07u1es": {
+  "batch_provisional": true,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s07u1es": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 1,
+     "precision": null,
+     "recall": null,
+     "f1": null
+    },
+    "l2_provisional": true,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 1,
+      "precision": null,
+      "recall": null,
+      "f1": null
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "unresolved_value",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "error"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": [
+     "unresolved_value"
+    ]
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 1,
+    "precision": null,
+    "recall": null,
+    "f1": null
+   }
+  }
+ },
+ "synthetic-s07u2": {
+  "batch_provisional": true,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s07u2": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 1,
+     "gold": 2,
+     "precision": null,
+     "recall": null,
+     "f1": null
+    },
+    "l2_provisional": true,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 1,
+      "gold": 2,
+      "precision": null,
+      "recall": null,
+      "f1": null
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "unresolved_attribution",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      "condition"
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": [
+     "unresolved_attribution"
+    ]
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 0,
+    "predicted": 1,
+    "gold": 2,
+    "precision": null,
+    "recall": null,
+    "f1": null
+   }
+  }
+ },
+ "synthetic-s08": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s08": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 1,
+     "fn": 0,
+     "precision": "1/2",
+     "recall": "1",
+     "f1": "2/3"
+    },
+    "l2": {
+     "correct": 1,
+     "predicted": 2,
+     "gold": 1,
+     "precision": "1/2",
+     "recall": "1",
+     "f1": "2/3"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 1,
+      "predicted": 2,
+      "gold": 1,
+      "precision": "1/2",
+      "recall": "1",
+      "f1": "2/3"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l1",
+      "duplicate",
+      "A",
+      "A-dup",
+      ""
+     ],
+     [
+      "l2",
+      "matched",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      ""
+     ],
+     [
+      "l2",
+      "extra_value",
+      null,
+      "A-dup|observed_phase_space.distance|p2",
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 1,
+    "fn": 0,
+    "precision": "1/2",
+    "recall": "1",
+    "f1": "2/3"
+   },
+   "l2": {
+    "correct": 1,
+    "predicted": 2,
+    "gold": 1,
+    "precision": "1/2",
+    "recall": "1",
+    "f1": "2/3"
+   }
+  }
+ },
+ "synthetic-s09": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s09": {
+    "readiness": "scoped",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 1,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 1,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "1",
+      "recall": "1",
+      "f1": "1"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "matched",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      ""
+     ],
+     [
+      "l2",
+      "out_of_scope_value",
+      "A|observed_phase_space.radial_velocity|g2",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "out_of_scope_value",
+      "B|observed_phase_space.distance|g3",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "out_of_scope_value",
+      null,
+      "A|observed_phase_space.radial_velocity|p2",
+      ""
+     ],
+     [
+      "l2",
+      "out_of_scope_value",
+      null,
+      "B|observed_phase_space.distance|p3",
+      ""
+     ]
+    ],
+    "diagnostic_codes": [
+     "out_of_scope_object",
+     "out_of_scope_object"
+    ],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 0,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   },
+   "l2": {
+    "correct": 1,
+    "predicted": 1,
+    "gold": 1,
+    "precision": "1",
+    "recall": "1",
+    "f1": "1"
+   }
+  }
+ },
+ "synthetic-s09-noscope": {
+  "batch_provisional": true,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s09-noscope": {
+    "readiness": "blocked",
+    "readiness_gaps": [
+     "partial_gold_without_predeclared_scope"
+    ],
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": null,
+    "l2": null,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {},
+    "pairings": [],
+    "diagnostic_codes": [
+     "readiness_gap"
+    ],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 1,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/1",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/1",
+    "completion": {
+     "complete": 1
+    }
+   },
+   "l1": null,
+   "l2": null
+  }
+ },
+ "synthetic-s10": {
+  "batch_provisional": false,
+  "correct_empty_papers": [],
+  "papers": {
+   "synthetic-s10a": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 1,
+     "format_valid": 1,
+     "delivered_over_planned": "1/1",
+     "valid_over_delivered": "1/1",
+     "valid_over_planned": "1/1",
+     "completion": {
+      "complete": 1
+     }
+    },
+    "l1": {
+     "tp": 1,
+     "fp": 0,
+     "fn": 0,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2": {
+     "correct": 1,
+     "predicted": 1,
+     "gold": 1,
+     "precision": "1",
+     "recall": "1",
+     "f1": "1"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 1,
+      "predicted": 1,
+      "gold": 1,
+      "precision": "1",
+      "recall": "1",
+      "f1": "1"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "matched",
+      "A",
+      "A",
+      ""
+     ],
+     [
+      "l2",
+      "matched",
+      "A|observed_phase_space.distance|g1",
+      "A|observed_phase_space.distance|p1",
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   },
+   "synthetic-s10b": {
+    "readiness": "ready",
+    "l0": {
+     "planned": 1,
+     "delivered": 0,
+     "format_valid": 0,
+     "delivered_over_planned": "0",
+     "valid_over_delivered": "NA",
+     "valid_over_planned": "0",
+     "completion": {
+      "failed": 1
+     }
+    },
+    "l1": {
+     "tp": 0,
+     "fp": 0,
+     "fn": 1,
+     "precision": "NA",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2": {
+     "correct": 0,
+     "predicted": 0,
+     "gold": 1,
+     "precision": "NA",
+     "recall": "0",
+     "f1": "0"
+    },
+    "l2_provisional": false,
+    "correct_empty": false,
+    "prediction_errors": [
+     "simulated whole-paper failure"
+    ],
+    "quantities": {
+     "observed_phase_space.distance": {
+      "correct": 0,
+      "predicted": 0,
+      "gold": 1,
+      "precision": "NA",
+      "recall": "0",
+      "f1": "0"
+     }
+    },
+    "pairings": [
+     [
+      "l1",
+      "omitted",
+      "A",
+      null,
+      ""
+     ],
+     [
+      "l2",
+      "object_omitted_value",
+      "A|observed_phase_space.distance|g1",
+      null,
+      ""
+     ]
+    ],
+    "diagnostic_codes": [],
+    "unresolved_codes": []
+   }
+  },
+  "micro": {
+   "l0": {
+    "planned": 2,
+    "delivered": 1,
+    "format_valid": 1,
+    "delivered_over_planned": "1/2",
+    "valid_over_delivered": "1/1",
+    "valid_over_planned": "1/2",
+    "completion": {
+     "complete": 1,
+     "failed": 1
+    }
+   },
+   "l1": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 1,
+    "precision": "1",
+    "recall": "1/2",
+    "f1": "2/3"
+   },
+   "l2": {
+    "correct": 1,
+    "predicted": 1,
+    "gold": 2,
+    "precision": "1",
+    "recall": "1/2",
+    "f1": "2/3"
+   }
+  }
+ }
+}

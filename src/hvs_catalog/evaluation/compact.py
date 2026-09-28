@@ -14,13 +14,16 @@ import re
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import Field, model_validator
 
 from ..records.common import Config
 from ..records.rules import author_state_ids
 from .errors import GoldFormatError, GoldIntegrityError
+
+if TYPE_CHECKING:  # 仅类型标注；运行时在函数内导入避免加载环
+    from .checking import CheckProblem
 from .models import (
     GOLD_COORDINATE_FORMATS,
     GOLD_INTERVAL_KINDS,
@@ -452,73 +455,22 @@ def validate_compact_gold_pair(pair: CompactGoldPair) -> None:
         raise GoldIntegrityError(f"Evidence references unknown PDF file IDs: {unknown}")
 
 
-def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path):
-    """Check the exact v2 pair that prepare/save will publish."""
-    from ..workspace.layout import resolve_within
-    from .checking import (
-        CheckProblem,
-        FileVerification,
-        GoldCheckReport,
-        QuoteVerification,
-    )
+def pair_preparation_problems(pair: CompactGoldPair) -> list[CheckProblem]:
+    """Pair-only preparation gaps that need no material files.
+
+    Shared by :func:`check_compact_gold_pair` (merged with PDF/source hash,
+    page and quote verification) and by in-memory scoring adaptation, which
+    must not read PDFs.  Callers still run :func:`validate_compact_gold_pair`
+    first: the structural binding checks are a precondition, not a
+    replacement.  The problem set, categories, codes, subjects and messages
+    match the corresponding blocks of the full checker.
+    """
+    from .checking import CheckProblem
     from .models import iter_gold_evidence
-    from .pdfcheck import analyze_pdf, quote_result
 
     validate_compact_gold_pair(pair)
-    root = Path(material_root)
     problems: list[CheckProblem] = []
-    files: list[FileVerification] = []
-    quotes: list[QuoteVerification] = []
-    analysis_by_id = {}
-    for item in pair.metadata.files:
-        path = resolve_within(root, item.name)
-        data = path.read_bytes() if path.is_file() else None
-        digest = _sha256(data) if data is not None else None
-        analysis = analyze_pdf(data) if data is not None else None
-        analysis_by_id[item.file_id] = analysis
-        if data is None:
-            problems.append(
-                CheckProblem(
-                    category="material",
-                    code="file_missing",
-                    subject=item.file_id,
-                    message=f"PDF file missing: {item.name}",
-                )
-            )
-        elif digest != item.sha256:
-            problems.append(
-                CheckProblem(
-                    category="material",
-                    code="file_hash_mismatch",
-                    subject=item.file_id,
-                    message=f"PDF hash mismatch: {item.name}",
-                )
-            )
-        elif analysis is None or not analysis.openable:
-            problems.append(
-                CheckProblem(
-                    category="material",
-                    code="file_not_pdf",
-                    subject=item.file_id,
-                    message=f"PDF cannot be opened: {item.name}",
-                )
-            )
-        files.append(
-            FileVerification(
-                file_id=item.file_id,
-                name=item.name,
-                sha256=item.sha256,
-                exists=data is not None,
-                hash_matches=None if data is None else digest == item.sha256,
-                openable=None if analysis is None else analysis.openable,
-                page_count=None
-                if analysis is None or not analysis.openable
-                else analysis.page_count,
-                notes=[] if analysis is None else list(analysis.notes),
-            )
-        )
-    source = pair.metadata.source
-    if source is None:
+    if pair.metadata.source is None:
         problems.append(
             CheckProblem(
                 category="material",
@@ -527,28 +479,7 @@ def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path)
                 message="Fixed source correspondence is required",
             )
         )
-    else:
-        source_path = resolve_within(root, source.name)
-        if not source_path.is_file():
-            problems.append(
-                CheckProblem(
-                    category="material",
-                    code="source_missing",
-                    subject="metadata/source",
-                    message=f"Source missing: {source.name}",
-                )
-            )
-        elif _sha256(source_path.read_bytes()) != source.sha256:
-            problems.append(
-                CheckProblem(
-                    category="material",
-                    code="source_hash_mismatch",
-                    subject="metadata/source",
-                    message=f"Source hash mismatch: {source.name}",
-                )
-            )
     for subject, evidence in iter_gold_evidence(pair.answer):
-        analysis = analysis_by_id.get(evidence.file_id)
         if evidence.file_id is None:
             problems.append(
                 CheckProblem(
@@ -558,35 +489,6 @@ def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path)
                     message="Evidence must reference a fixed PDF",
                 )
             )
-        if (
-            evidence.page is not None
-            and analysis is not None
-            and analysis.openable
-            and evidence.page > analysis.page_count
-        ):
-            problems.append(
-                CheckProblem(
-                    category="material",
-                    code="page_out_of_range",
-                    subject=subject,
-                    message=f"PDF page {evidence.page} is out of range",
-                )
-            )
-        if analysis is not None and analysis.openable:
-            result, note = quote_result(
-                analysis.page_texts, page=evidence.page, quote=evidence.quote
-            )
-        else:
-            result, note = "not_extractable", "PDF missing or unreadable"
-        quotes.append(
-            QuoteVerification(
-                subject=subject,
-                page=evidence.page,
-                quote=evidence.quote,
-                result=result,
-                note=note,
-            )
-        )
     for contribution in pair.answer.contributions:
         subject = f"contributions/{contribution.contribution_id}"
         for name, claim in (
@@ -700,6 +602,132 @@ def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path)
                 message=item.value,
             )
         )
+    return problems
+
+
+def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path):
+    """Check the exact v2 pair that prepare/save will publish."""
+    from ..workspace.layout import resolve_within
+    from .checking import (
+        CheckProblem,
+        FileVerification,
+        GoldCheckReport,
+        QuoteVerification,
+    )
+    from .models import iter_gold_evidence
+    from .pdfcheck import analyze_pdf, quote_result
+
+    validate_compact_gold_pair(pair)
+    root = Path(material_root)
+    problems: list[CheckProblem] = []
+    files: list[FileVerification] = []
+    quotes: list[QuoteVerification] = []
+    analysis_by_id = {}
+    for item in pair.metadata.files:
+        path = resolve_within(root, item.name)
+        data = path.read_bytes() if path.is_file() else None
+        digest = _sha256(data) if data is not None else None
+        analysis = analyze_pdf(data) if data is not None else None
+        analysis_by_id[item.file_id] = analysis
+        if data is None:
+            problems.append(
+                CheckProblem(
+                    category="material",
+                    code="file_missing",
+                    subject=item.file_id,
+                    message=f"PDF file missing: {item.name}",
+                )
+            )
+        elif digest != item.sha256:
+            problems.append(
+                CheckProblem(
+                    category="material",
+                    code="file_hash_mismatch",
+                    subject=item.file_id,
+                    message=f"PDF hash mismatch: {item.name}",
+                )
+            )
+        elif analysis is None or not analysis.openable:
+            problems.append(
+                CheckProblem(
+                    category="material",
+                    code="file_not_pdf",
+                    subject=item.file_id,
+                    message=f"PDF cannot be opened: {item.name}",
+                )
+            )
+        files.append(
+            FileVerification(
+                file_id=item.file_id,
+                name=item.name,
+                sha256=item.sha256,
+                exists=data is not None,
+                hash_matches=None if data is None else digest == item.sha256,
+                openable=None if analysis is None else analysis.openable,
+                page_count=None
+                if analysis is None or not analysis.openable
+                else analysis.page_count,
+                notes=[] if analysis is None else list(analysis.notes),
+            )
+        )
+    source = pair.metadata.source
+    if source is not None:
+        # source=None 的准备缺口由 pair_preparation_problems 统一报告
+        source_path = resolve_within(root, source.name)
+        if not source_path.is_file():
+            problems.append(
+                CheckProblem(
+                    category="material",
+                    code="source_missing",
+                    subject="metadata/source",
+                    message=f"Source missing: {source.name}",
+                )
+            )
+        elif _sha256(source_path.read_bytes()) != source.sha256:
+            problems.append(
+                CheckProblem(
+                    category="material",
+                    code="source_hash_mismatch",
+                    subject="metadata/source",
+                    message=f"Source hash mismatch: {source.name}",
+                )
+            )
+    for subject, evidence in iter_gold_evidence(pair.answer):
+        analysis = analysis_by_id.get(evidence.file_id)
+        # evidence.file_id 为 None 的准备缺口由 pair_preparation_problems 统一报告
+        if evidence.file_id is not None and (
+            evidence.page is not None
+            and analysis is not None
+            and analysis.openable
+            and evidence.page > analysis.page_count
+        ):
+            problems.append(
+                CheckProblem(
+                    category="material",
+                    code="page_out_of_range",
+                    subject=subject,
+                    message=f"PDF page {evidence.page} is out of range",
+                )
+            )
+        if analysis is not None and analysis.openable:
+            result, note = quote_result(
+                analysis.page_texts, page=evidence.page, quote=evidence.quote
+            )
+        else:
+            result, note = "not_extractable", "PDF missing or unreadable"
+        quotes.append(
+            QuoteVerification(
+                subject=subject,
+                page=evidence.page,
+                quote=evidence.quote,
+                result=result,
+                note=note,
+            )
+        )
+    # 纯内存可判定的准备缺口（结构/材料/科学待办）与文件核对共用同一
+    # 判定逻辑；混合场景下列表内部顺序可能与逐块内联时不同，问题集合
+    # （含重复项数量）、category/code/subject/message 均不变。
+    problems.extend(pair_preparation_problems(pair))
     return GoldCheckReport(
         document_sha256=_sha256(compact_answer_to_json(pair.answer).encode("utf-8")),
         kind="answer",

@@ -1,14 +1,37 @@
-"""评价与 Gold 工具：旧格式读取迁移、草稿检查与受控保存。
+"""评价与 Gold 工具：旧格式读取迁移、草稿检查、受控保存与评分集成。
 
 公共入口按操作组织：``legacy``/``migrate``（旧 v4 读取与迁移草稿）、
 ``compare``（逐项比较）、``checking``（草稿与答案检查）、``store``（准备
 保存、获准保存、查询/恢复）、``models``（新 Gold 标注格式的有类型定义，
-其格式说明与模板由 ``generate`` 生成）。设计约束见
-[评价设计](../../../docs/design/evaluation.md#gold-工具的格式对应方案)。
+其格式说明与模板由 ``generate`` 生成）。评分集成入口见 ``adapt``（既有
+Gold 与提取输出到评分输入的纯内存适配）、``synthetic_gold``（合成 Gold
+与评分计划）、``experiment``（裁决开关两组对照实验与报告）与 ``bundle``
+（评分输入集保存、指纹核对与离线重评）；分层评分本身见
+``hvs_catalog.evaluation.scoring``。设计约束见
+[评价设计](../../../docs/design/evaluation.md)。
 """
 
 from __future__ import annotations
 
+from .adapt import (
+    GoldAdaptation,
+    GoldAdaptationError,
+    adapt_annotation,
+    adapt_compact_answer,
+    adapt_compact_gold_pair,
+    gold_entries_from_annotation,
+    gold_entries_from_compact_answer,
+    gold_entries_from_compact_pair,
+    prediction_from_execution,
+    science_completion,
+)
+from .bundle import (
+    ScoringBundleError,
+    load_scoring_bundle,
+    plan_digest,
+    save_scoring_bundle,
+    score_scoring_bundle,
+)
 from .checking import (
     CheckProblem,
     FileVerification,
@@ -27,6 +50,7 @@ from .compact import (
     compact_answer_to_json,
     compact_gold_annotation,
     compact_metadata_to_json,
+    pair_preparation_problems,
     read_compact_gold_pair,
     validate_compact_gold_pair,
     write_compact_gold_pair,
@@ -106,6 +130,11 @@ from .store import (
     prepare_save,
     query_operation,
 )
+from .synthetic_gold import (
+    build_experiment_plan,
+    synthetic_gold_entries,
+    synthetic_gold_for_paper,
+)
 
 __all__ = [
     "ANSWER_FILENAME",
@@ -132,6 +161,8 @@ __all__ = [
     "CompareReport",
     "FileVerification",
     "GoldActor",
+    "GoldAdaptation",
+    "GoldAdaptationError",
     "GoldAnnotation",
     "GoldApprovalError",
     "GoldBoundness",
@@ -170,8 +201,13 @@ __all__ = [
     "QuoteVerification",
     "SaveApproval",
     "SaveReceipt",
+    "ScoringBundleError",
     "VersionEntry",
+    "adapt_annotation",
+    "adapt_compact_answer",
+    "adapt_compact_gold_pair",
     "approved_save",
+    "build_experiment_plan",
     "check_compact_gold_pair",
     "check_gold_annotation",
     "compact_answer_to_json",
@@ -179,17 +215,29 @@ __all__ = [
     "compact_metadata_to_json",
     "compare_legacy_with_current",
     "gold_annotation_to_json",
+    "gold_entries_from_annotation",
+    "gold_entries_from_compact_answer",
+    "gold_entries_from_compact_pair",
     "legacy_canary",
     "load_preparation",
+    "load_scoring_bundle",
     "manifest_sha256",
     "migrate_legacy_annotation",
+    "pair_preparation_problems",
     "parse_gold_annotation",
     "parse_legacy_annotation",
+    "plan_digest",
+    "prediction_from_execution",
     "prepare_save",
     "query_operation",
     "read_compact_gold_pair",
     "read_gold_annotation",
     "read_legacy_annotation",
+    "save_scoring_bundle",
+    "science_completion",
+    "score_scoring_bundle",
+    "synthetic_gold_entries",
+    "synthetic_gold_for_paper",
     "validate_compact_gold_pair",
     "verify_legacy_canary",
     "write_compact_gold_pair",

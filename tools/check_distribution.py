@@ -16,7 +16,12 @@
 7. 用安装后的 Gold 公共接口与 CLI 在仓库外走查 R06 链路：旧 v4 合成文档
    迁移成草稿、全新草稿检查、准备与模拟批准保存、查询与重放保护，另用
    独立子进程在真实中断窗口后恢复保存；精简 Gold v2 另验两文件包的检查、
-   科学审定批准、保存与中断恢复。
+   科学审定批准、保存与中断恢复；
+8. 用安装后的共享提取入口与评分组件在仓库外走查合成链路（驱动与核对
+   函数见 installed_pipeline_checks）：包来源与方法查询、3 篇合成论文
+   × 2 方法 × 裁决开/关共 12 个 CLI 用例、保存输入的重复评分一致性与
+   计划篡改拒绝、独立进程暂停→决定→恢复，以及两组对照实验的隔离与
+   专家用时未知边界。全部合成材料，不依赖仓库源码路径。
 
 用法：uv run python tools/check_distribution.py [Python 版本]
 
@@ -34,6 +39,8 @@ import tomllib
 import zipfile
 from collections.abc import Iterable, Sequence
 from pathlib import Path
+
+from installed_pipeline_checks import verify_pipeline_and_scoring
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -1109,13 +1116,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             for problem in problems:
                 print(f"  - {problem}")
             return 1
+        problems = verify_pipeline_and_scoring(venv_dir, work_dir, script)
+        if problems:
+            print("[失败] 仓库外合成提取与评分走查未通过：")
+            for problem in problems:
+                print(f"  - {problem}")
+            return 1
     print(
         f"[通过] 仓库外全新环境安装 wheel，独立子进程查询帮助与版本均正常（{version}）；"
         "持久化恢复演示走查通过（重启恢复、结果复用、决定规则、重复计费）；"
         "R05 公共接口走查通过（初始化、执行、裁决、备份、恢复、重放保护）；"
         "R06 Gold 工具走查通过（旧 v4 迁移、草稿检查、全新草稿保存、CLI、"
         "中断窗口恢复与重放保护）；精简 Gold v2 两文件包、CLI 检查、"
-        "获准保存和独立进程中断恢复通过"
+        "获准保存和独立进程中断恢复通过；合成提取与评分走查通过"
+        "（包来源与方法查询、3×2×2 提取×评分用例、重复评分一致与篡改"
+        "拒绝、跨进程暂停决定恢复、两组对照实验隔离与专家用时边界）"
     )
     return 0
 
