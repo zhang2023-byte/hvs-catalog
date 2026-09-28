@@ -42,7 +42,9 @@
 
 ## 压缩与重试
 
-自动压缩启用，`reserveTokens=32768`、`keepRecentTokens=20000`。阈值为 `contextTokens > contextWindow - reserveTokens`；有效窗口以模型 registry 为准，而不是只看模型宣传值。项目信任、设置加载与实际模型配置都必须生效。压缩使用当前模型，也可能因额度失败。
+自动压缩启用，普通设置为 `reserveTokens=32768`、`keepRecentTokens=20000`。本项目只对 `zai-coding-cn/glm-5.3` 设置 `compaction.modelOverrides` 的 `reserveTokens=700000`：当前 registry 窗口为 1000000，故在约 300000 token 触发压缩；主代理与 Sol 保持普通设置。阈值为 `contextTokens > contextWindow - reserveTokens`，不是严格请求长度上限；自动压缩在后续请求前检查，保留摘要和近期约 20000 token，不清空原始会话或任务计数。
+
+有效窗口以模型 registry 为准；离线检查会核对实际模型与各自解析后的设置，GLM 窗口变化使 300k 阈值偏移时拒绝放行，须重新核对。项目信任、设置加载与实际模型配置都必须生效；修改磁盘设置不证明已运行子进程热加载，新启动/续接仍须核对压缩事件。`reserveTokens` 也影响摘要输出预算（受模型最大输出限制），不等于摘要实际会使用这么多 token。压缩使用当前模型，也可能因额度失败。
 
 Pi 的瞬时错误重试最多 2 次，provider 层重试为 0；工作流层不额外自动重试、切换模型或等待定时重启。失败后保存现场并通知用户。原始会话 JSONL、运行材料和任务计数不能由压缩摘要代替；清理运行材料前先确认不再需要恢复。
 

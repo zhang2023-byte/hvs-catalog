@@ -49,6 +49,23 @@ export function validateCapabilities(capabilities, profiles) {
   }
 }
 
+// Compare the SDK-resolved values, not the unresolved modelOverrides object.
+export function validateCompaction(effective, configured, model) {
+  const key = `${model.provider}/${model.id}`;
+  const override = configured.modelOverrides?.[key] ?? {};
+  assert.deepEqual(effective, {
+    enabled: configured.enabled,
+    reserveTokens: override.reserveTokens ?? configured.reserveTokens,
+    keepRecentTokens: override.keepRecentTokens ?? configured.keepRecentTokens,
+  }, `Unexpected effective compaction for ${key}`);
+  const threshold = model.contextWindow - effective.reserveTokens;
+  assert(threshold > effective.keepRecentTokens, `${key}: no room after compaction`);
+  if (key === 'zai-coding-cn/glm-5.3') {
+    assert.equal(threshold, 300000, 'GLM registry changed: review the 300k threshold');
+  }
+  return { ...effective, contextWindow: model.contextWindow, threshold };
+}
+
 export async function checkProject() {
   assert(!process.env.PI_SUBAGENT_CHILD, 'Run the public-tool integration check in the parent Pi environment, not inside a restricted child. Do not strip child-safety variables; children may run check.test.mjs and review the saved parent check report.');
   const host = await openPi(root);
@@ -96,9 +113,13 @@ export async function checkProject() {
     assert.deepEqual(host.loader.getPrompts().prompts.map(p => p.name), ['hvs-work']);
     assert.equal(host.settings.getDefaultProvider(), settings.defaultProvider);
     assert.equal(host.settings.getDefaultModel(), settings.defaultModel);
-    for (const model of settings.enabledModels) {
-      const slash = model.indexOf('/');
-      assert.deepEqual(host.settings.getCompactionSettings({provider:model.slice(0,slash),id:model.slice(slash+1)}), settings.compaction);
+    const modelRuntime = await host.sdk.ModelRuntime.create();
+    const compaction = {};
+    for (const key of settings.enabledModels) {
+      const slash = key.indexOf('/');
+      const model = modelRuntime.getModel(key.slice(0, slash), key.slice(slash + 1));
+      assert(model, `Missing model registry entry: ${key}`);
+      compaction[key] = validateCompaction(host.settings.getCompactionSettings(model), settings.compaction, model);
     }
     assert.equal(host.settings.getRetrySettings().maxRetries, settings.retry.maxRetries);
     assert.equal(host.settings.getProviderRetrySettings().maxRetries, 0);
@@ -124,6 +145,7 @@ export async function checkProject() {
       result: 'passed', scope: 'offline public SDK/tool contract; no child or model calls',
       resources: { extensions: extensionNames, skills: ['pi-subagents'], prompts: ['hvs-work'] },
       agents: listing.details.agentCapabilities.agents,
+      compaction,
       unverified: ['real model calls', 'retained-session continuation', 'provider/compaction faults', 'parent process restart'],
     };
   } finally { await host.close(); }

@@ -57,7 +57,12 @@
   "compaction": {
     "enabled": true,
     "reserveTokens": 32768,
-    "keepRecentTokens": 20000
+    "keepRecentTokens": 20000,
+    "modelOverrides": {
+      "zai-coding-cn/glm-5.3": {
+        "reserveTokens": 700000
+      }
+    }
   },
   "retry": {
     "enabled": true,

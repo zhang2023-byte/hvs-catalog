@@ -5,8 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { loadPi } from './pi-host.mjs';
-import { validateReview, validateCapabilities } from './check.mjs';
-const { value } = await loadPi();
+import { validateReview, validateCapabilities, validateCompaction } from './check.mjs';
+const { value, sdk } = await loadPi();
 const schema = JSON.parse(fs.readFileSync(new URL('./review.schema.json', import.meta.url), 'utf8'));
 const good = { verdict:'pass', summary:'Synthetic format specimen', findings:[], validation:'Synthetic only: command evidence is checked separately', risks:[] };
 const finding = {severity:'must_fix', file:'fixture.py', issue:'Synthetic defect', fix:'Repair fixture'};
@@ -52,6 +52,27 @@ for (const [name, change] of Object.entries({
 test('reject missing or duplicated required agents', () => {
   for (const agents of [[],[agent,agent]]) assert.throws(() => validateCapabilities({agents},{review:profile}));
   assert.throws(() => validateCapabilities({}, {review:profile}));
+});
+const compactionConfig = {
+  enabled: true, reserveTokens: 32768, keepRecentTokens: 20000,
+  modelOverrides: {'zai-coding-cn/glm-5.3': {reserveTokens: 700000}},
+};
+for (const [provider, id, contextWindow, threshold] of [
+  ['zai-coding-cn', 'glm-5.3', 1000000, 300000],
+  ['openai-codex', 'gpt-6-astra', 272000, 239232],
+  ['openai-codex', 'gpt-6-sol', 272000, 239232],
+]) test(`model-specific compaction: ${provider}/${id}`, () => {
+  const settings = sdk.SettingsManager.inMemory({compaction: compactionConfig});
+  const model = {provider, id, contextWindow};
+  const report = validateCompaction(settings.getCompactionSettings(model), compactionConfig, model);
+  assert.equal(report.threshold, threshold);
+  assert.equal(report.keepRecentTokens, 20000);
+});
+test('compaction check rejects model metadata drift and unintended overrides', () => {
+  const model = {provider:'zai-coding-cn', id:'glm-5.3', contextWindow:1048576};
+  const effective = {enabled:true, reserveTokens:700000, keepRecentTokens:20000};
+  assert.throws(() => validateCompaction(effective, compactionConfig, model), /registry changed/);
+  assert.throws(() => validateCompaction({...effective, reserveTokens:32768}, compactionConfig, {...model, contextWindow:1000000}), /Unexpected effective/);
 });
 test('failed check replaces stale success and respects child restriction', () => {
   const root = fileURLToPath(new URL('../', import.meta.url));
