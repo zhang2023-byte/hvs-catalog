@@ -20,6 +20,27 @@
 
 运行记录不再计算、保存或比较货币费用：新记录不填写费用字段，用量统计只报告调用数与 tokens；历史有值记录与旧账本数据仍可读取，历史行不被改写。`hvs-catalog demo` 持久化演示中的模拟服务账单是保留的历史演示例外，仍会显示模拟费用，不代表新运行会产生费用。
 
+`hvs-catalog acquisition` 提供 arXiv 源码包获取子系统：受限检索发现、版本冻结与固定版本获取、修订检查、本地导入与状态查询。发现轮次按首提日期窗口与检索词/类别分页推进，每页溯源（含归档页文档）持久化在工作空间；未带版本的获取先查元数据选定当时最新版本并在下载前持久化冻结，恢复绝不悄悄改选更新版本；修订检查独立于发现窗口，只记录待处理状态。首次使用前用公开 Python 接口初始化工作空间（状态命令不会隐式初始化）：
+
+```bash
+python -c "from hvs_catalog.workspace import initialize_workspace; initialize_workspace('./ws')"
+```
+
+命令示例：
+
+```bash
+hvs-catalog acquisition discover --space ./ws --from 2024-01-01 --to 2024-01-31 \
+    --terms "dark matter" --category astro-ph.CO      # 发现（退出码 3 = 未完可恢复）
+hvs-catalog acquisition fetch --space ./ws --id 2401.01234            # 获取（或恢复）
+hvs-catalog acquisition revisions --space ./ws                       # 修订检查（新版→pending）
+hvs-catalog acquisition import --space ./ws --file pkg.tar.gz \
+    --id 2401.01234v2 --provenance "从镜像站获得"                      # 本地导入（身份与来源声明必填）
+hvs-catalog acquisition status --space ./ws [--json]               # 状态（不触网、不隐式初始化）
+hvs-catalog acquisition material --space ./ws --id 2401.01234       # 选定版本材料引用（交付提取）
+```
+
+退出码区分结果：0 成功；1 工程错误；3 发现未完（可恢复）；4 远程材料形态不支持（原始字节已保留）；5 源码不可用（待处理，不是“科学上无关”）；6 无可用材料；7 修订检查未能全部核实（unknown，不能当成无新版）。工程边界：同一工作空间的发现、获取、修订检查与本地导入从操作开始到收尾持有空间排他锁，其他写调用立即返回“忙”（不排队、不自动重试；锁随进程退出释放，之后可重试）；网络等待不放在数据库事务内，网络限流仍为本机全局（跨工作空间共享，含发送间隔与崩溃在途标记），出现未确认在途状态时需人工协调恢复，CLI 不提供重置入口；限流状态文件版本不兼容时拒绝使用。包安全检查在解压前有界（解压输出额度在分配前限定，成员数逐项解析立即停止，总量/路径/链接等护栏，形态不支持与获取失败分开报告）；“形态不支持”分两种：**远程获取**已收到的原始字节在工作空间内保留（挂选择状态与尝试记录，随整体备份恢复）；**本地导入**在发布前拒绝——文件未导入工作空间（无选择、尝试记录或备份引用），原文件不改动，CLI 以非零退出码报告。归档兼容范围（明确列出，特殊变体报告“不支持”而非仿真解析）：支持普通 tar、gzip 封装 tar、单个 TeX 与 gzip 单 TeX；tar 扩展头支持**每个成员至多一个**、负载能完整切分的局部 PAX（`x`）与 GNU 长名（`L`），且 PAX 记录名必须在**允许清单**内（纯元数据键：`path`/`linkpath`/`mtime`/`ctime`/`atime`/`comment`/`uid`/`gid`/`uname`/`gname`/`hdrcharset`）；明确拒绝（在进入解析前报告不支持、字节在限额内保留）：一切不在清单内的 PAX 字段——含 `size`（缩放/覆盖布局）、全部 `GNU.sparse.*`（稀疏布局）及其他未承诺命名空间、连续扩展头链（多级覆盖）、全局 PAX 头（`g`）、GNU 长链接（`K`）、链接/设备/管道成员、路径越界或别名冲突、截断或尾随数据；不把不支持的归档当普通文本处理，支持键上的元数据解析失败以可观察的完整性错误报告而非静默回退。特殊变体（如 PAX size）在真实 arXiv 材料中的出现率与受影响规模尚未验证，不支持是明确的能力边界而非对罕见性的判断。页级溯源是解析视图（含摘要等全部返回元数据，非原始 Atom 线路响应）；全部获取进度、溯源与保留字节都在工作空间内，随整体备份/恢复。生产 HTTP 传输使用 requests，关闭自动重定向与底层重试；每一跳仍由共享限流门管理，响应按原始字节有界读取。已完成小范围真实检索及单篇固定版本源码获取、重复获取与备份恢复验证，不代表全量检索覆盖或全部归档形态兼容；断电级耐久性与跨机协调未验证。
+
 已明确裁定的局部修正直接修改原有 Gold 文件，由 Git 保存历史；检查与修订依据要求见 [局部修正约定](docs/design/evaluation.md#gold-的局部修正与-git-历史)。
 
 50 篇真实论文的私有 Gold 已通过验收，尚未评分，具体进度见 [当前交接](.dev/progress.md)。文件归属与工具目标见 [Gold 仓布局](docs/design/architecture.md#gold-仓目标布局)，保存授权见 [批准说明](contracts/generated/gold/templates/gold-approval.md)；格式转换和内容审阅不自动构成正式保存授权。
@@ -46,7 +67,7 @@ uv pip install --python /path/to/env dist/hvs_catalog-*.whl
 
 开发环境与检查命令见 [验证要求](CONTRIBUTING.md#验证要求)。
 
-实测平台为 macOS（Apple Silicon）；各阶段的 Python 版本与验证范围见 [当前进度](.dev/progress.md)。安装包为纯 Python wheel，运行时依赖 LangGraph（流程编排与检查点，含 SQLite 检查点后端）、Pydantic（记录格式定义与校验）和 pypdf（Gold 材料的 PDF 解析）；其他平台未实测。
+实测平台为 macOS（Apple Silicon）；各阶段的 Python 版本与验证范围见 [当前进度](.dev/progress.md)。安装包为纯 Python wheel，运行时依赖 LangGraph（流程编排与检查点，含 SQLite 检查点后端）、Pydantic（记录格式定义与校验）、pypdf（Gold 材料的 PDF 解析）及 requests/urllib3（arXiv HTTP 传输）；其他平台未实测。
 
 ## 持久化与恢复演示
 

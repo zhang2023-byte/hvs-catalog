@@ -984,6 +984,374 @@ else:
 '''
 
 
+R10_DRIVER = '''
+"""仓库外 R10 获取子系统 CLI 走查：全部离线合成材料。
+
+用文档化的公开 Python 初始化命令初始化工作空间并生成合成 tar.gz
+源码包，然后用安装的 console 脚本在独立子进程里走 import →
+status（人读与 JSON 两种）→ material → 错误码边界。netflow 阶段
+补齐安装后 discover/fetch/revisions 的成功与新进程恢复证据：由
+安装的解释器运行子进程脚本（清除 PYTHONPATH，只依赖安装后的包），
+在子进程内把 CLI 服务工厂替换为注入合成假协议服务的替身（测试侧
+注入，产品不提供绕过限流/离线的后门），跨两个独立子进程完成：
+页界中断 → 新进程恢复完整 → 获取 → 修订 pending → 材料输出。
+不触真实 arXiv。
+"""
+
+import io
+import json
+import os
+import subprocess
+import sys
+import tarfile
+from pathlib import Path
+
+root = Path(sys.argv[1])
+step = sys.argv[2]
+script = Path(sys.argv[3])
+space = root / "r10-space"
+# 步骤工作目录（子进程 cwd）；工作空间本身仍由文档化命令初始化。
+root.mkdir(parents=True, exist_ok=True)
+
+# 与 README 文档化初始化完全一致的公开命令（唯一初始化入口）。
+DOCUMENTED_INIT = (
+    "from hvs_catalog.workspace import initialize_workspace; "
+    "initialize_workspace(r'%s')" % space
+)
+
+NETCHILD_SOURCE = """import sys
+from pathlib import Path
+
+# 安装后 R10 网络路径子进程走查（离线合成）。由安装的解释器执行：
+# 导入安装的 hvs_catalog，把 CLI 服务工厂替换为注入合成假协议服务
+# 的替身（测试侧注入；产品 CLI 无离线/绕限流后门），再调用 CLI main。
+# 两个独立进程分别承担"页界中断"与"恢复+获取+修订+材料"。
+
+import io
+import tarfile
+
+from hvs_catalog.cli import main
+import hvs_catalog.cli_acquisition as cli_acq
+from hvs_catalog.pipeline.acquisition.lifecycle import AcquisitionService
+from hvs_catalog.pipeline.acquisition.protocol import (
+    ArxivIdBatchResult,
+    ArxivIdLookup,
+    ArxivPaperMeta,
+    ArxivSearchPage,
+    ArxivSearchRequest,
+    ArxivSourceDownload,
+    parse_arxiv_identifier,
+)
+from hvs_catalog.workspace import open_workspace
+
+
+class FakeClock:
+    def __init__(self):
+        self._now = 1700000000.0
+
+    def now(self):
+        return self._now
+
+    def sleep(self, seconds):
+        self._now += max(0.0, seconds)
+
+
+def make_meta(cid, version):
+    return ArxivPaperMeta(
+        canonical_id=cid,
+        version=version,
+        api_id_url="http://arxiv.org/abs/%sv%d" % (cid, version),
+        title="Paper " + cid,
+        authors=("Author One",),
+        categories=("astro-ph.CO",),
+        primary_category="astro-ph.CO",
+        published="2024-01-01T00:00:00Z",
+        updated="2024-01-02T00:00:00Z",
+        abstract="installed smoke abstract",
+        doi=None,
+        journal_ref=None,
+    )
+
+
+def make_page(request, entries, total, fetched_at):
+    return ArxivSearchPage(
+        request=request,
+        response_url="https://export.arxiv.org/api/query synthetic",
+        fetched_at=fetched_at,
+        total_results=total,
+        returned_start_index=request.start,
+        entries=entries,
+        anomalies=(),
+    )
+
+
+PACKAGE_BYTES = None
+
+
+def package_bytes():
+    global PACKAGE_BYTES
+    if PACKAGE_BYTES is None:
+        raw = io.BytesIO()
+        with tarfile.open(fileobj=raw, mode="w:gz") as archive:
+            for name, data in {
+                "main.tex": b"\\\\\\\\documentclass{article}netflow smoke",
+                "data/table.csv": b"a,b\\\\n1,2\\\\n",
+            }.items():
+                info = tarfile.TarInfo(name)
+                info.size = len(data)
+                archive.addfile(info, io.BytesIO(data))
+        PACKAGE_BYTES = raw.getvalue()
+    return PACKAGE_BYTES
+
+
+class FakeApi:
+    def __init__(self):
+        self.metadata = {"2401.05555": make_meta("2401.05555", 2)}
+
+    def search(self, request):
+        if request.start == 0:
+            return make_page(
+                request, (make_meta("2401.06666", 1),), 2, 1700000100.0
+            )
+        if request.start == 1:
+            return make_page(
+                request, (make_meta("2401.06667", 1),), 2, 1700000200.0
+            )
+        raise AssertionError("unscripted page %d" % request.start)
+
+    def metadata_by_ids(self, identifiers):
+        lookups = []
+        for item in identifiers:
+            requested = parse_arxiv_identifier(
+                item if isinstance(item, str) else item.canonical_id
+            )
+            meta = self.metadata.get(requested.canonical_id)
+            lookups.append(
+                ArxivIdLookup(
+                    requested=requested,
+                    status="found" if meta is not None else "not_found",
+                    meta=meta,
+                )
+            )
+        return ArxivIdBatchResult(
+            response_url="synthetic",
+            fetched_at=1700000000.0,
+            lookups=tuple(lookups),
+            anomalies=(),
+        )
+
+    def download_source(self, identifier):
+        versioned = (
+            identifier if isinstance(identifier, str) else identifier.versioned_id
+        )
+        payload = package_bytes()
+        return ArxivSourceDownload(
+            identifier=parse_arxiv_identifier(versioned),
+            final_url="https://arxiv.org/e-print/" + versioned,
+            content_type="application/gzip",
+            payload=payload,
+            byte_count=len(payload),
+            fetched_at=1700000000.0,
+        )
+
+
+phase = sys.argv[1]
+space_path = sys.argv[2]
+workspace = open_workspace(Path(space_path))
+service = AcquisitionService(workspace, FakeApi(), clock=FakeClock())
+
+
+def factory(space_arg):
+    return service
+
+
+cli_acq._build_acquisition_service = factory
+
+if phase == "partial":
+    code = main([
+        "acquisition", "discover", "--space", space_path,
+        "--from", "2024-01-01", "--to", "2024-01-31",
+        "--terms", "dark matter", "--category", "astro-ph.CO",
+        "--max-pages", "1",
+    ])
+    print("NETFLOW-PARTIAL-CODE=%d" % code)
+    sys.exit(0 if code == 3 else 1)
+
+if phase == "resume":
+    checks = []
+    code_discover = main([
+        "acquisition", "discover", "--space", space_path,
+        "--from", "2024-01-01", "--to", "2024-01-31",
+        "--terms", "dark matter", "--category", "astro-ph.CO",
+    ])
+    checks.append(("discover-resume", code_discover, 0))
+    code_fetch = main([
+        "acquisition", "fetch", "--space", space_path, "--id", "2401.05555v1",
+    ])
+    checks.append(("fetch", code_fetch, 0))
+    code_rev = main([
+        "acquisition", "revisions", "--space", space_path,
+        "--id", "2401.05555",
+    ])
+    checks.append(("revisions", code_rev, 0))
+    code_mat = main([
+        "acquisition", "material", "--space", space_path, "--id", "2401.05555",
+    ])
+    checks.append(("material", code_mat, 0))
+    bad = []
+    for name, code, want_code in checks:
+        if code != want_code:
+            bad.append("%s 退出码 %d（期望 %d）" % (name, code, want_code))
+    if bad:
+        for item in bad:
+            print("[问题] " + item)
+        sys.exit(1)
+    print("NETFLOW-RESUME-OK")
+    sys.exit(0)
+
+sys.exit(2)
+"""
+
+def run_cli(*args: object) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+    return subprocess.run(
+        [str(script), "acquisition", *map(str, args)],
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+
+
+def run_child(*command: object) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+    return subprocess.run(
+        list(map(str, command)),
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+
+
+def make_package(path: Path) -> None:
+    raw = io.BytesIO()
+    with tarfile.open(fileobj=raw, mode="w:gz") as archive:
+        for name, data in {
+            "main.tex": b"\\\\documentclass{article}installed smoke",
+            "data/table.csv": b"a,b\\\\n1,2\\\\n",
+        }.items():
+            info = tarfile.TarInfo(name)
+            info.size = len(data)
+            archive.addfile(info, io.BytesIO(data))
+    path.write_bytes(raw.getvalue())
+
+
+if step == "setup":
+    # 与 README 文档完全一致的公开初始化命令（子进程、安装解释器）。
+    result = run_child(sys.executable, "-c", DOCUMENTED_INIT)
+    if result.returncode != 0:
+        print("[问题] 文档化初始化失败：%s%s" % (result.stdout, result.stderr))
+        raise SystemExit(1)
+    make_package(root / "smoke.tar.gz")
+    print("R10-READY")
+    raise SystemExit(0)
+
+if step == "flow":
+    problems = []
+    imported = run_cli(
+        "import", "--space", space, "--file", root / "smoke.tar.gz",
+        "--id", "2401.01234v1", "--provenance", "distribution smoke",
+    )
+    if imported.returncode != 0 or "state=imported" not in imported.stdout:
+        problems.append("import 失败：%d %s %s" % (
+            imported.returncode, imported.stdout, imported.stderr))
+    again = run_cli(
+        "import", "--space", space, "--file", root / "smoke.tar.gz",
+        "--id", "2401.01234v1", "--provenance", "second declaration",
+    )
+    if again.returncode != 0 or "重放" not in again.stdout:
+        problems.append("重复导入未按重放处理：%d %s %s" % (
+            again.returncode, again.stdout, again.stderr))
+    missing_provenance = run_cli(
+        "import", "--space", space, "--file", root / "smoke.tar.gz",
+        "--id", "2401.01234v1",
+    )
+    if missing_provenance.returncode != 2:
+        problems.append("缺来源声明应退出 2，实际 %d" % missing_provenance.returncode)
+    status_text = run_cli("status", "--space", space)
+    if status_text.returncode != 0 or "state=imported" not in status_text.stdout:
+        problems.append("status 失败：%d %s %s" % (
+            status_text.returncode, status_text.stdout, status_text.stderr))
+    status_json = run_cli("status", "--space", space, "--json")
+    try:
+        payload = json.loads(status_json.stdout)
+        logged = [
+            item["provenance"]
+            for item in payload["selections"][0]["provenance_log"]
+        ]
+    except (ValueError, KeyError, IndexError):
+        logged = []
+        problems.append("status --json 输出不可解析：%r" % status_json.stdout)
+    if logged != ["distribution smoke", "second declaration"]:
+        problems.append("溯源日志异常：%s" % logged)
+    material = run_cli("material", "--space", space, "--id", "2401.01234")
+    if material.returncode != 0 or "arxiv-source-2401.01234" not in material.stdout:
+        problems.append("material 失败：%d %s %s" % (
+            material.returncode, material.stdout, material.stderr))
+    not_ready = run_cli("material", "--space", space, "--id", "2401.09999")
+    if not_ready.returncode != 6:
+        problems.append("未就绪材料退出码应为 6，实际 %d" % not_ready.returncode)
+    uninitialized = run_cli("status", "--space", root / "not-a-space")
+    if uninitialized.returncode != 1:
+        problems.append("未初始化空间退出码应为 1，实际 %d" % uninitialized.returncode)
+    bad_discover = run_cli(
+        "discover", "--space", space, "--from", "2024-01-01", "--to", "2024-01-02"
+    )
+    if bad_discover.returncode != 1 or "至少提供其一" not in bad_discover.stderr:
+        problems.append("缺检索条件应拒绝（退出码 1）：%d %s" % (
+            bad_discover.returncode, bad_discover.stderr))
+    if problems:
+        for problem in problems:
+            print("[问题] %s" % problem)
+        raise SystemExit(1)
+    print("R10-CLI-OK")
+    raise SystemExit(0)
+
+if step == "netflow":
+    # 安装后 discover/fetch/revisions 的离线合成成功与跨进程恢复：
+    # 两个独立子进程（安装解释器、清 PYTHONPATH、测试侧注入假服务）。
+    netchild = root / "r10_netchild.py"
+    netchild.write_text(NETCHILD_SOURCE, encoding="utf-8")
+    partial = run_child(sys.executable, netchild, "partial", space)
+    if partial.returncode != 0 or "NETFLOW-PARTIAL-CODE=3" not in partial.stdout:
+        print("[问题] 页界中断步骤异常：%d %s %s" % (
+            partial.returncode, partial.stdout, partial.stderr))
+        raise SystemExit(1)
+    resume = run_child(sys.executable, netchild, "resume", space)
+    if resume.returncode != 0 or "NETFLOW-RESUME-OK" not in resume.stdout:
+        print("[问题] 恢复步骤异常：%d %s %s" % (
+            resume.returncode, resume.stdout, resume.stderr))
+        raise SystemExit(1)
+    # 恢复后的存储事实可被纯 CLI 状态查询独立复核（不注入）。
+    verify = run_cli("status", "--space", space)
+    if verify.returncode != 0 or "state=complete" not in verify.stdout:
+        print("[问题] 恢复后状态查询异常：%d %s %s" % (
+            verify.returncode, verify.stdout, verify.stderr))
+        raise SystemExit(1)
+    print("R10-NETFLOW-OK")
+    raise SystemExit(0)
+
+raise SystemExit(2)
+'''
+
+
 def verify_r06(python: Path, work_dir: Path, script: Path) -> list[str]:
     """仓库外用安装后的 Gold 公共接口与 CLI 走查 R06 链路。
 
@@ -1031,6 +1399,47 @@ def verify_r06(python: Path, work_dir: Path, script: Path) -> list[str]:
             continue
         if marker is not None and marker not in result.stdout:
             problems.append(f"R06 步骤 {step} 输出缺少 {marker!r}：{result.stdout!r}")
+    return problems
+
+
+def verify_r10(python: Path, work_dir: Path, script: Path) -> list[str]:
+    """仓库外用安装后的 acquisition CLI 走查 R10 离线链路。
+
+    独立子进程完成工作空间初始化与合成包生成，再用安装的 console
+    脚本在多个独立进程里走导入/重放、状态（人读+JSON）、材料输出与
+    错误码边界；全部清除 PYTHONPATH、不触网。
+    """
+    problems: list[str] = []
+    driver = work_dir / "r10_check.py"
+    driver.write_text(R10_DRIVER, encoding="utf-8")
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+
+    def run_step(name: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [str(python), str(driver), str(work_dir / "r10"), name, str(script)],
+            cwd=work_dir,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            check=False,
+        )
+
+    for step, marker, code in (
+        ("setup", "R10-READY", 0),
+        ("flow", "R10-CLI-OK", 0),
+        ("netflow", "R10-NETFLOW-OK", 0),
+    ):
+        result = run_step(step)
+        if result.returncode != code:
+            problems.append(
+                f"R10 步骤 {step} 退出码 {result.returncode}（期望 {code}）：\n"
+                f"{result.stdout}{result.stderr}"
+            )
+            continue
+        if marker not in result.stdout:
+            problems.append(f"R10 步骤 {step} 输出缺少 {marker!r}：{result.stdout!r}")
     return problems
 
 
@@ -1116,6 +1525,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             for problem in problems:
                 print(f"  - {problem}")
             return 1
+        problems = verify_r10(bin_python, work_dir, script)
+        if problems:
+            print("[失败] 仓库外 R10 获取子系统 CLI 走查未通过：")
+            for problem in problems:
+                print(f"  - {problem}")
+            return 1
         problems = verify_pipeline_and_scoring(venv_dir, work_dir, script)
         if problems:
             print("[失败] 仓库外合成提取与评分走查未通过：")
@@ -1130,7 +1545,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "中断窗口恢复与重放保护）；精简 Gold v2 两文件包、CLI 检查、"
         "获准保存和独立进程中断恢复通过；合成提取与评分走查通过"
         "（包来源与方法查询、3×2×2 提取×评分用例、重复评分一致与篡改"
-        "拒绝、跨进程暂停决定恢复、两组对照实验隔离与专家用时边界）"
+        "拒绝、跨进程暂停决定恢复、两组对照实验隔离与专家用时边界）；"
+        "R10 获取子系统 CLI 走查通过（文档化公开初始化、导入/重放、"
+        "状态人读+JSON、材料输出、未就绪/未初始化/缺检索条件/缺来源"
+        "声明的错误码边界；安装后 discover/fetch/revisions 的离线合成"
+        "成功与跨进程恢复，全部离线合成、清 PYTHONPATH、无产品后门）"
     )
     return 0
 

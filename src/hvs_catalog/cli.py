@@ -1,5 +1,6 @@
 """命令行入口，当前提供帮助、版本查询、离线持久化恢复演示、Gold
-工具，以及合成提取与独立评分演示。
+工具、合成提取与独立评分演示，以及 arXiv 获取子系统（R10）的
+发现/获取/修订/导入与状态查询。
 
 命令行只列出已经实现的操作；真实 direct/candidate_review 提取
 （R14–R16）与正式评分尚未提供，演示入口不冒充这些能力。其余命令随
@@ -337,6 +338,9 @@ def build_parser() -> argparse.ArgumentParser:
     score_demo.add_argument(
         "--output", default=None, type=Path, help="可选：评分报告 JSON 输出路径"
     )
+    from .cli_acquisition import build_acquisition_parser
+
+    build_acquisition_parser(commands)
     return parser
 
 
@@ -803,4 +807,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _run_extract_demo(args)
     if args.command == "score":
         return _run_score_demo(args)
+    if args.command == "acquisition":
+        from .cli_acquisition import EXIT_OK
+
+        result = args.handler(args)
+        assert isinstance(result, int)
+        return EXIT_OK if result == 0 else result
     return 0
