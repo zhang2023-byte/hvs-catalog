@@ -20,15 +20,11 @@ class GoldCheckError(GoldError):
 
 
 class GoldApprovalError(GoldError):
-    """批准记录与准备内容、目标前提或规则版本绑定不符。"""
+    """批准记录与具体配对内容、目标前提或规则版本绑定不符。"""
 
 
 class GoldTargetError(GoldError):
     """正式目标目录不满足保存前提，例如已有非托管资料或目标状态变化。"""
-
-
-class GoldOperationConflictError(GoldError):
-    """同一操作标识携带不同内容，或操作记录无法与现场对应。"""
 
 
 class GoldOutputConflictError(GoldError):

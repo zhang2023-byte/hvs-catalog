@@ -351,7 +351,7 @@ def test_cli_import_replay_and_status_json(
     )
     assert code == 0
     out = capsys.readouterr().out
-    assert "arxiv-source-2305.01234-2305.01234v2" in out
+    assert "arxiv-source-2305.01234v2" in out
 
 
 def test_cli_material_not_ready_exit6(capsys, workspace, patched_service):
@@ -478,7 +478,7 @@ def test_import_unsupported_local_file_message_and_no_side_effects(
     workspace, tmp_path, capsys
 ):
     """本地不支持形态：退出码 1，消息明确“未导入工作空间/原文件未改动”。"""
-    import tests.test_acquisition_archive as arch
+    import test_acquisition_archive as arch
 
     records = arch._pax_record("GNU.sparse.map", "garbage")
     sparse_pkg = b"".join(
@@ -707,3 +707,56 @@ def test_cli_remote_provenance_in_status_and_material(
     assert (
         "downloaded from https://arxiv.org/e-print/2401.00001v1" in provenance_lines[0]
     )
+
+
+def test_cli_old_version_query_does_not_switch_current(
+    capsys, workspace, patched_service
+):
+    api = FakeApi(
+        downloads={"2401.00001v1": GOOD_PACKAGE, "2401.00001v2": GOOD_PACKAGE}
+    )
+    patched_service(api)
+    for version in (1, 2):
+        assert (
+            main(
+                [
+                    "acquisition",
+                    "fetch",
+                    "--space",
+                    str(workspace.root),
+                    "--id",
+                    f"2401.00001v{version}",
+                ]
+            )
+            == 0
+        )
+        capsys.readouterr()
+    assert (
+        main(
+            [
+                "acquisition",
+                "status",
+                "--space",
+                str(workspace.root),
+                "--id",
+                "2401.00001v1",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["selections"][0]["version"] == 2
+    assert payload["versions"][0]["version"] == 1
+    assert payload["versions"][0]["source_record"]
+    assert "2401.00001v1" in payload["versions"][0]["retrieval"]
+    assert len(api.download_calls) == 2
+
+
+def test_cli_old_format_errors_preserving_state(capsys, workspace, patched_service):
+    patched_service(FakeApi())
+    workspace.store().set_meta("acquisition:index", '{"rounds":[]}')
+    assert main(["acquisition", "status", "--space", str(workspace.root)]) == 1
+    assert "新建工作空间" in capsys.readouterr().err
+    assert workspace.store().get_meta("acquisition:index") == '{"rounds":[]}'
+    assert workspace.store().get_meta("acquisition:state") is None

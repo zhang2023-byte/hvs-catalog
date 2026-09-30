@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import pytest
+from shared_scenarios import direct_flow, open_service, start_execution
 
 from hvs_catalog.records.runs import ModelSpec
 from hvs_catalog.runtime import (
@@ -14,8 +15,6 @@ from hvs_catalog.runtime import (
     get_execution,
     resume_execution,
 )
-from hvs_catalog.synthetic import open_service, start_execution
-from hvs_catalog.synthetic.flow import SyntheticFlow
 from hvs_catalog.workspace import (
     OperationKeyConflictError,
     RecoveryInconsistentError,
@@ -33,13 +32,13 @@ def space(tmp_path):
 
 @pytest.fixture()
 def service(tmp_path):
-    svc = open_service(tmp_path / "ledger.db")
+    svc = open_service(tmp_path / "calls.jsonl")
     yield svc
     svc.close()
 
 
 def _snapshot(space, *, expert=True, model="synthetic-mock", method="direct"):
-    from hvs_catalog.synthetic.runner import import_materials
+    from shared_scenarios import import_materials
 
     source = import_materials(space, "A")
     return build_input_snapshot(
@@ -52,7 +51,7 @@ def _snapshot(space, *, expert=True, model="synthetic-mock", method="direct"):
 
 def test_same_request_same_input_reuses_execution(space):
     snapshot = _snapshot(space)
-    flow = SyntheticFlow(paper="A")
+    flow = direct_flow()
     first, reused = create_execution(
         space, request_key="req-1", input_snapshot=snapshot, flow=flow
     )
@@ -66,7 +65,7 @@ def test_same_request_same_input_reuses_execution(space):
 
 
 def test_same_request_different_input_rejected(space):
-    flow = SyntheticFlow(paper="A")
+    flow = direct_flow()
     create_execution(
         space,
         request_key="req-1",
@@ -83,7 +82,7 @@ def test_same_request_different_input_rejected(space):
 
 
 def test_changed_input_creates_new_execution(space):
-    flow = SyntheticFlow(paper="A")
+    flow = direct_flow()
     first, _ = create_execution(
         space,
         request_key="req-1",
@@ -146,20 +145,20 @@ def test_missing_rules_archive_blocks_resume(space, service, tmp_path):
 
 def test_incompatible_flow_version_blocks_resume(space, service):
     execution, _flow, _ = start_execution(space, paper="B", request_key="b")
-    mismatch = SyntheticFlow(paper="B")
+    mismatch = direct_flow()
     mismatch.flow_version = "999"
     with pytest.raises(RecoveryInconsistentError, match="流程适配器不匹配"):
         resume_execution(space, execution.execution_id, mismatch, service=service)
 
 
 def test_code_version_mismatch_blocks_resume(space, service):
-    from hvs_catalog.synthetic.runner import import_materials
+    from shared_scenarios import import_materials
 
     source = import_materials(space, "A")
     snapshot = build_input_snapshot(
         source_refs=[source], expert_adjudication=True
     ).model_copy(update={"code_version": "0.0.0-test"})
-    flow = SyntheticFlow(paper="A")
+    flow = direct_flow()
     handle, _ = create_execution(
         space, request_key="version-mismatch", input_snapshot=snapshot, flow=flow
     )
@@ -171,12 +170,12 @@ def test_expert_and_pure_ai_groups_isolated(tmp_path):
     """A12：两组使用相同论文；关闭组拒绝本轮专家决定及衍生结果。"""
     expert_space = initialize_workspace(tmp_path / "expert")
     pure_space = initialize_workspace(tmp_path / "pure-ai")
-    service = open_service(tmp_path / "ledger.db")
+    service = open_service(tmp_path / "calls.jsonl")
     try:
         ex_e, flow_e, _ = start_execution(expert_space, paper="A", request_key="e")
         r_e = resume_execution(expert_space, ex_e.execution_id, flow_e, service=service)
         assert r_e.outcome == "paused"
-        from hvs_catalog.synthetic import pending_questions, submit_expert_decision
+        from shared_scenarios import pending_questions, submit_expert_decision
 
         question = pending_questions(expert_space, execution_id=ex_e.execution_id)[0]
         submit_expert_decision(
@@ -189,7 +188,7 @@ def test_expert_and_pure_ai_groups_isolated(tmp_path):
             expert_space, ex_e.execution_id, flow_e, service=service
         )
         assert finished.outcome == "finished"
-        from hvs_catalog.synthetic import material as m
+        from shared_scenarios import material as m
 
         expert_paper = expert_space.store().read_record_current(
             m.paper_record_id("A", ex_e.execution_id)
@@ -229,7 +228,8 @@ def test_expert_and_pure_ai_groups_isolated(tmp_path):
 
 def test_cross_execution_decision_rejected_in_same_space(space, service):
     """换执行标识不能绕过隔离：跨执行提交决定被拒绝。"""
-    from hvs_catalog.synthetic import pending_questions, submit_expert_decision
+    from shared_scenarios import pending_questions, submit_expert_decision
+
     from hvs_catalog.workspace import WorkspaceIntegrityError
 
     ex_b, flow_b, _ = start_execution(space, paper="B", request_key="b")

@@ -1,6 +1,8 @@
 """发行内容规则的单元测试，用合成的压缩包成员名验证 tools/check_distribution。"""
 
+import pytest
 from check_distribution import (
+    RETIRED_MODULE_PATHS,
     check_sdist,
     check_wheel,
     find_forbidden_paths,
@@ -64,6 +66,13 @@ def test_find_forbidden_paths_checks_whole_segments():
     assert find_forbidden_paths(["hvs_catalog/catalog.py", "catalog/data.ecsv"]) == [
         "catalog/data.ecsv"
     ]
+
+
+@pytest.mark.parametrize("module_path", sorted(RETIRED_MODULE_PATHS))
+def test_retired_modules_rejected_in_wheel_and_sdist(module_path):
+    assert check_wheel([module_path]) == [module_path]
+    sdist_path = f"hvs_catalog-0.1.0/src/{module_path}"
+    assert check_sdist([sdist_path], "0.1.0") == [sdist_path]
 
 
 def test_top_levels_returns_first_segments():

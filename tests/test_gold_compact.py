@@ -6,7 +6,6 @@ import json
 
 import pytest
 from evaluation_helpers import (
-    build_approval_payload,
     build_fresh_draft,
     build_legacy_v4_doc,
     write_synthetic_pdf,
@@ -16,17 +15,11 @@ from hvs_catalog.evaluation import (
     CompactGoldAnswer,
     CompactGoldMetadata,
     CompactGoldPair,
-    GoldApprovalError,
     GoldFormatError,
-    GoldIntegrityError,
-    GoldTarget,
-    SaveApproval,
-    approved_save,
     check_compact_gold_pair,
     compact_gold_annotation,
     compare_legacy_with_current,
     parse_gold_annotation,
-    prepare_save,
     read_compact_gold_pair,
     write_compact_gold_pair,
 )
@@ -96,60 +89,8 @@ def test_compact_conversion_preserves_science_and_orders_fields(tmp_path):
     assert check_compact_gold_pair(loaded, material_root=material).blocking_count == 0
 
 
-def test_compact_save_requires_exact_human_science_review_and_two_files(tmp_path):
-    material, _, pair = _pair(tmp_path)
-    answer_path, _ = write_compact_gold_pair(pair, tmp_path / "pair")
-    target = GoldTarget(tmp_path / "target")
-    preparation = prepare_save(
-        draft_path=answer_path,
-        material_root=material,
-        work_dir=tmp_path / "work",
-        target=target,
-    )
-    assert preparation.manifest.format_version == 2
-    assert preparation.manifest.metadata_sha256
-    approval = build_approval_payload(preparation)
-    with pytest.raises(GoldApprovalError, match="scientific_review"):
-        approved_save(
-            draft_path=answer_path,
-            material_root=material,
-            target=target,
-            preparation_dir=preparation.directory,
-            approval=SaveApproval.model_validate(approval),
-            operation_id="op-compact",
-        )
-    approval["scientific_review"] = True
-    receipt = approved_save(
-        draft_path=answer_path,
-        material_root=material,
-        target=target,
-        preparation_dir=preparation.directory,
-        approval=SaveApproval.model_validate(approval),
-        operation_id="op-compact",
-    )
-    assert receipt.version == 1
-    assert {item.path.rsplit("/", 1)[-1] for item in receipt.files} == {
-        "answer.json",
-        "metadata.json",
-    }
-    assert not (target.root / "annotations/gold-2501.00001/v1/provenance.json").exists()
-    assert not (target.root / "annotations/gold-2501.00001/v1/approval.json").exists()
-    assert (target.root / "operations/op-compact.approval.json").is_file()
-    entry, answer = target.read_current_answer("gold-2501.00001")
-    assert entry.version == 1
-    assert answer.contributions[0].contribution_id == "2501.00001:cand01"
-    replay = approved_save(
-        draft_path=answer_path,
-        material_root=material,
-        target=target,
-        preparation_dir=preparation.directory,
-        approval=SaveApproval.model_validate(approval),
-        operation_id="op-compact",
-    )
-    assert replay.replayed
-    (target.root / "operations/op-compact.approval.json").unlink()
-    with pytest.raises(GoldIntegrityError, match="approval"):
-        target.read_current_answer("gold-2501.00001")
+# Unified approved saves are covered by test_evaluation_save.py; format tests
+# below remain independent of saved-target authorization.
 
 
 def test_partial_zero_contributions_stays_distinct_from_complete_zero(tmp_path):

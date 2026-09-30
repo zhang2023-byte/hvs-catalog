@@ -11,13 +11,13 @@ This is a complete synthetic JSON example of a v1 working draft, not an approved
 
 provenance.prepared_by records this draft's human or AI maker, model for AI, timezone-aware prepared_at, action and description. It does not authorize saving. For a migrated annotation, preserve legacy.annotator and legacy.annotated_at verbatim; record a confirmed original human separately in original_expert with the original record as basis. Unknown historical identity/time must remain unknown with a reason. Do not classify an old annotator as human by guessing.
 
-For a new annotation, original_expert stays null: the first human approval is the authority for original authorship. Saved answers carry original_approval_version=1 and provenance.json points to that version's approval.json. Later approvals never replace the original expert. Each revision records its own maker and human approval. The original human expert may be will, shunhong_deng, or another explicitly identified expert; these names are not defaults. This records declared identities, not authentication.
+For a new working draft, original_expert may remain null. Before current-format conversion, explicitly identify its actual original annotator and reviewer; final approval is a separate human declaration for the concrete pair. No v1 formal save or provenance writer is provided. Revisions preserve original annotation identity. The original human expert may be will, shunhong_deng, or another explicitly identified expert; these names are not defaults. This records declared identities, not authentication.
 
 ## Materials and technical fields
 
 Set paper.version explicitly. material_correspondence records the checked PDF file IDs, fixed LaTeX file/archive name, hash and version, human checker, checked_at, basis and known differences. Until correspondence is checked the draft cannot be saved formally. Hashes establish file identity, not scientific equivalence. Differences require explicit acceptance and later evaluation-scope review. PDF and LaTeX files are read from material_root.
 
-The JSON reader assigns omitted contribution_id, conflict_id, exclusion_id and item_id deterministically, preserving supplied IDs and rejecting duplicates. Supply document_id and registered file_id; record real file hashes. Gold revision numbers are assigned by the save tool and are independent of paper versions.
+The JSON reader assigns omitted contribution_id, conflict_id, exclusion_id and item_id deterministically, preserving supplied IDs and rejecting duplicates. Supply document_id and registered file_id; record real file hashes. This draft is read-only to the formal writer; explicitly convert to the current pair before review/save. Git history, format versions, paper versions and rules versions are distinct.
 
 ## Quantity codes
 
@@ -167,4 +167,4 @@ The JSON reader assigns omitted contribution_id, conflict_id, exclusion_id and i
 }
 ```
 
-Missing evidence, conditions or hashes must be filled from known materials, not guessed. Draft pending categories are missing_info, structural_gap and science_review. Structural and material gaps block saving. Explicitly accepted scientific pending items retain their complete descriptions in the formal provenance. Conflicts preserve competing values and evidence.
+Missing evidence, conditions or hashes must be filled from known materials, not guessed. Draft pending categories are missing_info, structural_gap and science_review. Structural and material gaps block readiness. Conversion requires explicit pending dispositions; retained scientific uncertainty belongs in current answer.unresolved, not a separate formal provenance file. Conflicts preserve competing values and evidence.

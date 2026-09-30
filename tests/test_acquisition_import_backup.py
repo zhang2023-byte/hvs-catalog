@@ -1,6 +1,6 @@
 """本地导入与备份恢复的合成测试（Lane B：import/backup 集成）。
 
-全部离线：导入文件在系统临时目录构造；备份/恢复用 R05 公共 API；
+全部离线：导入文件在系统临时目录构造；备份/恢复用工作空间公共 API；
 恢复后的查询与材料回读在真实子进程中完成（独立进程恢复验证）。
 """
 
@@ -169,7 +169,8 @@ def test_import_legacy_identifier_supported(space, tmp_path):
         package, arxiv_id="math.AG/0309136v1", provenance="archive copy"
     )
     assert result.versioned_id == "math.AG/0309136v1"
-    assert result.raw_path.startswith("sources/papers/math.AG_0309136/")
+    assert result.raw_path.startswith("sources/packages/")
+    assert service.get_version("math.AG/0309136v1").source_record == result.material_ref
 
 
 def test_import_same_identity_version_different_bytes_rejected(space, tmp_path):
@@ -319,7 +320,7 @@ def test_backup_restore_then_subprocess_resume_query(tmp_path):
     space = initialize_workspace(tmp_path / "space")
 
     # 1) 发现轮次（单页完成）。
-    from tests.test_acquisition_lifecycle import script_single_page
+    from test_acquisition_lifecycle import script_single_page
 
     entries = (
         _meta("2401.00001", 1),
@@ -481,10 +482,8 @@ def test_import_replay_with_new_provenance_retained(space, tmp_path):
     status = service.get_selection("2305.01234")
     assert status is not None
     assert len(status.provenance_log) == 2
-    # 每条不同来源声明都有自己的幂等回执（可重放、可审计）。
-    prov_receipts = space.store().find_receipts(kind="acquisition_import_provenance")
-    assert len(prov_receipts) == 2  # first copy 与 mirror 各一条
-    assert len({row.operation_key for row in prov_receipts}) == 2
+    # 声明记录是来源权威，无独立声明/选择回执协调路径。
+    assert len(space.store().list_records()) == 3
 
 
 def test_unsupported_retained_bytes_survive_backup_restore(tmp_path):
@@ -499,10 +498,10 @@ def test_unsupported_retained_bytes_survive_backup_restore(tmp_path):
         )
         result = service.acquire("2401.00009v1")
         assert result.state == "unsupported"
-        attempt_id = f"arxiv-attempt-2401.00009-2401.00009v1-{result.raw_sha256[:8]}"
+        attempt_id = f"arxiv-attempt-2401.00009v1-{result.raw_sha256[:16]}"
         record = space.store().read_record_current(attempt_id)
         assert record is not None
-        assert record.data.query["reason"] == "unsupported_form"
+        assert service.get_selection("2401.00009").error
         # 尝试记录把保留字节作为附件引用：备份沿记录遍历到这些字节。
         backup_dir = tmp_path / "backup"
         report = backup_workspace(space, backup_dir)
@@ -544,10 +543,9 @@ def test_integrity_rejected_retained_bytes_covered_by_attempt_record(tmp_path):
         )
         with pytest.raises(PackageRejectionError):
             service.acquire("2401.00010v1")
-        receipts = space.store().find_receipts(kind="acquisition_attempt")
-        assert len(receipts) == 1
-        record = space.store().read_record_current(receipts[0].result_refs[0].record_id)
-        assert record.data.query["reason"] == "integrity_rejected"
+        records = space.store().list_records()
+        assert len(records) == 1
+        assert records[0].data.service == "arxiv-eprint-attempt"
         status = service.get_selection("2401.00010")
         assert status is not None
         assert status.state == "failed"

@@ -1,17 +1,11 @@
-"""费用兼容：停止新费用计算/保存/比较，兼容旧记录与旧账本（C11）。
+"""New runs omit monetary fields; historical valued scientific run fields remain readable.
 
-- ``Usage``/``Attempt`` 的 cost/currency 可省略；新运行序列化不输出未
-  填货币字段；历史有值数据照常读取并保留。
-- 旧 ``cost NOT NULL`` SQLite 账本打开时事务化迁移，历史行与费用值
-  原样保留；新调用只记调用与 tokens（未知为 NULL），统计不再汇总费用。
-- 新提取运行的记录 JSON 不含 cost/currency。
-- 持久化演示的模拟账单是既定架构例外，保持不变。
+Retired ledger rejection is covered by test_demo_service, with byte preservation.
 """
 
 from __future__ import annotations
 
 import json
-import sqlite3
 
 from hvs_catalog.pipeline import (
     PAPER_B,
@@ -23,7 +17,6 @@ from hvs_catalog.pipeline import (
 )
 from hvs_catalog.pipeline.mock import PipelineMockService
 from hvs_catalog.records.serialize import parse_record, record_to_json
-from hvs_catalog.synthetic.service import MockExtractionService
 from hvs_catalog.workspace import initialize_workspace
 
 
@@ -129,68 +122,6 @@ def test_old_run_record_with_costs_still_parses():
     assert record.data.steps[0].attempts[0].usage.cost == 0.5
 
 
-def _legacy_ledger(path):
-    conn = sqlite3.connect(path)
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS calls ("
-        " id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        " request_digest TEXT NOT NULL,"
-        " step TEXT NOT NULL,"
-        " cost REAL NOT NULL,"
-        " created_at TEXT NOT NULL)"
-    )
-    conn.execute(
-        "INSERT INTO calls (request_digest, step, cost, created_at)"
-        " VALUES ('d1', 'extract_roster', 0.5, '2026-01-01T00:00:00+00:00')"
-    )
-    conn.execute(
-        "INSERT INTO calls (request_digest, step, cost, created_at)"
-        " VALUES ('d2', 'extract_contribution', 0.5, '2026-01-01T00:00:01+00:00')"
-    )
-    conn.commit()
-    conn.close()
-
-
-def test_legacy_ledger_migrates_and_preserves_history(tmp_path):
-    ledger = tmp_path / "ledger.db"
-    _legacy_ledger(ledger)
-    material = {
-        "roster_spec": [],
-        "contribution_spec": {"item_id": "c1", "summary": "s", "type": "follow_up"},
-        "needs_expert": False,
-    }
-    service = MockExtractionService(ledger)
-    service.call(step="extract_roster", request={"n": 1}, material=material)
-    rows = service.dump()
-    # 历史行费用原样保留；新调用不填费用（NULL，不是 0）
-    assert rows[0]["cost"] == 0.5 and rows[1]["cost"] == 0.5
-    assert rows[2]["cost"] is None
-    assert rows[2]["tokens"] is None
-    # 统计只有调用数与 tokens，不汇总或比较货币费用
-    summary = service.summary()
-    assert summary == {"calls": 3, "tokens": None}
-    assert "total_cost" not in summary and "cost" not in summary
-    service.close()
-    # 重开核对：迁移只发生一次，历史数据不受影响
-    again = MockExtractionService(ledger)
-    assert again.dump()[0]["cost"] == 0.5
-    assert again.calls_for_step("extract_roster") == 2
-    version = again._conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 2
-    again.close()
-
-
-def test_new_ledger_has_no_cost_column_constraint(tmp_path):
-    service = MockExtractionService(tmp_path / "fresh.db")
-    flags = {
-        str(row[1]): bool(row[3])
-        for row in service._conn.execute("PRAGMA table_info(calls)")
-    }
-    assert flags["cost"] is False  # 可空：新调用不填费用
-    assert "tokens" in flags
-    service.close()
-
-
 def test_new_extraction_run_records_contain_no_money(tmp_path):
     space = initialize_workspace(tmp_path / "space")
     try:
@@ -219,14 +150,3 @@ def test_new_extraction_run_records_contain_no_money(tmp_path):
         assert '"tokens"' in payload  # 用量照常保存
     finally:
         space.close()
-
-
-def test_demo_simulated_billing_is_kept_as_exception():
-    """持久化演示的模拟账单是既定架构例外：保持原样，不随费用取消。"""
-    from hvs_catalog.demo import service as demo_service
-
-    assert hasattr(demo_service, "MockModelService")
-    source = __import__("inspect").getsource(demo_service)
-    # 持久化演示的模拟账单与费用汇总保持原样（既定例外，不随费用取消）
-    assert "cost REAL NOT NULL" in source
-    assert "SUM(cost)" in source

@@ -586,6 +586,11 @@ class ExtractionFlow(DefaultFlowAdapter):
                 issue_refs=[],
             ),
         )
+        stored = ctx.store.read_record(roster.ref())
+        if stored is not None:
+            # Question creation may already have committed this exact revision.
+            # Keep its timestamp; replay still checks all scientific content.
+            roster = roster.model_copy(update={"created_at": stored.created_at})
         result_refs = [roster.ref()]
         for entry, _ in pending:
             content = mock.inclusion_question(
@@ -727,6 +732,9 @@ class ExtractionFlow(DefaultFlowAdapter):
             created_at=ctx.now(),
             execution_id=execution_id,
         )
+        stored = ctx.store.read_record(paper.ref())
+        if stored is not None:
+            paper = paper.model_copy(update={"created_at": stored.created_at})
         result_refs = [paper.ref()]
         if needs_expert:
             review = ReviewService(ctx.space)

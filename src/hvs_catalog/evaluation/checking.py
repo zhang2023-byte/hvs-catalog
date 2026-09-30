@@ -1,7 +1,7 @@
 """Gold 草稿与正式答案的检查：结构、材料对应与科学待审分别报告。
 
 检查是只读的。结构错误与材料缺口是客观问题，正式保存前必须为零；科
-学待核查项留给 R07 专家处理，按规则明确保留的未决状态可以经批准接
+学待核查项留给人类专家处理，按规则明确保留的未决状态可以经批准接
 受。检查覆盖完整草稿：草稿声明的每一项待办都有明确去向——结构/资料
 缺口计入阻断，须科学处理的项目进入待核查清单并由批准显式接受，不会
 在转为正式答案时静默消失。工具不把结构检查通过解释为科学审定通过，
@@ -133,7 +133,7 @@ def check_gold_annotation(
             "science_pending",
             "exclusions_pending_mapping",
             "reviewed_exclusions",
-            "旧结构没有独立对象标识字段，排除记录保留为待对应项目，由 R07 对照原文处理",
+            "旧结构没有独立对象标识字段，排除记录保留为待对应项目，由专家对照原文处理",
         )
     if annotation.status == "no_contributions":
         checker.problem(
@@ -173,7 +173,7 @@ def check_gold_annotation(
         "结构与引用：字段形状、物理量编码、状态词表、编号唯一性与文件引用",
         "材料对应：文件存在、哈希一致、可打开与页序号边界",
         "引文匹配为辅助结果，不用于证明科学内容正确",
-        "科学待核查项由 R07 专家处理；本工具不进行科学审定",
+        "科学待核查项由人类专家处理；本工具不进行科学审定",
         "已检查：标注身份、材料版本及对应记录完整性，固定 PDF 与 LaTeX 文件哈希",
         "未独立判定：引文语义、科学结论正确性、PDF 与 LaTeX 科学内容是否等价",
     ]
@@ -399,7 +399,7 @@ def _check_contribution(contribution: GoldContribution, checker: _Checker) -> No
                 "science_pending",
                 "conflict_structure_pending",
                 f"{subject}/{where}",
-                f"物理量 {conflict.quantity} 的冲突只有位置与原因，缺少双方完整数值结构；保留旧冲突，不猜测两组数值，由 R07 核查补全",
+                f"物理量 {conflict.quantity} 的冲突只有位置与原因，缺少双方完整数值结构；保留旧冲突，不猜测两组数值，由专家对照原文核查补全",
             )
         for index, alternative in enumerate(conflict.alternatives):
             if not alternative.evidence:

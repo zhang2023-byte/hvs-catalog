@@ -44,7 +44,7 @@ RULES_ARCHIVE_REL = "inputs/rules.toml"
 
 
 class FlowAdapter(Protocol):
-    """调用方提供的可信流程适配器；R05 用合成实现验证接口。
+    """调用方提供的可信流程适配器；用合成实现验证接口。
 
     只允许调用者传入的程序对象，不从记录字符串动态导入或执行代码。
     """

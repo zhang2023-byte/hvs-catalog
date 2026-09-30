@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -19,7 +20,6 @@ from ..records.common import RecordRef, build_record, sha256_of
 from ..records.questions import RulesRef
 from ..review.service import QuestionContent
 from ..synthetic import material as m
-from ..synthetic.runner import import_materials as import_base_materials
 from ..workspace import CommitRequest, Workspace
 
 PAPER_A = m.PAPER_KEYS["A"]
@@ -495,11 +495,26 @@ def source_ref(spec: dict) -> RecordRef:
 def import_mock_source(space: Workspace, paper_key: str) -> RecordRef:
     """发布合成论文文件并提交来源包与证据记录（显式本地清单导入）。
 
-    A/B 沿用既有 synthetic 合成素材的导入入口，同内容按不可变修订复用。
+    固定来源与证据可跨执行复用；提取结果按执行隔离。
     """
     letter = BASE_LETTERS.get(paper_key)
     if letter is not None:
-        return import_base_materials(space, letter)
+        ref = space.publish_source_file(
+            f"r05/{letter.lower()}/paper.tex", m.tex_bytes(letter)
+        )
+        source, evidences = m.build_source_and_evidence(
+            letter, created_at=datetime.now(UTC), execution_id=None
+        )
+        assert ref.path == m.source_relative_path(letter)
+        space.store().commit(
+            CommitRequest(
+                operation_key=f"import:{paper_key}",
+                kind="material_import",
+                new_records=[source, *evidences],
+                result_refs=[source.ref()],
+            )
+        )
+        return source.ref()
     if paper_key != PAPER_C:
         raise ValueError(f"论文 {paper_key!r} 不在模拟材料支持范围")
     ref = space.publish_source_file("candidate/c/paper.tex", c_tex_bytes())
@@ -635,7 +650,20 @@ def expert_patch_for(question_category: str, *, target, evidence: RecordRef):
     from ..records.questions import DecisionPatch, PatchChange
 
     if question_category == "author_assessment":
-        return m.expert_decision_patch(target, evidence_ref=evidence)
+        return DecisionPatch(
+            target=target,
+            changes=[
+                PatchChange(
+                    field="paper_boundness",
+                    value={
+                        "status": "no_overall_conclusion",
+                        "evidence_refs": [evidence.model_dump(mode="json")],
+                        "issue_refs": [],
+                        "gap_refs": [],
+                    },
+                )
+            ],
+        )
     if question_category == "inclusion":
         return DecisionPatch(
             target=target,
@@ -672,6 +700,8 @@ def submit_expert_decision(
     from ..records.questions import Actor
     from ..review import DecisionSubmission, ReviewService
 
+    if choice not in ("no_overall_conclusion", "include", "keep_pending"):
+        raise ValueError(f"未知模拟决定：{choice!r}")
     review = ReviewService(space)
     view = review.get_question(question_ref)
     category = view.record.data.category
@@ -730,7 +760,9 @@ def submit_expert_decision(
 
 
 def _respond(step: str, request: dict, material: dict) -> dict:
-    spec = material_spec(material["paper_key"])
+    # The graph persisted this material snapshot before any external call.
+    # Reentry must not answer from a newly modified module-level fixture.
+    spec = material
     tokens = STEP_TOKENS.get(step)
     if step == "direct_roster":
         return {"entries": _entry_responses(spec["roster_entries"]), "tokens": tokens}
@@ -788,25 +820,47 @@ def _entry_responses(entries: list[dict]) -> list[dict]:
 class PipelineMockService:
     """按固定材料快照确定性应答的模拟模型服务。
 
-    调用记录与 token 用量保存在进程内日志中，供测试与报告核对；可选
-    的 ``journal_path`` 把每次调用追加写入 JSON 行文件，供跨进程测试
-    与集成报告核对实际调用次数。不计算或保存任何货币费用。
+    无 journal_path 时保留进程内调用；指定时在返回响应前追加并同步
+    独立 JSON 行日志，查询包括此前进程的事实。日志须放在客户端空间
+    外，不进入业务事务或备份。旧 SQLite 账本不接受、不迁移、不追加。
     """
 
     def __init__(self, journal_path: str | Path | None = None) -> None:
         self.calls: list[dict] = []
-        self._counter = 0
         self.journal_path = Path(journal_path) if journal_path is not None else None
         if self.journal_path is not None:
+            if self.journal_path.exists():
+                self._read_journal()  # 写入前拒绝未知格式，不改变旧文件
             self.journal_path.parent.mkdir(parents=True, exist_ok=True)
 
+    def close(self) -> None:
+        """服务不持有长期开启的文件或数据库。"""
+
+    def _read_journal(self) -> list[dict]:
+        if self.journal_path is None:
+            return list(self.calls)
+        if not self.journal_path.exists():
+            return []
+        try:
+            entries = [
+                json.loads(line)
+                for line in self.journal_path.read_text(encoding="utf-8").splitlines()
+            ]
+            if any(
+                not isinstance(entry, dict)
+                or not {"step", "request_digest", "tokens"} <= entry.keys()
+                for entry in entries
+            ):
+                raise ValueError("调用记录字段缺失")
+            return entries
+        except (UnicodeError, ValueError) as exc:
+            raise ValueError("模拟调用日志格式不支持；请另选新 JSONL 文件") from exc
+
     def call(self, *, step: str, request: dict, material: dict) -> dict:
-        self._counter += 1
         response = _respond(step, request, material)
         entry = {
             "step": step,
             "request_digest": sha256_of(request),
-            "service_request_id": f"pipeline-mock-{self._counter}",
             "tokens": response.get("tokens"),
             "model": (request.get("model") or {}).get("model"),
         }
@@ -814,20 +868,23 @@ class PipelineMockService:
         if self.journal_path is not None:
             with self.journal_path.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
         return response
 
     def calls_for_step(self, step: str) -> int:
-        return sum(1 for call in self.calls if call["step"] == step)
+        return sum(1 for call in self._read_journal() if call["step"] == step)
 
     def summary(self) -> dict:
+        calls = self._read_journal()
         by_step: dict[str, int] = {}
-        for call in self.calls:
+        for call in calls:
             by_step[call["step"]] = by_step.get(call["step"], 0) + 1
-        tokens = [call["tokens"] for call in self.calls if call["tokens"] is not None]
+        tokens = [call["tokens"] for call in calls if call["tokens"] is not None]
         return {
-            "calls": len(self.calls),
+            "calls": len(calls),
             "steps": by_step,
-            "tokens": sum(tokens) if len(tokens) == len(self.calls) else None,
+            "tokens": sum(tokens) if len(tokens) == len(calls) else None,
         }
 
 

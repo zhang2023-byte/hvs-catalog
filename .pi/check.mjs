@@ -78,7 +78,7 @@ export async function checkProject() {
     assert.equal(settings.subagents.modelScope.enforce, true);
     assert.equal(settings.subagents.modelScope.strict, true);
     const profiles = {};
-    for (const name of ['hvs-implementer', 'hvs-reviewer']) {
+    for (const name of ['hvs-implementer', 'hvs-simplifier', 'hvs-reviewer']) {
       const { frontmatter: f } = host.sdk.parseFrontmatter(fs.readFileSync(path.join(root, '.pi/agents', `${name}.md`), 'utf8'));
       assert.equal(f.name, name);
       assert.equal(f.defaultContext, 'fresh');
@@ -92,10 +92,16 @@ export async function checkProject() {
       profiles[name] = { ...f, tools: typeof f.tools === 'string' ? f.tools.split(',').map(s => s.trim()) : f.tools };
     }
     assert.deepEqual(sorted(profiles['hvs-reviewer'].tools), ['bash', 'read']);
-    assert.deepEqual(sorted(profiles['hvs-implementer'].tools), ['bash', 'edit', 'read', 'write']);
-    assert.equal(profiles['hvs-implementer'].acceptanceRole, 'writer');
+    for (const name of ['hvs-implementer', 'hvs-simplifier']) {
+      assert.deepEqual(sorted(profiles[name].tools), ['bash', 'edit', 'read', 'write']);
+      assert.equal(profiles[name].acceptanceRole, 'writer');
+    }
     assert.equal(profiles['hvs-reviewer'].acceptanceRole, 'read-only');
-    assert.deepEqual(sorted(settings.subagents.modelScope.allow), sorted(Object.values(profiles).map(p => p.model)));
+    assert.equal(profiles['hvs-implementer'].model, 'zai-coding-cn/glm-5.3');
+    assert.equal(profiles['hvs-simplifier'].model, 'openai-codex/gpt-6.1-sol');
+    assert.equal(profiles['hvs-reviewer'].model, 'openai-codex/gpt-6.1-sol');
+    const childModels = [...new Set(Object.values(profiles).map(p => p.model))];
+    assert.deepEqual(sorted(settings.subagents.modelScope.allow), sorted(childModels));
     const listing = await host.call('subagent', { action: 'list', agentScope: 'project', capabilities: true });
     validateCapabilities(listing.details?.agentCapabilities, profiles);
     const extensionNames = host.loader.getExtensions().extensions.map(e => {
@@ -109,13 +115,14 @@ export async function checkProject() {
       throw new Error(`Cannot identify loaded extension: ${e.path}`);
     });
     assert.deepEqual(sorted(extensionNames), ['pi-subagents', 'pi-web-access']);
-    assert.deepEqual(host.loader.getSkills().skills.map(s => s.name), ['pi-subagents']);
+    assert.deepEqual(host.loader.getSkills().skills.map(s => s.name), []);
     assert.deepEqual(host.loader.getPrompts().prompts.map(p => p.name), ['hvs-work']);
-    assert.equal(host.settings.getDefaultProvider(), settings.defaultProvider);
-    assert.equal(host.settings.getDefaultModel(), settings.defaultModel);
+    for (const key of ['defaultProvider', 'defaultModel', 'defaultThinkingLevel', 'enabledModels']) {
+      assert(!Object.hasOwn(settings, key), `Parent model selection belongs to the operator, not project ${key}`);
+    }
     const modelRuntime = await host.sdk.ModelRuntime.create();
     const compaction = {};
-    for (const key of settings.enabledModels) {
+    for (const key of childModels) {
       const slash = key.indexOf('/');
       const model = modelRuntime.getModel(key.slice(0, slash), key.slice(slash + 1));
       assert(model, `Missing model registry entry: ${key}`);
@@ -139,11 +146,11 @@ export async function checkProject() {
     return {
       checkedAt: new Date().toISOString(), pi: host.version, installations,
       inputHashes: Object.fromEntries([
-        '.pi/settings.json', '.pi/agents/hvs-implementer.md', '.pi/agents/hvs-reviewer.md',
+        '.pi/settings.json', '.pi/agents/hvs-implementer.md', '.pi/agents/hvs-simplifier.md', '.pi/agents/hvs-reviewer.md',
         '.pi/review.schema.json', '.pi/pi-host.mjs', '.pi/check.mjs',
       ].map(file => [file, createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex')])),
       result: 'passed', scope: 'offline public SDK/tool contract; no child or model calls',
-      resources: { extensions: extensionNames, skills: ['pi-subagents'], prompts: ['hvs-work'] },
+      resources: { extensions: extensionNames, skills: [], prompts: ['hvs-work'] },
       agents: listing.details.agentCapabilities.agents,
       compaction,
       unverified: ['real model calls', 'retained-session continuation', 'provider/compaction faults', 'parent process restart'],

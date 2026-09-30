@@ -61,7 +61,7 @@ def _l2_rows(paper):
 
 
 # ---------------------------------------------------------------------------
-# 修复1：内容键不同不能证明科学不同，必须走按域三态
+# 内容键不同不能证明科学不同，必须走按域三态
 # ---------------------------------------------------------------------------
 
 
@@ -117,12 +117,12 @@ def test_supported_differences_remain_determined():
 
 
 # ---------------------------------------------------------------------------
-# 修复2：跨归属未知关系保留，参与整体最大匹配界
+# 跨归属未知关系保留，参与整体最大匹配界
 # ---------------------------------------------------------------------------
 
 
 def test_cross_condition_unknown_candidate_blocks_final_zero():
-    """复审反例：G1(M1,8)、G2(未支持改写条件,10)、P(M1,10)。
+    """跨归属未知关系：G1(M1,8)、G2(未支持改写条件,10)、P(M1,10)。
 
     P→G2 归属未知是可能边；对应 G2 时 C 可能为 1，不能最终判 0。
     数值相同（10=10）不是条件等价证据。
@@ -254,7 +254,7 @@ def test_b8_style_swap_stays_determined_zero():
 
 
 # ---------------------------------------------------------------------------
-# 修复3：材料不足不因注入适配器而变确定（有/无 mock 不变量）
+# 材料不足不因注入适配器而变确定（有/无 mock 不变量）
 # ---------------------------------------------------------------------------
 
 
@@ -315,12 +315,12 @@ def test_insufficient_condition_evidence_reports_no_adapter_call():
 
 
 # ---------------------------------------------------------------------------
-# 修复4：证据片段绑定待判字段
+# 证据片段绑定待判字段
 # ---------------------------------------------------------------------------
 
 
 def test_value_fragments_cannot_support_error_judgment():
-    """复审反例：value 片段 + error 未知宏 → 不得调用，保持未知。"""
+    """字段证据不匹配：value 片段 + error 未知宏 → 不得调用，保持未知。"""
     gold_fragments = [_fragment("table-1", "The distance is 8.2 kpc.", ["value"])]
     pred_fragments = [
         _fragment("macro-def", "\\newcommand{\\mystery}[1]{#1}", ["value"])
@@ -429,7 +429,7 @@ def test_fragment_support_declaration_semantics():
 
 
 # ---------------------------------------------------------------------------
-# 修复5：冻结请求绑定完整计划；缓存上下文不可单侧篡改
+# 冻结请求绑定完整计划；缓存上下文不可单侧篡改
 # ---------------------------------------------------------------------------
 
 
@@ -559,11 +559,11 @@ def test_frozen_request_carries_plan_digest(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# 修复6：写冲突后不得在同实例缓存被拒判定
+# 写冲突后不得在同实例缓存被拒判定
 # ---------------------------------------------------------------------------
 
 
-def _r3_request() -> AgentRequest:
+def _evidence_bound_request() -> AgentRequest:
     _plan, gold, preds, _ = load_bundle("synthetic-s07u1es")
     gold_fragments = gold[0].objects[0].quantities[0].values[0].evidence_fragments
     pred_fragments = preds[0].objects[0].quantities[0].values[0].evidence_fragments
@@ -595,7 +595,7 @@ def _r3_request() -> AgentRequest:
 
 def test_rejected_conflict_not_reused_by_same_instance(tmp_path: Path):
     store = FrozenDecisionStore(tmp_path / "frozen")
-    request = _r3_request()
+    request = _evidence_bound_request()
     winner = build_judgment(
         request,
         response_raw={
@@ -644,7 +644,7 @@ def test_rejected_conflict_not_reused_by_same_instance(tmp_path: Path):
 
 def test_concurrent_same_context_conflict_single_winner(tmp_path: Path):
     store = FrozenDecisionStore(tmp_path / "frozen")
-    request = _r3_request()
+    request = _evidence_bound_request()
     barrier = threading.Barrier(2)
     outcomes: list[str] = []
 
@@ -682,7 +682,7 @@ def test_concurrent_same_context_conflict_single_winner(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# 修复7：证据统计与 scoped L1/L2 同范围
+# 证据统计与 scoped L1/L2 同范围
 # ---------------------------------------------------------------------------
 
 

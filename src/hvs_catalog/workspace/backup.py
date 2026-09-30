@@ -9,8 +9,8 @@
 一致性核对覆盖两层：全部记录修订（含历史运行修订与每次请求/响应）
 引用的归档文件按记录哈希逐一核验；检查点按线程核对执行绑定与状态引
 用。"标记完成"的执行另按框架完成凭据核对（完成时与修订同事务记录
-的最终检查点 id 及其内容摘要，摘要覆盖检查点与待写入状态的原始字
-节），与具体流程身份无关。备份、恢复与完成状态检查共用同一组核对
+的最终检查点 id），通过公开检查点接口核对，与具体流程身份无关。
+备份、恢复与完成状态检查共用同一组核对
 函数。
 """
 
@@ -40,7 +40,7 @@ from .layout import (
     open_workspace,
     resolve_within,
 )
-from .store import walk_artifact_refs
+from .store import verify_artifact_refs, walk_artifact_refs
 
 BACKUP_MANIFEST = "backup-manifest.json"
 BACKUP_COMPLETE = "complete"
@@ -49,10 +49,6 @@ _MANIFEST_FORMAT = "hvs-catalog-backup"
 _MANIFEST_VERSION = 1
 
 FRAMEWORK_FINAL_META_PREFIX = "framework_final_checkpoint:"
-FRAMEWORK_FINAL_DIGEST_META_PREFIX = "framework_final_digest:"
-
-#: 摘要算法与字段范围标记；变更算法时同步更新，避免新旧摘要混淆。
-_CHECKPOINT_DIGEST_VERSION = "checkpoint-digest-v1"
 
 
 def framework_final_key(execution_id: str) -> str:
@@ -60,81 +56,8 @@ def framework_final_key(execution_id: str) -> str:
     return f"{FRAMEWORK_FINAL_META_PREFIX}{execution_id}"
 
 
-def framework_final_digest_key(execution_id: str) -> str:
-    """框架完成凭据的内容摘要在业务库 meta 表中的键。"""
-    return f"{FRAMEWORK_FINAL_DIGEST_META_PREFIX}{execution_id}"
-
-
-def checkpoint_row_digest(
-    conn: sqlite3.Connection, thread_id: str, checkpoint_id: str
-) -> str | None:
-    """按检查点库原始存储字节计算内容摘要；行缺失返回 None。
-
-    覆盖会影响恢复行为的全部存储状态：检查点行（类型、父引用、
-    checkpoint 与 metadata 原始字节）及该检查点的待写入状态（writes
-    行）。直接对存储字节做哈希，不依赖反序列化或字典顺序，字节级
-    变化必然改变摘要。
-    """
-    row = conn.execute(
-        "SELECT type, checkpoint, metadata, parent_checkpoint_id FROM checkpoints"
-        " WHERE thread_id = ? AND checkpoint_ns = '' AND checkpoint_id = ?",
-        (thread_id, checkpoint_id),
-    ).fetchone()
-    if row is None:
-        return None
-    digest = hashlib.sha256()
-    digest.update(
-        f"{_CHECKPOINT_DIGEST_VERSION}\nthread={thread_id}\nns=\nid={checkpoint_id}\n".encode()
-    )
-    for label, value in (("type", row[0]), ("parent", row[3])):
-        digest.update(f"{label}=".encode())
-        digest.update(value.encode() if isinstance(value, str) else b"\x00none")
-        digest.update(b"\n")
-    digest.update(b"checkpoint=")
-    digest.update(row[1] or b"")
-    digest.update(b"\nmetadata=")
-    digest.update(row[2] or b"")
-    digest.update(b"\n")
-    for write in conn.execute(
-        "SELECT task_id, idx, channel, type, value FROM writes"
-        " WHERE thread_id = ? AND checkpoint_ns = '' AND checkpoint_id = ?"
-        " ORDER BY task_id, idx",
-        (thread_id, checkpoint_id),
-    ).fetchall():
-        digest.update(f"write={write[0]}:{write[1]}:{write[2]}:".encode())
-        digest.update(write[3].encode() if isinstance(write[3], str) else b"\x00none")
-        digest.update(b":")
-        digest.update(write[4] or b"")
-        digest.update(b"\n")
-    return digest.hexdigest()
-
-
-def framework_final_credential(
-    space: Workspace, execution_id: str, checkpoint_id: str
-) -> dict[str, str]:
-    """计算完整完成凭据（id 与内容摘要）；由调用方并入同一事务提交。"""
-    conn = space.checkpoint_connection()
-    try:
-        digest = checkpoint_row_digest(conn, execution_id, checkpoint_id)
-    finally:
-        conn.close()
-    if digest is None:
-        raise WorkspaceIntegrityError(
-            f"执行 {execution_id} 的最终检查点 {checkpoint_id} 不存在，"
-            "无法记录框架完成凭据"
-        )
-    return {
-        framework_final_key(execution_id): checkpoint_id,
-        framework_final_digest_key(execution_id): digest,
-    }
-
-
 def framework_final_checkpoint(space: Workspace, execution_id: str) -> str | None:
     return space.store().get_meta(framework_final_key(execution_id))
-
-
-def framework_final_digest(space: Workspace, execution_id: str) -> str | None:
-    return space.store().get_meta(framework_final_digest_key(execution_id))
 
 
 @dataclass
@@ -167,23 +90,7 @@ def _referenced_files(space: Workspace) -> list[str]:
 
 def verify_record_artifacts(space: Workspace) -> list[str]:
     """按记录原哈希核验全部归档文件，覆盖历史修订与每次请求/响应。"""
-    records = space.store().list_records()
-    problems: list[str] = []
-    for record in records:
-        for ref in walk_artifact_refs(record.model_dump(mode="json")):
-            where = f"记录 {record.record_id} v{record.revision} 引用的 {ref['path']}"
-            try:
-                path = resolve_within(space.root, ref["path"])
-            except WorkspaceIntegrityError as exc:
-                problems.append(f"{where}：{exc}")
-                continue
-            if path.is_symlink() or not path.is_file():
-                problems.append(f"{where} 缺失或不可读")
-                continue
-            digest = _sha256_file(path)
-            if digest != ref.get("sha256"):
-                problems.append(f"{where} 哈希与记录不符")
-    return problems
+    return verify_artifact_refs(space.store().list_records(), space.root)
 
 
 def walk_state_refs(value: object) -> list[RecordRef]:
@@ -205,7 +112,9 @@ def walk_state_refs(value: object) -> list[RecordRef]:
     return refs
 
 
-def checkpoint_state_problems(space: Workspace) -> list[str]:
+def checkpoint_state_problems(
+    space: Workspace, execution_id: str | None = None
+) -> list[str]:
     """检查点内容核对：执行绑定、状态引用与业务库对应（各入口共用）。
 
     线程编号一致不代表内容一致：逐线程读取检查点状态，核对执行绑定
@@ -216,18 +125,20 @@ def checkpoint_state_problems(space: Workspace) -> list[str]:
     from langgraph.checkpoint.sqlite import SqliteSaver
 
     store = space.store()
-    executions = {row.execution_id for row in store.list_executions()}
+    executions = (
+        {execution_id}
+        if execution_id is not None
+        else {row.execution_id for row in store.list_executions()}
+    )
     conn = space.checkpoint_connection()
     problems: list[str] = []
     try:
-        try:
-            threads = {
-                row[0]
-                for row in conn.execute("SELECT DISTINCT thread_id FROM checkpoints")
-            }
-        except sqlite3.Error:
-            threads = set()
         saver = SqliteSaver(conn)
+        threads = (
+            {execution_id}
+            if execution_id is not None
+            else {tup.config["configurable"]["thread_id"] for tup in saver.list(None)}
+        )
         for thread_id in sorted(threads):
             if thread_id not in executions:
                 problems.append(f"检查点线程 {thread_id} 没有对应的执行记录")
@@ -259,23 +170,16 @@ def checkpoint_state_problems(space: Workspace) -> list[str]:
                     )
     finally:
         conn.close()
-    for execution_id in sorted(executions - threads):
-        problems.append(f"执行 {execution_id} 没有对应的检查点线程")
-    problems.extend(_framework_completion_problems(space))
+    for missing_id in sorted(executions - threads):
+        problems.append(f"执行 {missing_id} 没有对应的检查点线程")
+    problems.extend(_framework_completion_problems(space, execution_id))
     return problems
 
 
-def _framework_completion_problems(space: Workspace) -> list[str]:
-    """完成核对：标记完成的执行必须停留在完成时验证过的框架状态。
-
-    完成凭据（最终检查点 id 及其内容摘要，摘要按检查点库原始存储字
-    节计算并覆盖待写入状态）由运行层在持有调用方流程适配器、确认框
-    架到达结束节点（无待执行节点）时与完成修订同事务记录；本核对按
-    同一规则重算并比较 id 与摘要，与具体流程身份无关——共同基础不
-    反向依赖任何演示流程，也不能把无法核对的执行视为已完成。凭据缺
-    失、摘要缺失、检查点在完成之后被追加或改写（同 id 下内容变化）
-    都按问题报告，备份、恢复与完成报告一致执行该规则。
-    """
+def _framework_completion_problems(
+    space: Workspace, execution_id: str | None = None
+) -> list[str]:
+    """完成凭据与最新公开检查点 ID 必须相符；不补记缺失凭据。"""
     from langgraph.checkpoint.sqlite import SqliteSaver
 
     from ..records.runs import RunRecord
@@ -285,22 +189,23 @@ def _framework_completion_problems(space: Workspace) -> list[str]:
     problems: list[str] = []
     try:
         saver = SqliteSaver(conn)
-        for row in store.list_executions():
+        rows = (
+            [store.get_execution(execution_id)]
+            if execution_id is not None
+            else store.list_executions()
+        )
+        for row in rows:
+            if row is None:
+                problems.append(f"执行 {execution_id} 缺失")
+                continue
             run = store.read_record_current(row.run_record_id)
             if not isinstance(run, RunRecord) or run.data.state != "finished":
                 continue
             final_id = framework_final_checkpoint(space, row.execution_id)
-            expected_digest = framework_final_digest(space, row.execution_id)
             if final_id is None:
                 problems.append(
                     f"执行 {row.execution_id} 标记完成，但缺少框架完成凭据；"
-                    "须以匹配流程恢复一次核验补记，不能直接视为已完成"
-                )
-                continue
-            if expected_digest is None:
-                problems.append(
-                    f"执行 {row.execution_id} 的完成凭据缺少内容摘要；"
-                    "须以匹配流程恢复一次核验补记，不能直接视为已完成"
+                    "不能直接视为已完成，不自动补记"
                 )
                 continue
             tup = saver.get_tuple({"configurable": {"thread_id": row.execution_id}})
@@ -316,15 +221,6 @@ def _framework_completion_problems(space: Workspace) -> list[str]:
                     f"执行 {row.execution_id} 标记完成，但框架检查点已偏离"
                     f"完成时状态（完成凭据 {final_id}，最新 {latest}）；"
                     "仍有待执行节点的执行不能按已完成接受"
-                )
-            elif (
-                checkpoint_row_digest(conn, row.execution_id, final_id)
-                != expected_digest
-            ):
-                problems.append(
-                    f"执行 {row.execution_id} 标记完成，但框架检查点内容与"
-                    f"完成凭据不符（检查点 {final_id} 的内容在完成之后被改写，"
-                    "含待写入状态）；仍有待执行节点的执行不能按已完成接受"
                 )
     finally:
         conn.close()
@@ -516,7 +412,7 @@ def restore_workspace(backup_dir: Path, target: Path) -> Workspace:
             finally:
                 conn.close()
 
-        # 逻辑空间身份与执行 ID 保留；锁文件在新位置重建并登记身份
+        # 逻辑空间身份与执行 ID 保留；锁文件在新位置重建
         lock_path = staging / ".lock"
         fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o644)
         os.close(fd)
@@ -528,9 +424,6 @@ def restore_workspace(backup_dir: Path, target: Path) -> Workspace:
                 raise WorkspaceIntegrityError(
                     "恢复内容一致性核对未通过，不发布可打开空间：" + "；".join(problems)
                 )
-            from .locking import LockIdentity, write_lock_identity
-
-            write_lock_identity(staging / BUSINESS_DB, LockIdentity.of(lock_path))
         finally:
             restored.close()
         os.replace(staging, target)

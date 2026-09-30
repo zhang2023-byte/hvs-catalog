@@ -1,11 +1,11 @@
-"""集成修复回归：失败保留名单、科学完成状态与两组失败报告（F2/F3/F7）。
+"""失败保留名单、科学完成状态与两组失败报告。
 
-- F2：数值步骤失败不丢已存名单——delivered/format_valid 按有效输出、
+- 数值步骤失败不丢已存名单——delivered/format_valid 按有效输出、
   completion=partial、原始错误保留；数值未产出保持空，Gold 数值全入 G；
   真正无有效结果的失败仍 failed。恢复后行为一并验证。
-- F3：科学完成状态与运行图终止分开——开放/已答仍未决问题或名单未决
+- 科学完成状态与运行图终止分开——开放/已答仍未决问题或名单未决
   条目不得报 complete；图 finished 只是运行事实。
-- F7：单组或两组失败仍生成完整两组报告，分母完整、原始错误与用量
+- 单组或两组失败仍生成完整两组报告，分母完整、原始错误与用量
   保留，未知仍 null；不为报告成功自动裁决未知。
 """
 
@@ -87,13 +87,13 @@ def _score(space, execution_id, paper_key):
     ), prediction
 
 
-# ---- F2：数值失败保留名单与完整分母 ----
+# ---- 数值失败保留名单与完整分母 ----
 
 
 def test_direct_quantities_failure_preserves_roster_as_partial(space):
     """direct 数值失败：已存名单保留为部分结果，Gold 数值全入 G。"""
     source = import_mock_source(space, PAPER_B)
-    handle = _start(space, source, method="direct", key="f2-direct")
+    handle = _start(space, source, method="direct", key="direct-quantity-failure")
     failed = resume_extraction(
         space, handle.execution_id, service=_FailingStepService(("quantities",))
     )
@@ -118,7 +118,9 @@ def test_direct_quantities_failure_preserves_roster_as_partial(space):
 def test_candidate_review_quantities_failure_preserves_roster_as_partial(space):
     """candidate_review 同样保留名单；未决条目不算已确认 L1 对象。"""
     source = import_mock_source(space, PAPER_C)
-    handle = _start(space, source, method="candidate_review", key="f2-candidate")
+    handle = _start(
+        space, source, method="candidate_review", key="candidate-quantity-failure"
+    )
     failed = resume_extraction(
         space, handle.execution_id, service=_FailingStepService(("quantities",))
     )
@@ -137,7 +139,7 @@ def test_candidate_review_quantities_failure_preserves_roster_as_partial(space):
 def test_quantities_failure_recovery_completes_and_reuses_roster(space):
     """恢复用健康服务后完成；名单复用不再调用名单步骤。"""
     source = import_mock_source(space, PAPER_B)
-    handle = _start(space, source, method="direct", key="f2-recover")
+    handle = _start(space, source, method="direct", key="quantity-failure-recovery")
     resume_extraction(
         space, handle.execution_id, service=_FailingStepService(("quantities",))
     )
@@ -154,7 +156,7 @@ def test_quantities_failure_recovery_completes_and_reuses_roster(space):
 def test_roster_failure_is_failed_not_empty_success(space):
     """名单步骤失败：真正无有效结果，failed 而不是空名单成功。"""
     source = import_mock_source(space, PAPER_B)
-    handle = _start(space, source, method="direct", key="f2-roster-fail")
+    handle = _start(space, source, method="direct", key="direct-roster-failure")
     failed = resume_extraction(
         space, handle.execution_id, service=_FailingStepService(("direct_roster",))
     )
@@ -175,7 +177,9 @@ def test_roster_failure_is_failed_not_empty_success(space):
 
 def test_candidate_review_roster_failure_is_failed(space):
     source = import_mock_source(space, PAPER_C)
-    handle = _start(space, source, method="candidate_review", key="f2-cr-roster-fail")
+    handle = _start(
+        space, source, method="candidate_review", key="candidate-roster-failure"
+    )
     failed = resume_extraction(
         space,
         handle.execution_id,
@@ -190,7 +194,7 @@ def test_candidate_review_roster_failure_is_failed(space):
     assert paper.l1.fn == 2 and paper.l2.gold == 2
 
 
-# ---- F3：科学完成状态与图终止分离 ----
+# ---- 科学完成状态与图终止分离 ----
 
 
 def _question(status, outcome=None):
@@ -316,7 +320,7 @@ def test_e20_off_group_not_complete_and_pending(space):
     assert report["groups"]["expert_on"]["science_completion"] == "complete"
 
 
-# ---- F7：失败组仍生成完整两组报告 ----
+# ---- 失败组仍生成完整两组报告 ----
 
 
 def _factory(fail_on: tuple[str, ...], fail_off: tuple[str, ...]):
@@ -447,7 +451,7 @@ def test_group_summary_reports_blocked_reason_without_quality(space):
     assert summary["failures"] == ["identity lost"]
 
 
-# ---- R3-F4：科学完成状态纳入真实名单覆盖/未列清范围/作者判断材料缺口 ----
+# ---- 科学完成状态纳入名单覆盖/未列清范围/作者判断材料缺口 ----
 
 
 def _healthy_records(space):
@@ -457,7 +461,7 @@ def _healthy_records(space):
     from hvs_catalog.records.roster import RosterRecord
 
     source = import_mock_source(space, PAPER_B)
-    handle = _start(space, source, method="direct", key="r3-f4-real")
+    handle = _start(space, source, method="direct", key="bound-source-completion")
     finished = resume_extraction(
         space, handle.execution_id, service=PipelineMockService()
     )
@@ -503,7 +507,7 @@ def _finished_status(errors=("historical boom",)):
 
 
 def test_roster_coverage_partial_is_partial_with_reasons(space):
-    """R3-F4：名单覆盖 partial（含材料缺口）→ partial 并列具体原因。"""
+    """名单覆盖 partial（含材料缺口）→ partial 并列具体原因。"""
     roster, paper = _healthy_records(space)
     assert roster.data.coverage.state == "complete"  # 基线先确认
     patched = _patched(
@@ -521,7 +525,7 @@ def test_roster_coverage_partial_is_partial_with_reasons(space):
 
 
 def test_roster_unresolved_groups_are_pending(space):
-    """R3-F4：未列清的原文范围按既定语义保留未决（pending）。"""
+    """未列清的原文范围按既定语义保留未决（pending）。"""
     roster, paper = _healthy_records(space)
     patched = _patched(
         roster,
@@ -541,7 +545,7 @@ def test_roster_unresolved_groups_are_pending(space):
 
 
 def test_boundness_gap_refs_only_is_partial(space):
-    """R3-F4：status=None 且仅有材料 gap_refs 的作者判断是材料缺口 partial。"""
+    """status=None 且仅有材料 gap_refs 的作者判断是材料缺口 partial。"""
     roster, paper = _healthy_records(space)
     dump = paper.model_dump(mode="json")
     contribution = dump["data"]["object_contributions"][0]
@@ -561,7 +565,7 @@ def test_boundness_gap_refs_only_is_partial(space):
 
 
 def test_boundness_with_issue_refs_stays_pending(space):
-    """R3-F4：issue_refs 关联科学问题的作者判断仍按既定 pending。"""
+    """issue_refs 关联科学问题的作者判断仍按既定 pending。"""
     roster, paper = _healthy_records(space)
     dump = paper.model_dump(mode="json")
     contribution = dump["data"]["object_contributions"][0]
@@ -580,7 +584,7 @@ def test_boundness_with_issue_refs_stays_pending(space):
 
 
 def test_clean_records_with_resolved_question_stay_complete(space):
-    """R3-F4：真正完整、待决已解决、历史错误已恢复 → 仍 complete。"""
+    """真正完整、待决已解决、历史错误已恢复 → 仍 complete。"""
     roster, paper = _healthy_records(space)
     status = {
         "state": "finished",
@@ -596,7 +600,7 @@ def test_clean_records_with_resolved_question_stay_complete(space):
 
 
 def test_l0_and_report_do_not_overstate_complete_with_real_records(space):
-    """R3-F4：预测 L0 与报告层不高报 complete（partial/pending 分层保留）。"""
+    """预测 L0 与报告层不高报 complete（partial/pending 分层保留）。"""
     roster, paper = _healthy_records(space)
     status = _finished_status()
     # 覆盖缺口：L0 partial（科学完成非 complete），不冒称 complete

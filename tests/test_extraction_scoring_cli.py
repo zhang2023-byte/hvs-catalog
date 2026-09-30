@@ -151,7 +151,7 @@ def test_score_demo_new_process_rescore_is_stable(tmp_path):
 
 
 def test_bundle_rejects_full_plan_tamper(tmp_path):
-    """F6：输入集绑定完整计划摘要；改计划任一字段拒绝重评。"""
+    """输入集绑定完整计划摘要；改计划任一字段拒绝重评。"""
     from hvs_catalog.evaluation.bundle import (
         ScoringBundleError,
         load_scoring_bundle,
@@ -187,7 +187,7 @@ def test_bundle_rejects_full_plan_tamper(tmp_path):
 
 
 def test_score_demo_new_process_rejects_plan_tamper(tmp_path):
-    """F6：新进程重评对计划篡改拒绝，不只核对 Gold/预测/辅助。"""
+    """新进程重评对计划篡改拒绝，不只核对 Gold/预测/辅助。"""
     bundle_path = _run_extract(tmp_path)
     bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
     bundle["plan"]["program_ref"]["version"] = "TAMPERED"

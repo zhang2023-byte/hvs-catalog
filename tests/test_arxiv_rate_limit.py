@@ -124,7 +124,7 @@ def test_transfer_max_wait_zero_allows_immediate_permit(tmp_path):
         assert lease.granted_at == 1000.0
 
 
-# --------------------------------------- 固定总预算（round4：有界准入）
+# --------------------------------------- 固定总预算与有界准入
 
 
 def make_extending_clock(clock: FakeClock, state_path, *, extend_seconds: float):
@@ -314,7 +314,7 @@ def test_transfer_max_wait_zero_rejects_lock_contention_immediately(tmp_path):
         os.close(holder_fd)
 
 
-# ------------------------------- 迟到准入核对（round5：迟到锁/迟到读取不签发）
+# ------------------------------- 迟到准入核对：迟到锁/迟到读取不签发
 
 
 def test_transfer_late_lock_poll_oversleep_rejects_beyond_budget(tmp_path):

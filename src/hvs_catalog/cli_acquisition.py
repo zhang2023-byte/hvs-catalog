@@ -1,4 +1,4 @@
-"""``hvs-catalog acquisition`` 子命令组（R10 获取生命周期的 CLI 面）。
+"""``hvs-catalog acquisition`` 子命令组：arXiv 源码包获取生命周期。
 
 设计与边界：
 
@@ -14,7 +14,7 @@
   （unknown，不能当成无新版）。
 - 获取与导入不会把"不可用"冒充成"科学上无关"：不可用就是不可用。
   两种"保留"语义不同：**远程获取**已收到的字节在工作空间内保留
-  （挂选择状态与尝试记录，随整体备份恢复）；**本地导入**被明确拒绝
+  （挂版本事实与获取记录，随整体备份恢复）；**本地导入**被明确拒绝
   （如不支持的归档形态）时不发布文件、不创建选择状态——原文件不
   变、未导入工作空间，也不在工作空间备份范围内。
 """
@@ -38,6 +38,7 @@ from hvs_catalog.pipeline.acquisition.protocol import (
     ArxivIdentifierError,
     ArxivProtocolError,
     ArxivQueryError,
+    parse_arxiv_identifier,
 )
 from hvs_catalog.pipeline.acquisition.transport import (
     ArxivRateLimitedError,
@@ -60,7 +61,7 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
         "acquisition",
         help="arXiv 获取：发现/获取/修订检查/本地导入与状态查询",
         description=(
-            "arXiv 源码包获取生命周期（R10）。发现轮次显式受限并持久化"
+            "arXiv 源码包获取生命周期。发现轮次显式受限并持久化"
             "溯源；获取先冻结版本再下载；状态查询不触网。限流状态为本机"
             "全局（跨工作空间共享），出现未确认在途状态时需人工协调恢"
             "复，CLI 不提供重置入口。首次使用前需用 Python 公共接口初始"
@@ -180,13 +181,15 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
     )
     status.add_argument("--space", required=True, type=Path, help="工作空间根目录")
     status.add_argument("--round", default=None, help="只看指定轮次 id")
-    status.add_argument("--id", default=None, help="只看指定论文（规范标识）")
+    status.add_argument(
+        "--id", default=None, help="只看指定论文；带版本号可回查旧版材料与来源"
+    )
     status.add_argument("--json", action="store_true", help="以 JSON 输出（机器可读）")
     status.set_defaults(handler=_run_status)
 
     material = sub.add_parser(
         "material",
-        help="输出选定版本的材料引用（交付 R11；不触网）",
+        help="输出选定版本的材料引用，供后续解析使用（不触网）",
         description=(
             "打印选定版本的源码包记录引用与原始包字节位置；未就绪时退出码 6。"
         ),
@@ -488,18 +491,26 @@ def _run_status(args: argparse.Namespace) -> int:
         )
         rounds = [item for item in rounds if item is not None]
         if args.id:
-            selections = [service.get_selection(args.id)]
+            ident = parse_arxiv_identifier(args.id)
+            selections = [service.get_selection(ident.canonical_id)]
             selections = [item for item in selections if item is not None]
-            revisions = [service.get_revision_status(args.id)]
+            versions = (
+                [service.get_version(ident.versioned_id)]
+                if ident.version is not None
+                else service.list_versions(ident.canonical_id)
+            )
+            versions = [item for item in versions if item is not None]
+            revisions = [service.get_revision_status(ident.canonical_id)]
             revisions = [item for item in revisions if item is not None]
         else:
             selections = service.list_selections()
+            versions = service.list_versions()
             revisions = [
                 service.get_revision_status(item.canonical_id) for item in selections
             ]
             revisions = [item for item in revisions if item is not None]
-    except WorkspaceError as exc:
-        print(f"[错误] 工作空间错误：{exc}", file=sys.stderr)
+    except (WorkspaceError, AcquisitionError, ArxivIdentifierError) as exc:
+        print(f"[错误] 获取状态不可读：{exc}", file=sys.stderr)
         return EXIT_ERROR
     finally:
         space.close()
@@ -516,6 +527,7 @@ def _run_status(args: argparse.Namespace) -> int:
                 for item in rounds
             ],
             "selections": [_selection_as_dict(item) for item in selections],
+            "versions": [_selection_as_dict(item) for item in versions],
             "revisions": [
                 {
                     "canonical_id": item.canonical_id,
@@ -537,6 +549,9 @@ def _run_status(args: argparse.Namespace) -> int:
     for item in rounds:
         _print_discovery_status(item)
     for item in selections:
+        _print_selection(item)
+    for item in versions:
+        print("[已登记版本]")
         _print_selection(item)
     for item in revisions:
         _print_revision(item)

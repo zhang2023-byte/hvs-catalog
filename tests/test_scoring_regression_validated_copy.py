@@ -30,7 +30,7 @@ def _l2_rows(paper):
 
 
 def test_bytes_scope_scores_correctly_via_validated_copy():
-    """复审反例：构造后把 scope 路径改为 UTF-8 bytes。
+    """构造后把 scope 路径改为 UTF-8 bytes，入口应按验证后的文本评分。
 
     JSON 序列化隐式归一为原字符串，重校验通过；修复前评分使用 bytes
     构成 effective_paths，C/P/G 从 1/2/1 变 0/0/0 且标 ready；修复后

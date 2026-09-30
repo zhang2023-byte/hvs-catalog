@@ -1,8 +1,7 @@
 """登记的提取方法与共用步骤：仅 synthetic-mock 实现。
 
 步骤边界固定：``direct`` 一步产生名单；``candidate_review`` 先发现候
-选、再逐个判定产生名单；两者之后共用 ``quantities``（数值与论文贡献，
-显式承接既有 synthetic 合成流程的 ``extract_contribution`` 语义）与
+选、再逐个判定产生名单；两者之后共用 ``quantities``（数值与论文贡献）与
 ``finalize``。实际的真实提取实现留待后续任务接入。
 """
 
@@ -24,9 +23,6 @@ STEP_REVIEW_CANDIDATES = "review_candidates"
 STEP_QUANTITIES = "quantities"
 STEP_FINALIZE = "finalize"
 
-#: 数值步骤显式适配既有 synthetic 合成名 ``extract_contribution``。
-LEGACY_CONTRIBUTION_STEP = "extract_contribution"
-
 DIRECT_STEPS = (
     StepSpec(
         step_id=STEP_DIRECT_ROSTER,
@@ -43,8 +39,7 @@ DIRECT_STEPS = (
         title="Quantities and contributions",
         description=(
             "Extract measured values and paper contributions for included"
-            " roster entries; explicitly adapts the synthetic"
-            f" {LEGACY_CONTRIBUTION_STEP!r} step."
+            " roster entries."
         ),
     ),
     StepSpec(

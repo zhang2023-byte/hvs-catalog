@@ -301,7 +301,7 @@ def test_gzip_pdf_inside_rejected():
 def test_gzip_bomb_allocation_bounded_before_expansion():
     """解压炸弹的内存分配受上限约束：峰值远小于展开后的完整尺寸。
 
-    审核反例：约 4 KiB 的合成 gzip 可展开为 4 MiB；若先解压再检查，
+    解压输出限制：约 4 KiB 的合成 gzip 可展开为 4 MiB；若先解压再检查，
     拒绝前的内存峰值接近完整展开。这里用 tracemalloc 实测峰值必须
     保持在与上限同量级，而不是与展开尺寸同量级。
     """
@@ -335,7 +335,7 @@ def test_gzip_output_at_cap_boundary_accepted():
 def test_tar_member_cap_stops_parsing_before_all_headers(monkeypatch):
     """成员数上限在逐项解析处立即停止：不会先构造全部 TarInfo。
 
-    审核反例：上限设 2 时旧实现先 getmembers() 构造 100 项才拒绝。
+    成员上限设为 2 时，不得先用 getmembers() 构造 100 项再拒绝。
     这里直接统计 TarInfo 构造次数：拒绝发生时构造数必须与上限同量级。
     """
 
@@ -588,7 +588,7 @@ def _pax_size_record(value: int) -> bytes:
 def test_tar_local_pax_size_record_unsupported(monkeypatch):
     """收敛边界：局部 PAX ``size`` 记录（含缩至 0）明确不支持。
 
-    R4 审核反例的处置方式：不在自定义解析器里仿真 tarfile 的覆盖
+    不在自定义解析器里仿真 tarfile 的覆盖
     语义（重复字段/局部链/数值容错会打开分歧窗口），布局改变型变
     体一律在进入 tarfile 前报告“不支持”，原始字节由调用方保留。
     """
@@ -690,7 +690,7 @@ def _pax_record(key: str, value: str) -> bytes:
 
 
 def test_pax_sparse_map_field_unsupported_before_tarfile():
-    """审核反例：有效定界的 ``GNU.sparse.map=garbage`` 在 tarfile 之前拒绝。"""
+    """有效定界的 ``GNU.sparse.map=garbage`` 在 tarfile 之前拒绝。"""
     crafted = b"".join(
         [
             _tar_header_raw(

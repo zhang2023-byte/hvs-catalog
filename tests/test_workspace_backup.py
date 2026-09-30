@@ -8,18 +8,18 @@ import subprocess
 import sys
 
 import pytest
-
-from hvs_catalog.runtime import resume_execution
-from hvs_catalog.synthetic import (
-    material as m,
-)
-from hvs_catalog.synthetic import (
+from shared_scenarios import (
+    direct_flow,
     open_service,
     pending_questions,
     start_execution,
     submit_expert_decision,
 )
-from hvs_catalog.synthetic.flow import SyntheticFlow
+from shared_scenarios import (
+    material as m,
+)
+
+from hvs_catalog.runtime import resume_execution
 from hvs_catalog.workspace import (
     WorkspaceConflictError,
     WorkspaceIntegrityError,
@@ -32,7 +32,7 @@ from hvs_catalog.workspace import (
 
 @pytest.fixture()
 def service(tmp_path):
-    svc = open_service(tmp_path / "ledger.db")
+    svc = open_service(tmp_path / "calls.jsonl")
     yield svc
     svc.close()
 
@@ -59,15 +59,15 @@ import sys
 from pathlib import Path
 
 from hvs_catalog.runtime import resume_execution
-from hvs_catalog.synthetic import open_service, pending_questions, submit_expert_decision
-from hvs_catalog.synthetic.flow import SyntheticFlow
+from shared_scenarios import open_service, pending_questions, submit_expert_decision
+from shared_scenarios import direct_flow
 from hvs_catalog.workspace import open_workspace
 
 root, execution_id, ledger = sys.argv[1], sys.argv[2], sys.argv[3]
 space = open_workspace(Path(root))
 service = open_service(Path(ledger))
 out = {}
-report = resume_execution(space, execution_id, SyntheticFlow(paper="A"), service=service)
+report = resume_execution(space, execution_id, direct_flow(), service=service)
 out["first"] = report.outcome
 question = pending_questions(space, execution_id=execution_id)[0]
 submit_expert_decision(
@@ -76,9 +76,9 @@ submit_expert_decision(
     question_ref=question.question_ref,
     request_key="dec-subprocess",
 )
-report = resume_execution(space, execution_id, SyntheticFlow(paper="A"), service=service)
+report = resume_execution(space, execution_id, direct_flow(), service=service)
 out["second"] = report.outcome
-from hvs_catalog.synthetic import material as m
+from shared_scenarios import material as m
 
 out["paper_revision"] = space.store().current_revision(
     m.paper_record_id("A", execution_id)
@@ -125,12 +125,12 @@ def test_backup_waiting_answer_and_restore_continues(tmp_path, service):
         assert questions[0].status == "open"
     finally:
         restored.close()
-    # 在新进程中继续执行；前两步结果被复用，账本不产生任何新调用
+    # 在新进程中继续执行；前两步结果被复用，日志不产生任何新调用
     out = _continue_in_subprocess(
         tmp_path,
         tmp_path / "restored",
         execution.execution_id,
-        tmp_path / "ledger.db",
+        tmp_path / "calls.jsonl",
     )
     assert out["first"] == "paused"  # 仍等待答复
     assert out["second"] == "finished"
@@ -156,8 +156,13 @@ def test_backup_pending_apply_state(tmp_path, service):
         view = pending_questions(restored, execution_id=execution.execution_id)[0]
         assert view.status == "answered"
         assert view.application is None  # 回执显示待应用
+        out = _continue_in_subprocess(
+            tmp_path, restored.root, execution.execution_id, tmp_path / "calls.jsonl"
+        )
+        assert out["first"] == out["second"] == "finished"
+        assert out["paper_revision"] == 2
         report = resume_execution(
-            restored, execution.execution_id, SyntheticFlow(paper="A"), service=service
+            restored, execution.execution_id, direct_flow(), service=service
         )
         assert report.outcome == "finished"
         assert (
@@ -188,7 +193,7 @@ def test_backup_applied_awaiting_resume_state(tmp_path, service):
     resume_execution(
         space,
         execution.execution_id,
-        SyntheticFlow(paper="A", fault_hooks={"after_apply": explode}),
+        direct_flow(fault_hooks={"after_apply": explode}),
         service=service,
     )
     assert (
@@ -198,8 +203,13 @@ def test_backup_applied_awaiting_resume_state(tmp_path, service):
     backup_workspace(space, tmp_path / "backup-applied")
     restored = restore_workspace(tmp_path / "backup-applied", tmp_path / "restored")
     try:
+        out = _continue_in_subprocess(
+            tmp_path, restored.root, execution.execution_id, tmp_path / "calls.jsonl"
+        )
+        assert out["first"] == out["second"] == "finished"
+        assert out["paper_revision"] == 2
         report = resume_execution(
-            restored, execution.execution_id, SyntheticFlow(paper="A"), service=service
+            restored, execution.execution_id, direct_flow(), service=service
         )
         assert report.outcome == "finished"
         revisions = [
@@ -237,6 +247,11 @@ def test_backup_finished_state_and_receipts_complete(tmp_path, service):
         assert "decision_apply" in kinds
         run = restored.store().read_record_current(f"run-{execution.execution_id}")
         assert run.data.state == "finished"
+        out = _continue_in_subprocess(
+            tmp_path, restored.root, execution.execution_id, tmp_path / "calls.jsonl"
+        )
+        assert out["first"] == out["second"] == "finished"
+        assert out["paper_revision"] == 2
     finally:
         restored.close()
         space.close()
@@ -340,7 +355,7 @@ def test_restore_refuses_existing_target_and_escapes(tmp_path, service):
 
 
 def test_restore_rejects_symlinked_backup_source_directory(tmp_path, service):
-    """R2-05：中间目录符号链接不能让恢复读取备份根外的材料。"""
+    """中间目录符号链接不能让恢复读取备份根外的材料。"""
     space = initialize_workspace(tmp_path / "space")
     _run_finished(space, service)
     backup_workspace(space, tmp_path / "backup")

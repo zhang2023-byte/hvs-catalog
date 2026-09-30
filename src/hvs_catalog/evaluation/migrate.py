@@ -316,7 +316,7 @@ def _map_contribution(
             new_path=f"{new}/quantity_conflicts/{conflict_id}",
             description=f"物理量 {conflict.quantity} 的冲突保留原因与全部旧证据；"
             "旧格式没有要求冲突双方的完整数值结构，不能凭原因文字编造双方"
-            "数值，待 R07 核查补全",
+            "数值，待专家对照原文核查补全",
         )
         pending.append(
             GoldPendingItem(
@@ -551,7 +551,7 @@ def migrate_legacy_annotation(
                 item_id="p-exclusions",
                 category="science_review",
                 subject="reviewed_exclusions",
-                description="排除记录待 R07 对照原文建立对象对应",
+                description="排除记录待专家对照原文建立对象对应",
             )
         )
     builder.add(

@@ -1,7 +1,6 @@
 """工作空间初始化、打开、配置与材料发布（A01、A02）。
 
-全部材料为合成内容。中断初始化用手工构造的暂存清单模拟真实中断
-现场；真实进程终止的恢复见子进程测试。
+全部材料为合成内容。整目录初始化的真实中断与发布竞争见子进程测试。
 """
 
 from __future__ import annotations
@@ -52,20 +51,20 @@ def test_repeated_initialize_reads_existing_config_without_changes(tmp_path):
 def test_existing_unmanaged_files_preserved_and_reserved_conflicts_reject_all(
     tmp_path,
 ):
-    # 非预留名的用户资料可以保留，初始化成功
+    # 任意非空未知目录拒绝；用户资料保持不变
     root = tmp_path / "ok-space"
     root.mkdir()
     (root / "user-notes.txt").write_text("用户自有资料", encoding="utf-8")
-    space = initialize_workspace(root)
+    with pytest.raises(WorkspaceConflictError, match="非空"):
+        initialize_workspace(root)
     assert (root / "user-notes.txt").read_text(encoding="utf-8") == "用户自有资料"
-    space.close()
 
     # 预留文件名冲突：整体拒绝，已有资料逐字节保留，不留任何空间文件
     conflict = tmp_path / "conflict-space"
     conflict.mkdir()
     (conflict / "sources").mkdir()
     (conflict / "sources" / "own.txt").write_text("用户来源资料", encoding="utf-8")
-    with pytest.raises(WorkspaceConflictError, match="冲突"):
+    with pytest.raises(WorkspaceConflictError, match="非空"):
         initialize_workspace(conflict)
     assert (conflict / "sources" / "own.txt").read_text(
         encoding="utf-8"
@@ -121,7 +120,7 @@ def test_open_refuses_marker_database_identity_mismatch(tmp_path):
         open_workspace(root)
 
 
-def test_interrupted_init_recovers_only_own_files(tmp_path):
+def test_interrupted_init_does_not_take_over_old_products(tmp_path):
     root = tmp_path / "space"
     root.mkdir()
     staging = root / ".workspace-init"
@@ -149,12 +148,12 @@ def test_interrupted_init_recovers_only_own_files(tmp_path):
     (root / "sources").mkdir()
     (staging / "business.db").write_bytes(b"partial")
     (root / "user-notes.txt").write_text("用户自有资料", encoding="utf-8")
-    space = initialize_workspace(root)
-    # 清单内的文件被回滚后重新创建，未列出的用户资料逐字节保留
-    assert (root / "workspace.json").is_file()
+    with pytest.raises(WorkspaceConflictError, match="非空"):
+        initialize_workspace(root)
+    assert not (root / "workspace.json").exists()
+    assert (root / "config.json").read_bytes() == b"{}"
+    assert (staging / "business.db").read_bytes() == b"partial"
     assert (root / "user-notes.txt").read_text(encoding="utf-8") == "用户自有资料"
-    assert not (root / ".workspace-init").exists()
-    space.close()
 
 
 def test_interrupted_init_refuses_unknown_same_name_files(tmp_path):
@@ -168,7 +167,7 @@ def test_interrupted_init_refuses_unknown_same_name_files(tmp_path):
     )
     # 身份不明的同名资料：清单没有记录，初始化拒绝接管
     (root / "business.db").write_bytes(b"someone else's data")
-    with pytest.raises(WorkspaceConflictError, match="冲突"):
+    with pytest.raises(WorkspaceConflictError, match="非空"):
         initialize_workspace(root)
     assert (root / "business.db").read_bytes() == b"someone else's data"
 

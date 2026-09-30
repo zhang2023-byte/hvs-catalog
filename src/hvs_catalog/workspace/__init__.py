@@ -19,7 +19,6 @@ from .backup import (
 from .errors import (
     AdjudicationNotAllowedError,
     DecisionConflictError,
-    LockCorruptedError,
     OperationKeyConflictError,
     RecoveryInconsistentError,
     RevisionStaleError,
@@ -43,7 +42,7 @@ from .layout import (
     open_workspace,
     resolve_within,
 )
-from .locking import LockIdentity, SpaceLock, repair_lock
+from .locking import SpaceLock
 from .store import (
     CommitRequest,
     ExecutionRow,
@@ -71,8 +70,6 @@ __all__ = [
     "CommitRequest",
     "DecisionConflictError",
     "ExecutionRow",
-    "LockCorruptedError",
-    "LockIdentity",
     "OperationKeyConflictError",
     "QuestionIndexRow",
     "Receipt",
@@ -96,7 +93,6 @@ __all__ = [
     "initialize_workspace",
     "open_workspace",
     "read_backup_manifest",
-    "repair_lock",
     "resolve_within",
     "restore_workspace",
     "verify_artifact_refs",

@@ -7,17 +7,17 @@ A13/A15/A16/A18 的进程内部分；真实进程终止（保存前、应用事�
 from __future__ import annotations
 
 import pytest
-
-from hvs_catalog.records.common import RecordRef
-from hvs_catalog.runtime import resume_execution
-from hvs_catalog.synthetic import material as m
-from hvs_catalog.synthetic import (
+from shared_scenarios import (
+    direct_flow,
     open_service,
     pending_questions,
     start_execution,
     submit_expert_decision,
 )
-from hvs_catalog.synthetic.flow import SyntheticFlow
+from shared_scenarios import material as m
+
+from hvs_catalog.records.common import RecordRef
+from hvs_catalog.runtime import resume_execution
 from hvs_catalog.workspace import (
     RecoveryInconsistentError,
     initialize_workspace,
@@ -33,7 +33,7 @@ def space(tmp_path):
 
 @pytest.fixture()
 def service(tmp_path):
-    svc = open_service(tmp_path / "ledger.db")
+    svc = open_service(tmp_path / "calls.jsonl")
     yield svc
     svc.close()
 
@@ -130,7 +130,7 @@ def test_crash_after_apply_does_not_create_second_revision(space, service, waiti
     def explode():
         raise RuntimeError("caller lost the completion response")
 
-    crashing_flow = SyntheticFlow(paper="A", fault_hooks={"after_apply": explode})
+    crashing_flow = direct_flow(fault_hooks={"after_apply": explode})
     failed = resume_execution(
         space, execution.execution_id, crashing_flow, service=service
     )
@@ -144,7 +144,7 @@ def test_crash_after_apply_does_not_create_second_revision(space, service, waiti
     assert view.application.phase == "applied"
     # 再次恢复：复用应用回执，不再生成第二份修订，流程继续到完成
     recovered = resume_execution(
-        space, execution.execution_id, SyntheticFlow(paper="A"), service=service
+        space, execution.execution_id, direct_flow(), service=service
     )
     assert recovered.outcome == "finished"
     revisions = [
@@ -166,7 +166,7 @@ def test_node_reentry_reuses_step_results_without_extra_calls(space, service, wa
         request_key="dec",
     )
     report = resume_execution(
-        space, execution.execution_id, SyntheticFlow(paper="A"), service=service
+        space, execution.execution_id, direct_flow(), service=service
     )
     assert report.outcome == "finished"
     assert service.summary()["calls"] == calls_before  # 决定应用与重入不再调用服务
@@ -190,7 +190,7 @@ def test_finished_execution_resume_reports_without_extra_work(space, service, wa
 
 
 def test_response_received_but_not_saved_bills_again(space, service, tmp_path):
-    """A17（进程内异常变体）：响应已到、保存前失败，恢复重新调用并计费。"""
+    """A17（进程内异常变体）：响应已到、保存前失败，恢复重新调用并记录事实。"""
 
     def explode():
         raise RuntimeError("crash after response, before save")
@@ -199,18 +199,18 @@ def test_response_received_but_not_saved_bills_again(space, service, tmp_path):
         space,
         paper="B",
         request_key="b",
-        fault_hooks={"after_response:extract_contribution": explode},
+        fault_hooks={"after_response:quantities": explode},
     )
     failed = resume_execution(space, execution.execution_id, flow, service=service)
     assert failed.outcome == "failed"
-    billed = service.calls_for_step("extract_contribution")
+    billed = service.calls_for_step("quantities")
     assert billed >= 1
     recovered = resume_execution(
-        space, execution.execution_id, SyntheticFlow(paper="B"), service=service
+        space, execution.execution_id, direct_flow(), service=service
     )
     assert recovered.outcome == "finished"
-    # 重新调用再次计费；账本独立于客户端事务，此前计费不回滚
-    assert service.calls_for_step("extract_contribution") > billed
+    # 重新调用新增事实；日志独立于客户端事务，此前调用不回滚
+    assert service.calls_for_step("quantities") > billed
     assert service.summary()["calls"] >= 3
 
 
@@ -245,7 +245,7 @@ def test_application_blocked_when_target_revised_by_other_operation(
         )
     )
     report = resume_execution(
-        space, execution.execution_id, SyntheticFlow(paper="A"), service=service
+        space, execution.execution_id, direct_flow(), service=service
     )
     assert report.outcome == "paused"
     blocked = [a for a in report.applied if a.blocked_reason]
@@ -297,9 +297,7 @@ def test_checkpoint_cross_wired_execution_stops(space, service, tmp_path):
         conn.close()
 
     with pytest.raises(RecoveryInconsistentError, match="绑定执行"):
-        resume_execution(
-            space, ex_a.execution_id, SyntheticFlow(paper="A"), service=service
-        )
+        resume_execution(space, ex_a.execution_id, direct_flow(), service=service)
     run_a = space.store().read_record_current(f"run-{ex_a.execution_id}")
     assert run_a.data.state == "failed"
 
@@ -317,9 +315,7 @@ def test_missing_business_result_stops_execution(space, service, waiting):
     conn.commit()
     conn.close()
     with pytest.raises(RecoveryInconsistentError, match="缺失"):
-        resume_execution(
-            space, execution.execution_id, SyntheticFlow(paper="A"), service=service
-        )
+        resume_execution(space, execution.execution_id, direct_flow(), service=service)
     # 不把恢复失败写成科学结论：执行不再推进（无法修订时保留原状态并报告）
     run = space.store().read_record_current(f"run-{execution.execution_id}")
     assert run.data.state in {"failed", "waiting_review"}

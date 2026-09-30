@@ -1,4 +1,4 @@
-"""裁决身份与准确修订回归：跨空间误投拒绝、不存在/过期修订拒绝（F03/F04，R2-04）。
+"""裁决身份与准确修订回归：跨空间误投拒绝、不存在/过期修订拒绝。
 
 两个空间对同一论文按相同顺序创建执行与问题时，执行编号相同但问题
 编号按逻辑空间派生；原样投递另一空间的提交被拒绝且目标库不新增决
@@ -12,17 +12,17 @@ from __future__ import annotations
 from dataclasses import replace
 
 import pytest
-
-from hvs_catalog.records.common import RecordRef
-from hvs_catalog.records.questions import Actor
-from hvs_catalog.review import DecisionSubmission, ReviewService
-from hvs_catalog.runtime import resume_execution
-from hvs_catalog.synthetic import (
+from shared_scenarios import (
     open_service,
     pending_questions,
     start_execution,
     submit_expert_decision,
 )
+
+from hvs_catalog.records.common import RecordRef
+from hvs_catalog.records.questions import Actor
+from hvs_catalog.review import DecisionSubmission, ReviewService
+from hvs_catalog.runtime import resume_execution
 from hvs_catalog.workspace import (
     RevisionStaleError,
     WorkspaceIntegrityError,
@@ -32,7 +32,7 @@ from hvs_catalog.workspace import (
 
 @pytest.fixture()
 def service(tmp_path):
-    svc = open_service(tmp_path / "ledger.db")
+    svc = open_service(tmp_path / "calls.jsonl")
     yield svc
     svc.close()
 
@@ -46,7 +46,7 @@ def _paused_with_question(space, service, *, request_key="a"):
 
 
 def test_cross_space_submission_rejected_verbatim(tmp_path, service):
-    """F03：两空间同论文同顺序，原样误投被拒且目标库不新增决定。"""
+    """两空间同论文同顺序，原样误投被拒且目标库不新增决定。"""
     space_a = initialize_workspace(tmp_path / "a")
     space_b = initialize_workspace(tmp_path / "b")
     try:
@@ -69,7 +69,7 @@ def test_cross_space_submission_rejected_verbatim(tmp_path, service):
         with pytest.raises(WorkspaceIntegrityError):
             ReviewService(space_b).submit_decision(
                 execution_id=exec_a.execution_id,
-                step_id=question_a.step_id or "extract_contribution",
+                step_id=question_a.step_id or "quantities",
                 submission=submission,
                 request_key="from-space-a",
             )
@@ -93,7 +93,7 @@ def test_cross_space_submission_rejected_verbatim(tmp_path, service):
 
 
 def test_nonexistent_question_revision_rejected(tmp_path, service):
-    """F04：提交不存在的问题修订被拒，不产生决定或新修订。"""
+    """提交不存在的问题修订被拒，不产生决定或新修订。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, question = _paused_with_question(space, service)
@@ -118,7 +118,7 @@ def test_nonexistent_question_revision_rejected(tmp_path, service):
 
 
 def test_answered_question_accepts_only_answer_chain(tmp_path, service):
-    """F04：已答复问题只开放答复前后的最短修订链。"""
+    """已答复问题只开放答复前后的最短修订链。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, question = _paused_with_question(space, service)
@@ -156,7 +156,7 @@ def test_answered_question_accepts_only_answer_chain(tmp_path, service):
         space.close()
 
 
-# ---- R2-04：重放入口同样核验提交引用 ----
+# ---- 重放入口同样核验提交引用 ----
 
 
 def _unresolved_submission(question):
@@ -172,13 +172,13 @@ def _unresolved_submission(question):
 
 
 def test_replay_with_unrelated_revision_rejected(tmp_path, service):
-    """R2-04：同请求键携带不存在的 v999 重放被拒（直接覆盖公共服务）。"""
+    """同请求键携带不存在的 v999 重放被拒（直接覆盖公共服务）。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, question = _paused_with_question(space, service)
         review = ReviewService(space)
         submission = _unresolved_submission(question)
-        step_id = question.step_id or "extract_contribution"
+        step_id = question.step_id or "quantities"
         first = review.submit_decision(
             execution_id=execution.execution_id,
             step_id=step_id,
@@ -227,13 +227,13 @@ def test_replay_with_unrelated_revision_rejected(tmp_path, service):
 
 
 def test_old_success_receipt_queryable_after_supersede(tmp_path, service):
-    """R2-04：问题随后被替代后，原成功请求的回执仍可按原修订重放查询。"""
+    """问题随后被替代后，原成功请求的回执仍可按原修订重放查询。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, question = _paused_with_question(space, service)
         review = ReviewService(space)
         submission = _unresolved_submission(question)
-        step_id = question.step_id or "extract_contribution"
+        step_id = question.step_id or "quantities"
         review.submit_decision(
             execution_id=execution.execution_id,
             step_id=step_id,

@@ -1,223 +1,332 @@
-"""独立进程验证保存中断窗口与恢复（场景八）。
+"""Real process death: reject incomplete saves; manual rollback, not replay."""
 
-中断用故障窗口钩子在准确时点 ``os._exit`` 结束子进程，等价于进程死亡：
-操作日志、已发布文件与版本入口等已提交事实保留，未完成部分丢弃。父
-进程随后核对实际保存内容与版本入口，不只检查返回码。
-"""
-
-from __future__ import annotations
-
+import hashlib
 import json
+import os
+import shutil
 import subprocess
 import sys
-from pathlib import Path
+import time
 
 import pytest
-from evaluation_helpers import (
-    build_approval_payload,
-    build_fresh_draft,
-    write_synthetic_pdf,
-)
+from gold_save_helpers import approve_revision, flow, revise, snapshot, write_approval
 
 from hvs_catalog.evaluation import (
-    GoldTarget,
+    GoldIntegrityError,
+    GoldTargetError,
+    SaveApproval,
     approved_save,
-    prepare_save,
-    query_operation,
+    check_compact_gold_pair,
+    read_compact_gold_pair,
 )
+from hvs_catalog.workspace import SpaceLock
+from hvs_catalog.workspace.errors import WorkspaceBusyError
 
-HELPERS = Path(__file__).parent / "evaluation_helpers.py"
+CHILD = """
+import json, os, sys
+from pathlib import Path
+from hvs_catalog.evaluation import GoldTarget, SaveApproval, approved_save
+pair, material, root, approval, window = sys.argv[1:]
+approved_save(pair_path=pair, material_root=material, target=GoldTarget(root),
+              approval=SaveApproval.model_validate_json(Path(approval).read_bytes()),
+              fault_hooks={window: lambda: os._exit(9)})
+raise AssertionError("missed explicit fault window")
+"""
 
 
-def run_scenario(name: str, *args: object, timeout: float = 60.0):
+PRE_REPLACE_CHILD = """
+import hashlib, json, os, sys
+from pathlib import Path
+from hvs_catalog.evaluation import GoldTarget, SaveApproval, approved_save, store
+pair, material, root, approval, filename = sys.argv[1:]
+original_replace = store.os.replace
+
+def stop_before_replace(source, destination):
+    if Path(destination) == Path(root) / filename:
+        # _atomic_write has closed/fsynced the new temporary file, but has not
+        # replaced the old file. Record the exact residue, not a glob selection.
+        data = Path(source).read_bytes()
+        assert data == (Path(root) / ".save-backup" / "new" / filename).read_bytes()
+        print(json.dumps({"temporary_path": str(source),
+                          "sha256": hashlib.sha256(data).hexdigest()}), flush=True)
+        os._exit(19)
+    return original_replace(source, destination)
+
+store.os.replace = stop_before_replace
+approved_save(pair_path=pair, material_root=material, target=GoldTarget(root),
+              approval=SaveApproval.model_validate_json(Path(approval).read_bytes()))
+raise AssertionError("missed precise pre-replace window")
+"""
+
+
+def child(args, tmp_path, window, *, script=CHILD, exit_code=9):
+    approval = write_approval(args, tmp_path / "permission.json")
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
     result = subprocess.run(
-        [sys.executable, str(HELPERS), name, *map(str, args)],
+        [
+            sys.executable,
+            "-c",
+            script,
+            str(args["pair_path"]),
+            str(args["material_root"]),
+            str(args["target"].root),
+            str(approval),
+            window,
+        ],
+        cwd=tmp_path,
+        env=env,
         capture_output=True,
         text=True,
-        timeout=timeout,
+        timeout=30,
         check=False,
     )
-    payload = None
-    lines = [line for line in result.stdout.splitlines() if line.strip()]
-    if lines:
-        try:
-            payload = json.loads(lines[-1])
-        except json.JSONDecodeError:
-            payload = None
-    return result.returncode, payload
+    assert result.returncode == exit_code, result.stdout + result.stderr
+    return result
 
 
-def _setup_flow(tmp_path):
-    material = tmp_path / "materials"
-    digest = write_synthetic_pdf(material / "paper.pdf")
-    draft = build_fresh_draft(pdf_sha256=digest)
-    draft_path = tmp_path / "draft.json"
-    draft_path.write_text(json.dumps(draft, ensure_ascii=False), encoding="utf-8")
-    target = GoldTarget(tmp_path / "target")
-    target.initialize()
-    preparation = prepare_save(
-        draft_path=draft_path,
-        material_root=material,
-        work_dir=tmp_path / "work",
-        target=target,
-    )
-    approval_path = tmp_path / "approval.json"
-    approval_path.write_text(
-        json.dumps(build_approval_payload(preparation), ensure_ascii=False),
-        encoding="utf-8",
-    )
-    return draft_path, material, target, preparation, approval_path
-
-
-def _published_files(target: GoldTarget) -> list[Path]:
-    annotations = target.root / "annotations"
-    if not annotations.exists():
-        return []
-    return sorted(p for p in annotations.rglob("*") if p.is_file())
-
-
+@pytest.mark.parametrize("revision", [False, True])
 @pytest.mark.parametrize(
-    "window,expected_query",
-    [
-        ("after_log", "pending"),
-        ("after_stage", "pending"),
-        ("after_file:answer.json", "recoverable"),
-        ("after_files", "recoverable"),
-        ("after_entry", "saved"),
-    ],
+    "window",
+    ["after_backup", "after_answer.json", "after_metadata.json", "after_approval.json"],
 )
-def test_crash_window_then_recover(tmp_path, window, expected_query):
-    """保存链路各中断窗口退出后：先核对实际结果，再恢复到一致状态。"""
-    draft_path, material, target, preparation, approval_path = _setup_flow(tmp_path)
-    code, payload = run_scenario(
-        "save-exit",
-        draft_path,
-        material,
-        target.root,
-        preparation.directory,
-        approval_path,
-        "op-crash",
-        window,
+@pytest.mark.parametrize("restore", ["old", "new"])
+def test_crash_refusal_and_complete_manual_restore(tmp_path, revision, window, restore):
+    args = flow(tmp_path)
+    if revision:
+        approved_save(**args)
+    old = snapshot(args["target"].root)
+    if revision:
+        args = approve_revision(revise(args))
+    child(args, tmp_path, window)
+    backup = args["target"].root / ".save-backup"
+    assert backup.is_dir()
+    assert {p.name for p in (backup / "new").iterdir()} == {
+        "answer.json",
+        "metadata.json",
+        "approval.json",
+    }
+    if revision:
+        assert {p.name: p.read_bytes() for p in (backup / "old").iterdir()} == {
+            name: old[name]
+            for name in ("answer.json", "metadata.json", "approval.json")
+        }
+    with pytest.raises(GoldIntegrityError, match="Interrupted"):
+        args["target"].read_current()
+    with pytest.raises(GoldIntegrityError, match="Interrupted"):
+        approved_save(**args)
+    # Explicit manual restoration while holding the documented existing lock.
+    with SpaceLock(args["target"].root):
+        chosen = backup / restore
+        for name in ("answer.json", "metadata.json", "approval.json"):
+            source = chosen / name
+            destination = args["target"].root / name
+            if source.exists():
+                shutil.copyfile(source, destination)
+            elif destination.exists():
+                destination.unlink()  # synthetic empty rollback only
+        if restore == "new" or revision:
+            restored = read_compact_gold_pair(args["target"].root)
+            approval = SaveApproval.model_validate_json(
+                (args["target"].root / "approval.json").read_bytes()
+            )
+            assert (
+                approval.scientific_review
+                and approval.binding_sha256 == approval.binding.sha256
+            )
+            assert approval.binding.target_path == str(args["target"].root)
+            for name, digest in (
+                ("answer.json", approval.binding.answer_sha256),
+                ("metadata.json", approval.binding.metadata_sha256),
+            ):
+                assert (
+                    hashlib.sha256(
+                        (args["target"].root / name).read_bytes()
+                    ).hexdigest()
+                    == digest
+                )
+            checked = check_compact_gold_pair(
+                restored, material_root=args["material_root"]
+            )
+            assert checked.blocking_count == 0
+            assert sorted(approval.accepted_pending) == sorted(checked.pending_ids())
+        shutil.rmtree(backup)
+    # A fresh process verifies the restored target, not the prior process cache.
+    verify = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "hvs_catalog",
+            "gold",
+            "read",
+            "--target",
+            str(args["target"].root),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
     )
-    assert code == 9, payload  # 子进程在故障窗口硬退出
-
-    status = query_operation(operation_id="op-crash", target=target)
-    assert status.state == expected_query, (window, status.detail)
-
-    # 中断后入口未发布时不算正式答案
-    entry_before = target.read_entry("gold-synth-001")
-    if expected_query in ("pending", "recoverable"):
-        assert entry_before is None
-
-    # 用同一操作标识与原批准重试：核对原批准、文件和目标后继续或确认
-    receipt = approved_save(
-        draft_path=draft_path,
-        material_root=material,
-        target=target,
-        preparation_dir=preparation.directory,
-        approval=approval_path,
-        operation_id="op-crash",
+    assert verify.returncode == (2 if restore == "old" and not revision else 0), (
+        verify.stderr
     )
-    assert receipt.version == 1
-    entry = target.read_entry("gold-synth-001")
-    assert entry is not None and entry.version == 1
-    assert entry.operation_id == "op-crash"
-    # 三个正式文件齐备且哈希一致（读取者只接受完整一致的入口）
-    assert len(entry.files) == 3
-    target.read_current_answer("gold-synth-001")
-    # 只有一个版本目录，成功保存仅一份
-    versions = sorted(
-        p.name for p in (target.root / "annotations" / "gold-synth-001").iterdir()
-    )
-    assert versions == ["v1"]
-
-
-def test_entry_published_but_receipt_lost_no_second_version(tmp_path):
-    """入口已更新但回执未返回：重试据入口确认已保存，不发布第二份。"""
-    draft_path, material, target, preparation, approval_path = _setup_flow(tmp_path)
-    code, _ = run_scenario(
-        "save-exit",
-        draft_path,
-        material,
-        target.root,
-        preparation.directory,
-        approval_path,
-        "op-receipt-lost",
-        "after_entry",
-    )
-    assert code == 9
-    again = approved_save(
-        draft_path=draft_path,
-        material_root=material,
-        target=target,
-        preparation_dir=preparation.directory,
-        approval=approval_path,
-        operation_id="op-receipt-lost",
-    )
-    assert again.replayed and again.recovered
-    assert again.version == 1
-    versions = sorted(
-        p.name for p in (target.root / "annotations" / "gold-synth-001").iterdir()
-    )
-    assert versions == ["v1"]
-    status = query_operation(operation_id="op-receipt-lost", target=target)
-    assert status.state == "saved"
-
-
-def test_recovered_save_in_subprocess(tmp_path):
-    """中断后在独立子进程内完成恢复保存（另一个进程接手）。"""
-    draft_path, material, target, preparation, approval_path = _setup_flow(tmp_path)
-    code, _ = run_scenario(
-        "save-exit",
-        draft_path,
-        material,
-        target.root,
-        preparation.directory,
-        approval_path,
-        "op-cross",
-        "after_file:answer.json",
-    )
-    assert code == 9
-    code, payload = run_scenario(
-        "save",
-        draft_path,
-        material,
-        target.root,
-        preparation.directory,
-        approval_path,
-        "op-cross",
-    )
-    assert code == 0, payload
-    assert payload["version"] == 1
-    assert payload["recovered"] is True or payload["replayed"] is True
-    target.read_current_answer("gold-synth-001")
+    if restore == "new":
+        assert (
+            json.loads(verify.stdout)["pair_sha256"]
+            == args["approval"].binding.pair_sha256
+        )
+        assert approved_save(**args).already_present
+    elif revision:
+        assert (
+            snapshot(args["target"].root) == old
+        )  # uncommitted previous result retained
+    else:
+        assert args["target"].read_current() is None
 
 
-def test_recovery_keeps_old_input_untouched(tmp_path):
-    """恢复保存过程中旧输入与材料保持只读。"""
-    draft_path, material, target, preparation, approval_path = _setup_flow(tmp_path)
-    legacy = tmp_path / "legacy.json"
-    legacy_payload = {"placeholder": True}
-    legacy.write_text(json.dumps(legacy_payload), encoding="utf-8")
-    material_bytes = (material / "paper.pdf").read_bytes()
-    code, _ = run_scenario(
-        "save-exit",
-        draft_path,
-        material,
-        target.root,
-        preparation.directory,
-        approval_path,
-        "op-ro",
-        "after_files",
+@pytest.mark.parametrize("restore", ["old", "new"])
+def test_pre_replace_residue_preserved_and_manually_moved_out(tmp_path, restore):
+    args = flow(tmp_path)
+    approved_save(**args)  # Previous result is deliberately never Git-committed.
+    root = args["target"].root
+    old = snapshot(root)
+    old_approval = args["target"].read_current()[1]
+    old_fingerprint = args["target"].fingerprint()
+    args = approve_revision(revise(args))
+    result = child(
+        args, tmp_path, "metadata.json", script=PRE_REPLACE_CHILD, exit_code=19
     )
-    assert code == 9
-    approved_save(
-        draft_path=draft_path,
-        material_root=material,
-        target=target,
-        preparation_dir=preparation.directory,
-        approval=approval_path,
-        operation_id="op-ro",
+    evidence = json.loads(result.stdout)
+    residue = root / os.path.basename(evidence["temporary_path"])
+    assert str(residue) == evidence["temporary_path"]
+    assert residue.name.startswith(".metadata.json.tmp-")
+    residue_bytes = residue.read_bytes()
+    assert hashlib.sha256(residue_bytes).hexdigest() == evidence["sha256"]
+    backup = root / ".save-backup"
+    names = ("answer.json", "metadata.json", "approval.json")
+    assert {name: (backup / "old" / name).read_bytes() for name in names} == {
+        name: old[name] for name in names
+    }
+    assert residue_bytes == (backup / "new" / "metadata.json").read_bytes()
+    assert (root / "metadata.json").read_bytes() == old["metadata.json"]
+    assert (root / "answer.json").read_bytes() == (
+        backup / "new" / "answer.json"
+    ).read_bytes()
+    with pytest.raises(GoldTargetError, match="layout"):
+        args["target"].read_current()
+    with pytest.raises(GoldTargetError, match="layout"):
+        approved_save(**args)
+
+    # Follow the documentation: hold the existing lock, preserve the complete
+    # incident, restore/check one full set, then move the confirmed residue out.
+    incident = tmp_path / "incident"
+    incident.mkdir()
+    before_recovery = snapshot(root)
+    expected = dict(old)
+    expected_approval = old_approval if restore == "old" else args["approval"]
+    with SpaceLock(root):
+        shutil.copytree(root, incident / "target-before-recovery")
+        assert snapshot(incident / "target-before-recovery") == before_recovery
+        for name in names:
+            expected[name] = (backup / restore / name).read_bytes()
+            shutil.copyfile(backup / restore / name, root / name)
+        restored = read_compact_gold_pair(root)
+        approval = SaveApproval.model_validate_json(
+            (root / "approval.json").read_bytes()
+        )
+        assert approval == expected_approval and approval.scientific_review
+        assert approval.binding_sha256 == approval.binding.sha256
+        assert approval.binding.target_path == str(root)
+        for name, digest in (
+            ("answer.json", approval.binding.answer_sha256),
+            ("metadata.json", approval.binding.metadata_sha256),
+        ):
+            assert hashlib.sha256((root / name).read_bytes()).hexdigest() == digest
+        checked = check_compact_gold_pair(restored, material_root=args["material_root"])
+        assert checked.blocking_count == 0
+        assert sorted(approval.accepted_pending) == sorted(checked.pending_ids())
+        # Restoring valid files alone cannot bypass the unknown-file protection.
+        with pytest.raises(GoldTargetError, match="layout"):
+            args["target"].read_current()
+        assert residue.read_bytes() == residue_bytes
+        assert (
+            snapshot(root)[str(residue.relative_to(root))]
+            == before_recovery[residue.name]
+        )
+        retained_dir = incident / "confirmed-atomic-write-residue"
+        retained_dir.mkdir()
+        retained = retained_dir / residue.name
+        assert not retained.exists()
+        residue.rename(retained)  # Exact identified file, preserved, not deleted.
+        assert retained.read_bytes() == residue_bytes and not residue.exists()
+        with pytest.raises(GoldIntegrityError, match="Interrupted"):
+            args["target"].read_current()
+        shutil.rmtree(backup)  # Only the new synthetic invocation's verified backup.
+
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+    verify = subprocess.run(
+        [sys.executable, "-m", "hvs_catalog", "gold", "read", "--target", str(root)],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
     )
-    assert legacy.read_bytes() == json.dumps(legacy_payload).encode()
-    assert (material / "paper.pdf").read_bytes() == material_bytes
+    assert verify.returncode == 0, verify.stdout + verify.stderr
+    fingerprint = json.loads(verify.stdout)["pair_sha256"]
+    assert fingerprint == expected_approval.binding.pair_sha256
+    if restore == "old":
+        assert fingerprint == old_fingerprint
+    assert snapshot(root) == expected  # Old rollback restores all uncommitted bytes.
+    assert retained.read_bytes() == residue_bytes
+    assert snapshot(incident / "target-before-recovery") == before_recovery
+
+
+def test_response_lost_completed_retry_no_second_result(tmp_path):
+    args = flow(tmp_path)
+    child(args, tmp_path, "after_complete")
+    before = snapshot(args["target"].root)
+    assert approved_save(**args).already_present
+    assert before == snapshot(args["target"].root)
+
+
+def test_other_process_lock_busy_no_queue(tmp_path):
+    args = flow(tmp_path)
+    args["target"].initialize()
+    signal = tmp_path / "held"
+    release = tmp_path / "release"
+    code = """
+import sys, time
+from pathlib import Path
+from hvs_catalog.workspace import SpaceLock
+with SpaceLock(Path(sys.argv[1])):
+    Path(sys.argv[2]).write_text("held")
+    while not Path(sys.argv[3]).exists():
+        time.sleep(.01)
+"""
+    proc = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            code,
+            str(args["target"].root),
+            str(signal),
+            str(release),
+        ],
+        cwd=tmp_path,
+    )
+    try:
+        deadline = time.monotonic() + 30
+        while not signal.exists():
+            assert proc.poll() is None and time.monotonic() < deadline
+            time.sleep(0.01)
+        with pytest.raises(WorkspaceBusyError):
+            approved_save(**args)
+    finally:
+        release.write_text("done")
+        proc.wait(timeout=30)
+    assert proc.returncode == 0
+    assert not approved_save(**args).already_present

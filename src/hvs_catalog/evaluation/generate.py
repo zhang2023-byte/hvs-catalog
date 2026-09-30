@@ -390,10 +390,10 @@ def render_annotation_template() -> str:
         "record a confirmed original human separately in original_expert with the original "
         "record as basis. Unknown historical identity/time must remain unknown with a reason. "
         "Do not classify an old annotator as human by guessing.\n\n"
-        "For a new annotation, original_expert stays null: the first human approval is the "
-        "authority for original authorship. Saved answers carry original_approval_version=1 "
-        "and provenance.json points to that version's approval.json. Later approvals never "
-        "replace the original expert. Each revision records its own maker and human approval. "
+        "For a new working draft, original_expert may remain null. Before current-format "
+        "conversion, explicitly identify its actual original annotator and reviewer; final "
+        "approval is a separate human declaration for the concrete pair. No v1 formal save "
+        "or provenance writer is provided. Revisions preserve original annotation identity. "
         "The original human expert may be will, shunhong_deng, or another explicitly identified "
         "expert; these names are not defaults. This records declared identities, not authentication.\n\n"
         "## Materials and technical fields\n\n"
@@ -404,13 +404,15 @@ def render_annotation_template() -> str:
         "acceptance and later evaluation-scope review. PDF and LaTeX files are read from material_root.\n\n"
         "The JSON reader assigns omitted contribution_id, conflict_id, exclusion_id and item_id "
         "deterministically, preserving supplied IDs and rejecting duplicates. Supply document_id "
-        "and registered file_id; record real file hashes. Gold revision numbers are assigned by "
-        "the save tool and are independent of paper versions.\n\n"
+        "and registered file_id; record real file hashes. This draft is read-only to the "
+        "formal writer; explicitly convert to the current pair before review/save. Git "
+        "history, format versions, paper versions and rules versions are distinct.\n\n"
         f"## Quantity codes\n\n{quantity_list}\n\n## Synthetic draft\n\n```json\n{skeleton}\n```\n\n"
         "Missing evidence, conditions or hashes must be filled from known materials, not guessed. "
         "Draft pending categories are missing_info, structural_gap and science_review. Structural "
-        "and material gaps block saving. Explicitly accepted scientific pending items retain their "
-        "complete descriptions in the formal provenance. Conflicts preserve competing values and evidence.\n"
+        "and material gaps block readiness. Conversion requires explicit pending dispositions; "
+        "retained scientific uncertainty belongs in current answer.unresolved, not a separate "
+        "formal provenance file. Conflicts preserve competing values and evidence.\n"
     )
 
 
@@ -418,38 +420,35 @@ def render_approval_template() -> str:
     return """<!-- Generated -->
 # Human approval record
 
-This template applies to immutable version saves. An authorized local correction
-edits the existing answer and metadata in place and records the existing human decision;
-it does not need a new preparation approval. See the [Gold maintenance design](../../../../docs/design/evaluation.md).
+New answers and revisions use the same current-pair save. Organize the compact pair
+before review; use check_save / gold inspect-save for a read-only binding summary.
+This document is guidance, not approval. See the [Gold maintenance design](../../../../docs/design/evaluation.md).
 
-For the current two-file Gold format, review both answer.json and metadata.json, plus the check report.
-Set scientific_review=true only after a human expert has reviewed the scientific
-content of that exact pair. The approved manifest hashes both files, fixed materials,
-rules and target. The approval is saved as a protected operation sidecar; the formal
-version directory contains answer.json and metadata.json only.
-
-For a historical v1 save, the prepared package included answer and provenance.
-After reviewing the prepared answer, provenance and check report, a human expert supplies
-an approval matching that preparation. This document is guidance, not an approval.
-Use [the approval schema](../schemas/gold.approval.json) for the full typed contract.
+Review answer.json, metadata.json and all reported checks. Set scientific_review=true
+only after a human expert has reviewed this exact content. The binding hashes both
+files (therefore their rules, material fingerprints and attribution), the absolute
+target and expected old pair fingerprint. Save approval.json alongside the current
+pair. Metadata review alone is not save authorization.
+Use [the approval schema](../schemas/gold.approval.json) for the typed contract.
+Old v4 inputs and v1 drafts remain read-only; explicitly convert them to a compact
+pair before review. Old versioned targets and approvals are not adopted.
 
 | Field | Required content |
 |---|---|
 | approved_by | Explicit human expert identifier |
 | approver_kind | human (AI approval is rejected) |
 | approved_at | Actual approval time, ISO 8601 with timezone |
-| document_id, target_path | Exact document and target from the manifest |
-| manifest_sha256 | Hash of the exact reviewed preparation |
-| expected_old | Exact predecessor reference, or null for first save |
-| rules_version, rules_sha256 | Exact rules reference from the manifest |
+| binding | Entire check_save binding, including target, files, rules, science_pending and expected_old |
+| binding_sha256 | check_save binding.sha256; CLI inspect-save prints it |
+| binding.expected_old | Current pair fingerprint from GoldTarget.fingerprint / gold read, or null for new Gold |
 | basis | Human review and approval rationale |
-| scientific_review | true for a current two-file save after reviewing the exact answer and metadata; false otherwise |
+| scientific_review | true only after human review of the exact pair |
 | accepted_pending | Each explicitly accepted scientific pending ID |
 
-Any change to the answer, maker, original attribution, materials or target requires a new
-preparation and approval. Historical v1 keeps approval.json in its version directory;
-v2 keeps the approval in operations. Never replace an old approval with a later
-expert's name. No identity provider or digital signature is implied.
+Changed content, target or predecessor requires new approval. Revisions preserve
+original annotation identity and record revision actors/date/basis and the previous
+answer hash in metadata. Earlier approval is not refreshed to cover new content.
+No identity provider or digital signature is implied. Tools never execute Git.
 """
 
 
@@ -486,12 +485,73 @@ that a reader must understand; they remain checked when files are read.
 |---|---|
 | Metadata `schema.version = 2` | Current two-file format; the earlier working annotation format used 1 |
 | Old Stella `schema.version = 4` | A separate input format supported by the legacy reader |
-| Saved directory `v1/`, `v2/`, ... | Original save location; local corrections edit these files in place and Git retains history |
+| Git commit | Authorized historical content; no new vN directories or version index |
+| Old saved `vN/` directories | Historical layout, rejected by the current writer; no migration performed |
 | Paper or source `version` | The version of the paper or source material |
 | Rules `version` | The scientific rule set used for the annotation |
 
 These numbers advance independently. Moving contract files does not change a
 saved answer, its metadata, its hashes or its Gold revision.
+
+## Current save and manual recovery
+
+Use one directory per paper, e.g. private-repo/data/2501.00001, not the repository
+root. It contains gold-target.json, .lock, answer.json, metadata.json and approval.json.
+Only new/empty or exactly compatible targets are accepted. A selected parent alias
+(such as macOS /var) resolves to the real root, which the approval binds. The target
+itself (including dangling symlinks) and internal managed paths must not be symlinks.
+A parent alias redirected to a different root cannot reuse approval. Old layouts are
+not read or migrated. Real private-repository data and documentation remain unchanged.
+
+Python: organize drafts with compact_gold_annotation / write_compact_gold_pair;
+then check_save(pair_path=..., material_root=..., target=GoldTarget(...),
+expected_old=None or the current fingerprint). Have a human supply SaveApproval
+with the returned binding and binding.sha256. Call approved_save with the same
+pair/material/target and approval. Revisions use a separate work copy, preserve
+original attribution, and include metadata.revision. GoldTarget.read_current()
+checks the current approval; fingerprint() returns the pair digest. Plain format
+parsers read drafts and do not certify saved targets.
+
+CLI: gold inspect-save --pair WORK/answer.json --material-root MATERIALS --target
+TARGET [--expected-old DIGEST] prints binding and binding_sha256 without writing.
+After human approval, gold save --pair WORK/answer.json --material-root MATERIALS
+--target TARGET --approval APPROVAL.json saves. gold read --target TARGET checks
+current content and prints its fingerprint. Old prepare/query/git-refresh commands
+and operation-id/preparation arguments are removed. No tool runs Git commands.
+
+Interrupted save leaves .save-backup and refuses formal reads/writes. Stop writers,
+hold the target .lock (SpaceLock), and preserve the entire incident directory before
+manual recovery. The backup contains complete old/ and new/ triplets. Restore all
+three files from one set, never mix them. For an empty old/ set (first save), remove
+the three current files to restore the initialized empty target. Check restored
+answer/metadata with read_compact_gold_pair, and validate approval.binding against
+the authorized binding: hash the exact restored answer/metadata bytes, compare them
+to approval.binding.answer_sha256/metadata_sha256, check the absolute target path,
+validate the human approval fields and binding_sha256 (SaveBinding.sha256), and
+check materials/pending via check_compact_gold_pair. Do not call inspect-save against
+the interrupted target: it intentionally refuses.
+
+After restoring and verifying that complete set (or the empty rollback), inspect
+also the target root for atomic-write temporary leftovers: a process can stop after
+writing .metadata.json.tmp-* (or an answer/approval temporary file), before replacing
+the current file. These leftovers still block formal reads/writes, even when the
+restored triplet is valid. Manually confirm each leftover's exact path and contents
+against the preserved incident and the selected save's old/new files. A filename
+pattern alone is not proof of ownership or authorization to delete. Preserve and
+move each confirmed leftover to an incident-storage location outside the target,
+without overwriting existing files. Do not use wildcard deletion, automatically
+adopt leftovers, or clear other unknown files; if ownership cannot be established,
+retain the blocked target for further manual investigation. Keep the complete
+incident copy and moved residue as recovery evidence.
+
+Only after this verification and manual move-out may .save-backup be removed;
+then gold read must succeed (or report no answer for an empty rollback).
+If cleanup was interrupted and backup sets are
+incomplete, verify the complete current triplet against its approval before removing
+the remnant. Unknown temporary siblings from interruption before backup publication
+are not adopted or automatically cleaned. Preserve them for operator inspection.
+The tool does not replay recovery or repair arbitrary damage. The backup covers the
+previous uncommitted pair too; successful saves remove only this invocation's backup.
 """
 
 
@@ -607,11 +667,11 @@ def render_compact_format_document() -> str:
         "",
         (
             "Material and scope confirmation in metadata is distinct from final Gold "
-            "approval. Immutable version save additionally requires `scientific_review=true` from a "
-            "human approver for the exact answer and metadata manifest. The operation "
-            "record retains that approval separately from the two-file package. "
-            "In-place local corrections record their preparer, human decision author and "
-            "basis in `revision`; earlier approvals apply only to the original content preserved in Git history."
+            "approval. New answers and revisions require `scientific_review=true` from a "
+            "human approver bound to the exact pair, target and predecessor. The current "
+            "`approval.json` is stored alongside the pair; no preparation or operation log is kept. "
+            "Revisions record preparer, human decision author, date, basis and the previous "
+            "answer hash in `revision`. Authorized Git commits retain history; uncommitted copies do not."
         ),
         "",
         (

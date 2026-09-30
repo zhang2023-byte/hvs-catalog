@@ -1,6 +1,6 @@
 """补丁应用纯函数：校验与应用共用解释，只增不覆盖（A13 基础）。
 
-校验（R04 ``validate_collection``）与实际应用（R05 运行层）走同一
+集合校验（``validate_collection``）与实际应用（运行层）走同一
 目标定位与字段约束；这里的用例同时在两条入口上核对。
 """
 
@@ -146,8 +146,8 @@ def test_validation_and_application_share_field_constraints():
         apply_decision_patch(paper, bad_patch)
 
 
-def test_r04_validation_still_enforces_patch_scope(tmp_path):
-    """R04 集合校验继续核对补丁范围与指纹（复用共同纯函数）。"""
+def test_collection_validation_enforces_patch_scope(tmp_path):
+    """集合校验继续核对补丁范围与指纹（复用共同纯函数）。"""
     from hvs_catalog.records import DecisionRecord, QuestionRecord, build_record
 
     paper = _paper()

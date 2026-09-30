@@ -45,18 +45,16 @@ Quantities reuse the 18 approved science rule paths at rules version `0.1.0`; th
 
 #### `SaveApproval`
 
+Human declaration for this exact binding, not metadata review alone.
+
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
-| `approved_by` | string | required | — | |
+| `approved_by` | string | required | — |min length 1 |
 | `approver_kind` | human | required | — | |
 | `approved_at` | AwareDatetime | required | — | |
-| `document_id` | string | required | — | |
-| `target_path` | string | required | — | |
-| `manifest_sha256` | string | required | — | |
-| `expected_old` | PreviousRef \| null | required | — | |
-| `rules_version` | string | required | — | |
-| `rules_sha256` | string | required | — | |
-| `basis` | string | required | — | |
+| `binding` | SaveBinding | required | — | |
+| `binding_sha256` | string | required | — | |
+| `basis` | string | required | — |min length 1 |
 | `scientific_review` | boolean | optional | false | |
 | `accepted_pending` | array of string | optional | [] | |
 

@@ -1,4 +1,4 @@
-"""问题创建原子性与贡献响应复用回归（F05）。
+"""问题创建原子性与贡献响应复用回归。
 
 问题、执行/步骤绑定与回执在同一业务事务保存：事务中途中止不留半份
 问题；问题创建后、步骤回执前的中断由新进程恢复——已归档的贡献响应
@@ -14,22 +14,22 @@ import textwrap
 from pathlib import Path
 
 import pytest
-
-from hvs_catalog.review import ReviewService
-from hvs_catalog.runtime import resume_execution
-from hvs_catalog.synthetic import (
+from shared_scenarios import (
+    direct_flow,
     open_service,
     pending_questions,
     start_execution,
     submit_expert_decision,
 )
-from hvs_catalog.synthetic.flow import SyntheticFlow
+
+from hvs_catalog.review import ReviewService
+from hvs_catalog.runtime import resume_execution
 from hvs_catalog.workspace import WorkspaceIntegrityError, initialize_workspace
 
 
 @pytest.fixture()
 def service(tmp_path):
-    svc = open_service(tmp_path / "ledger.db")
+    svc = open_service(tmp_path / "calls.jsonl")
     yield svc
     svc.close()
 
@@ -46,7 +46,7 @@ def _run_child(tmp_path: Path, code: str, *args) -> int:
 
 
 def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, service):
-    """F05：问题提交后、步骤回执前真实退出——新进程零新增调用地接续。"""
+    """问题提交后、步骤回执前真实退出——新进程零新增调用地接续。"""
     space_root = tmp_path / "space"
     space = initialize_workspace(space_root)
     try:
@@ -59,8 +59,8 @@ def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, servi
             from pathlib import Path
 
             from hvs_catalog.runtime import resume_execution
-            from hvs_catalog.synthetic import open_service
-            from hvs_catalog.synthetic.flow import SyntheticFlow
+            from shared_scenarios import open_service
+            from shared_scenarios import direct_flow
             from hvs_catalog.workspace import open_workspace
 
             space = open_workspace(Path(sys.argv[1]))
@@ -69,11 +69,11 @@ def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, servi
             def die():
                 os._exit(74)
 
-            flow = SyntheticFlow(paper="A", fault_hooks={"after_question_create": die})
+            flow = direct_flow(fault_hooks={"after_question_create": die})
             resume_execution(space, sys.argv[3], flow, service=service)
             """,
             str(space_root),
-            str(tmp_path / "ledger.db"),
+            str(tmp_path / "calls.jsonl"),
             execution.execution_id,
         )
         assert code == 74
@@ -82,15 +82,15 @@ def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, servi
         # 问题已保存且绑定正确；论文已随问题事务保存
         question = pending_questions(space, execution_id=execution.execution_id)[0]
         assert question.status == "open"
-        assert question.step_id == "extract_contribution"
-        from hvs_catalog.synthetic import material as m
+        assert question.step_id == "quantities"
+        from shared_scenarios import material as m
 
         paper_id = m.paper_record_id("A", execution.execution_id)
         assert space.store().current_revision(paper_id) == 1
 
         # 新进程恢复：复用已归档响应，不重复调用服务，停回等待裁决
         report = resume_execution(
-            space, execution.execution_id, SyntheticFlow(paper="A"), service=service
+            space, execution.execution_id, direct_flow(), service=service
         )
         assert report.outcome == "paused"
         assert service.summary()["calls"] == calls_before
@@ -112,7 +112,7 @@ def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, servi
             request_key="dec",
         )
         report = resume_execution(
-            space, execution.execution_id, SyntheticFlow(paper="A"), service=service
+            space, execution.execution_id, direct_flow(), service=service
         )
         assert report.outcome == "finished"
         assert service.summary()["calls"] == calls_before
@@ -122,7 +122,7 @@ def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, servi
 
 
 def test_crash_inside_question_transaction_leaves_no_half_state(tmp_path, service):
-    """F05：问题事务中途真实退出——无半份问题、无残留绑定。"""
+    """问题事务中途真实退出——无半份问题、无残留绑定。"""
     space_root = tmp_path / "space"
     space = initialize_workspace(space_root)
     try:
@@ -137,8 +137,8 @@ def test_crash_inside_question_transaction_leaves_no_half_state(tmp_path, servic
             import hvs_catalog.workspace.store as store_mod
             from hvs_catalog.review.service import QUESTION_CREATE_KIND
             from hvs_catalog.runtime import resume_execution
-            from hvs_catalog.synthetic import open_service
-            from hvs_catalog.synthetic.flow import SyntheticFlow
+            from shared_scenarios import open_service
+            from shared_scenarios import direct_flow
             from hvs_catalog.workspace import open_workspace
 
             space = open_workspace(Path(sys.argv[1]))
@@ -153,29 +153,29 @@ def test_crash_inside_question_transaction_leaves_no_half_state(tmp_path, servic
 
             store_mod.StoreTransaction = ExitInQuestion
             resume_execution(
-                space, sys.argv[3], SyntheticFlow(paper="A"), service=service
+                space, sys.argv[3], direct_flow(), service=service
             )
             """,
             str(space_root),
-            str(tmp_path / "ledger.db"),
+            str(tmp_path / "calls.jsonl"),
             execution.execution_id,
         )
         assert code == 74
         calls_before = service.summary()["calls"]
         # 事务未提交：没有问题、没有问题事务保存的论文
         assert pending_questions(space, execution_id=execution.execution_id) == []
-        from hvs_catalog.synthetic import material as m
+        from shared_scenarios import material as m
 
         paper_id = m.paper_record_id("A", execution.execution_id)
         assert space.store().read_record_current(paper_id) is None
         # 新进程恢复：响应已归档，不重复调用服务；问题完整创建并带绑定
         report = resume_execution(
-            space, execution.execution_id, SyntheticFlow(paper="A"), service=service
+            space, execution.execution_id, direct_flow(), service=service
         )
         assert report.outcome == "paused"
         assert service.summary()["calls"] == calls_before
         question = pending_questions(space, execution_id=execution.execution_id)[0]
-        assert question.step_id == "extract_contribution"
+        assert question.step_id == "quantities"
     finally:
         space.close()
 

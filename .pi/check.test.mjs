@@ -59,14 +59,29 @@ const compactionConfig = {
 };
 for (const [provider, id, contextWindow, threshold] of [
   ['zai-coding-cn', 'glm-5.3', 1000000, 300000],
-  ['openai-codex', 'gpt-6-astra', 272000, 239232],
-  ['openai-codex', 'gpt-6-sol', 272000, 239232],
+  ['example-provider', 'operator-selected-model', 272000, 239232],
+  ['openai-codex', 'gpt-6.1-sol', 272000, 239232],
 ]) test(`model-specific compaction: ${provider}/${id}`, () => {
   const settings = sdk.SettingsManager.inMemory({compaction: compactionConfig});
   const model = {provider, id, contextWindow};
   const report = validateCompaction(settings.getCompactionSettings(model), compactionConfig, model);
   assert.equal(report.threshold, threshold);
   assert.equal(report.keepRecentTokens, 20000);
+});
+test('project leaves parent model choice free and preserves separate writer/reviewer roles', () => {
+  const settings = JSON.parse(fs.readFileSync(new URL('./settings.json', import.meta.url), 'utf8'));
+  for (const key of ['defaultProvider', 'defaultModel', 'defaultThinkingLevel', 'enabledModels']) {
+    assert(!Object.hasOwn(settings, key));
+  }
+  const profiles = Object.fromEntries(['hvs-implementer', 'hvs-simplifier', 'hvs-reviewer'].map(name => [
+    name, sdk.parseFrontmatter(fs.readFileSync(new URL(`./agents/${name}.md`, import.meta.url), 'utf8')).frontmatter,
+  ]));
+  assert.equal(profiles['hvs-implementer'].model, 'zai-coding-cn/glm-5.3');
+  assert.equal(profiles['hvs-simplifier'].model, 'openai-codex/gpt-6.1-sol');
+  assert.equal(profiles['hvs-reviewer'].model, 'openai-codex/gpt-6.1-sol');
+  assert.equal(profiles['hvs-simplifier'].acceptanceRole, 'writer');
+  assert.equal(profiles['hvs-reviewer'].acceptanceRole, 'read-only');
+  assert.deepEqual(settings.subagents.modelScope.allow.slice().sort(), [...new Set(Object.values(profiles).map(p => p.model))].sort());
 });
 test('compaction check rejects model metadata drift and unintended overrides', () => {
   const model = {provider:'zai-coding-cn', id:'glm-5.3', contextWindow:1048576};

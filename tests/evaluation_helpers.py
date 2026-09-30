@@ -1,22 +1,15 @@
-"""Gold 工具测试驱动：合成旧文档、合成 PDF、全新草稿与独立进程中窗口。
+"""Gold 科学格式测试辅助：合成旧文档、PDF 和全新草稿。
 
 合成材料全部虚构（SYN-* 编号），不涉及真实论文、真实答案或模型输出。
-子进程场景配合信号文件定位故障窗口后 ``os._exit``，等价于进程死亡：
-已写入文件保留，未完成部分丢弃。
+当前保存及真实进程故障窗口在独立的维护测试中验证。
 """
 
 from __future__ import annotations
 
-import json
-import os
-import sys
-import time
 from pathlib import Path
 
 from hvs_catalog.evaluation.legacy import legacy_canary
 from hvs_catalog.records.rules import load_rules
-
-WAIT_TIMEOUT = 60.0
 
 MIGRATION_PROTOCOL = "contribution_migration_ai_assisted_v1"
 
@@ -335,148 +328,5 @@ def build_fresh_draft(
     )
 
 
-def build_approval_payload(
-    preparation,
-    *,
-    approved_by: str = "synthetic-expert",
-    basis: str = "Synthetic review of the prepared content.",
-    accepted_pending: list[str] | None = None,
-    manifest_sha256: str | None = None,
-) -> dict:
-    from hvs_catalog.evaluation import manifest_sha256 as hash_of
-
-    manifest = preparation.manifest
-    return {
-        "approved_by": approved_by,
-        "approver_kind": "human",
-        "approved_at": "2026-09-22T00:00:00+00:00",
-        "document_id": manifest.document_id,
-        "target_path": manifest.target_path,
-        "manifest_sha256": manifest_sha256 or hash_of(manifest),
-        "expected_old": (
-            None
-            if manifest.expected_old is None
-            else manifest.expected_old.model_dump(mode="json")
-        ),
-        "rules_version": manifest.rules_version,
-        "rules_sha256": manifest.rules_sha256,
-        "basis": basis,
-        "accepted_pending": (
-            accepted_pending
-            if accepted_pending is not None
-            else list(manifest.science_pending)
-        ),
-    }
-
-
-# ---- 子进程场景 ----
-
-
-def _wait_for(path: Path) -> None:
-    deadline = time.monotonic() + WAIT_TIMEOUT
-    while not path.exists():
-        if time.monotonic() > deadline:
-            raise TimeoutError(f"等待信号文件超时：{path}")
-        time.sleep(0.02)
-
-
-def _exit9() -> None:
-    sys.stdout.flush()
-    os._exit(9)
-
-
-def _target(root: str):
-    from hvs_catalog.evaluation import GoldTarget
-
-    return GoldTarget(root)
-
-
-def _load_approval(path: str):
-    from hvs_catalog.evaluation import SaveApproval
-
-    return SaveApproval.model_validate(json.loads(Path(path).read_text("utf-8")))
-
-
-def scenario_save(
-    draft: str,
-    material_root: str,
-    target_root: str,
-    preparation: str,
-    approval: str,
-    operation_id: str,
-) -> dict:
-    from hvs_catalog.evaluation import approved_save
-
-    receipt = approved_save(
-        draft_path=draft,
-        material_root=material_root,
-        target=_target(target_root),
-        preparation_dir=preparation,
-        approval=_load_approval(approval),
-        operation_id=operation_id,
-    )
-    return {
-        "operation_id": receipt.operation_id,
-        "version": receipt.version,
-        "replayed": receipt.replayed,
-        "recovered": receipt.recovered,
-        "manifest": receipt.manifest_sha256,
-    }
-
-
-def scenario_save_exit(
-    draft: str,
-    material_root: str,
-    target_root: str,
-    preparation: str,
-    approval: str,
-    operation_id: str,
-    window: str,
-) -> dict:
-    """在指定故障窗口硬退出：保存链路中真实进程终止。"""
-    from hvs_catalog.evaluation import approved_save
-
-    approved_save(
-        draft_path=draft,
-        material_root=material_root,
-        target=_target(target_root),
-        preparation_dir=preparation,
-        approval=_load_approval(approval),
-        operation_id=operation_id,
-        fault_hooks={window: _exit9},
-    )
-    raise AssertionError("故障窗口场景不应运行到这里")
-
-
-def scenario_hold_target_lock(target_root: str, signal: str, release: str) -> dict:
-    """持有目标锁直到放行；持锁事实用信号文件告知父进程。"""
-    target = _target(target_root)
-    with target.lock():
-        Path(signal).write_text("held", encoding="utf-8")
-        _wait_for(Path(release))
-    return {"held": True}
-
-
-def scenario_query(target_root: str, operation_id: str) -> dict:
-    from hvs_catalog.evaluation import query_operation
-
-    status = query_operation(operation_id=operation_id, target=_target(target_root))
-    return {"state": status.state, "detail": status.detail}
-
-
-SCENARIOS = {
-    "save": scenario_save,
-    "save-exit": scenario_save_exit,
-    "hold-target-lock": scenario_hold_target_lock,
-    "query": scenario_query,
-}
-
-
-def main(argv: list[str]) -> None:
-    scenario = argv[1]
-    result = SCENARIOS[scenario](*argv[2:])
-    print(json.dumps(result, ensure_ascii=False))
-
-
-if __name__ == "__main__":
-    main(sys.argv)
+# Current save helpers and explicit subprocess windows live in
+# gold_save_helpers.py / test_evaluation_subprocess.py.

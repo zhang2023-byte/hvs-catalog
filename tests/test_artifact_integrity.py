@@ -1,7 +1,7 @@
-"""归档文件与检查点内容完整性回归（F06/F07，R2-02/R2-03）。
+"""归档文件与检查点内容完整性回归。
 
-全部记录修订（含每次请求/响应）引用的归档文件在提交、备份、恢复与
-完成检查中按记录原哈希统一核验；检查点按线程核对执行绑定与状态引
+提交核验本批引用闭包，执行恢复核验本执行历史（含请求/响应）及依赖；
+整体备份与空间恢复仍核验全部历史。按记录原哈希统一核验，检查点核对执行绑定与状态引
 用，完成状态不绕过检查。线程编号一致但内容错配时整体拒绝；恢复先
 完整核对检查点再应用决定，完成报告须同时证明业务与框架完成。
 """
@@ -13,17 +13,17 @@ import json
 import shutil
 
 import pytest
-
-from hvs_catalog.records.runs import Attempt
-from hvs_catalog.review import ReviewService
-from hvs_catalog.runtime import resume_execution
-from hvs_catalog.synthetic import (
+from shared_scenarios import (
+    direct_flow,
     open_service,
     pending_questions,
     start_execution,
     submit_expert_decision,
 )
-from hvs_catalog.synthetic.flow import SyntheticFlow
+
+from hvs_catalog.records.runs import Attempt
+from hvs_catalog.review import ReviewService
+from hvs_catalog.runtime import resume_execution
 from hvs_catalog.workspace import (
     RecoveryInconsistentError,
     WorkspaceIntegrityError,
@@ -35,7 +35,7 @@ from hvs_catalog.workspace import (
 
 @pytest.fixture()
 def service(tmp_path):
-    svc = open_service(tmp_path / "ledger.db")
+    svc = open_service(tmp_path / "calls.jsonl")
     yield svc
     svc.close()
 
@@ -56,7 +56,7 @@ def _add_attempt_with_response(space, execution, response_path, response_bytes):
     run_id = f"run-{execution.execution_id}"
     run = store.read_record_current(run_id)
     steps = list(run.data.steps)
-    target = next(i for i, s in enumerate(steps) if s.step_id == "extract_roster")
+    target = next(i for i, s in enumerate(steps) if s.step_id == "direct_roster")
     attempt = Attempt(
         request=None,
         response=ref,
@@ -88,7 +88,7 @@ def _add_attempt_with_response(space, execution, response_path, response_bytes):
 
 
 def test_commit_rejects_corrupt_response_reference(tmp_path, service):
-    """F06：提交引用已损坏响应文件的运行修订被拒。"""
+    """提交引用已损坏响应文件的运行修订被拒。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
@@ -103,7 +103,7 @@ def test_commit_rejects_corrupt_response_reference(tmp_path, service):
         run_id = f"run-{execution.execution_id}"
         run = store.read_record_current(run_id)
         steps = list(run.data.steps)
-        target = next(i for i, s in enumerate(steps) if s.step_id == "extract_roster")
+        target = next(i for i, s in enumerate(steps) if s.step_id == "direct_roster")
         attempt = Attempt(
             request=None,
             response=ref,
@@ -137,7 +137,7 @@ def test_commit_rejects_corrupt_response_reference(tmp_path, service):
 
 
 def test_post_commit_corruption_blocks_backup_and_finished_resume(tmp_path, service):
-    """F06：提交后损坏响应文件——备份拒绝，完成恢复不跳过检查。"""
+    """提交后损坏响应文件——备份拒绝，完成恢复不跳过检查。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
@@ -151,14 +151,14 @@ def test_post_commit_corruption_blocks_backup_and_finished_resume(tmp_path, serv
         # 完成状态的恢复同样核验归档，不能只报告 already-finished
         with pytest.raises(RecoveryInconsistentError, match="哈希与记录不符"):
             resume_execution(
-                space, execution.execution_id, SyntheticFlow(paper="B"), service=service
+                space, execution.execution_id, direct_flow(), service=service
             )
     finally:
         space.close()
 
 
 def test_missing_response_file_blocks_backup_and_resume(tmp_path, service):
-    """F06：响应文件缺失同样拒绝备份与恢复。"""
+    """响应文件缺失同样拒绝备份与恢复。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
@@ -170,19 +170,19 @@ def test_missing_response_file_blocks_backup_and_resume(tmp_path, service):
             backup_workspace(space, tmp_path / "backup")
         with pytest.raises(RecoveryInconsistentError, match="缺失或不可读"):
             resume_execution(
-                space, execution.execution_id, SyntheticFlow(paper="B"), service=service
+                space, execution.execution_id, direct_flow(), service=service
             )
     finally:
         space.close()
 
 
 def test_symlinked_intermediate_directory_rejected(tmp_path, service):
-    """F06：归档路径中间目录换成符号链接时拒绝。"""
+    """归档路径中间目录换成符号链接时拒绝。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
         ref = _add_attempt_with_response(
-            space, execution, "responses/roster.json", b'{"evidence": "original"}'
+            space, execution, "test-window/roster.json", b'{"evidence": "original"}'
         )
         target = space.root / ref.path
         payload = target.read_bytes()
@@ -209,11 +209,11 @@ def _tamper_checkpoint_binding(space, execution_id, new_binding):
     ctx = RuntimeContext(
         space=space,
         execution=get_execution(space, execution_id),
-        flow=SyntheticFlow(paper="A"),
+        flow=direct_flow(),
         service=None,
         checkpointer=saver,
     )
-    graph = SyntheticFlow(paper="A").build_graph(ctx)
+    graph = direct_flow().build_graph(ctx)
     graph.update_state(
         {"configurable": {"thread_id": execution_id}},
         {"execution_id": new_binding},
@@ -222,7 +222,7 @@ def _tamper_checkpoint_binding(space, execution_id, new_binding):
 
 
 def test_checkpoint_content_mismatch_blocks_backup(tmp_path, service):
-    """F07：线程编号相同但检查点绑定错配——备份拒绝。"""
+    """线程编号相同但检查点绑定错配——备份拒绝。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, flow, _ = start_execution(space, paper="A", request_key="a")
@@ -234,34 +234,34 @@ def test_checkpoint_content_mismatch_blocks_backup(tmp_path, service):
         # 恢复推进也在加载检查点时发现错配并停止
         with pytest.raises(RecoveryInconsistentError, match="foreign-execution"):
             resume_execution(
-                space, execution.execution_id, SyntheticFlow(paper="A"), service=service
+                space, execution.execution_id, direct_flow(), service=service
             )
     finally:
         space.close()
 
 
 def test_finished_execution_validates_checkpoint_content(tmp_path, service):
-    """F07：完成状态不绕过检查点内容核对。"""
+    """完成状态不绕过检查点内容核对。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
         _tamper_checkpoint_binding(space, execution.execution_id, "foreign-execution")
         with pytest.raises(RecoveryInconsistentError, match="foreign-execution"):
             resume_execution(
-                space, execution.execution_id, SyntheticFlow(paper="B"), service=service
+                space, execution.execution_id, direct_flow(), service=service
             )
     finally:
         space.close()
 
 
 def test_finished_execution_with_missing_result_record_stops(tmp_path, service):
-    """F07：完成记录但业务结果缺失——完成检查拒绝。"""
+    """完成记录但业务结果缺失——完成检查拒绝。"""
     import sqlite3
 
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
-        from hvs_catalog.synthetic import material as m
+        from shared_scenarios import material as m
 
         roster_id = m.roster_record_id("B", execution.execution_id)
         conn = sqlite3.connect(space.root / "business.db")
@@ -273,17 +273,17 @@ def test_finished_execution_with_missing_result_record_stops(tmp_path, service):
             RecoveryInconsistentError, match="业务结果缺失|业务结果不完整"
         ):
             resume_execution(
-                space, execution.execution_id, SyntheticFlow(paper="B"), service=service
+                space, execution.execution_id, direct_flow(), service=service
             )
     finally:
         space.close()
 
 
-# ---- R2-02：核对先于应用 ----
+# ---- 核对先于应用 ----
 
 
 def test_pending_decision_not_applied_when_checkpoint_corrupt(tmp_path, service):
-    """R2-02：有待应用决定 + 坏检查点——先核对再应用，结果零变化。"""
+    """有待应用决定 + 坏检查点——先核对再应用，结果零变化。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, flow, _ = start_execution(space, paper="A", request_key="a")
@@ -300,7 +300,7 @@ def test_pending_decision_not_applied_when_checkpoint_corrupt(tmp_path, service)
         _tamper_checkpoint_binding(space, execution.execution_id, "foreign-execution")
         with pytest.raises(RecoveryInconsistentError, match="foreign-execution"):
             resume_execution(
-                space, execution.execution_id, SyntheticFlow(paper="A"), service=service
+                space, execution.execution_id, direct_flow(), service=service
             )
         # 已保存的决定保留，但目标修订与应用回执零变化
         review = ReviewService(space)
@@ -313,11 +313,11 @@ def test_pending_decision_not_applied_when_checkpoint_corrupt(tmp_path, service)
         space.close()
 
 
-# ---- R2-03：完成须同时证明业务与框架完成 ----
+# ---- 完成须同时证明业务与框架完成 ----
 
 
 def _force_pending_framework_nodes(
-    space, execution_id, *, paper, as_node="extract_roster"
+    space, execution_id, *, paper, as_node="direct_roster"
 ):
     """伪造绑定与引用完好、但框架仍有待执行节点的检查点。"""
     from langgraph.checkpoint.sqlite import SqliteSaver
@@ -330,11 +330,11 @@ def _force_pending_framework_nodes(
         ctx = RuntimeContext(
             space=space,
             execution=get_execution(space, execution_id),
-            flow=SyntheticFlow(paper=paper),
+            flow=direct_flow(),
             service=None,
             checkpointer=SqliteSaver(conn),
         )
-        graph = SyntheticFlow(paper=paper).build_graph(ctx)
+        graph = direct_flow().build_graph(ctx)
         config = {"configurable": {"thread_id": execution_id}}
         graph.update_state(config, {}, as_node=as_node)
         pending = tuple(graph.get_state(config).next)
@@ -344,7 +344,7 @@ def _force_pending_framework_nodes(
 
 
 def test_pending_framework_nodes_reject_backup_and_finished_resume(tmp_path, service):
-    """R2-03：框架仍有待执行节点——备份与完成报告都拒绝。"""
+    """框架仍有待执行节点——备份与完成报告都拒绝。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
@@ -353,14 +353,14 @@ def test_pending_framework_nodes_reject_backup_and_finished_resume(tmp_path, ser
             backup_workspace(space, tmp_path / "backup")
         with pytest.raises(RecoveryInconsistentError, match="待执行节点"):
             resume_execution(
-                space, execution.execution_id, SyntheticFlow(paper="B"), service=service
+                space, execution.execution_id, direct_flow(), service=service
             )
     finally:
         space.close()
 
 
 def test_restore_rejects_semantically_inconsistent_backup(tmp_path, service):
-    """R2-03：恢复的语义核对覆盖"完成 + 待执行节点"矛盾。"""
+    """恢复的语义核对覆盖"完成 + 待执行节点"矛盾。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
@@ -387,7 +387,7 @@ def test_restore_rejects_semantically_inconsistent_backup(tmp_path, service):
 
 
 def test_intact_space_still_backs_up_and_restores(tmp_path, service):
-    """F06/F07 对照：完好空间（含归档响应与暂停检查点）仍可备份恢复。"""
+    """完好空间（含归档响应与暂停检查点）仍可备份恢复。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
@@ -410,7 +410,7 @@ def test_intact_space_still_backs_up_and_restores(tmp_path, service):
             report = resume_execution(
                 restored,
                 execution.execution_id,
-                SyntheticFlow(paper="B"),
+                direct_flow(),
                 service=service,
             )
             assert report.outcome == "finished"

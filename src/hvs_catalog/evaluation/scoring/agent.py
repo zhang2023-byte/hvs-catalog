@@ -16,8 +16,8 @@ raw 求摘要）。发布用临时文件 + 原子排他链接：同键首次写�
 包括失败与 undecidable，不重抽有利答案。
 
 启用门禁：``protocol_only`` 仅限合成用途且只允许项目内置模拟适配器；
-``production`` 在本关 fail closed——即使调用方现场构造全部通过的验证
-记录也不能开启，正式验证凭据来源在 R12 可信接入前保持禁用。验证记
+``production`` 当前 fail closed——即使调用方现场构造全部通过的验证
+记录也不能开启；正式验证凭据的可信来源尚未接入，保持禁用。验证记
 录模型仍实现并测试预定样例内容指纹、配置绑定与全部复测轮次 100%
 一致性的规则；模拟通过只证明协议，不构成正式授权。没有
 ``validated=true`` 之类的逃生口。
@@ -82,7 +82,7 @@ class AgentResponse(Config):
 
 
 class AgentAdapter(Protocol):
-    """同步、可注入的判定适配器；真实联网 adapter 不在本关实现。"""
+    """同步、可注入的判定适配器；真实联网 adapter 尚未实现。"""
 
     name: str
 
@@ -143,9 +143,9 @@ class ValidationRound(Config):
 class AgentValidationRecord(Config):
     """预定测试集内容指纹、模型/提示/参数/预算绑定与逐轮复测结果。
 
-    本关只用于协议一致性检查：模拟通过不能开启 production（见
-    ``AuxiliaryScoringConfig.agent_allowed``），正式验证凭据接入留待
-    R12 之后的可信来源。
+    当前只用于协议一致性检查：模拟通过不能开启 production（见
+    ``AuxiliaryScoringConfig.agent_allowed``），正式验证凭据的可信来源
+    尚未接入。
     """
 
     test_set_id: str = Field(min_length=1)
@@ -197,7 +197,7 @@ class AuxiliaryScoringConfig(Config):
     """辅助判定配置：模式、模型/提示/参数/预算摘要与显式冻结目录。
 
     ``production`` 在本实现中 fail closed：正式能力验证与可信验证凭据
-    的接入留待 R12 之后，任何现场构造的验证记录都不能开启生产调用。
+    尚未接入，任何现场构造的验证记录都不能开启生产调用。
     """
 
     mode: Literal["protocol_only", "production"] = "protocol_only"
@@ -216,7 +216,7 @@ class AuxiliaryScoringConfig(Config):
             return None
         return (
             "production 模式尚未接入可信正式验证凭据来源，默认拒绝"
-            "（fail closed；R12 后接入获准验证记录才可开启）"
+            "（fail closed；须先实现可信接入并取得正式验证授权）"
         )
 
 

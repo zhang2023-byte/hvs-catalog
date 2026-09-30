@@ -91,6 +91,15 @@ def _iter_refs(value: Any):
             yield from _iter_refs(item)
 
 
+def iter_record_refs(value: Any):
+    """复用共同引用遍历，产出准确记录引用（含条目与缺口引用）。"""
+    for _, ref in _iter_refs(value):
+        if isinstance(ref, (RecordRef, ItemRef)):
+            yield RecordRef(record_id=ref.record_id, revision=ref.revision)
+        elif isinstance(ref, GapRef):
+            yield ref.source_ref
+
+
 def _check_evidence_ref(
     ref: RecordRef,
     *,
@@ -860,7 +869,7 @@ def _check_materials(
     for record in records:
         if isinstance(record, ExternalRecord):
             # 外部响应属于论文材料；运行清单中的请求/响应归档属于运行目录，
-            # 不按本材料根核对，由 R05 之后的运行恢复负责。
+            # 不按本材料根核对，由工作空间保存与运行恢复核验。
             for _, ref in _iter_refs(record.data):
                 if isinstance(ref, ArtifactRef):
                     _check_artifact(record.record_id, ref, materials_root, issues)

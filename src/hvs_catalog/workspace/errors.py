@@ -29,10 +29,6 @@ class WorkspaceIntegrityError(WorkspaceError):
     """记录、材料或空间结构损坏，不能继续按已保存内容推进。"""
 
 
-class LockCorruptedError(WorkspaceIntegrityError):
-    """锁文件缺失或与数据库记录的身份不符；不能靠重建文件悄悄绕过。"""
-
-
 class RevisionStaleError(WorkspaceError):
     """预期当前修订与实际不符，本次修改未提交。"""
 

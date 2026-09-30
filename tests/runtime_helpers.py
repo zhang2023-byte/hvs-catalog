@@ -14,14 +14,15 @@ import sys
 import time
 from pathlib import Path
 
-from hvs_catalog.records.common import RecordRef
-from hvs_catalog.runtime import resume_execution
-from hvs_catalog.synthetic import (
+from shared_scenarios import (
+    direct_flow,
     open_service,
     submit_expert_decision,
 )
-from hvs_catalog.synthetic.flow import SyntheticFlow
-from hvs_catalog.workspace import LockCorruptedError, WorkspaceBusyError, open_workspace
+
+from hvs_catalog.records.common import RecordRef
+from hvs_catalog.runtime import resume_execution
+from hvs_catalog.workspace import WorkspaceBusyError, open_workspace
 
 WAIT_TIMEOUT = 60.0
 
@@ -48,7 +49,7 @@ def _resume(space, execution_id: str, paper: str, ledger: str, hooks=None):
         report = resume_execution(
             space,
             execution_id,
-            SyntheticFlow(paper=paper, fault_hooks=hooks),
+            direct_flow(fault_hooks=hooks),
             service=service,
         )
         return {
@@ -57,8 +58,6 @@ def _resume(space, execution_id: str, paper: str, ledger: str, hooks=None):
         }
     except WorkspaceBusyError:
         return {"busy": True}
-    except LockCorruptedError:
-        return {"lock_corrupt": True}
     finally:
         service.close()
 
@@ -108,7 +107,7 @@ def scenario_resume_block(
         execution_id,
         paper,
         ledger,
-        hooks={"after_response:extract_roster": block_after_roster},
+        hooks={"after_response:direct_roster": block_after_roster},
     )
     space.close()
     return result
@@ -120,7 +119,7 @@ def scenario_resume_pause_exit(
     """推进到等待专家答复后立即退出（决定保存前中断）。"""
     space = _space(root)
     report = resume_execution(
-        space, execution_id, SyntheticFlow(paper=paper), service=open_service(ledger)
+        space, execution_id, direct_flow(), service=open_service(ledger)
     )
     assert report.outcome == "paused"
     os._exit(9)
@@ -133,6 +132,24 @@ def scenario_submit_exit(
     space = _space(root)
     _submit(space, execution_id, question_ref_json, request_key)
     os._exit(9)
+
+
+def scenario_exit_in_decision_save(root, execution_id, question_ref_json, request_key):
+    """Kill after decision/question rows are staged, before the save commits."""
+    import hvs_catalog.workspace.store as store_mod
+    from hvs_catalog.review.service import DECISION_SAVE_KIND
+
+    original = store_mod.StoreTransaction
+
+    class ExitInSave(original):
+        def insert_receipt(self, receipt):
+            if receipt.kind == DECISION_SAVE_KIND:
+                os._exit(9)
+            super().insert_receipt(receipt)
+
+    store_mod.StoreTransaction = ExitInSave
+    _submit(_space(root), execution_id, question_ref_json, request_key)
+    raise AssertionError("decision-save transaction must terminate")
 
 
 def scenario_exit_in_apply(
@@ -180,7 +197,7 @@ def scenario_exit_after_apply(
 def scenario_exit_after_response(
     root: str, execution_id: str, paper: str, ledger: str, step: str
 ) -> dict:
-    """模拟服务已记账响应、业务保存前硬退出（外部调用可能重复）。"""
+    """模拟服务已记录响应、业务保存前硬退出（外部调用可能重复）。"""
     space = _space(root)
     _resume(
         space, execution_id, paper, ledger, hooks={f"after_response:{step}": _exit9}
@@ -194,6 +211,7 @@ SCENARIOS = {
     "resume-block": scenario_resume_block,
     "resume-pause-exit": scenario_resume_pause_exit,
     "submit-exit": scenario_submit_exit,
+    "exit-in-decision-save": scenario_exit_in_decision_save,
     "exit-in-apply": scenario_exit_in_apply,
     "exit-after-apply": scenario_exit_after_apply,
     "exit-after-response": scenario_exit_after_response,

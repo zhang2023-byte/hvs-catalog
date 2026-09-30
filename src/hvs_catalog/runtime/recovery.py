@@ -29,14 +29,8 @@ from ..workspace import (
     WorkspaceIntegrityError,
 )
 from ..workspace.backup import (
-    checkpoint_row_digest,
     checkpoint_state_problems,
-    framework_final_checkpoint,
-    framework_final_credential,
-    framework_final_digest,
-    framework_final_digest_key,
     framework_final_key,
-    verify_record_artifacts,
     walk_state_refs,
 )
 from .execution import (
@@ -117,13 +111,6 @@ def _resume_locked(
 
     review = ReviewService(space)
     run = _current_run(space, execution)
-    # 记录引用的归档文件先行核验：损坏或缺失的响应/归档不能靠恢复或
-    # "已完成"跳过检查
-    artifact_problems = _record_artifact_problems(space)
-    if artifact_problems:
-        raise RecoveryInconsistentError(
-            "记录引用的归档文件损坏或缺失，停止该执行：" + "；".join(artifact_problems)
-        )
     # 先读取并核对检查点，再做任何可能产生业务结果的恢复动作：
     # 已知不一致时不得先应用决定或生成新修订
     conn = space.checkpoint_connection()
@@ -136,6 +123,15 @@ def _resume_locked(
         graph = flow.build_graph(ctx)
         config = {"configurable": {"thread_id": execution_id}}
         snapshot = graph.get_state(config)
+        # 本执行全部历史及状态引用共用一个准确闭包，损坏不能靠“完成”跳过。
+        record_problems = _execution_record_problems(
+            space, execution_id, snapshot.values
+        )
+        if record_problems:
+            raise RecoveryInconsistentError(
+                "执行业务结果不完整或记录引用的归档文件损坏或缺失，停止该执行："
+                + "；".join(record_problems)
+            )
         if snapshot.created_at is not None:
             problems = flow.verify_state(ctx, dict(snapshot.values))
             problems.extend(_runtime_state_problems(space, execution, snapshot.values))
@@ -161,14 +157,11 @@ def _resume_locked(
                 )
 
         if run.data.state == "finished":
-            # 完成须同时证明业务与框架完成：当前执行用调用方流程直接
-            # 核对（无待执行节点）；通过后补记缺失的框架完成凭据
+            # 已完成执行仍核对实际终态与原完成凭据；缺失不补记。
             problems = _verify_business_results(space, execution)
             if snapshot.created_at is None or snapshot.next != ():
                 problems.append("运行清单标记完成，但框架仍有待执行节点，未到达结束")
-            if not problems:
-                self_heal_framework_final(space, execution_id, snapshot)
-            problems.extend(_checkpoint_problems(space))
+            problems.extend(checkpoint_state_problems(space, execution_id))
             if problems:
                 raise RecoveryInconsistentError(
                     "执行已标记完成但业务结果不完整：" + "；".join(problems)
@@ -297,15 +290,13 @@ def _resume_locked(
         report.service_summary = _service_summary(service)
         return report
 
-    # 完成修订与框架完成凭据（最终检查点 id 及内容摘要）同一事务提交：
-    # 凭据证明本执行是在调用方流程核验无待执行节点后才标记完成的，
-    # 且摘要绑定核验时的检查点内容
+    # 匹配流程确证业务完整且框架终态；最终 ID 与完成修订同事务保存。
     final_id = final_checkpoint_id(end, execution_id)
     append_run_revision(
         space,
         execution,
         state="finished",
-        meta_updates=framework_final_credential(space, execution_id, final_id),
+        meta_updates={framework_final_key(execution_id): final_id},
     )
     report.outcome = "finished"
     report.mode = mode
@@ -322,48 +313,6 @@ def final_checkpoint_id(snapshot: Any, execution_id: str) -> str:
             f"执行 {execution_id} 完成时无法确定最终检查点，完成凭据缺失"
         )
     return checkpoint_id
-
-
-def self_heal_framework_final(
-    space: Workspace, execution_id: str, snapshot: Any
-) -> None:
-    """已完成执行的凭据缺失时，在调用方流程核验通过后成组补记。
-
-    先按当前已核验快照构造完整候选凭据（最终检查点 id 及其内容摘
-    要），逐项核对已存在的键：任一已有值与候选不符，立即拒绝并保
-    持两个键原样——冲突证据不能靠补记覆盖；全部相符时才在一次事
-    务中只补缺失的键。凭据齐全时的冲突仍由共用核对报告。
-    """
-    existing_id = framework_final_checkpoint(space, execution_id)
-    existing_digest = framework_final_digest(space, execution_id)
-    if existing_id is not None and existing_digest is not None:
-        return
-    candidate_id = final_checkpoint_id(snapshot, execution_id)
-    conn = space.checkpoint_connection()
-    try:
-        candidate_digest = checkpoint_row_digest(conn, execution_id, candidate_id)
-    finally:
-        conn.close()
-    if candidate_digest is None:
-        raise RecoveryInconsistentError(
-            f"执行 {execution_id} 的最终检查点 {candidate_id} 不存在，无法补记完成凭据"
-        )
-    if existing_id is not None and existing_id != candidate_id:
-        raise RecoveryInconsistentError(
-            f"执行 {execution_id} 已有的完成凭据检查点为 {existing_id}，"
-            f"与当前核验状态（{candidate_id}）不符；已有凭据冲突不能补记"
-        )
-    if existing_digest is not None and existing_digest != candidate_digest:
-        raise RecoveryInconsistentError(
-            f"执行 {execution_id} 已有的完成凭据摘要与当前检查点内容"
-            f"（{candidate_id}）不符；已有凭据冲突不能补记"
-        )
-    updates: dict[str, str] = {}
-    if existing_id is None:
-        updates[framework_final_key(execution_id)] = candidate_id
-    if existing_digest is None:
-        updates[framework_final_digest_key(execution_id)] = candidate_digest
-    space.store().set_meta_many(updates)
 
 
 def _current_run(space: Workspace, execution: ExecutionHandle) -> RunRecord:
@@ -599,12 +548,24 @@ def _runtime_state_problems(
     return problems
 
 
-def _record_artifact_problems(space: Workspace) -> list[str]:
-    return verify_record_artifacts(space)
+def _execution_record_problems(
+    space: Workspace, execution_id: str, state: dict
+) -> list[str]:
+    from ..records.validate import CollectionValidationError, validate_collection
+    from ..workspace.store import record_closure, verify_artifact_refs
 
-
-def _checkpoint_problems(space: Workspace) -> list[str]:
-    return checkpoint_state_problems(space)
+    seeds = space.store().list_records(execution_id=execution_id)
+    for ref in walk_state_refs(state):
+        record = space.store().read_record(ref)
+        if record is not None:
+            seeds.append(record)
+    records = record_closure(seeds, space.store().read_record)
+    problems = verify_artifact_refs(records, space.root)
+    try:
+        validate_collection(records, space.root)
+    except CollectionValidationError as exc:
+        problems.append(f"执行记录集合未通过校验：{exc}")
+    return problems
 
 
 def _verify_business_results(space: Workspace, execution: ExecutionHandle) -> list[str]:

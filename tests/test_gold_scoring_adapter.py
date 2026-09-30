@@ -93,7 +93,7 @@ def test_compact_pair_maps_fields_and_preserves_originals(tmp_path):
 
 
 def test_compact_condition_none_is_rejected_as_preparation_gap(tmp_path):
-    """F4：缺失条件不能破例当成“原文未报告条件”的科学断言。"""
+    """缺失条件不能破例当成“原文未报告条件”的科学断言。"""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["contributions"][0]["quantities"][0]["values"][0]["condition"] = None
@@ -237,7 +237,7 @@ def test_adaptation_does_not_mutate_input(tmp_path):
     assert pair.answer.model_dump(mode="json") == before
 
 
-# ---- F5：配对绑定校验、未决待办与 answer-only 边界 ----
+# ---- 配对绑定校验、未决待办与 answer-only 边界 ----
 
 
 def _review_payloads():
@@ -321,7 +321,7 @@ def test_binding_is_preserved_for_report_checks(tmp_path):
 
 
 def test_answer_only_adaptation_is_not_formal_readiness(tmp_path):
-    """F5：answer-only 输入缺 metadata 绑定，不冒称正式就绪。"""
+    """answer-only 输入缺 metadata 绑定，不冒称正式就绪。"""
     _, pair = _pair(tmp_path)
     adaptation = adapt_compact_answer(pair.answer)
     assert adaptation.entries
@@ -332,7 +332,7 @@ def test_answer_only_adaptation_is_not_formal_readiness(tmp_path):
     assert adaptation.entries[0].objects[0].identifiers == ["SYN-A"]
 
 
-# ---- R3-F2：材料/科学准备缺口必须实际阻止就绪 ----
+# ---- 材料/科学准备缺口必须实际阻止就绪 ----
 
 
 def _draft(tmp_path, **overrides):
@@ -370,7 +370,7 @@ def _pair_from_draft(
 
 
 def test_source_missing_is_a_preparation_gap(tmp_path):
-    """R3-F2：source=None 是材料准备缺口，不能当就绪评分输入。"""
+    """source=None 是材料准备缺口，不能当就绪评分输入。"""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     # 无 LaTeX 来源对应：v1 草稿只能保持 pending，材料缺口真实存在
@@ -387,7 +387,7 @@ def test_source_missing_is_a_preparation_gap(tmp_path):
 
 
 def test_material_differences_is_a_preparation_gap(tmp_path):
-    """R3-F2：审定记录在案的 PDF/源材料差异是科学准备缺口。"""
+    """审定记录在案的 PDF/源材料差异是科学准备缺口。"""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["material_correspondence"]["differences"] = [
@@ -411,7 +411,7 @@ def test_material_differences_is_a_preparation_gap(tmp_path):
 
 
 def test_missing_value_evidence_is_a_preparation_gap(tmp_path):
-    """R3-F2：数值无证据是材料准备缺口。"""
+    """数值无证据是材料准备缺口。"""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["contributions"][0]["quantities"][0]["values"][0]["evidence"] = []
@@ -425,7 +425,7 @@ def test_missing_value_evidence_is_a_preparation_gap(tmp_path):
 
 
 def test_related_memory_gaps_all_block_readiness(tmp_path):
-    """R3-F2：不止三个特例——其余纯内存材料/科学缺口同样阻止就绪。"""
+    """纯内存中的各类材料/科学缺口同样阻止就绪。"""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     contribution = payload["contributions"][0]
@@ -461,7 +461,7 @@ def test_related_memory_gaps_all_block_readiness(tmp_path):
 
 
 def test_approved_structured_conflicts_are_not_gaps(tmp_path):
-    """R3-F2：已审定、结构完整的冲突双方不是待办（配对仍就绪）。"""
+    """已审定、结构完整的冲突双方不是待办（配对仍就绪）。"""
     evidence = {
         "file_id": "pdf-1",
         "location": "Table 2, row SYN-A",
@@ -517,7 +517,7 @@ def test_approved_structured_conflicts_are_not_gaps(tmp_path):
 
 
 def test_partial_scope_with_confirmed_ranges_does_not_clear_other_gaps(tmp_path):
-    """R3-F2：显式封闭子范围只解决 partial_coverage，其余缺口照实保留。"""
+    """显式封闭子范围只解决 partial_coverage，其余缺口照实保留。"""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["contributions"][0]["quantities"][0]["values"][0]["evidence"] = []
@@ -555,8 +555,8 @@ def test_partial_scope_with_confirmed_ranges_does_not_clear_other_gaps(tmp_path)
     assert adaptation.formal_readiness is False
 
 
-def test_full_checker_problem_set_is_unchanged(tmp_path):
-    """R3-F2 等价守卫：完整检查器（读文件）的问题集合与原实现一致。"""
+def test_full_checker_reports_material_gaps_and_unresolved(tmp_path):
+    """完整检查器按固定预期报告材料缺口与未决项。"""
     import hashlib
 
     material = tmp_path / "materials"
@@ -589,11 +589,11 @@ def test_full_checker_problem_set_is_unchanged(tmp_path):
     del hashlib
 
 
-# ---- R3-F3：严格入口必须携带就绪状态 ----
+# ---- 严格入口必须携带就绪状态 ----
 
 
 def test_answer_only_strict_entry_rejects_pointing_to_informal_api(tmp_path):
-    """R3-F3：缺 metadata 的 answer-only 不能经严格入口拿到可当 ready 的裸条目。"""
+    """缺 metadata 的 answer-only 不能经严格入口拿到可当 ready 的裸条目。"""
     _, pair = _pair(tmp_path)
     with pytest.raises(GoldAdaptationError, match="adapt_compact_answer"):
         gold_entries_from_compact_answer(pair.answer)
@@ -605,7 +605,7 @@ def test_answer_only_strict_entry_rejects_pointing_to_informal_api(tmp_path):
 
 
 def test_strict_entries_still_reject_gaps_and_keep_legit_pair_ready(tmp_path):
-    """R3-F3：严格入口=绑定+就绪双门禁；合法已绑定配对不受影响。"""
+    """严格入口=绑定+就绪双门禁；合法已绑定配对不受影响。"""
     _, pair = _pair(tmp_path)
     entries = gold_entries_from_compact_pair(pair)
     assert entries[0].coverage == "complete"

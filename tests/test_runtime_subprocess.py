@@ -1,8 +1,8 @@
 """独立进程验证：双进程锁竞争、持锁终止与真实中断窗口（A03/A04/A15/A17）。
 
 中断用信号文件定位故障窗口后以 ``os._exit``（或 SIGKILL）结束子进程，
-等价于进程死亡：已提交事实保留，未提交事务丢弃。A17 的模拟账本独立
-于空间，账单事实不会被客户端回滚抹掉。
+等价于进程死亡：已提交事实保留，未提交事务丢弃。A17 的独立调用日志独立
+于空间，调用事实不会被客户端回滚抹掉。
 """
 
 from __future__ import annotations
@@ -16,20 +16,18 @@ import time
 from pathlib import Path
 
 import pytest
-
-from hvs_catalog.runtime import resume_execution
-from hvs_catalog.synthetic import material as m
-from hvs_catalog.synthetic import (
+from shared_scenarios import (
+    direct_flow,
     open_service,
     pending_questions,
     start_execution,
     submit_expert_decision,
 )
-from hvs_catalog.synthetic.flow import SyntheticFlow
+from shared_scenarios import material as m
+
+from hvs_catalog.runtime import resume_execution
 from hvs_catalog.workspace import (
-    LockCorruptedError,
     initialize_workspace,
-    repair_lock,
 )
 
 HELPERS = Path(__file__).parent / "runtime_helpers.py"
@@ -69,23 +67,14 @@ def release_holder(holder: subprocess.Popen, release: Path) -> None:
 
 @pytest.fixture()
 def service(tmp_path):
-    svc = open_service(tmp_path / "ledger.db")
+    svc = open_service(tmp_path / "calls.jsonl")
     yield svc
     svc.close()
 
 
 def _ledger_calls(tmp_path, step: str | None = None) -> int:
-    conn = sqlite3.connect(tmp_path / "ledger.db")
-    try:
-        if step is None:
-            row = conn.execute("SELECT COUNT(*) FROM calls").fetchone()
-        else:
-            row = conn.execute(
-                "SELECT COUNT(*) FROM calls WHERE step = ?", (step,)
-            ).fetchone()
-        return int(row[0])
-    finally:
-        conn.close()
+    service = open_service(tmp_path / "calls.jsonl")
+    return service.summary()["calls"] if step is None else service.calls_for_step(step)
 
 
 def _receipt_kinds(space, execution_id: str) -> list[str]:
@@ -135,7 +124,7 @@ def test_two_processes_race_same_execution(tmp_path, service):
                 tmp_path / "space",
                 execution.execution_id,
                 "B",
-                tmp_path / "ledger.db",
+                tmp_path / "calls.jsonl",
                 marker,
                 release,
             ],
@@ -152,11 +141,11 @@ def test_two_processes_race_same_execution(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "B",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         assert code == 0
         assert payload == {"busy": True}
-        assert _ledger_calls(tmp_path, "extract_roster") == 1
+        assert _ledger_calls(tmp_path, "direct_roster") == 1
         assert "decision_save" not in _receipt_kinds(space, execution.execution_id)
 
         release.write_text("go", encoding="utf-8")
@@ -170,7 +159,7 @@ def test_two_processes_race_same_execution(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "B",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         assert payload["outcome"] == "finished"
         assert payload["mode"] == "already-finished"
@@ -182,10 +171,10 @@ def test_two_processes_race_same_execution(tmp_path, service):
         space.close()
 
 
-# ---- A04 持锁进程终止、删除活跃锁文件、另一空间独立运行 ----
+# ---- A04 持锁进程终止、另一空间独立运行 ----
 
 
-def test_lock_holder_killed_and_lock_file_deleted(tmp_path, service):
+def test_lock_holder_killed_and_other_space_independent(tmp_path, service):
     space1 = initialize_workspace(tmp_path / "space1")
     space2 = initialize_workspace(tmp_path / "space2")
     holder = None
@@ -215,38 +204,29 @@ def test_lock_holder_killed_and_lock_file_deleted(tmp_path, service):
             tmp_path / "space2",
             execution2.execution_id,
             "B",
-            tmp_path / "ledger2.db",
+            tmp_path / "calls2.jsonl",
         )
         assert payload["outcome"] == "finished"
-        assert _ledger_calls(tmp_path) == 0  # space2 使用独立账本
+        assert _ledger_calls(tmp_path) == 0  # space2 使用独立调用日志
 
-        # 活跃锁文件被删除：不能靠重建文件绕过，明确报告锁损坏
-        (tmp_path / "space1" / ".lock").unlink()
         _code, payload = run_scenario(
             "resume",
             tmp_path / "space1",
             execution1.execution_id,
             "B",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
-        assert payload == {"lock_corrupt": True}
-        with pytest.raises(LockCorruptedError):
-            space1.lock().acquire()
-
-        # 持锁进程被杀死后锁由操作系统释放；显式修复登记新的锁文件身份
+        assert payload == {"busy": True}
+        # 持锁进程被杀死后正常再取锁，无持久身份或修复步骤。
         holder.send_signal(signal.SIGKILL)
         holder.communicate(timeout=30)
-        with pytest.raises(LockCorruptedError):
-            space1.lock().acquire()
-        repair_lock(
-            tmp_path / "space1", business_db=tmp_path / "space1" / "business.db"
-        )
+        assert (space1.root / ".lock").exists()
         _code, payload = run_scenario(
             "resume",
             tmp_path / "space1",
             execution1.execution_id,
             "B",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         assert payload["outcome"] == "finished"
         assert _ledger_calls(tmp_path) == 2
@@ -270,7 +250,7 @@ def test_exit_before_decision_save(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "A",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         assert code == 9
         view = pending_questions(space, execution_id=execution.execution_id)[0]
@@ -290,14 +270,54 @@ def test_exit_before_decision_save(tmp_path, service):
             question_ref=view.question_ref,
             request_key="dec-after-recovery",
         )
-        svc = open_service(tmp_path / "ledger.db")
+        svc = open_service(tmp_path / "calls.jsonl")
         try:
             report = resume_execution(
-                space, execution.execution_id, SyntheticFlow(paper="A"), service=svc
+                space, execution.execution_id, direct_flow(), service=svc
             )
             assert report.outcome == "finished"
         finally:
             svc.close()
+    finally:
+        space.close()
+
+
+def test_death_inside_decision_save_rolls_back_all_staged_rows(tmp_path, service):
+    space = initialize_workspace(tmp_path / "space")
+    try:
+        execution, flow, _ = start_execution(space, paper="A", request_key="a")
+        assert (
+            resume_execution(
+                space, execution.execution_id, flow, service=service
+            ).outcome
+            == "paused"
+        )
+        code, _ = run_scenario(
+            "exit-in-decision-save",
+            space.root,
+            execution.execution_id,
+            _question_ref_json(space, execution.execution_id),
+            "dec",
+        )
+        assert code == 9
+        question = pending_questions(space, execution_id=execution.execution_id)[0]
+        assert question.status == "open" and not question.decisions
+        assert "decision_save" not in _receipt_kinds(space, execution.execution_id)
+        assert not [
+            r for r in space.store().list_records() if r.RECORD_NAME == "decision"
+        ]
+        code, _ = run_scenario(
+            "submit-exit",
+            space.root,
+            execution.execution_id,
+            _question_ref_json(space, execution.execution_id),
+            "dec",
+        )
+        assert code == 9
+        code, report = run_scenario(
+            "resume", space.root, execution.execution_id, "A", tmp_path / "calls.jsonl"
+        )
+        assert code == 0 and report["outcome"] == "finished"
     finally:
         space.close()
 
@@ -312,7 +332,7 @@ def test_exit_after_decision_save_before_apply(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "A",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         assert payload["outcome"] == "paused"
         code, _payload = run_scenario(
@@ -340,7 +360,7 @@ def test_exit_after_decision_save_before_apply(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "A",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         assert payload["outcome"] == "finished"
         assert (
@@ -363,7 +383,7 @@ def test_exit_inside_apply_transaction(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "A",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         assert code == 0
         question_ref = _question_ref_json(space, execution.execution_id)
@@ -372,7 +392,7 @@ def test_exit_inside_apply_transaction(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "A",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
             question_ref,
             "dec",
         )
@@ -390,7 +410,7 @@ def test_exit_inside_apply_transaction(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "A",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         assert payload["outcome"] == "finished"
         assert _paper_revisions(
@@ -410,7 +430,7 @@ def test_exit_after_apply_before_resume(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "A",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         question_ref = _question_ref_json(space, execution.execution_id)
         code, _payload = run_scenario(
@@ -418,7 +438,7 @@ def test_exit_after_apply_before_resume(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "A",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
             question_ref,
             "dec",
         )
@@ -435,7 +455,7 @@ def test_exit_after_apply_before_resume(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "A",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         assert payload["outcome"] == "finished"
         assert _paper_revisions(
@@ -448,7 +468,7 @@ def test_exit_after_apply_before_resume(tmp_path, service):
 # ---- A17 响应后、保存前退出：外部调用可能重复 ----
 
 
-def test_exit_after_response_bills_again_on_resume(tmp_path, service):
+def test_exit_after_response_calls_again_on_resume(tmp_path, service):
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, _flow, _ = start_execution(space, paper="B", request_key="b")
@@ -457,23 +477,23 @@ def test_exit_after_response_bills_again_on_resume(tmp_path, service):
             tmp_path / "space",
             execution.execution_id,
             "B",
-            tmp_path / "ledger.db",
-            "extract_roster",
+            tmp_path / "calls.jsonl",
+            "direct_roster",
         )
         assert code == 9
-        # 账本独立于空间：已计费事实保留，但业务库没有步骤结果
-        assert _ledger_calls(tmp_path, "extract_roster") == 1
+        # 日志独立于空间：已发生调用事实保留，但业务库没有步骤结果
+        assert _ledger_calls(tmp_path, "direct_roster") == 1
 
         code, payload = run_scenario(
             "resume",
             tmp_path / "space",
             execution.execution_id,
             "B",
-            tmp_path / "ledger.db",
+            tmp_path / "calls.jsonl",
         )
         assert payload["outcome"] == "finished"
         # 恢复重新调用了名单步骤：外部调用发生两次，不能宣称只发生一次
-        assert _ledger_calls(tmp_path, "extract_roster") == 2
+        assert _ledger_calls(tmp_path, "direct_roster") == 2
         assert (
             space.store().current_revision(
                 m.paper_record_id("B", execution.execution_id)

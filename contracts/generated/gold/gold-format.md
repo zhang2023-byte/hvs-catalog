@@ -5,7 +5,7 @@ The formal scoring reference is `answer.json` together with `metadata.json`. The
 
 `contribution_id` has the form `arxiv_id:candNN`; it is a generated identifier and needs no paper citation. Scientific claims use `value` and their corresponding `evidence`. The old v1 draft, migration indices, old boundness status, pending tasks and full historical provenance stay outside the formal pair.
 
-Material and scope confirmation in metadata is distinct from final Gold approval. Immutable version save additionally requires `scientific_review=true` from a human approver for the exact answer and metadata manifest. The operation record retains that approval separately from the two-file package. In-place local corrections record their preparer, human decision author and basis in `revision`; earlier approvals apply only to the original content preserved in Git history.
+Material and scope confirmation in metadata is distinct from final Gold approval. New answers and revisions require `scientific_review=true` from a human approver bound to the exact pair, target and predecessor. The current `approval.json` is stored alongside the pair; no preparation or operation log is kept. Revisions record preparer, human decision author, date, basis and the previous answer hash in `revision`. Authorized Git commits retain history; uncommitted copies do not.
 
 See [version meanings](README.md#what-the-version-numbers-mean) for the distinction between format, paper, rules and saved Gold revisions.
 

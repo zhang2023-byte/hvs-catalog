@@ -1,4 +1,4 @@
-"""共享提取入口：受限模型参数通道（F1 回归与修复验证）。
+"""共享提取入口：受限模型参数通道与输入隔离。
 
 ``StepModel.parameters`` 只接受可信登记声明的受限字段、类型和值域；
 未知参数、嵌套对象、列表、自由文本和越界值在建立执行前拒绝，拒绝
@@ -74,7 +74,7 @@ def _start_rejected(space, request, request_key="reject"):
     assert space.store().list_executions() == []
 
 
-# ---- 反例：答案借道模型参数进入提取请求（审核 F1 复现） ----
+# ---- 拒绝答案借道模型参数进入提取请求 ----
 
 
 def test_nested_gold_answer_payload_rejected_before_execution(space, source):
@@ -89,7 +89,7 @@ def test_nested_gold_answer_payload_rejected_before_execution(space, source):
         ],
     )
     service = SpyService()
-    _start_rejected(space, request, request_key="f1-nested")
+    _start_rejected(space, request, request_key="nested-parameters")
     assert service.requests == []
 
 
@@ -100,7 +100,7 @@ def test_renamed_payload_rejected(space, source):
             source,
             models=[StepModel(model="mock-default", parameters={name: "secret"})],
         )
-        _start_rejected(space, request, request_key=f"f1-renamed-{name}")
+        _start_rejected(space, request, request_key=f"renamed-parameter-{name}")
 
 
 def test_list_and_free_text_disguise_rejected(space, source):
@@ -116,7 +116,9 @@ def test_list_and_free_text_disguise_rejected(space, source):
         request = _request(
             source, models=[StepModel(model="mock-default", parameters=parameters)]
         )
-        _start_rejected(space, request, request_key=f"f1-disguise-{id(parameters)}")
+        _start_rejected(
+            space, request, request_key=f"disguised-parameter-{id(parameters)}"
+        )
 
 
 def test_out_of_range_and_unknown_values_rejected(space, source):
@@ -132,7 +134,7 @@ def test_out_of_range_and_unknown_values_rejected(space, source):
         request = _request(
             source, models=[StepModel(model="mock-default", parameters=parameters)]
         )
-        _start_rejected(space, request, request_key=f"f1-range-{id(parameters)}")
+        _start_rejected(space, request, request_key=f"parameter-range-{id(parameters)}")
 
 
 def test_rejection_has_no_execution_or_service_side_effects(space, source):
@@ -143,7 +145,9 @@ def test_rejection_has_no_execution_or_service_side_effects(space, source):
             models=[StepModel(model="m", parameters={"gold_answer": {"a": 1}})],
         )
         with pytest.raises(PipelineRequestError):
-            start_extraction(space, request=request, request_key=f"f1-effect-{index}")
+            start_extraction(
+                space, request=request, request_key=f"parameter-effect-{index}"
+            )
     assert space.store().list_executions() == []
 
 
@@ -163,7 +167,7 @@ def test_legal_parameters_pass_through_to_service_requests(space):
         ),
     ]
     handle = start_extraction(
-        space, request=_request(source, models), request_key="f1-legal"
+        space, request=_request(source, models), request_key="allowed-parameters"
     )
     report = resume_extraction(space, handle.execution_id, service=service)
     assert report.outcome == "finished"
@@ -185,17 +189,17 @@ def test_post_construction_mutation_rejected_at_start(space, source):
     model = StepModel(model="mock-default", parameters={"temperature": 0.2})
     request = _request(source, models=[model])
     model.parameters["gold_answer"] = {"FIC-CANDIDATE-C": "secret answer"}
-    _start_rejected(space, request, request_key="f1-mutate-start")
+    _start_rejected(space, request, request_key="mutated-request-at-start")
     # 整体替换为未支持参数同样拒绝
     model.parameters = {"answer": "secret"}
-    _start_rejected(space, request, request_key="f1-mutate-assign")
+    _start_rejected(space, request, request_key="mutated-request-assignment")
 
 
 def test_mutation_after_start_does_not_affect_frozen_execution(space, source):
     """建立执行后变异请求对象：固定快照与实际发送内容不受影响。"""
     model = StepModel(model="mock-default", parameters={"temperature": 0.2})
     request = _request(source, models=[model])
-    handle = start_extraction(space, request=request, request_key="f1-frozen")
+    handle = start_extraction(space, request=request, request_key="frozen-parameters")
     model.parameters["gold_answer"] = {"x": 1}
     model.parameters["temperature"] = 99.0
     service = SpyService()
@@ -221,7 +225,9 @@ def test_interpret_path_also_carries_only_declared_parameters(space):
         mode="synthetic",
         expert_adjudication=False,
     )
-    handle = start_extraction(space, request=request, request_key="f1-interpret")
+    handle = start_extraction(
+        space, request=request, request_key="parameter-interpretation"
+    )
     report = resume_extraction(space, handle.execution_id, service=service)
     assert report.outcome == "finished"
     interpret = [
@@ -249,7 +255,7 @@ def _legacy_execution_with_unsupported_params(space, source):
     )
     handle, _ = create_execution(
         space,
-        request_key="f1-legacy",
+        request_key="legacy-parameters",
         input_snapshot=snapshot,
         flow=ExtractionFlow(DIRECT_METHOD, mode="daily"),
     )
@@ -289,7 +295,7 @@ def test_valid_legacy_empty_parameters_still_resume(space):
     """合法旧快照（无参数）不受影响，正常恢复。"""
     source = import_mock_source(space, PAPER_B)
     request = _request(source, models=[StepModel(model="mock-default")])
-    handle = start_extraction(space, request=request, request_key="f1-empty")
+    handle = start_extraction(space, request=request, request_key="empty-parameters")
     report = resume_extraction(
         space, handle.execution_id, service=PipelineMockService()
     )
@@ -299,7 +305,7 @@ def test_valid_legacy_empty_parameters_still_resume(space):
 # ---- 受限参数支持集（API 报告） ----
 
 
-# ---- R3-F1：未声明策略的流程层旁路（审核复现） ----
+# ---- 未声明参数策略时拒绝流程层旁路 ----
 
 
 def _undeclared_spec():
@@ -331,7 +337,7 @@ def _legacy_execution(space, source, *, spec, parameters):
     )
     handle, _ = create_execution(
         space,
-        request_key=f"r3-legacy-{spec.method_id}",
+        request_key=f"undeclared-policy-{spec.method_id}",
         input_snapshot=snapshot,
         flow=ExtractionFlow(spec, mode="daily"),
     )
@@ -463,7 +469,10 @@ def test_custom_registration_default_policy_is_strictest(space, source):
     )
     with pytest.raises(PipelineRequestError, match="未声明模型参数支持集"):
         start_extraction(
-            space, request=request, request_key="f1-custom", registry=registry
+            space,
+            request=request,
+            request_key="custom-parameter-policy",
+            registry=registry,
         )
     assert DEFAULT_REGISTRY.get("direct").spec.parameter_policy is not None
     assert CANDIDATE_REVIEW_METHOD.parameter_policy is not None

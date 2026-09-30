@@ -1,224 +1,151 @@
-"""Gold CLI 薄封装：六个操作的实际流程与退出码。"""
-
-from __future__ import annotations
+"""Gold CLI thin wrappers: migration, checks, and one current-pair writer."""
 
 import json
 
-from evaluation_helpers import (
-    build_approval_payload,
-    build_fresh_draft,
-    build_legacy_v4_doc,
-    write_synthetic_pdf,
-)
+import pytest
+from evaluation_helpers import build_legacy_v4_doc
+from gold_save_helpers import flow, revise, write_approval
 
 from hvs_catalog.cli import main
 
 
-def _write(tmp_path, name, payload):
-    path = tmp_path / name
-    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-    return path
-
-
 def test_gold_cli_migrate_check_compare(tmp_path, capsys):
-    legacy = _write(tmp_path, "legacy.json", build_legacy_v4_doc())
-    draft_dir = tmp_path / "draft"
-    code = main(
-        [
-            "gold",
-            "migrate",
-            "--legacy",
-            str(legacy),
-            "--draft-dir",
-            str(draft_dir),
-            "--material-root",
-            str(tmp_path),
-        ]
+    legacy = tmp_path / "legacy.json"
+    legacy.write_text(json.dumps(build_legacy_v4_doc()))
+    draft = tmp_path / "draft"
+    assert (
+        main(
+            [
+                "gold",
+                "migrate",
+                "--legacy",
+                str(legacy),
+                "--draft-dir",
+                str(draft),
+                "--material-root",
+                str(tmp_path),
+            ]
+        )
+        == 0
     )
-    assert code == 0
     out = capsys.readouterr().out
     assert "[迁移]" in out and "[待办]" in out
-    assert (draft_dir / "draft.json").is_file()
-
-    code = main(
-        [
-            "gold",
-            "check",
-            "--draft",
-            str(draft_dir / "draft.json"),
-            "--material-root",
-            str(tmp_path),
-        ]
-    )
-    assert code == 2  # 未绑定材料的草稿有阻断问题
-    assert "[拒绝]" not in capsys.readouterr().out  # 检查结果不是拒绝
     report_path = tmp_path / "report.json"
-    code = main(
-        [
-            "gold",
-            "check",
-            "--draft",
-            str(draft_dir / "draft.json"),
-            "--material-root",
-            str(tmp_path),
-            "--report-json",
-            str(report_path),
-        ]
+    assert (
+        main(
+            [
+                "gold",
+                "check",
+                "--draft",
+                str(draft / "draft.json"),
+                "--material-root",
+                str(tmp_path),
+                "--report-json",
+                str(report_path),
+            ]
+        )
+        == 2
     )
-    assert code == 2
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-    assert report["problems"]
-
-    code = main(
-        [
-            "gold",
-            "compare",
-            "--legacy",
-            str(legacy),
-            "--current",
-            str(draft_dir / "draft.json"),
-        ]
+    assert json.loads(report_path.read_text())["problems"]
+    assert "[拒绝]" not in capsys.readouterr().out
+    assert (
+        main(
+            [
+                "gold",
+                "compare",
+                "--legacy",
+                str(legacy),
+                "--current",
+                str(draft / "draft.json"),
+            ]
+        )
+        == 0
     )
-    assert code == 0
-    out = capsys.readouterr().out
-    assert "一致" in out
+    assert "一致" in capsys.readouterr().out
 
 
-def test_gold_cli_prepare_save_query_full_flow(tmp_path, capsys):
-    material = tmp_path / "materials"
-    digest = write_synthetic_pdf(material / "paper.pdf")
-    draft = build_fresh_draft(pdf_sha256=digest)
-    draft_path = _write(tmp_path, "draft.json", draft)
-    target = tmp_path / "target"
-    work = tmp_path / "work"
+def test_cli_inspect_save_read_new_and_revision(tmp_path, capsys):
+    args = flow(tmp_path)
+    common = [
+        "--pair",
+        str(args["pair_path"] / "answer.json"),
+        "--material-root",
+        str(args["material_root"]),
+        "--target",
+        str(args["target"].root),
+    ]
+    assert main(["gold", "inspect-save", *common]) == 0
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["binding_sha256"] == args["approval"].binding_sha256
+    assert not args["target"].root.exists()
+    permission = write_approval(args, tmp_path / "permission.json")
+    command = ["gold", "save", *common, "--approval", str(permission)]
+    assert main(command) == 0
+    assert not json.loads(capsys.readouterr().out)["already_present"]
+    assert main(command) == 0
+    assert json.loads(capsys.readouterr().out)["already_present"]
+    assert main(["gold", "read", "--target", str(args["target"].root)]) == 0
+    old = json.loads(capsys.readouterr().out)["pair_sha256"]
+    changed = revise(args)
+    assert main(["gold", "inspect-save", *common, "--expected-old", old]) == 0
+    summary = json.loads(capsys.readouterr().out)
+    payload = args["approval"].model_dump(mode="json")
+    payload.update(summary)
+    permission.write_text(json.dumps(payload))
+    assert main(command) == 0
+    capsys.readouterr()
+    assert changed["target"].read_current()[0].metadata.revision is not None
+    # Former separate protocols aren't exposed as misleading aliases.
+    for obsolete in ("prepare", "query", "git-refresh"):
+        with pytest.raises(SystemExit):
+            main(["gold", obsolete])
 
-    code = main(
-        [
-            "gold",
-            "prepare",
-            "--draft",
-            str(draft_path),
-            "--material-root",
-            str(material),
-            "--target",
-            str(target),
-            "--work-dir",
-            str(work),
-        ]
+
+def test_cli_rejects_changed_content_under_old_approval(tmp_path, capsys):
+    args = flow(tmp_path)
+    permission = write_approval(args, tmp_path / "permission.json")
+    revise_without_current = json.loads(
+        (args["pair_path"] / "metadata.json").read_text()
     )
-    assert code == 0, capsys.readouterr()
-    out = capsys.readouterr().out
-    assert "清单哈希" in out
-    prep_dir = next((work / "preparations").iterdir())
-
-    from hvs_catalog.evaluation import load_preparation
-
-    preparation = load_preparation(prep_dir)
-    approval_path = _write(
-        tmp_path, "approval.json", build_approval_payload(preparation)
+    revise_without_current["paper"]["title"] += " changed"
+    (args["pair_path"] / "metadata.json").write_text(json.dumps(revise_without_current))
+    assert (
+        main(
+            [
+                "gold",
+                "save",
+                "--pair",
+                str(args["pair_path"]),
+                "--material-root",
+                str(args["material_root"]),
+                "--target",
+                str(args["target"].root),
+                "--approval",
+                str(permission),
+            ]
+        )
+        == 2
     )
-    code = main(
-        [
-            "gold",
-            "save",
-            "--draft",
-            str(draft_path),
-            "--material-root",
-            str(material),
-            "--target",
-            str(target),
-            "--preparation",
-            str(prep_dir),
-            "--approval",
-            str(approval_path),
-            "--operation-id",
-            "op-cli",
-        ]
-    )
-    assert code == 0, capsys.readouterr()
-    out = capsys.readouterr().out
-    assert "v1" in out
-
-    code = main(
-        [
-            "gold",
-            "query",
-            "--operation-id",
-            "op-cli",
-            "--target",
-            str(target),
-        ]
-    )
-    assert code == 0
-    out = capsys.readouterr().out
-    assert "saved" in out
-
-
-def test_gold_cli_save_rejects_stale_approval(tmp_path, capsys):
-    material = tmp_path / "materials"
-    digest = write_synthetic_pdf(material / "paper.pdf")
-    draft = build_fresh_draft(pdf_sha256=digest)
-    draft_path = _write(tmp_path, "draft.json", draft)
-    target = tmp_path / "target"
-    work = tmp_path / "work"
-    code = main(
-        [
-            "gold",
-            "prepare",
-            "--draft",
-            str(draft_path),
-            "--material-root",
-            str(material),
-            "--target",
-            str(target),
-            "--work-dir",
-            str(work),
-        ]
-    )
-    assert code == 0
-    prep_dir = next((work / "preparations").iterdir())
-    from hvs_catalog.evaluation import load_preparation
-
-    preparation = load_preparation(prep_dir)
-    # 批准绑定错误清单哈希
-    payload = build_approval_payload(preparation, manifest_sha256="0" * 64)
-    approval_path = _write(tmp_path, "approval.json", payload)
-    code = main(
-        [
-            "gold",
-            "save",
-            "--draft",
-            str(draft_path),
-            "--material-root",
-            str(material),
-            "--target",
-            str(target),
-            "--preparation",
-            str(prep_dir),
-            "--approval",
-            str(approval_path),
-            "--operation-id",
-            "op-bad",
-        ]
-    )
-    assert code == 2
-    err = capsys.readouterr().err
-    assert "[拒绝]" in err
+    assert "binding" in capsys.readouterr().err
+    assert not args["target"].root.exists()
 
 
 def test_gold_cli_migrate_rejects_unknown_version(tmp_path, capsys):
-    document = build_legacy_v4_doc()
-    document["schema"]["version"] = 3
-    legacy = _write(tmp_path, "legacy.json", document)
-    code = main(
-        [
-            "gold",
-            "migrate",
-            "--legacy",
-            str(legacy),
-            "--draft-dir",
-            str(tmp_path / "draft"),
-        ]
+    raw = build_legacy_v4_doc()
+    raw["schema"]["version"] = 3
+    legacy = tmp_path / "legacy.json"
+    legacy.write_text(json.dumps(raw))
+    assert (
+        main(
+            [
+                "gold",
+                "migrate",
+                "--legacy",
+                str(legacy),
+                "--draft-dir",
+                str(tmp_path / "draft"),
+            ]
+        )
+        == 2
     )
-    assert code == 2
-    assert "不在受支持范围" in capsys.readouterr().err
+    assert capsys.readouterr().err

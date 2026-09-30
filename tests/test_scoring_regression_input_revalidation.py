@@ -62,7 +62,7 @@ def _score(plan, gold, preds, auxiliary, **kwargs):
 
 
 # ---------------------------------------------------------------------------
-# 修复1：池内全部预测的贡献类型/作者判断诊断
+# 池内全部预测的贡献类型/作者判断诊断
 # ---------------------------------------------------------------------------
 
 
@@ -168,12 +168,12 @@ def test_ambiguity_not_diagnosed_as_field_mismatch():
 
 
 # ---------------------------------------------------------------------------
-# 修复2：入口复核当前实际输入，拒绝构造后变异
+# 入口复核当前实际输入，拒绝构造后变异
 # ---------------------------------------------------------------------------
 
 
 def test_post_construction_duplicate_record_id_rejected():
-    """复审反例：有效 S08 构造后把第二 record_id 改为 p1 → 拒绝。"""
+    """有效 S08 构造后把第二 record_id 改为 p1 → 拒绝。"""
     plan, gold, preds, auxiliary = load_bundle(S08)
     preds[0].objects[1].quantities[0].values[0].record_id = "p1"
     with pytest.raises(ScoringInputError):

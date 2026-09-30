@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 import pytest
-
-from hvs_catalog.records.questions import Actor
-from hvs_catalog.review import DecisionSubmission, ReviewService, derive_question_id
-from hvs_catalog.runtime import resume_execution
-from hvs_catalog.synthetic import (
+from shared_scenarios import (
     open_service,
     pending_questions,
     start_execution,
     submit_expert_decision,
 )
+
+from hvs_catalog.records.questions import Actor
+from hvs_catalog.review import DecisionSubmission, ReviewService, derive_question_id
+from hvs_catalog.runtime import resume_execution
 from hvs_catalog.workspace import (
     DecisionConflictError,
     OperationKeyConflictError,
@@ -31,7 +31,7 @@ def space(tmp_path):
 
 @pytest.fixture()
 def service(tmp_path):
-    svc = open_service(tmp_path / "ledger.db")
+    svc = open_service(tmp_path / "calls.jsonl")
     yield svc
     svc.close()
 
@@ -51,9 +51,10 @@ def test_create_question_replay_returns_original(space, waiting):
     assert question.status == "open"
     assert question.needs_processing
     # 同请求同内容：编号派生自空间、执行与内容，重建得到同一问题
+    from shared_scenarios import material as m
+
     from hvs_catalog.records.common import RecordRef
     from hvs_catalog.records.rules import load_rules
-    from hvs_catalog.synthetic import material as m
 
     rules = load_rules()
     content = m.question_content(
@@ -79,7 +80,7 @@ def test_cross_step_submission_rejected(space, waiting):
     with pytest.raises(WorkspaceIntegrityError, match="跨步骤"):
         ReviewService(space).submit_decision(
             execution_id=execution.execution_id,
-            step_id="extract_roster",
+            step_id="direct_roster",
             submission=_submission_for(question),
             request_key="wrong-step",
         )
@@ -128,7 +129,7 @@ def test_same_key_different_content_rejected(space, waiting):
     with pytest.raises(OperationKeyConflictError, match="不同内容"):
         ReviewService(space).submit_decision(
             execution_id=execution.execution_id,
-            step_id="extract_contribution",
+            step_id="quantities",
             submission=other_content,
             request_key="dec",
         )
@@ -167,7 +168,7 @@ def test_conflicting_answer_rejected_and_duplicate_saved_once(space, waiting):
     with pytest.raises(DecisionConflictError, match="冲突"):
         ReviewService(space).submit_decision(
             execution_id=execution.execution_id,
-            step_id="extract_contribution",
+            step_id="quantities",
             submission=conflicting,
             request_key="dec-3",
         )
@@ -195,7 +196,7 @@ def test_stale_fingerprint_rejected(space, waiting):
     with pytest.raises(RevisionStaleError, match="指纹"):
         ReviewService(space).submit_decision(
             execution_id=execution.execution_id,
-            step_id="extract_contribution",
+            step_id="quantities",
             submission=stale,
             request_key="stale",
         )
@@ -221,7 +222,7 @@ def test_unresolved_answer_keeps_question_open_and_independent_tasks_proceed(
     assert view.application is None
     assert view.needs_processing  # 已答复仍未决，仍需处理
     # 论文保持原修订：没有补丁、没有科学排除
-    from hvs_catalog.synthetic import material as m
+    from shared_scenarios import material as m
 
     paper = space.store().read_record_current(
         m.paper_record_id("A", execution.execution_id)
@@ -232,10 +233,10 @@ def test_unresolved_answer_keeps_question_open_and_independent_tasks_proceed(
     report_b = resume_execution(space, ex_b.execution_id, flow_b, service=service)
     assert report_b.outcome == "finished"
     # A 篇恢复后仍停在等待，不把未决执行成科学解决
-    from hvs_catalog.synthetic.flow import SyntheticFlow
+    from shared_scenarios import direct_flow
 
     report_a = resume_execution(
-        space, execution.execution_id, SyntheticFlow(paper="A"), service=service
+        space, execution.execution_id, direct_flow(), service=service
     )
     assert report_a.outcome == "paused"
     assert report_a.pending_question is not None
@@ -247,7 +248,7 @@ def test_unresolved_with_patch_rejected(space, waiting):
     with pytest.raises(WorkspaceIntegrityError, match="补丁"):
         ReviewService(space).submit_decision(
             execution_id=execution.execution_id,
-            step_id="extract_contribution",
+            step_id="quantities",
             submission=submission,
             request_key="unresolved-patch",
         )
@@ -271,7 +272,7 @@ def test_model_actor_rejected(space, waiting):
     with pytest.raises(AdjudicationNotAllowedError, match="人类操作者"):
         ReviewService(space).submit_decision(
             execution_id=execution.execution_id,
-            step_id="extract_contribution",
+            step_id="quantities",
             submission=submission,
             request_key="model-actor",
         )
@@ -293,9 +294,7 @@ def test_superseded_question_rejects_old_answer(space, waiting):
     resume_execution(
         space,
         execution.execution_id,
-        __import__(
-            "hvs_catalog.synthetic.flow", fromlist=["SyntheticFlow"]
-        ).SyntheticFlow(paper="A"),
+        __import__("shared_scenarios", fromlist=["direct_flow"]).direct_flow(),
         service=service,
     )
     # 材料变化：替代问题（同一目标的更新上下文，指向论文新修订的条目）。
@@ -303,7 +302,7 @@ def test_superseded_question_rejects_old_answer(space, waiting):
     with pytest.raises(RevisionStaleError, match="只能替代当前修订"):
         ReviewService(space).supersede_question(
             execution_id=execution.execution_id,
-            step_id="extract_contribution",
+            step_id="quantities",
             old_ref=question.question_ref,
             request_key="supersede-stale",
             new_content=QuestionContent(
@@ -334,7 +333,7 @@ def test_superseded_question_rejects_old_answer(space, waiting):
     review = ReviewService(space)
     new_view = review.supersede_question(
         execution_id=execution.execution_id,
-        step_id="extract_contribution",
+        step_id="quantities",
         old_ref=current_ref,
         request_key="supersede",
         new_content=new_content,
@@ -366,7 +365,7 @@ def test_superseded_question_rejects_old_answer(space, waiting):
         )
     # 新问题不接受旧决定：旧补丁目标（修订 1）不在新问题的目标范围内，
     # 整体拒绝
-    from hvs_catalog.synthetic import material as m
+    from shared_scenarios import material as m
 
     stale_patch = m.expert_decision_patch(
         question.record.data.target_refs[0],
@@ -375,26 +374,26 @@ def test_superseded_question_rejects_old_answer(space, waiting):
     with pytest.raises(WorkspaceIntegrityError, match="目标范围"):
         ReviewService(space).submit_decision(
             execution_id=execution.execution_id,
-            step_id="extract_contribution",
+            step_id="quantities",
             submission=_submission_for(new_view, patch=stale_patch),
             request_key="dec-new-target",
         )
 
 
 def _submission_for(question, *, outcome="resolved", patch="default", **overrides):
-    from hvs_catalog.synthetic import material as m
+    from shared_scenarios import material as m
 
     fields = {
         "question_ref": question.question_ref,
         "fingerprint": question.record.data.fingerprint,
-        "actor": Actor(kind="human", id="synthetic-expert-01"),
+        "actor": Actor(kind="human", id="pipeline-synthetic-expert-01"),
         "outcome": outcome,
         "answer_original": "无总体结论：作者在两种模型下给出相反结论且未作总体判断。",
         "answer_en": (
             "No overall conclusion: the author gives opposite conditional"
             " conclusions and defers an overall assessment."
         ),
-        "reason": "Synthetic expert decision fixed in R05 test inputs.",
+        "reason": "Synthetic expert decision fixed in the pipeline mock materials.",
         "evidence_refs": [],
         "patch": (
             m.expert_decision_patch(

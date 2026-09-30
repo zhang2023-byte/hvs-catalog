@@ -1,6 +1,6 @@
 """业务库：保存与按准确修订读取、事务原子性、操作键重放与当前输出一致（A05/A06/A14）。
 
-记录内容来自 R04 合成夹具（虚构材料），路径改写后发布到空间 sources/ 下。
+记录内容来自共同记录的合成夹具（虚构材料），路径改写后发布到空间 sources/ 下。
 """
 
 from __future__ import annotations
@@ -8,8 +8,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from r05_helpers import publish_fixture_collection
 from records_helpers import load_fixture
+from workspace_helpers import publish_fixture_collection
 
 from hvs_catalog.records import build_record, current_rules_ref
 from hvs_catalog.records.runs import InputSnapshot, RunData, RunRecord, Usage

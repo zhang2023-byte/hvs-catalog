@@ -1,29 +1,71 @@
 {
   "$defs": {
-    "PreviousRef": {
+    "SaveBinding": {
       "additionalProperties": false,
+      "description": "Read-only summary of canonical content and the authorized write premise.",
       "properties": {
-        "version": {
-          "title": "Version",
-          "type": "integer"
-        },
-        "manifest_sha256": {
-          "title": "Manifest Sha256",
+        "target_path": {
+          "title": "Target Path",
           "type": "string"
+        },
+        "arxiv_id": {
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "answer_sha256": {
+          "title": "Answer Sha256",
+          "type": "string"
+        },
+        "metadata_sha256": {
+          "title": "Metadata Sha256",
+          "type": "string"
+        },
+        "expected_old": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Old"
+        },
+        "rules_version": {
+          "title": "Rules Version",
+          "type": "string"
+        },
+        "rules_sha256": {
+          "title": "Rules Sha256",
+          "type": "string"
+        },
+        "science_pending": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Science Pending",
+          "type": "array"
         }
       },
       "required": [
-        "version",
-        "manifest_sha256"
+        "target_path",
+        "arxiv_id",
+        "answer_sha256",
+        "metadata_sha256",
+        "expected_old",
+        "rules_version",
+        "rules_sha256",
+        "science_pending"
       ],
-      "title": "PreviousRef",
+      "title": "SaveBinding",
       "type": "object"
     }
   },
   "additionalProperties": false,
-  "description": "专家对具体准备内容的科学审定与保存批准；工具只验证内容绑定。\n\n``target_path`` 固定批准指向的正式目标目录；同一份资料在另一个目标\n不能串用该批准，须重新准备与审定。",
+  "description": "Human declaration for this exact binding, not metadata review alone.",
   "properties": {
     "approved_by": {
+      "minLength": 1,
       "title": "Approved By",
       "type": "string"
     },
@@ -37,37 +79,15 @@
       "title": "Approved At",
       "type": "string"
     },
-    "document_id": {
-      "title": "Document Id",
-      "type": "string"
+    "binding": {
+      "$ref": "#/$defs/SaveBinding"
     },
-    "target_path": {
-      "title": "Target Path",
-      "type": "string"
-    },
-    "manifest_sha256": {
-      "title": "Manifest Sha256",
-      "type": "string"
-    },
-    "expected_old": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/PreviousRef"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "rules_version": {
-      "title": "Rules Version",
-      "type": "string"
-    },
-    "rules_sha256": {
-      "title": "Rules Sha256",
+    "binding_sha256": {
+      "title": "Binding Sha256",
       "type": "string"
     },
     "basis": {
+      "minLength": 1,
       "title": "Basis",
       "type": "string"
     },
@@ -88,12 +108,8 @@
     "approved_by",
     "approver_kind",
     "approved_at",
-    "document_id",
-    "target_path",
-    "manifest_sha256",
-    "expected_old",
-    "rules_version",
-    "rules_sha256",
+    "binding",
+    "binding_sha256",
     "basis"
   ],
   "title": "SaveApproval",

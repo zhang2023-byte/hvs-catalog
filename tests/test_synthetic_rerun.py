@@ -1,4 +1,4 @@
-"""同空间重跑与换配置新执行的输出隔离回归（F08）。
+"""同空间重跑与换配置新执行的输出隔离回归。
 
 有意重跑使用新请求键：第二次执行走完预期路径，提取输出（名单、论文
 贡献、对象、问题）按执行隔离编号，与第一次执行的结果、决定及回执互
@@ -8,29 +8,29 @@
 from __future__ import annotations
 
 import pytest
-
-from hvs_catalog.runtime import resume_execution
-from hvs_catalog.synthetic import (
+from shared_scenarios import (
     material as m,
 )
-from hvs_catalog.synthetic import (
+from shared_scenarios import (
     open_service,
     pending_questions,
     start_execution,
     submit_expert_decision,
 )
+
+from hvs_catalog.runtime import resume_execution
 from hvs_catalog.workspace import initialize_workspace
 
 
 @pytest.fixture()
 def service(tmp_path):
-    svc = open_service(tmp_path / "ledger.db")
+    svc = open_service(tmp_path / "calls.jsonl")
     yield svc
     svc.close()
 
 
 def test_same_space_rerun_with_new_request_key_completes(tmp_path, service):
-    """F08 复现一：同空间 B 篇有意重跑，两个执行各自完成。"""
+    """同空间 B 篇有意重跑，两个执行各自完成。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         first, flow1, _ = start_execution(space, paper="B", request_key="b1")
@@ -81,13 +81,13 @@ def test_same_space_rerun_with_new_request_key_completes(tmp_path, service):
             {r.operation_key for r in second_receipts}
         )
         # 两个执行都实际调用了服务（步骤缓存限定在本执行内）
-        assert service.calls_for_step("extract_roster") == 2
+        assert service.calls_for_step("direct_roster") == 2
     finally:
         space.close()
 
 
 def test_same_space_config_change_creates_isolated_execution(tmp_path, service):
-    """F08 复现二：A 篇专家组完成后，关闭裁决建立新执行并完成。"""
+    """A 篇专家组完成后，关闭裁决建立新执行并完成。"""
     space = initialize_workspace(tmp_path / "space")
     try:
         expert, flow_e, _ = start_execution(space, paper="A", request_key="expert-run")

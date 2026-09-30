@@ -21,7 +21,11 @@ from ..records.paper import PaperRecord
 from ..records.registry import AnyRecord
 from ..records.roster import RosterRecord
 from ..records.serialize import parse_record
-from ..records.validate import CollectionValidationError, validate_collection
+from ..records.validate import (
+    CollectionValidationError,
+    iter_record_refs,
+    validate_collection,
+)
 from .errors import (
     OperationKeyConflictError,
     RevisionStaleError,
@@ -558,9 +562,16 @@ class RecordStore:
         with self.transaction() as tx:
             return tx.current_revision(record_id)
 
-    def list_records(self) -> list[AnyRecord]:
+    def list_records(self, *, execution_id: str | None = None) -> list[AnyRecord]:
         with self.transaction() as tx:
-            return tx.all_records()
+            if execution_id is None:
+                return tx.all_records()
+            rows = tx.conn.execute(
+                "SELECT payload FROM records WHERE execution_id = ?"
+                " ORDER BY record_id, revision",
+                (execution_id,),
+            ).fetchall()
+            return [parse_record(row[0]) for row in rows]
 
     def find_receipt(self, operation_key: str) -> ReceiptRow | None:
         with self.transaction() as tx:
@@ -615,7 +626,7 @@ class RecordStore:
         self.set_meta_many({key: value})
 
     def set_meta_many(self, entries: dict[str, str]) -> None:
-        """一次事务写入多条运行层凭据（补记凭据时保持成组生效）。"""
+        """一次事务写入多条元数据。"""
         if not entries:
             return
         with self.transaction() as tx:
@@ -659,6 +670,7 @@ class RecordStore:
                         "本次修改未提交"
                     )
             pending: list[AnyRecord] = []
+            revisions: dict[str, int] = {}
             for record in request.new_records:
                 payload = tx.record_payload(record.record_id, record.revision)
                 if payload is not None:
@@ -668,10 +680,26 @@ class RecordStore:
                             " 已存在且内容不同；相同编号与修订只能保存相同内容"
                         )
                     continue
+                previous = revisions.get(record.record_id)
+                if previous is None:
+                    previous = tx.current_revision(record.record_id)
+                if previous is not None and record.revision <= previous:
+                    raise WorkspaceIntegrityError(
+                        f"记录 {record.record_id} 修订 {record.revision} 未递增"
+                        f"（当前或本批前一修订为 {previous}）"
+                    )
+                revisions[record.record_id] = record.revision
                 pending.append(record)
             _check_question_bindings(tx, pending, request.question_steps)
             if pending:
-                candidate = tx.all_records() + pending
+                candidate = record_closure(
+                    pending,
+                    lambda ref: (
+                        parse_record(payload)
+                        if (payload := tx.record_payload(ref.record_id, ref.revision))
+                        else None
+                    ),
+                )
                 try:
                     validate_collection(
                         candidate,
@@ -681,7 +709,7 @@ class RecordStore:
                     raise WorkspaceIntegrityError(
                         f"候选记录集合未通过校验：{exc}"
                     ) from exc
-                _check_run_artifacts(pending, self.materials_root)
+                _check_run_artifacts(candidate, self.materials_root)
                 _check_current_outputs(tx, pending)
                 for record in pending:
                     tx.insert_record(record)
@@ -714,6 +742,22 @@ class RecordStore:
                     (key, value),
                 )
             return receipt
+
+
+def record_closure(seeds: list[AnyRecord], read_record) -> list[AnyRecord]:
+    """准确修订递归闭包；缺引用留给同一个共同集合校验器报告。"""
+    records = {(record.record_id, record.revision): record for record in seeds}
+    queue = list(records.values())
+    for record in queue:
+        for ref in iter_record_refs(record.data):
+            key = (ref.record_id, ref.revision)
+            if key in records:
+                continue
+            dependency = read_record(ref)
+            if dependency is not None:
+                records[key] = dependency
+                queue.append(dependency)
+    return [records[key] for key in sorted(records)]
 
 
 def walk_artifact_refs(value: object) -> list[dict]:
@@ -787,7 +831,7 @@ def _check_question_bindings(
 
 
 def _check_run_artifacts(pending: list[AnyRecord], root: Path | None) -> None:
-    """提交前核验新记录引用的全部归档文件；R04 的材料校验不覆盖运行归档。"""
+    """提交前核验新记录引用的全部归档文件；共同记录的材料校验不覆盖运行归档。"""
     if root is None:
         return
     problems = verify_artifact_refs(pending, root)
@@ -829,23 +873,26 @@ def _check_current_outputs(tx: StoreTransaction, pending: list[AnyRecord]) -> No
     新名单进入当前状态后，仍指向旧名单修订的当前论文构成不一致输出，
     必须同批更新；不能借历史论文仍指向旧名单让错误的新名单通过。
     """
-    stored = tx.all_records()
-    if not any(isinstance(record, RosterRecord) for record in pending):
+    rosters = {r.record_id: r.revision for r in pending if isinstance(r, RosterRecord)}
+    if not rosters:
         return
-    current = {record.record_id: record.revision for record in stored}
-    for record in pending:
-        current[record.record_id] = record.revision
-    for record in [*stored, *pending]:
-        if not isinstance(record, PaperRecord):
-            continue
-        if current.get(record.record_id) != record.revision:
-            continue  # 只约束当前修订
-        roster_ref = record.data.roster_ref
-        roster_current = current.get(roster_ref.record_id)
-        if roster_current != roster_ref.revision:
-            raise WorkspaceIntegrityError(
-                f"声明的当前输出不一致：论文 {record.record_id} 当前修订"
-                f" v{record.revision} 仍引用名单 {roster_ref.record_id}"
-                f" v{roster_ref.revision}（当前修订 v{roster_current}）；"
-                "新名单必须与引用它的论文贡献一起更新"
-            )
+    papers = {r.record_id: r for r in pending if isinstance(r, PaperRecord)}
+    for roster_id, revision in rosters.items():
+        # 只读取引用受影响名单的当前论文，不解析全部历史记录。
+        rows = tx.conn.execute(
+            "SELECT r.payload FROM records r JOIN current_revisions c"
+            " ON r.record_id = c.record_id AND r.revision = c.revision"
+            " WHERE r.schema_name = 'paper'"
+            " AND json_extract(r.payload, '$.data.roster_ref.record_id') = ?",
+            (roster_id,),
+        ).fetchall()
+        affected = {r.record_id: r for r in (parse_record(row[0]) for row in rows)}
+        affected.update(papers)
+        for paper in affected.values():
+            ref = paper.data.roster_ref
+            if ref.record_id == roster_id and ref.revision != revision:
+                raise WorkspaceIntegrityError(
+                    f"声明的当前输出不一致：论文 {paper.record_id} 当前修订"
+                    f" v{paper.revision} 仍引用名单 {roster_id} v{ref.revision}"
+                    f"（当前修订 v{revision}）；新名单必须与引用它的论文贡献一起更新"
+                )
