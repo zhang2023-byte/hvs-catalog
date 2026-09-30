@@ -92,20 +92,16 @@ from .submission import (
 )
 
 COMMON_INSTRUCTIONS = (
-    "Return the scientific fields requested for this step. Preserve the paper's printed "
-    "identifiers, values, units, conditions and evidence. Use only the supplied paper "
-    "and source references. Provide every required list explicitly; an empty list does "
-    "not establish that the paper reported nothing. For each object, explicitly declare "
-    "common coverage for all requested quantities and provide a complete replacement "
-    "entry for each exception. Missing coverage is invalid. Keep material gaps, "
-    "unresolved scientific questions and the authors' assessment distinct. Include "
-    "optional numeric fields when applicable; never omit a reported component or invent "
-    "a missing one. Give evidence inline, grouping numeric components supported by the "
-    "same source location. Report conflicting printings together with their full values, "
-    "evidence and the reason they remain unresolved. Give other questions inline with "
-    "their affected targets. Use application-supplied object identifiers. The "
-    "application creates record identifiers, references and execution metadata; it does "
-    "not supply scientific judgments or expert decisions."
+    "Return only the scientific fields requested for this step. Write new summaries, "
+    "questions and precedent notes in English; preserve the paper's printed identifiers, "
+    "values, units, conditions and excerpts in their original form. Use only the supplied "
+    "paper materials and fixed references. Provide every required list explicitly; an "
+    "empty list does not establish that the paper reported nothing. Keep material gaps, "
+    "unresolved scientific questions and the authors' assessment distinct. Supply the "
+    "evidence required by this step; never invent missing content or silently resolve "
+    "conflicting results. Use application-supplied identifiers where provided. The "
+    "application creates persistent record identifiers, references and execution "
+    "metadata; it does not supply scientific judgments or expert decisions."
 )
 
 CROSS_RECORD_RULES = (
@@ -214,8 +210,9 @@ CROSS_RECORD_RULES = (
             "item's scientific references then run through the same checks as saved "
             "records — existence at the exact revision, record types, paper "
             "ownership, numeric fragment containment — so a patch cannot bypass the "
-            "normal entry points. Applying patches and transactional recovery are "
-            "later milestones."
+            "normal entry points. Patch application is provided by records.patches; "
+            "transactional saving and recovery are responsibilities of the workspace "
+            "and runtime interfaces."
         ),
     ),
     (
@@ -343,8 +340,11 @@ def _type_text(prop: dict[str, Any]) -> str:
     if "$ref" in prop:
         name = prop["$ref"].rsplit("/", 1)[-1]
         return f"`{name}`"
-    if "anyOf" in prop:
-        return " | ".join(_type_text(option) for option in prop["anyOf"])
+    for union in ("anyOf", "oneOf"):
+        if union in prop:
+            return " | ".join(_type_text(option) for option in prop[union])
+    if "const" in prop:
+        return f"`{prop['const']}`"
     if "enum" in prop:
         return " / ".join(f"`{value}`" for value in prop["enum"])
     kind = prop.get("type", "value")
@@ -392,7 +392,7 @@ def _model_table(model: type[BaseModel]) -> list[str]:
                 notes + " " if notes else ""
             ) + "Nullable: absent content is `null`, never a default value."
         lines.append(
-            f"| `{name}` | {_type_text(prop)} | {required_mark} | {_constraints(prop)} | {notes} |"
+            f"| `{name}` | {_cell(_type_text(prop))} | {required_mark} | {_cell(_constraints(prop))} | {notes} |"
         )
     lines.append("")
     return lines
@@ -405,7 +405,8 @@ def _envelope_section() -> list[str]:
         (
             "Every record is a JSON object with the following outer fields; the payload "
             "lives under `data`. Field names, status codes and this documentation are "
-            "English; scientific content keeps the paper's original language."
+            "English. New summaries, questions and precedent notes are English; "
+            "printed identifiers, values and evidence excerpts retain their original form."
         ),
         "",
         "| Field | Type | Required | Notes |",
@@ -460,12 +461,12 @@ def _expansion_section() -> list[str]:
     optional_fields = [
         name
         for name, field in ValueSubmission.model_fields.items()
-        if field.default is not None or field.default_factory is not None
+        if not field.is_required()
     ]
     required_fields = [
         name
         for name, field in ValueSubmission.model_fields.items()
-        if field.default is None and field.default_factory is None
+        if field.is_required()
     ]
     optional = ", ".join(f"`{name}`" for name in optional_fields)
     required = ", ".join(f"`{name}`" for name in required_fields)
@@ -836,9 +837,11 @@ def render_quantity_template() -> str:
             "## Required behavior",
             "",
             (
-                "- Required lists (`objects`, per object `quantities`, "
-                "`quantity_conflicts`, `coverage`, `questions`) must be present even "
-                "when empty; an empty list never means the paper reported nothing."
+                "- Top-level lists `objects` and `questions`, and each object's "
+                "`quantities` and `quantity_conflicts` lists, must be present even when "
+                "empty. Each object also requires `object_id` and a `coverage` "
+                "declaration object, not a list. `questions` belongs at the top level, "
+                "not inside an object; an empty list never means the paper reported nothing."
             ),
             (
                 "- Omit a numeric group entirely when there is no result; never create a "

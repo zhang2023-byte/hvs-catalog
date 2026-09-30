@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -11,6 +12,13 @@ from hvs_catalog.records.generate import (
     COMMON_INSTRUCTIONS,
     build_outputs,
     check_outputs,
+)
+from hvs_catalog.records.submission import (
+    CandidateSubmission,
+    ObjectQuantitySubmission,
+    QuantitySubmission,
+    RosterSubmission,
+    ValueSubmission,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -98,11 +106,70 @@ def test_all_templates_share_common_instructions():
 
 
 def test_omittable_fields_derived_from_submission_model():
+    doc = build_outputs()["record-format.md"]
+    required_line = next(
+        line for line in doc.splitlines() if line.startswith("- Always provided")
+    )
+    optional_line = next(
+        line for line in doc.splitlines() if line.startswith("- Omittable")
+    )
+    required = set(ValueSubmission.model_json_schema()["required"])
+    assert required == {"limit_kind", "condition", "source", "evidence"}
+    assert set(re.findall(r"`([^`]+)`", required_line)) == required
+    # The explanation also quotes null; it is not a field name.
+    optional = set(re.findall(r"`([^`]+)`", optional_line)) - {"null"}
+    assert optional == set(ValueSubmission.model_fields) - required
+    assert {"error_components", "interval_kind"} <= optional
+    assert required.isdisjoint(optional)
+
+
+def test_generated_tables_keep_one_column_per_header():
+    doc = build_outputs()["record-format.md"]
+    assert "| `origin` | `SyntheticOrigin` \\| `ArxivOrigin` | yes |" in doc
+    assert "| `kind` | `arxiv` | yes |" in doc
+    columns = None
+    for line in doc.splitlines():
+        if not line.startswith("|"):
+            columns = None
+            continue
+        count = len(re.findall(r"(?<!\\)\|", line))
+        if columns is None:
+            columns = count
+        assert count == columns, line
+
+
+def test_quantity_template_field_levels_match_submission_schema():
+    template = build_outputs()["templates/quantity-extraction.md"]
+    assert QuantitySubmission.model_json_schema()["required"] == [
+        "objects",
+        "questions",
+    ]
+    assert "questions" not in ObjectQuantitySubmission.model_fields
+    coverage = ObjectQuantitySubmission.model_json_schema()["properties"]["coverage"]
+    assert coverage == {"$ref": "#/$defs/CoverageDeclaration"}
+    assert "Top-level lists `objects` and `questions`" in template
+    assert "declaration object, not a list" in template
+    assert "`questions` belongs at the top level" in template
+
+
+def test_common_instructions_are_step_independent():
+    # Roster and candidate submissions cannot contain quantity coverage declarations.
+    assert "quantities" not in RosterSubmission.model_fields
+    assert "quantities" not in CandidateSubmission.model_fields
+    assert "all requested quantities" not in COMMON_INSTRUCTIONS
+    assert "common coverage" not in COMMON_INSTRUCTIONS
+    quantity = build_outputs()["templates/quantity-extraction.md"]
+    assert "Declare the common state for all requested quantities" in quantity
+    assert "never omit a reported component" not in COMMON_INSTRUCTIONS
+    assert "exactly when the paper reports them" in quantity
+
+
+def test_record_contract_docs_are_english():
     outputs = build_outputs()
-    doc = outputs["record-format.md"]
-    # 简化填写允许省略的可空字段在说明中明确列出
-    assert "`error_components`" in doc
-    assert "interval_kind" in doc
+    for name, text in outputs.items():
+        if name.endswith(".md"):
+            assert re.search(r"[\u4e00-\u9fff]", text) is None, name
+    assert "retain their original form" in outputs["record-format.md"]
 
 
 def test_generation_is_deterministic():

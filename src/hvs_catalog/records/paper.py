@@ -142,7 +142,11 @@ class ErrorComponent(Config):
 
 
 class MeasuredValue(Config):
-    """一组科学数值的保存形式；所有键在保存记录中必须出现，未提供的内容为 null。"""
+    """A saved numeric expression; required and optional fields follow this model.
+
+    Unreported nullable components remain null; reported components retain their
+    printed form and direct evidence. Step filling uses ValueSubmission instead.
+    """
 
     value_id: str = Field(min_length=1)
     value: str | None = Field(

@@ -296,7 +296,7 @@
     },
     "MeasuredValue": {
       "additionalProperties": false,
-      "description": "一组科学数值的保存形式；所有键在保存记录中必须出现，未提供的内容为 null。",
+      "description": "A saved numeric expression; required and optional fields follow this model.\n\nUnreported nullable components remain null; reported components retain their\nprinted form and direct evidence. Step filling uses ValueSubmission instead.",
       "properties": {
         "value_id": {
           "minLength": 1,

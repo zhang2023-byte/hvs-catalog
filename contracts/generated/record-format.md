@@ -5,7 +5,7 @@ This document is generated from the shared Pydantic definitions in `hvs_catalog.
 
 ### Record envelope
 
-Every record is a JSON object with the following outer fields; the payload lives under `data`. Field names, status codes and this documentation are English; scientific content keeps the paper's original language.
+Every record is a JSON object with the following outer fields; the payload lives under `data`. Field names, status codes and this documentation are English. New summaries, questions and precedent notes are English; printed identifiers, values and evidence excerpts retain their original form.
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
@@ -114,13 +114,13 @@ Required nullable fields must be present with `null`; only fields marked optiona
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `kind` | `string` | yes |  |  |
+| `kind` | `synthetic` | yes |  |  |
 
 #### ArxivOrigin
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `kind` | `string` | yes |  |  |
+| `kind` | `arxiv` | yes |  |  |
 | `arxiv_id` | `string` | yes | minLength 1 |  |
 | `retrieval` | `string` | yes | minLength 1 | How and when the source package was retrieved, e.g. the download basis. |
 
@@ -140,9 +140,9 @@ Required nullable fields must be present with `null`; only fields marked optiona
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `item_id` | `string` | `null` | yes |  | Contribution item affected by the gap, when identifiable. Nullable: absent content is `null`, never a default value. |
-| `quantity` | `string` | `null` | yes |  | Quantity path affected by the gap, when the scope names one. Nullable: absent content is `null`, never a default value. |
-| `judgment` | `inclusion` / `identity` | `null` | yes |  | Roster-level judgment the gap affects: inclusion (whether the object belongs to the roster) or identity (whether printed names denote one object). Mutually exclusive with quantity in one item; null when the item names quantities only. Nullable: absent content is `null`, never a default value. |
+| `item_id` | `string` \| `null` | yes |  | Contribution item affected by the gap, when identifiable. Nullable: absent content is `null`, never a default value. |
+| `quantity` | `string` \| `null` | yes |  | Quantity path affected by the gap, when the scope names one. Nullable: absent content is `null`, never a default value. |
+| `judgment` | `inclusion` / `identity` \| `null` | yes |  | Roster-level judgment the gap affects: inclusion (whether the object belongs to the roster) or identity (whether printed names denote one object). Mutually exclusive with quantity in one item; null when the item names quantities only. Nullable: absent content is `null`, never a default value. |
 
 #### AffectedTargets
 
@@ -158,7 +158,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | `gap_id` | `string` | yes | minLength 1 |  |
 | `reason` | `missing` / `unreadable` / `unparsed` / `external_not_included` | yes |  |  |
 | `description` | `string` | yes | minLength 1 |  |
-| `file_id` | `string` | `null` | yes |  | Omitted for gaps without a specific package file. Nullable: absent content is `null`, never a default value. |
+| `file_id` | `string` \| `null` | yes |  | Omitted for gaps without a specific package file. Nullable: absent content is `null`, never a default value. |
 | `mention_evidence_refs` | list of `RecordRef` | yes | minItems 0 |  |
 | `affected_targets` | `AffectedTargets` | yes |  |  |
 
@@ -167,7 +167,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `paper_key` | `string` | yes | minLength 1 |  |
-| `origin` | `value` | yes |  |  |
+| `origin` | `SyntheticOrigin` \| `ArxivOrigin` | yes |  |  |
 | `source_version` | `string` | yes | minLength 1 |  |
 | `files` | list of `SourceFile` | yes | minItems 0 |  |
 | `gaps` | list of `Gap` | yes | minItems 0 |  |
@@ -176,7 +176,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `kind` | `string` | yes |  |  |
+| `kind` | `text` | yes |  |  |
 | `start_line` | `integer` | yes | minimum 1 |  |
 | `end_line` | `integer` | yes | minimum 1 |  |
 
@@ -184,10 +184,10 @@ Required nullable fields must be present with `null`; only fields marked optiona
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `kind` | `string` | yes |  |  |
+| `kind` | `table_cell` | yes |  |  |
 | `row_key` | `object` | yes |  |  |
 | `column` | `string` | yes | minLength 1 |  |
-| `row_number` | `integer` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `row_number` | `integer` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 
 #### DataElementSelector
 
@@ -201,13 +201,13 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `name` | `string` | yes | minLength 1 |  |
-| `encoding` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `encoding` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 
 #### DataElementLocator
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `kind` | `string` | yes |  |  |
+| `kind` | `data_element` | yes |  |  |
 | `selector` | `DataElementSelector` | yes |  |  |
 | `decoder` | `DataElementDecoder` | yes |  |  |
 
@@ -218,7 +218,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | `paper_key` | `string` | yes | minLength 1 |  |
 | `source_ref` | `RecordRef` | yes |  |  |
 | `file_id` | `string` | yes | minLength 1 |  |
-| `locator` | `value` | yes |  |  |
+| `locator` | `TextLocator` \| `TableCellLocator` \| `DataElementLocator` | yes |  |  |
 | `excerpt` | `string` | yes | minLength 1 |  |
 
 ### Paper and object contributions
@@ -227,9 +227,9 @@ Required nullable fields must be present with `null`; only fields marked optiona
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `arxiv_id` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `arxiv_id` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `version` | `string` | yes | minLength 1 |  |
-| `title` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `title` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `authors` | list of `string` | yes | minItems 0 |  |
 
 #### DirectEvidencePart
@@ -245,7 +245,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `value` | `string` | yes | minLength 1 |  |
-| `unit` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `unit` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `direct_evidence` | list of `DirectEvidencePart` | yes | minItems 1 |  |
 
 #### QuantileReport
@@ -253,7 +253,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `value` | `string` | yes | minLength 1 |  |
-| `unit` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `unit` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `direct_evidence` | list of `DirectEvidencePart` | yes | minItems 1 |  |
 
 #### ErrorComponent
@@ -261,42 +261,45 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `name` | `string` | yes | minLength 1 |  |
-| `error` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `lower_error` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `upper_error` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `error` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `lower_error` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `upper_error` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `direct_evidence` | list of `DirectEvidencePart` | yes | minItems 1 |  |
 
 #### MeasuredValue
 
-一组科学数值的保存形式；所有键在保存记录中必须出现，未提供的内容为 null。
+A saved numeric expression; required and optional fields follow this model.
+
+Unreported nullable components remain null; reported components retain their
+printed form and direct evidence. Step filling uses ValueSubmission instead.
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `value_id` | `string` | yes | minLength 1 |  |
-| `value` | `string` | `null` | yes |  | Printed value string; null only for pure intervals. Nullable: absent content is `null`, never a default value. |
-| `error` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `lower_error` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `upper_error` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `unit` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `value` | `string` \| `null` | yes |  | Printed value string; null only for pure intervals. Nullable: absent content is `null`, never a default value. |
+| `error` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `lower_error` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `upper_error` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `unit` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `limit_kind` | `none` / `lower_limit` / `upper_limit` / `range` | yes |  |  |
-| `range_lower` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `range_upper` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `lower_inclusive` | `boolean` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `upper_inclusive` | `boolean` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `interval_kind` | `ordinary_range` / `prior_support` / `confidence` / `credible` / `statistical_interval` / `unspecified` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `coverage` | `CoverageReport` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
-| `lower_quantile` | `QuantileReport` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
-| `upper_quantile` | `QuantileReport` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `range_lower` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `range_upper` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `lower_inclusive` | `boolean` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `upper_inclusive` | `boolean` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `interval_kind` | `ordinary_range` / `prior_support` / `confidence` / `credible` / `statistical_interval` / `unspecified` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `coverage` | `CoverageReport` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `lower_quantile` | `QuantileReport` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `upper_quantile` | `QuantileReport` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `error_components` | list of `ErrorComponent` | yes | minItems 0 |  |
 | `condition` | `string` | yes | minLength 1 |  |
-| `frame` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `epoch` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `coordinate_format` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `representation` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `purpose` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `frame` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `epoch` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `coordinate_format` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `representation` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `purpose` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `source` | `this_paper` / `prior_work` / `unclear` | yes |  |  |
-| `source_note` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `author_usage` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `source_note` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `author_usage` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `direct_evidence` | list of `DirectEvidencePart` | yes | minItems 1 |  |
 | `context_evidence_refs` | list of `RecordRef` | yes | minItems 0 |  |
 
@@ -325,7 +328,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `status` | `no_overall_conclusion` / `unbound` / `possibly_unbound` / `possibly_bound` / `bound` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `status` | `no_overall_conclusion` / `unbound` / `possibly_unbound` / `possibly_bound` / `bound` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `evidence_refs` | list of `RecordRef` | yes | minItems 0 |  |
 | `issue_refs` | list of `RecordRef` | yes | minItems 0 |  |
 | `gap_refs` | list of `GapRef` | yes | minItems 0 |  |
@@ -441,7 +444,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | `disposition` | `included` / `excluded` / `pending` | yes |  |  |
 | `evidence_refs` | list of `RecordRef` | yes | minItems 0 |  |
 | `issue_refs` | list of `RecordRef` | yes | minItems 0 |  |
-| `contribution_id` | `string` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `contribution_id` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 
 #### UnresolvedGroup
 
@@ -517,7 +520,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 |---|---|---|---|---|
 | `name` | `string` | yes | minLength 1 |  |
 | `raw_value` | `string` | yes | minLength 1 |  |
-| `unit` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `unit` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `response_selector` | `string` | yes | minLength 1 |  |
 
 #### ExternalEntry
@@ -532,7 +535,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `service` | `string` | yes | minLength 1 |  |
-| `catalog_version` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `catalog_version` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `queried_at` | `string` | yes |  |  |
 | `query` | `object` | yes |  |  |
 | `raw_response` | `ArtifactRef` | yes |  |  |
@@ -597,7 +600,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | `answer_en` | `string` | yes | minLength 1 |  |
 | `reason` | `string` | yes | minLength 1 |  |
 | `evidence_refs` | list of `RecordRef` | yes | minItems 0 |  |
-| `result_patch` | `DecisionPatch` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `result_patch` | `DecisionPatch` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 
 ### Run and release manifests
 
@@ -612,16 +615,16 @@ cost compatibility boundary in the architecture document.
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `tokens` | `integer` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `cost` | `number` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
-| `currency` | `string` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `tokens` | `integer` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `cost` | `number` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `currency` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 
 #### ModelSpec
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `step_id` | `string` | `null` | yes |  | Null for the whole-pipeline default model. Nullable: absent content is `null`, never a default value. |
-| `provider` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `step_id` | `string` \| `null` | yes |  | Null for the whole-pipeline default model. Nullable: absent content is `null`, never a default value. |
+| `provider` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `model` | `string` | yes | minLength 1 |  |
 | `parameters` | `object` | yes |  |  |
 
@@ -631,7 +634,7 @@ cost compatibility boundary in the architecture document.
 |---|---|---|---|---|
 | `source_refs` | list of `RecordRef` | yes | minItems 0 |  |
 | `rules` | `RulesRef` | yes |  |  |
-| `method` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `method` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `models` | list of `ModelSpec` | yes | minItems 0 |  |
 | `code_version` | `string` | yes | minLength 1 |  |
 | `dependency_versions` | `object` | yes |  |  |
@@ -645,15 +648,15 @@ cost compatibility boundary in the architecture document.
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `request` | `ArtifactRef` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `response` | `ArtifactRef` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `request` | `ArtifactRef` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `response` | `ArtifactRef` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 | `state` | `pending` / `succeeded` / `failed` | yes |  |  |
-| `started_at` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `finished_at` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `usage` | `Usage` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `cost` | `number` | `null` | no |  | Legacy monetary cost; new runs leave it unfilled and the serialized output omits it. Nullable: absent content is `null`, never a default value. |
-| `currency` | `string` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
-| `service_request_id` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `started_at` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `finished_at` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `usage` | `Usage` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `cost` | `number` \| `null` | no |  | Legacy monetary cost; new runs leave it unfilled and the serialized output omits it. Nullable: absent content is `null`, never a default value. |
+| `currency` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `service_request_id` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 
 #### StepRecord
 
@@ -711,8 +714,8 @@ cost compatibility boundary in the architecture document.
 |---|---|---|---|---|
 | `target` | `string` | yes | minLength 1 |  |
 | `state` | `not_started` / `succeeded` / `failed` | yes |  |  |
-| `receipt_ref` | `ArtifactRef` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
-| `error` | `string` | `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `receipt_ref` | `ArtifactRef` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
+| `error` | `string` \| `null` | yes |  | Nullable: absent content is `null`, never a default value. |
 
 #### ReleaseData
 
@@ -725,7 +728,7 @@ cost compatibility boundary in the architecture document.
 | `source_run_refs` | list of `RecordRef` | yes | minItems 1 |  |
 | `code_version` | `string` | yes | minLength 1 |  |
 | `change_summary` | `string` | yes | minLength 1 |  |
-| `approval` | `Approval` | `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `approval` | `Approval` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `channels` | list of `Channel` | yes | minItems 0 |  |
 
 ## Cross-record rules
@@ -748,7 +751,7 @@ The checks below cannot be expressed as field constraints alone; they are implem
 
 - **Decision binding**: The question's stored fingerprint is recomputed from its actual fixed content (category, targets, evidence, sources, rules); a question whose fingerprint does not match its content is rejected. A decision must carry the recomputed fingerprint of the exact question revision it answers, so a decision made for an older version of the question cannot be applied.
 
-- **Patch validation**: A decision's result_patch must target one of the exact question targets (record, revision, item) that exists in the target record. Fields are resolved against the actual target item's model (a paper contribution or a roster entry): record-level fields cannot be reached through an item target. All changes of one patch are merged into a plain copy of the item and the final state is parsed once, so legal combined changes (e.g. excluding an entry and clearing its contribution) pass in any order while field and cross-field constraints still hold. The patched item's scientific references then run through the same checks as saved records — existence at the exact revision, record types, paper ownership, numeric fragment containment — so a patch cannot bypass the normal entry points. Applying patches and transactional recovery are later milestones.
+- **Patch validation**: A decision's result_patch must target one of the exact question targets (record, revision, item) that exists in the target record. Fields are resolved against the actual target item's model (a paper contribution or a roster entry): record-level fields cannot be reached through an item target. All changes of one patch are merged into a plain copy of the item and the final state is parsed once, so legal combined changes (e.g. excluding an entry and clearing its contribution) pass in any order while field and cross-field constraints still hold. The patched item's scientific references then run through the same checks as saved records — existence at the exact revision, record types, paper ownership, numeric fragment containment — so a patch cannot bypass the normal entry points. Patch application is provided by records.patches; transactional saving and recovery are responsibilities of the workspace and runtime interfaces.
 
 - **Revision history**: Records of the same record_id must have strictly increasing unique revisions; existing revisions are never overwritten in place.
 
@@ -760,12 +763,12 @@ The checks below cannot be expressed as field constraints alone; they are implem
 
 Step submissions contain only the scientific fields of that step. The application supplies fixed paper and source context, object identifiers, record identifiers, references, revisions and all execution metadata; none of these are model-filled. The common instruction text sent with every step is:
 
-> Return the scientific fields requested for this step. Preserve the paper's printed identifiers, values, units, conditions and evidence. Use only the supplied paper and source references. Provide every required list explicitly; an empty list does not establish that the paper reported nothing. For each object, explicitly declare common coverage for all requested quantities and provide a complete replacement entry for each exception. Missing coverage is invalid. Keep material gaps, unresolved scientific questions and the authors' assessment distinct. Include optional numeric fields when applicable; never omit a reported component or invent a missing one. Give evidence inline, grouping numeric components supported by the same source location. Report conflicting printings together with their full values, evidence and the reason they remain unresolved. Give other questions inline with their affected targets. Use application-supplied object identifiers. The application creates record identifiers, references and execution metadata; it does not supply scientific judgments or expert decisions.
+> Return only the scientific fields requested for this step. Write new summaries, questions and precedent notes in English; preserve the paper's printed identifiers, values, units, conditions and excerpts in their original form. Use only the supplied paper materials and fixed references. Provide every required list explicitly; an empty list does not establish that the paper reported nothing. Keep material gaps, unresolved scientific questions and the authors' assessment distinct. Supply the evidence required by this step; never invent missing content or silently resolve conflicting results. Use application-supplied identifiers where provided. The application creates persistent record identifiers, references and execution metadata; it does not supply scientific judgments or expert decisions.
 
 Numeric filling rules:
 
-- Always provided by the extractor: `value`, `error`, `lower_error`, `upper_error`, `unit`, `range_lower`, `range_upper`, `lower_inclusive`, `upper_inclusive`, `interval_kind`, `coverage`, `lower_quantile`, `upper_quantile`, `frame`, `epoch`, `coordinate_format`, `representation`, `purpose`, `source_note`, `author_usage`.
-- Omittable when not applicable: `limit_kind`, `error_components`, `condition`, `source`, `evidence`. The application fills omitted fields with `null` (or an empty list for `error_components`); this only marks the field as not provided and implies no scientific conclusion.
+- Always provided by the extractor: `limit_kind`, `condition`, `source`, `evidence`.
+- Omittable when not applicable: `value`, `error`, `lower_error`, `upper_error`, `unit`, `range_lower`, `range_upper`, `lower_inclusive`, `upper_inclusive`, `interval_kind`, `coverage`, `lower_quantile`, `upper_quantile`, `error_components`, `frame`, `epoch`, `coordinate_format`, `representation`, `purpose`, `source_note`, `author_usage`. The application fills omitted fields with `null` (or an empty list for `error_components`); this only marks the field as not provided and implies no scientific conclusion.
 - Reported single-sided errors, zeros, negative values, percentages and statistical interpretations must be preserved; a pure interval carries endpoints and an `interval_kind` but never a computed central value.
 - Evidence is given inline as `{source, parts, context}`. The application validates each locator and excerpt, creates evidence records, assigns identifiers, and merges only evidence that is identical under the same fixed source version. Extractors never maintain evidence keys or persistent identifiers.
 - Coverage is declared once per object as `{scope: all_requested, common, exceptions}` and expanded deterministically to one entry per requested quantity. Missing declarations, unknown or duplicate exceptions, unknown files, gaps or questions, and complete declarations that contradict known material gaps are rejected. Gaps whose impact scope is unknown block complete declarations for every quantity.
