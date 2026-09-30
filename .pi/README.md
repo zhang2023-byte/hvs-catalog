@@ -55,13 +55,13 @@ Pi 瞬时错误最多重试 2 次，provider 层为 0；工作流不再叠加自
 
 配置或包变化后先运行 `PI_OFFLINE=1 node .pi/check.mjs`；在当前聊天激活插件，再用 `subagent({action:"list", agentScope:"project", capabilities:true})` 确认可执行角色和模型。型号覆盖必须先查询 registry。能力发现不是模型已成功调用的证据。
 
-新任务在 `.work/pi-delivery/<taskId>/contract.md` 固定说明；taskId 只用字母、数字、连字符或下划线。创建或随首次 workflow 建立一个原生 mission，关联该说明，不启用 goal。同一任务串行交接，progress 仅保留状态、missionId 和恢复入口。
+新任务在 `.work/<taskId>/contract.md` 固定说明；taskId 只用字母、数字、连字符或下划线，不复用已结束子空间。创建或随首次 workflow 建立一个原生 mission，关联该说明，不启用 goal。同一任务串行交接，progress 仅保留状态、missionId 和恢复入口。结束后按 [共用归档规则](../CONTRIBUTING.md#收尾检查与工作材料归档) 整体移动子空间；先核对终态并停用残留通知，历史 mission／会话／回执不改写，以归档索引映射旧路径。追溯归档不授权重新执行旧任务。
 
 原生 `state` 的 `delivery` 只记必要事实：任务说明、当前批次与审核轮次、阶段、各角色最新 runId／报告路径，以及未决启动的 key／resumeId／错误。启动前保存未决项，成功收取后清除；保存失败不启动。已有记录或未决启动先核对，不重新初始化。旧任务的历史 cycle/round 保留，不因规则变更重置预算。
 
 ### 2. 启动、结果与故障
 
-获准的多步骤工作使用**一个外层 `async:true` workflow**，子项由 `await runs.run(...)` 串行等待，不对子项设置仅返启动回执的 `async:true`。初次实现和初审显式 `context:"fresh"`；续接使用精确旧 runId。输出通过子调用的 `output` 绑定到 `.work` 下绝对路径，不要求只读审核者写文件。
+获准的多步骤工作使用**一个外层 `async:true` workflow**，子项由 `await runs.run(...)` 串行等待，不对子项设置仅返启动回执的 `async:true`。初次实现和初审显式 `context:"fresh"`；续接使用精确旧 runId。输出通过子调用的 `output` 绑定到本任务子空间下绝对路径，不写入 `archive/`，不要求只读审核者写文件。
 
 审核调用不传 `outputSchema` 或 acceptance 覆盖。审核者输出完整原始 JSON，再附单独的原生 `acceptance-report`；运行时保存报告及回执。主会话从实际 `outputReference` 读取整份报告，以 `node .pi/check.mjs --review /绝对路径/review.json` 校验；不能解析可能附带路径提示的展示文本来猜 verdict。
 
@@ -101,6 +101,6 @@ checked 只是实现交付凭据，不是技术通过；attested 只是审核回
 
 运行 `PI_OFFLINE=1 node .pi/check.mjs`、`PI_OFFLINE=1 node --test .pi/check.test.mjs` 和 `git diff --check`。能力检查在父 Pi 环境运行，不清除子代理安全环境变量；子代理可以运行测试并阅读父会话的检查报告。
 
-自检覆盖资源、公开 list/get/children.list/validate、模型／工具／验收配置和 compaction/retry，不启动模型。`--output .work/路径/offline.json` 保存版本、输入哈希和证据；失败撤销旧通过结果。使用证据前核对输入与版本，不能把陈旧报告当成当前结果。特殊 SDK 布局用 `HVS_PI_PACKAGE_ROOT`，不写全局环境。
+自检覆盖资源、公开 list/get/children.list/validate、模型／工具／验收配置和 compaction/retry，不启动模型。`--output .work/<taskId>/offline.json` 在当前任务子空间保存版本、输入哈希和证据；失败撤销旧通过结果。使用证据前核对输入与版本，不能把陈旧报告当成当前结果。特殊 SDK 布局用 `HVS_PI_PACKAGE_ROOT`，不写全局环境。
 
 静态检查不代替真实调用。配置变更后的新角色用 fresh 调用核实；既有 resume 保留旧契约。合成测试限获准范围，不触碰业务数据／Gold，不为测额度耗尽制造费用。仅报告实际覆盖的启动、完成、续接、故障与重启场景；未测项保持未验证。历史 `.work/archive/check-pi-config.mjs` 不是当前入口。
