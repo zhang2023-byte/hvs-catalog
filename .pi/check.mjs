@@ -66,6 +66,27 @@ export function validateCompaction(effective, configured, model) {
   return { ...effective, contextWindow: model.contextWindow, threshold };
 }
 
+// Required collaboration packages plus the operator's optional notification package.
+export function validateExtensions(extensions) {
+  const names = extensions.map(extension => {
+    // Skip module-only manifests (e.g. {"type":"module"}) to find package identity.
+    let dir = path.dirname(extension.path);
+    while (dir !== path.dirname(dir)) {
+      const manifest = path.join(dir, 'package.json');
+      if (fs.existsSync(manifest)) {
+        const name = json(manifest).name;
+        if (typeof name === 'string' && name) return name;
+      }
+      dir = path.dirname(dir);
+    }
+    throw new Error(`Cannot identify loaded extension: ${extension.path}`);
+  });
+  const notify = '@bacnh85/pi-notify';
+  assert.deepEqual(sorted(names.filter(name => name !== notify)), ['pi-subagents', 'pi-web-access']);
+  assert(names.filter(name => name === notify).length <= 1, 'Notification extension loaded more than once');
+  return names;
+}
+
 export async function checkProject() {
   assert(!process.env.PI_SUBAGENT_CHILD, 'Run the public-tool integration check in the parent Pi environment, not inside a restricted child. Do not strip child-safety variables; children may run check.test.mjs and review the saved parent check report.');
   const host = await openPi(root);
@@ -104,17 +125,7 @@ export async function checkProject() {
     assert.deepEqual(sorted(settings.subagents.modelScope.allow), sorted(childModels));
     const listing = await host.call('subagent', { action: 'list', agentScope: 'project', capabilities: true });
     validateCapabilities(listing.details?.agentCapabilities, profiles);
-    const extensionNames = host.loader.getExtensions().extensions.map(e => {
-      // Manifest identity, not index.ts/index.js or private source layout.
-      let dir = path.dirname(e.path);
-      while (dir !== path.dirname(dir)) {
-        const manifest = path.join(dir, 'package.json');
-        if (fs.existsSync(manifest)) return json(manifest).name;
-        dir = path.dirname(dir);
-      }
-      throw new Error(`Cannot identify loaded extension: ${e.path}`);
-    });
-    assert.deepEqual(sorted(extensionNames), ['pi-subagents', 'pi-web-access']);
+    const extensionNames = validateExtensions(host.loader.getExtensions().extensions);
     assert.deepEqual(host.loader.getSkills().skills.map(s => s.name), []);
     assert.deepEqual(host.loader.getPrompts().prompts.map(p => p.name), ['hvs-work']);
     for (const key of ['defaultProvider', 'defaultModel', 'defaultThinkingLevel', 'enabledModels']) {

@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { loadPi } from './pi-host.mjs';
-import { validateReview, validateCapabilities, validateCompaction } from './check.mjs';
+import { validateReview, validateCapabilities, validateCompaction, validateExtensions } from './check.mjs';
 const { value, sdk } = await loadPi();
 const schema = JSON.parse(fs.readFileSync(new URL('./review.schema.json', import.meta.url), 'utf8'));
 const good = { verdict:'pass', summary:'Synthetic format specimen', findings:[], validation:'Synthetic only: command evidence is checked separately', risks:[] };
@@ -88,6 +89,28 @@ test('compaction check rejects model metadata drift and unintended overrides', (
   const effective = {enabled:true, reserveTokens:700000, keepRecentTokens:20000};
   assert.throws(() => validateCompaction(effective, compactionConfig, model), /registry changed/);
   assert.throws(() => validateCompaction({...effective, reserveTokens:32768}, compactionConfig, {...model, contextWindow:1000000}), /Unexpected effective/);
+});
+test('loaded extensions require collaboration packages and allow only optional pi-notify', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pi-extension-check-'));
+  const extension = name => {
+    const base = path.join(dir, name);
+    fs.mkdirSync(path.join(base, 'extensions'), {recursive:true});
+    fs.writeFileSync(path.join(base, 'package.json'), JSON.stringify({name}));
+    // The closest manifest is not necessarily the package identity.
+    fs.writeFileSync(path.join(base, 'extensions/package.json'), JSON.stringify({type:'module'}));
+    return {path:path.join(base, 'extensions/index.js')};
+  };
+  try {
+    const required = ['pi-subagents', 'pi-web-access'].map(extension);
+    const notify = extension('@bacnh85/pi-notify');
+    assert.deepEqual(validateExtensions(required), ['pi-subagents', 'pi-web-access']);
+    assert.deepEqual(validateExtensions([notify, ...required]), ['@bacnh85/pi-notify', 'pi-subagents', 'pi-web-access']);
+    for (const loaded of [[], [notify], [required[0], notify], [...required, required[0]], [...required, extension('unexpected')]]) {
+      assert.throws(() => validateExtensions(loaded));
+    }
+    assert.throws(() => validateExtensions([...required, notify, notify]), /loaded more than once/);
+    assert.throws(() => validateExtensions([...required, {path:path.join(dir, 'unnamed/index.js')}]), /Cannot identify loaded extension/);
+  } finally { fs.rmSync(dir, {recursive:true,force:true}); }
 });
 test('failed check replaces stale success and respects child restriction', () => {
   const root = fileURLToPath(new URL('../', import.meta.url));
