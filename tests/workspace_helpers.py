@@ -1,4 +1,4 @@
-"""工作空间测试辅助：发布合成夹具材料并绑定来源与外部响应路径。"""
+"""Workspace helpers publish synthetic fixtures and bind source/external-response paths."""
 
 from __future__ import annotations
 
@@ -8,9 +8,10 @@ from hvs_catalog.workspace import Workspace
 
 
 def publish_fixture_collection(space: Workspace, records: list) -> list:
-    """把夹具记录集合的材料发布到 sources/ 下并改写路径，返回可提交记录。
+    """Publish fixture materials under sources/, rewrite paths, and return committable
+    records.
 
-    覆盖来源包文件与外部资料原始响应两类材料引用。
+    Cover both source-package files and raw external-data responses.
     """
     from hvs_catalog.records.objects import ExternalRecord
 

@@ -1,8 +1,8 @@
-"""Gold 数值文本的共用校验：与旧仓相同的原文表达规则，逐字保留。
+"""Shared Gold numeric-text validation preserving original expressions under legacy rules.
 
-不换算、不补数字；只判断字符串是否是允许的原文数值形式（普通数字或
-六十进制坐标），以及概率取值是否在声明的比例尺内。旧格式接受的
-Unicode 正负号在此同样接受，判断结果不写回文档。
+Never convert or fill values. Check allowed ordinary/sexagesimal strings and
+probabilities within declared scales. Accept legacy Unicode signs too; do not write
+interpretations back.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ def normalize_number_text(text: str) -> str:
 
 
 def parse_plain_number(text: str) -> float | None:
-    """普通数字文本转为浮点；不是允许的形式时返回 None。"""
+    """Interpret ordinary numeric text as float, or return None for unsupported forms."""
     normalized = normalize_number_text(text)
     if not _PLAIN_NUMBER_RE.fullmatch(normalized):
         return None
@@ -32,7 +32,9 @@ def parse_plain_number(text: str) -> float | None:
 
 
 def parse_sexagesimal(text: str) -> float | None:
-    """六十进制坐标文本转为度数；无法解释时返回 None，不改写原文。"""
+    """Interpret sexagesimal coordinates as degrees, returning None if uninterpretable
+    without changing source text.
+    """
     normalized = normalize_number_text(text)
     if not normalized:
         return None
@@ -59,7 +61,9 @@ def parse_sexagesimal(text: str) -> float | None:
 
 
 def parse_probability(value: str, unit: str) -> float | None:
-    """概率文本按其比例尺（fraction 0–1 或 % 0–100）解释；无法解释返回 None。"""
+    """Interpret probabilities using fraction 0-1 or percent 0-100 scales; return None if
+    uninterpretable.
+    """
     number = parse_plain_number(value)
     if number is None:
         return None

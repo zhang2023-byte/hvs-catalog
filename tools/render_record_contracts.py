@@ -1,7 +1,7 @@
-"""从共同数据定义生成格式说明、JSON Schema 与填写模板；--check 仅检查，不修改文件。
+"""Generate documentation, schemas, and templates from shared definitions; --check reads
+only.
 
-同时渲染记录契约（``hvs_catalog.records``）与 Gold 格式契约
-（``hvs_catalog.evaluation``，输出在 ``gold/`` 子树）。
+Render records contracts and evaluation Gold contracts under the gold/ subtree together.
 """
 
 from __future__ import annotations

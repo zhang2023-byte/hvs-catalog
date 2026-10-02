@@ -1,8 +1,10 @@
-"""评分固定手算样例：全部材料虚构（SYN-* 对象、synthetic-* 论文）。
+"""Frozen scoring examples with manually calculated expectations and fictional SYN-*
+objects and synthetic-* papers.
 
-每个样例冻结 plan/Gold/预测输入；预期结果在 ``expected/expected.json``
-中手工维护（来自开工规格的手算数字），不得由评分程序反算生成。
-``render_fixtures.py`` 用本模块确定性重生成 ``inputs/`` 下的 JSON。
+Each example freezes plan, Gold, and prediction inputs. Maintain
+``expected/expected.json`` manually from the specified calculations; never derive it by
+running the scorer. ``render_fixtures.py`` deterministically regenerates JSON under
+``inputs/``.
 """
 
 from __future__ import annotations
@@ -46,9 +48,9 @@ HELI = "heliocentric"
 
 DEFAULT_AUX = protocol_only_config()
 
-#: 冻结输入文件名按样例职责命名（键为 ``sample_id``，与内容一一对应）。
-#: 生成器据此写出 ``inputs/`` 下的文件；阅读时以文件内 ``sample_id``
-#: 为准，不依赖文件名解析样例编号。
+#: Frozen input filenames describe each example; keys are sample_id values matching their contents.
+#: The generator writes inputs/ using this mapping. Read sample_id from each file;
+#: do not infer example identifiers from filenames.
 SAMPLE_FILES = {
     "synthetic-s01": "s01-partially-correct-extra-missed.json",
     "synthetic-s02": "s02-empty-predictions.json",
@@ -840,8 +842,10 @@ def _s07_u1e_bundle() -> SampleBundle:
 def _s07_u1_error_variant(
     sample_id: str, description: str, pred_supports: list[str], gold_supports: list[str]
 ) -> SampleBundle:
-    """U1 的 error 字段变体：pred 侧 error 为未知宏，片段声明决定证据
-    是否与当前待判字段（error）相关；value 片段不能支持 error 判定。"""
+    """U1 error-field variant: the prediction error uses an unknown macro. Fragment
+    declarations determine whether evidence concerns the current error field; value
+    fragments cannot support an error judgment.
+    """
     key = sample_id
     common = {"unit": "kpc", "condition": STD, "representation": HELI}
     materials_fp = _fp("synthetic-materials")

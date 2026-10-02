@@ -1,4 +1,6 @@
-"""从共同定义生成数据格式说明、JSON Schema 与英文步骤填写模板。"""
+"""Generate format documentation, JSON schemas, and English templates from shared
+definitions.
+"""
 
 from __future__ import annotations
 
@@ -949,15 +951,15 @@ def write_outputs(root: Path) -> dict[str, str]:
     return outputs
 
 
-#: 由其他定义独立维护并检查的子树（evaluation 的 Gold 格式），不当作本模块的多余文件。
+#: Independently maintained Gold subtrees are not unexpected outputs of this generator.
 _FOREIGN_SUBTREES = frozenset({"gold"})
 
 
 def check_outputs(root: Path) -> list[str]:
-    """返回与生成结果不一致的文件列表；空列表表示同步。
+    """Return files differing from generated results; empty means synchronized.
 
-    ``gold/`` 子树由 ``hvs_catalog.evaluation.generate`` 独立维护并另行
-    检查，此处不当作多余文件。
+    hvs_catalog.evaluation.generate maintains/checks gold/ separately, so it is never
+    unexpected here.
     """
     expected = build_outputs()
     problems: list[str] = []

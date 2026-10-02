@@ -1,8 +1,10 @@
-"""共享提取入口：配置冻结、恢复与两组隔离（C05）。
+"""Shared extraction entry point: frozen configuration, recovery, and group isolation
+(C05).
 
-方法/模型/开关在建立执行时进入固定输入快照并参与执行摘要；同请求
-键换输入被拒绝，改变配置须用新请求键建立新执行。恢复只读取执行内
-保存的快照；归档响应在中断窗口后可复用，不重复调用服务。
+Freeze method/model/review switches and include them in execution digests. Reject
+changed input under one request key; new configuration requires a new key/execution.
+Recovery reads only saved snapshots and reuses archived responses after interruption
+without duplicate calls.
 """
 
 from __future__ import annotations
@@ -101,7 +103,9 @@ def test_same_request_same_input_reuses_execution(space):
 
 
 def test_resume_signature_has_no_request_channel(space):
-    """恢复入口不接收新请求内容：配置不可在原运行中改变。"""
+    """Recovery accepts no new request content; configuration cannot change within the
+    original run.
+    """
     parameters = inspect.signature(resume_extraction).parameters
     assert set(parameters) == {"space", "execution_id", "service", "registry"}
     assert "request" not in parameters
@@ -110,7 +114,7 @@ def test_resume_signature_has_no_request_channel(space):
 
 
 def test_resume_uses_frozen_snapshot_config(space, service):
-    """暂停后恢复沿用保存的配置；状态查询回显同一冻结配置。"""
+    """Paused recovery uses saved configuration, and status echoes the same freeze."""
     source = import_mock_source(space, PAPER_A)
     handle = start_extraction(
         space,
@@ -143,13 +147,15 @@ def test_resume_uses_frozen_snapshot_config(space, service):
     assert second.config == first.config
     status = get_extraction(space, handle.execution_id)
     assert status["config"] == first.config
-    # 数值步骤确实用了冻结的逐步模型
+    # The value step actually used the frozen step-specific model.
     used = {call["step"]: call["model"] for call in service.calls}
     assert used["quantities"] == "mock-quantities"
 
 
 def test_archived_response_reused_after_interrupted_commit(space):
-    """归档后、提交前中断：恢复复用归档响应，不重复调用服务。"""
+    """After interruption between archiving and commit, reuse the response without calling
+    again.
+    """
     from hvs_catalog.runtime import resume_execution
 
     source = import_mock_source(space, PAPER_B)
@@ -169,7 +175,7 @@ def test_archived_response_reused_after_interrupted_commit(space):
         service=PipelineMockService(),
     )
     assert failed.outcome == "failed"
-    # 恢复：新服务实例看不到旧调用日志；归档响应避免重复调用
+    # A fresh recovery service lacks old call logs; archived responses avoid repeated calls.
     fresh_service = PipelineMockService()
     report = resume_extraction(space, handle.execution_id, service=fresh_service)
     assert report.outcome == "finished"
@@ -181,11 +187,15 @@ def test_archived_response_reused_after_interrupted_commit(space):
         for step in status["steps"]
         if step["step_id"] == "direct_roster"
     )
-    assert roster_attempts == 1  # 只有一次真实调用，归档复用没有第二次
+    assert (
+        roster_attempts == 1
+    )  # One actual call occurred; archive reuse makes no second call.
 
 
 def test_registry_without_method_refuses_resume(space, service):
-    """方法未登记（如代码回退）时拒绝推进，不旁挂旧流程。"""
+    """Reject advancement when the method is unregistered, for example after code rollback;
+    do not attach a legacy flow.
+    """
     source = import_mock_source(space, PAPER_B)
     handle = start_extraction(space, request=_request(source), request_key="no-reg")
     empty = PipelineRegistry()
@@ -194,7 +204,7 @@ def test_registry_without_method_refuses_resume(space, service):
 
 
 def test_two_groups_outputs_and_decisions_isolated(space, service):
-    """两组执行输出与决定互不混用；同空间重跑用新请求键。"""
+    """Never mix group outputs/decisions; reruns in one workspace use new request keys."""
     source = import_mock_source(space, PAPER_A)
     expert = start_extraction(space, request=_request(source), request_key="g1")
     resume_extraction(space, expert.execution_id, service=service)

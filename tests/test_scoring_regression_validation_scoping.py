@@ -1,10 +1,11 @@
-"""评分回归：输入校验、冻结状态与范围统计的独立构造反例（合成材料）。
+"""Synthetic scoring regressions for validation, frozen state, and scoped statistics.
 
-覆盖：内容键不同不得绕过按域三态、跨归属未知关系保留并参与匹配
-界、材料不足不因注入适配器而变确定、证据片段绑定待判字段、冻结
-请求绑定完整计划且缓存上下文不可单侧篡改、写冲突后内存不得复用
-被拒判定、证据统计与 scoped L1/L2 同范围。
-全部走完整 score_batch 入口或真实内部入口，不用辅助捷径掩盖分支。
+Different content keys cannot bypass domain-specific three-state comparisons. Retain
+cross-attribution unknowns in matching bounds; injected adapters cannot resolve
+insufficient evidence. Bind fragments to compared fields and frozen requests to complete
+plans; reject unilateral context tampering. Rejected concurrent judgments cannot enter
+memory caches. Evidence and scoped L1/L2 share scope. Exercise full score_batch or real
+internal entry points without shortcuts hiding branches.
 """
 
 import hashlib
@@ -61,7 +62,7 @@ def _l2_rows(paper):
 
 
 # ---------------------------------------------------------------------------
-# 内容键不同不能证明科学不同，必须走按域三态
+# Different content keys cannot prove scientific difference; apply domain-specific three-state comparison.
 # ---------------------------------------------------------------------------
 
 
@@ -74,7 +75,7 @@ def test_unsupported_number_without_macro_is_unknown_not_mismatch():
     paper = report.papers[0]
     assert compare_number("about eight", "eight") == "undecidable"
     assert paper.l2.correct == 0
-    assert paper.l2.precision is None  # 不能最终判 0
+    assert paper.l2.precision is None  # Cannot assign a final zero.
     assert report.batch_provisional is True
     assert any(
         row.status == "unresolved_value" and row.fields == ["value"]
@@ -100,7 +101,9 @@ def test_unsupported_unit_syntax_is_unknown_not_mismatch():
 
 
 def test_supported_differences_remain_determined():
-    """已支持的确定差异仍最终判不同：修复不能把确定差异也变未知。"""
+    """Supported definite differences remain final differences; fixes must not turn them
+    unknown.
+    """
     plan, gold, preds = _bundle(
         [("g1", STD, {"value": "8.2", "error": "0.3", "unit": "kpc"}, [])],
         [("p1", STD, {"value": "8200", "error": "0.3", "unit": "pc"}, [])],
@@ -117,15 +120,16 @@ def test_supported_differences_remain_determined():
 
 
 # ---------------------------------------------------------------------------
-# 跨归属未知关系保留，参与整体最大匹配界
+# Retain cross-attribution unknown relations in overall maximum-matching bounds.
 # ---------------------------------------------------------------------------
 
 
 def test_cross_condition_unknown_candidate_blocks_final_zero():
-    """跨归属未知关系：G1(M1,8)、G2(未支持改写条件,10)、P(M1,10)。
+    """Cross-attribution unknown: G1(M1,8), G2(unsupported condition paraphrase,10),
+    P(M1,10).
 
-    P→G2 归属未知是可能边；对应 G2 时 C 可能为 1，不能最终判 0。
-    数值相同（10=10）不是条件等价证据。
+    P to G2 is a possible attribution edge that may yield C=1, preventing final zero.
+    Equal numeric values (10=10) are not evidence of equivalent conditions.
     """
     plan, gold, preds = _bundle(
         [
@@ -144,7 +148,7 @@ def test_cross_condition_unknown_candidate_blocks_final_zero():
 
 
 def test_cross_condition_reordering_keeps_counts_and_provisional():
-    """重排 Gold/预测列表不改变 C/P/G 与未决状态。"""
+    """Reordering Gold/prediction lists leaves C/P/G and unresolved status unchanged."""
     gold_specs = [
         ("g1", M1, {"value": "8", "unit": "kpc"}, []),
         ("g2", M1_REWRITE, {"value": "10", "unit": "kpc"}, []),
@@ -163,7 +167,9 @@ def test_cross_condition_reordering_keeps_counts_and_provisional():
 
 
 def test_multiple_condition_groups_attribution_correspondence_uncertain():
-    """C 已达上界但归属未知边可能改变对应关系时仍保持未决。"""
+    """Even at maximum C, unknown attribution edges that may change correspondence remain
+    unresolved.
+    """
     plan, gold, preds = _bundle(
         [
             ("g1", M1, {"value": "8", "unit": "kpc"}, []),
@@ -179,7 +185,7 @@ def test_multiple_condition_groups_attribution_correspondence_uncertain():
     report = _score(plan, gold, preds)
     paper = report.papers[0]
     assert (paper.l2.correct, paper.l2.predicted, paper.l2.gold) == (3, 3, 3)
-    assert paper.l2.precision is None  # 对应关系不确定，不能给最终率
+    assert paper.l2.precision is None  # Uncertain correspondence prevents final rates.
     assert report.batch_provisional is True
     assert (
         sum(1 for row in _l2_rows(paper) if row.status == "unresolved_attribution") >= 1
@@ -187,7 +193,9 @@ def test_multiple_condition_groups_attribution_correspondence_uncertain():
 
 
 def test_agent_can_resolve_unknown_attribution_both_directions():
-    """归属未知可经 Agent 确认：different 禁边、equivalent 允许比较内容。"""
+    """Agent attribution verdicts can resolve unknowns: different forbids edges; equivalent
+    permits content comparison.
+    """
     gold_fragments = [
         _fragment("gold-cond", "under Galactic potential M1", ["condition"])
     ]
@@ -216,7 +224,9 @@ def test_agent_can_resolve_unknown_attribution_both_directions():
     assert len(rejected.calls) == 1
     paper = first.papers[0]
     assert (paper.l2.correct, paper.l2.predicted, paper.l2.gold) == (0, 1, 2)
-    assert paper.l2.precision == 0.0  # 条件被拒后仅剩 g1（值不同），确定 0
+    assert (
+        paper.l2.precision == 0.0
+    )  # Rejected conditions leave only g1 with a different value, giving definite zero.
     assert first.batch_provisional is False
     accepted = MockAgentAdapter(
         lambda request: AgentResponse(
@@ -229,12 +239,16 @@ def test_agent_can_resolve_unknown_attribution_both_directions():
     assert len(accepted.calls) == 1
     other = second.papers[0]
     assert (other.l2.correct, other.l2.predicted, other.l2.gold) == (1, 1, 2)
-    assert other.l2.precision == 1.0  # 对应 g2 时内容相等，确定 1
+    assert (
+        other.l2.precision == 1.0
+    )  # Matching g2 gives equivalent content and definite one.
     assert second.batch_provisional is False
 
 
 def test_b8_style_swap_stays_determined_zero():
-    """B8 交换：归属全部确定、内容全部确定不同，最终 C=0 不变。"""
+    """B8 swap: all attributions and content differences are definite, so final C remains
+    zero.
+    """
     plan, gold, preds = _bundle(
         [
             ("g1", M1, {"value": "8", "unit": "kpc"}, []),
@@ -254,7 +268,7 @@ def test_b8_style_swap_stays_determined_zero():
 
 
 # ---------------------------------------------------------------------------
-# 材料不足不因注入适配器而变确定（有/无 mock 不变量）
+# Insufficient material remains unknown regardless of mock injection.
 # ---------------------------------------------------------------------------
 
 
@@ -296,7 +310,7 @@ def test_u2_with_unused_mock_matches_no_mock_result():
 
 
 def test_insufficient_condition_evidence_reports_no_adapter_call():
-    """无片段的条件未知：insufficient_evidence 保持未决且不调用。"""
+    """Unknown conditions without fragments remain insufficient_evidence and make no calls."""
     plan, gold, preds = _bundle(
         [("g1", M1, {"value": "8", "unit": "kpc"}, [])],
         [("p1", M1_REWRITE, {"value": "8", "unit": "kpc"}, [])],
@@ -315,12 +329,14 @@ def test_insufficient_condition_evidence_reports_no_adapter_call():
 
 
 # ---------------------------------------------------------------------------
-# 证据片段绑定待判字段
+# Bind evidence fragments to the field being judged.
 # ---------------------------------------------------------------------------
 
 
 def test_value_fragments_cannot_support_error_judgment():
-    """字段证据不匹配：value 片段 + error 未知宏 → 不得调用，保持未知。"""
+    """Value-only fragments cannot support an unknown error macro: make no call and retain
+    uncertainty.
+    """
     gold_fragments = [_fragment("table-1", "The distance is 8.2 kpc.", ["value"])]
     pred_fragments = [
         _fragment("macro-def", "\\newcommand{\\mystery}[1]{#1}", ["value"])
@@ -361,7 +377,7 @@ def test_value_fragments_cannot_support_error_judgment():
 
 
 def test_error_field_fragments_allow_mock_resolution():
-    """error 字段证据充足（u1es 固定样例）：mock 可判定并给出最终率。"""
+    """Sufficient error evidence in u1es permits a mock judgment and final rates."""
     plan, gold, preds, _auxiliary = load_bundle("synthetic-s07u1es")
     mock = MockAgentAdapter(
         lambda request: AgentResponse(
@@ -383,7 +399,9 @@ def test_error_field_fragments_allow_mock_resolution():
 
 
 def test_error_field_insufficient_frozen_sample_stays_unknown():
-    """error 证据不足（u1ei 固定样例）：有 mock 也不调用、保持未知。"""
+    """Insufficient error evidence in u1ei makes no call even with a mock and stays
+    unknown.
+    """
     plan, gold, preds, _auxiliary = load_bundle("synthetic-s07u1ei")
     mock = MockAgentAdapter(
         lambda request: AgentResponse(
@@ -404,7 +422,9 @@ def test_error_field_insufficient_frozen_sample_stays_unknown():
 
 
 def test_fragment_support_declaration_semantics():
-    """片段支持声明：前缀覆盖子字段，声明域受限，value 不覆盖 error。"""
+    """Evidence support prefixes cover subfields within restricted declared domains; value
+    never covers error.
+    """
     component = _fragment("comp", "sys err text", ["error_components"])
     assert component.supports("error_components")
     assert component.supports("error_components.sys.err")
@@ -429,7 +449,7 @@ def test_fragment_support_declaration_semantics():
 
 
 # ---------------------------------------------------------------------------
-# 冻结请求绑定完整计划；缓存上下文不可单侧篡改
+# Bind frozen requests to complete plans; reject unilateral cache-context tampering.
 # ---------------------------------------------------------------------------
 
 
@@ -454,7 +474,7 @@ def test_scope_change_invalidates_frozen_entry(tmp_path: Path):
     assert (
         len(first.auxiliary.judgments) == 1 and not first.auxiliary.judgments[0].reused
     )
-    # 同输入重复评分：复用冻结，不再次调用
+    # Repeated identical scoring reuses frozen judgments without another call.
     second_adapter = _u1es_adapter()
     second = score_batch(
         plan,
@@ -465,7 +485,7 @@ def test_scope_change_invalidates_frozen_entry(tmp_path: Path):
     )
     assert second_adapter.calls == []
     assert second.auxiliary.judgments[0].reused is True
-    # 仅扩展评价范围：计划摘要变化，旧 key 不可复用
+    # Expanding evaluation scope changes the plan digest and prevents old-key reuse.
     widened = plan.model_copy(
         update={
             "scopes": [
@@ -523,7 +543,9 @@ def test_tampered_cache_context_digests_rejected(tmp_path: Path):
     )
     entry_path = next(store_directory.glob("*.json"))
     data = json.loads(entry_path.read_text("utf-8"))
-    data["context_digests"]["gold"] = "0" * 64  # 与 request 内摘要不一致
+    data["context_digests"]["gold"] = (
+        "0" * 64
+    )  # Inconsistent with the digest inside the request.
     entry_path.write_text(json.dumps(data), encoding="utf-8")
     adapter = _u1es_adapter()
     try:
@@ -559,7 +581,7 @@ def test_frozen_request_carries_plan_digest(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# 写冲突后不得在同实例缓存被拒判定
+# Rejected write-conflict judgments cannot remain in the instance cache.
 # ---------------------------------------------------------------------------
 
 
@@ -611,7 +633,7 @@ def test_rejected_conflict_not_reused_by_same_instance(tmp_path: Path):
         recorded_at="2026-01-01T00:00:00",
     )
     store.record(winner)
-    # 模拟竞态：本实例首次 lookup 未命中（另一写入者随后持久保存）
+    # Simulate a lookup miss before another writer persists the winning judgment.
     racy = FrozenDecisionStore(tmp_path / "frozen")
     real_lookup = racy.lookup
     state = {"missed": False}
@@ -636,7 +658,7 @@ def test_rejected_conflict_not_reused_by_same_instance(tmp_path: Path):
     )
     with pytest.raises(FrozenStoreError):
         adjudicator.adjudicate(request)
-    # 同实例再次调用：必须读取冻结赢家，不得返回被拒的 different
+    # A second call must read the frozen winner, never return the rejected different verdict.
     after = adjudicator.adjudicate(request)
     assert after.verdict == "equivalent" and after.rationale == "other writer"
     assert adjudicator.uses[-1].reused is True
@@ -662,7 +684,7 @@ def test_concurrent_same_context_conflict_single_winner(tmp_path: Path):
             adjudicator.adjudicate(request)
             outcomes.append("ok")
         except FrozenStoreError:
-            # 同键异内容：败者被明确拒绝，绝不覆盖磁盘赢家
+            # Explicitly reject same-key/different-content losers without overwriting disk winners.
             outcomes.append("rejected")
 
     threads = [
@@ -674,15 +696,15 @@ def test_concurrent_same_context_conflict_single_winner(tmp_path: Path):
     for thread in threads:
         thread.join()
     entries = list((tmp_path / "frozen").glob("*.json"))
-    assert len(entries) == 1  # 磁盘恰一个完整条目，无双重发布
+    assert len(entries) == 1  # Exactly one complete disk entry; no double publication.
     stored = json.loads(entries[0].read_text("utf-8"))
     assert stored["verdict"] in {"equivalent", "different"}
     assert stored["context_digests"] == stored["request"]["context_digests"]
-    assert not list((tmp_path / "frozen").glob("*.tmp-*"))  # 无临时残留
+    assert not list((tmp_path / "frozen").glob("*.tmp-*"))  # No temporary remnants.
 
 
 # ---------------------------------------------------------------------------
-# 证据统计与 scoped L1/L2 同范围
+# Evidence statistics share the scoped L1/L2 range.
 # ---------------------------------------------------------------------------
 
 
@@ -692,7 +714,7 @@ def test_s09_evidence_stats_match_scoped_counts():
     paper = report.papers[0]
     assert paper.l2.predicted == 1
     verification = paper.evidence_verification
-    assert verification["values"] == 1  # 不含范围外对象 B / 范围外物理量
+    assert verification["values"] == 1  # Exclude out-of-scope object B and quantities.
     assert verification["out_of_scope"] == 2
     assert (
         sum(
@@ -704,7 +726,9 @@ def test_s09_evidence_stats_match_scoped_counts():
 
 
 def test_out_of_scope_dangling_evidence_not_mixed_into_scope():
-    """范围外对象的悬空证据引用不混入 scope 统计。"""
+    """Dangling evidence references on out-of-scope objects do not affect scoped
+    statistics.
+    """
     plan, gold, preds, auxiliary = load_bundle("synthetic-s09")
     dangling_value = build_measured_value(
         value_id="p3",
@@ -727,6 +751,6 @@ def test_out_of_scope_dangling_evidence_not_mixed_into_scope():
     paper = report.papers[0]
     verification = paper.evidence_verification
     assert verification["values"] == 1
-    assert verification["dangling"] == 0  # 悬空对象在范围外，不混入
+    assert verification["dangling"] == 0  # Exclude the out-of-scope dangling object.
     assert verification["out_of_scope"] == 2
-    assert paper.l2.predicted == 1  # scoped 计数不受影响
+    assert paper.l2.predicted == 1  # Scoped counts remain unchanged.

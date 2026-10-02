@@ -1,8 +1,11 @@
-"""串行获取：版本事实、当前指针与轮次进度；记录和附件是来源权威。
+"""Serial acquisition: version facts, current pointers, and round progress;
+records/attachments are authoritative.
 
-获取格式 v2 不迁移旧开发状态。写入口整操作持空间锁，网络等待不持
-数据库事务。关联记录和状态使用既有提交接口一起保存；不靠逐步回执
-补偿。外部响应与本地提交不是事务，提交前退出仍可能重复请求。
+Format v2 does not migrate old development state. Writers hold workspace locks for whole
+operations but never database transactions during network waits. Save associated
+records/state through existing atomic commit interfaces, without per-step compensation
+receipts. External responses and local commits are not one transaction; exits before
+commit may repeat requests.
 """
 
 from __future__ import annotations
@@ -68,15 +71,15 @@ ROUND_FAILED = "failed"
 
 
 class AcquisitionError(Exception):
-    """获取工程失败；保留已提交事实供查询和重试。"""
+    """Acquisition engineering failure; retain committed facts for queries/retries."""
 
 
 class SourceUnavailableError(AcquisitionError):
-    """服务端没有可用源码；不是科学排除。"""
+    """The server has no usable source; this is not scientific exclusion."""
 
 
 class PackageRejectionError(AcquisitionError):
-    """源码包未通过安全或完整性检查。"""
+    """The source package failed safety/integrity checks."""
 
 
 @dataclass(frozen=True)
@@ -104,7 +107,7 @@ class SelectionStatus:
     package_inventory: tuple[dict[str, Any], ...] = ()
     provenance_log: tuple[dict[str, Any], ...] = ()
     error: str | None = None
-    # 每个其他版本一项，不是逐次选择快照；由版本事实派生。
+    # One item per other version, derived from version facts rather than selection snapshots.
     history: tuple[dict[str, Any], ...] = ()
 
 
@@ -198,7 +201,7 @@ def discovery_round_id(request: ArxivSearchRequest, round_seq: int = 1) -> str:
 
 
 def _page_document(page: Any) -> bytes:
-    """协议入口的完整解析视图，不冒称原始 Atom 响应。"""
+    """Complete parsed protocol view without claiming it is a raw Atom response."""
     document = {
         "kind": "arxiv_discovery_page",
         "parsed_view": True,
@@ -238,7 +241,9 @@ def _page_document(page: Any) -> bytes:
 
 
 class AcquisitionService:
-    """已初始化工作空间的获取入口；状态查询不触网、不修复数据。"""
+    """Acquisition service for initialized workspaces; queries neither access networks nor
+    repair data.
+    """
 
     def __init__(
         self, space: Workspace, api: ArxivApiService | None = None, *, clock: Any = None
@@ -251,7 +256,7 @@ class AcquisitionService:
         store = self._space.store()
         raw = store.get_meta(_STATE_KEY)
         if raw is None:
-            # 旧格式明确拒绝，不静默重置，不扫描旧材料内容或迁移。
+            # Reject old formats explicitly without silent resets, legacy content scans, or migration.
             old = store.transaction_read(
                 lambda tx: tx.conn.execute(
                     "SELECT 1 FROM meta WHERE key LIKE 'acquisition:%' LIMIT 1"
@@ -284,7 +289,7 @@ class AcquisitionService:
     def _save(self, state: dict, records: list | None = None) -> None:
         updates = {_STATE_KEY: _dump(state)}
         if records:
-            # 通用记录保存的回执仅是提交凭据，不参与获取重放/协调。
+            # Shared-record receipts prove commits only; they do not coordinate/replay acquisition.
             self._space.store().commit(
                 CommitRequest(
                     operation_key=f"acq:records:{uuid.uuid4().hex}",
@@ -317,7 +322,9 @@ class AcquisitionService:
         )
 
     def get_version(self, identifier: str) -> SelectionStatus | None:
-        """回查具体版本（不改变当前选择），含材料与来源。"""
+        """Look up a specific version with materials/provenance without changing current
+        selection.
+        """
         ident = parse_arxiv_identifier(identifier)
         if ident.version is None:
             raise AcquisitionError("回查版本必须提供带版本号的 arXiv 标识")
@@ -558,8 +565,10 @@ class AcquisitionService:
                     self._save(state)
                 return result
             fact = self._select(state, ident, via)
-            self._save(state)  # 最新版在下载前固定；显式旧版切换不依赖来源重放。
-            # 已登记原包（提交前故障后重试）先复用，不再请求网络。
+            self._save(
+                state
+            )  # Freeze latest before download; explicit old-version selection does not rely on provenance replay.
+            # Reuse registered raw packages after pre-commit failure/retry instead of requesting again.
             attempt = self._download_record(fact)
             if attempt is None:
                 try:
@@ -580,7 +589,9 @@ class AcquisitionService:
                     ident, ref, download.fetched_at, download.final_url
                 )
                 fact["attempt_record"] = attempt.ref().model_dump(mode="json")
-                self._save(state, [attempt])  # 原包可备份；尚未宣称源码可用。
+                self._save(
+                    state, [attempt]
+                )  # Raw packages can be backed up; source usability is not yet claimed.
             raw = attempt.data.raw_response
             payload = self._space.read_file(raw)
             try:
@@ -731,7 +742,7 @@ class AcquisitionService:
             file = Path(path)
             if not file.is_file():
                 raise AcquisitionError(f"导入文件不存在或不是常规文件：{file}")
-            # 有界读取也覆盖读取期间增长的文件；调用者原文件不改动。
+            # Bounded reading covers growing files too; preserve the caller's original file.
             with file.open("rb") as stream:
                 payload = stream.read(MAX_PACKAGE_BYTES + 1)
             if len(payload) > MAX_PACKAGE_BYTES:
@@ -749,7 +760,9 @@ class AcquisitionService:
                     f"本地导入文件是不支持的归档形态：{exc}；未导入工作空间（无选择、尝试记录或备份引用），原文件未改动"
                 ) from exc
             self._reject_conflict(state, ident, payload)
-            self._declarations(ident.versioned_id)  # 已保存来源有缺口时不静默跳过。
+            self._declarations(
+                ident.versioned_id
+            )  # Never silently skip gaps in saved provenance.
             raw = self._publish_raw(payload)
             fact = self._select(state, ident, "local_import")
             record = self._source_record(fact)
@@ -809,7 +822,9 @@ class AcquisitionService:
                 error=None,
                 source_record=record.ref().model_dump(mode="json"),
             )
-            self._save(state, records)  # 材料、新声明与显式选择一起提交。
+            self._save(
+                state, records
+            )  # Commit materials, new declarations, and explicit selection together.
             return ImportResult(
                 ident.canonical_id,
                 version,
@@ -936,7 +951,9 @@ class AcquisitionService:
                     round_state.update(state=ROUND_INCOMPLETE, reason="anomalies")
                 elif max_pages is not None and pages_fetched >= max_pages:
                     round_state.update(state=ROUND_INCOMPLETE, reason="page_bound")
-                self._save(state, [record])  # 页记录、进度及真实终态一次提交。
+                self._save(
+                    state, [record]
+                )  # Commit page records, progress, and actual terminal state once.
                 if round_state["state"] != ROUND_IN_PROGRESS:
                     return self._round_status(round_state)
 
@@ -1032,5 +1049,7 @@ class AcquisitionService:
                         )
                     entries.append(entry)
                     state["revisions"][key] = entry.__dict__
-                self._save(state)  # 已完成批次可查询；后续批次失败不抹掉它。
+                self._save(
+                    state
+                )  # Completed batches remain queryable; later failures do not erase them.
             return RevisionCheckResult(checked_at, tuple(entries))

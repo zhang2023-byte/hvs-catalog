@@ -1,4 +1,4 @@
-"""论文来源包、材料缺口与原文证据的记录格式。"""
+"""Source-package, material-gap, and source-evidence formats."""
 
 from __future__ import annotations
 
@@ -99,11 +99,11 @@ class Gap(Config):
 
 
 def gap_affects(gap: Gap, *, item_id: str | None, quantity: str | None) -> bool:
-    """判断缺口按已声明的影响范围是否命中给定对象与物理量。
+    """Check declared gap impact for objects/quantities.
 
-    scope 为 unknown 时视为可能影响一切目标；known 时影响条目的 item_id 或
-    quantity 为空分别表示整个对象或所有对象的该物理量。指明收录/身份判断的
-    条目不影响物理量提取的完成情况。
+    Unknown scope may affect all targets. In known scope, missing item_id means all
+    objects for a quantity, and missing quantity means the whole object.
+    Inclusion/identity entries do not affect quantity completion.
     """
     if gap.affected_targets.scope == "unknown":
         return True
@@ -118,7 +118,7 @@ def gap_affects(gap: Gap, *, item_id: str | None, quantity: str | None) -> bool:
 def gaps_affecting_quantity(
     gaps: Iterable[Gap], item_id: str, quantity: str
 ) -> list[str]:
-    """列出影响指定对象某物理量的缺口编号。"""
+    """List gaps affecting an object's quantity."""
     return [
         gap.gap_id
         for gap in gaps
@@ -127,10 +127,10 @@ def gaps_affecting_quantity(
 
 
 def gaps_affecting_roster(gaps: Iterable[Gap]) -> list[str]:
-    """列出影响名单判定（收录与身份）的缺口编号。
+    """List roster inclusion/identity gaps.
 
-    影响范围未知的缺口可能改变任何名单结论；范围已知的缺口只有显式声明
-    影响收录或身份判断时才波及名单，仅指明物理量的缺口与名单无关。
+    Unknown scope may change any roster conclusion. Known gaps affect rosters only
+    through explicit inclusion/identity declarations; quantity-only gaps do not.
     """
     affecting: list[str] = []
     for gap in gaps:

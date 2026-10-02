@@ -1,7 +1,8 @@
-"""共享提取入口：可信方法与步骤登记（C02）。
+"""Shared extraction entry point: trusted method/step registration (C02).
 
-登记只绑定可信代码对象；重复方法、非法步骤边界与未知方法查询都
-明确拒绝。当前只登记 synthetic-mock 实现，不宣称真实提取已可运行。
+Bind trusted code objects only; explicitly reject duplicate methods, invalid step
+boundaries, and unknown methods. Only synthetic-mock implementations are registered;
+real extraction is not claimed runnable.
 """
 
 from __future__ import annotations
@@ -30,7 +31,9 @@ FIXTURES = Path(__file__).parent / "fixtures" / "pipeline"
 
 
 def test_registered_methods_match_fixed_listing():
-    """方法/步骤清单与固定夹具一致；方法与 step IDs 供集成接线使用。"""
+    """Method/step inventories match fixed fixtures; identifiers support integration
+    wiring.
+    """
     expected = json.loads((FIXTURES / "methods.json").read_text(encoding="utf-8"))
     actual = list_methods()
     assert [
@@ -43,7 +46,7 @@ def test_registered_methods_match_fixed_listing():
         }
         for method in actual
     ] == expected["methods"]
-    # 共用数值与收尾步骤在两种方法中同名同界
+    # Both methods share value/finalization step names and boundaries.
     direct = next(m for m in actual if m["method_id"] == "direct")
     review = next(m for m in actual if m["method_id"] == "candidate_review")
     assert [s["step_id"] for s in direct["steps"]] == [
@@ -65,7 +68,9 @@ def test_registered_methods_match_fixed_listing():
 
 
 def test_mock_only_registration_does_not_claim_real_extraction():
-    """登记仅标 synthetic/mock；真实 direct/candidate_review 未实现。"""
+    """Registration marks only synthetic/mock implementations; real direct/candidate_review
+    is absent.
+    """
     for registration in DEFAULT_REGISTRY.list_methods():
         assert registration.spec.implementation == "synthetic-mock"
         assert registration.spec.real_extraction is False
@@ -101,7 +106,7 @@ def test_method_spec_requires_shared_quantities_and_finalize():
 
 
 def test_registry_binds_trusted_objects_not_strings():
-    """登记绑定可信构建器对象；按标识取回同一绑定。"""
+    """Registration binds trusted builders; identifier lookup returns the same binding."""
     registry = PipelineRegistry()
     built = []
 
@@ -115,7 +120,7 @@ def test_registry_binds_trusted_objects_not_strings():
     assert isinstance(flow, ExtractionFlow)
     assert flow.spec is DIRECT_METHOD
     assert built == [("direct", "daily")]
-    # 未知方法不从输入字符串导入代码
+    # Never import code from an unknown method's input string.
     with pytest.raises(UnknownMethodError):
         registry.get("import os")
 

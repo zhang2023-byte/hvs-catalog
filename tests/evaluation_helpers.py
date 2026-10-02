@@ -1,7 +1,8 @@
-"""Gold 科学格式测试辅助：合成旧文档、PDF 和全新草稿。
+"""Gold science-format helpers: synthetic legacy documents, PDFs, and fresh drafts.
 
-合成材料全部虚构（SYN-* 编号），不涉及真实论文、真实答案或模型输出。
-当前保存及真实进程故障窗口在独立的维护测试中验证。
+All materials are fictional (SYN-* identifiers), with no real papers, answers, or model
+outputs. Current saves and real-process failure windows are covered by separate
+maintenance tests.
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ def build_legacy_v4_doc(
     contributions: list[dict] | None = None,
     reviewed_exclusions: list[dict] | None = None,
 ) -> dict:
-    """构造一份有效的旧 contribution Gold v4 文档（合成材料）。"""
+    """Build a valid synthetic legacy contribution Gold v4 document."""
     if contributions is None:
         contributions = [build_legacy_contribution()]
     if status is None:
@@ -128,16 +129,19 @@ def build_legacy_range_value(
 
 
 def _pdf_text_line(line: str) -> bytes:
-    """一行显示文本：圆括号转义后包装为 Tj 操作（3.11 兼容写法）。"""
+    """Escape parentheses and wrap one display line in a Tj operation (Python 3.11
+    compatible).
+    """
     escaped = line.replace("(", "\\(").replace(")", "\\)")
     return f"({escaped}) Tj T*".encode()
 
 
 def build_synthetic_pdf(pages: list[list[str]] | None = None) -> bytes:
-    """构造一份结构完整、每页带可提取文本的合成 PDF。
+    """Build a structurally complete synthetic PDF with extractable text on every page.
 
-    页对象声明 /Resources 字体，使成熟解析器能按页树定位并提取文本；
-    内容流未压缩。不追求通用阅读器排版兼容。
+    Page objects declare /Resources fonts so established parsers can locate and extract
+    text through the page tree. Content streams are uncompressed; general reader layout
+    compatibility is outside this fixture's scope.
     """
     if pages is None:
         pages = [
@@ -241,10 +245,10 @@ def build_fresh_draft(
     include_quote: bool = True,
     page: int | None = 2,
 ) -> dict:
-    """构造一份全新草稿（合成材料，不需要旧答案）。
+    """Build a fresh synthetic draft without legacy answers.
 
-    ``pdf_sha256`` 为 None 时材料哈希待补（草稿允许），正式保存前须
-    固定。
+    When pdf_sha256 is None, the material hash is pending, as allowed for drafts; fix it
+    before an official save.
     """
     rules = load_rules()
     evidence = {

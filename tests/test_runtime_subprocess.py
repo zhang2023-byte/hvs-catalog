@@ -1,8 +1,9 @@
-"""独立进程验证：双进程锁竞争、持锁终止与真实中断窗口（A03/A04/A15/A17）。
+"""Independent-process tests: lock contention, termination while holding a lock, and
+interruption windows (A03/A04/A15/A17).
 
-中断用信号文件定位故障窗口后以 ``os._exit``（或 SIGKILL）结束子进程，
-等价于进程死亡：已提交事实保留，未提交事务丢弃。A17 的独立调用日志独立
-于空间，调用事实不会被客户端回滚抹掉。
+Locate windows through signal files, then terminate using os._exit or SIGKILL. Committed
+facts survive and uncommitted transactions vanish. A17 call logs are independent of the
+workspace, so client rollback cannot erase call facts.
 """
 
 from __future__ import annotations
@@ -36,7 +37,7 @@ HELPERS = Path(__file__).parent / "runtime_helpers.py"
 
 
 def run_scenario(name: str, *args: object, timeout: float = 60.0):
-    """在独立进程中运行驱动场景，返回 (返回码, JSON 结果)。"""
+    """Run a driver scenario in an independent process and return (exit code, JSON result)."""
     result = subprocess.run(
         [sys.executable, str(HELPERS), name, *map(str, args)],
         capture_output=True,
@@ -52,7 +53,7 @@ def run_scenario(name: str, *args: object, timeout: float = 60.0):
 
 
 def wait_for_file(path: Path, proc: subprocess.Popen, timeout: float = 30.0) -> None:
-    """等待子进程写出的信号文件；子进程提前退出立即失败。"""
+    """Wait for a child signal file; fail immediately if the child exits early."""
     deadline = time.monotonic() + timeout
     while not path.exists():
         assert proc.poll() is None, f"子进程提前退出（{proc.returncode}）"
@@ -61,7 +62,7 @@ def wait_for_file(path: Path, proc: subprocess.Popen, timeout: float = 30.0) -> 
 
 
 def release_holder(holder: subprocess.Popen, release: Path) -> None:
-    """测试结束时放行并回收持锁子进程。"""
+    """Release and reap the lock-holding child at test cleanup."""
     if holder.poll() is None:
         release.write_text("go", encoding="utf-8")
         holder.communicate(timeout=30)
@@ -107,11 +108,13 @@ def _question_ref_json(space, execution_id: str) -> str:
     return json.dumps(view.question_ref.model_dump(mode="json"))
 
 
-# ---- A03 双进程锁竞争 ----
+# ---- A03: two-process lock contention ----
 
 
 def test_two_processes_race_same_execution(tmp_path, service):
-    """一个进程推进时另一进程返回忙；无重复调用、步骤结果或决定。"""
+    """While one process advances, another reports busy with no duplicate calls, results,
+    or decisions.
+    """
     space = initialize_workspace(tmp_path / "space")
     holder = None
     try:
@@ -134,10 +137,10 @@ def test_two_processes_race_same_execution(tmp_path, service):
             stderr=subprocess.PIPE,
             text=True,
         )
-        # 持锁进程已收到名单响应：产生一次服务调用且锁保持持有
+        # The lock holder received a roster response after one service call and still retains the lock.
         wait_for_file(marker, holder)
 
-        # 竞争进程：同空间同执行推进被拒绝为忙，不产生任何副作用
+        # The competing process cannot advance the same execution/workspace and has no side effects.
         code, payload = run_scenario(
             "resume",
             tmp_path / "space",
@@ -155,7 +158,7 @@ def test_two_processes_race_same_execution(tmp_path, service):
         assert holder.returncode == 0
         assert json.loads(out.strip().splitlines()[-1])["outcome"] == "finished"
 
-        # 持锁进程完成后重入：报告已完成，不再重复调用或保存
+        # After the holder finishes, reentry reports completion without repeated calls/saves.
         code, payload = run_scenario(
             "resume",
             tmp_path / "space",
@@ -165,7 +168,9 @@ def test_two_processes_race_same_execution(tmp_path, service):
         )
         assert payload["outcome"] == "finished"
         assert payload["mode"] == "already-finished"
-        assert _ledger_calls(tmp_path) == 2  # 名单 + 贡献，各只一次
+        assert (
+            _ledger_calls(tmp_path) == 2
+        )  # One roster call and one contribution call.
         assert _step_result_rows(space) == 3
     finally:
         if holder is not None:
@@ -173,7 +178,7 @@ def test_two_processes_race_same_execution(tmp_path, service):
         space.close()
 
 
-# ---- A04 持锁进程终止、另一空间独立运行 ----
+# ---- A04: terminate the lock holder while another workspace runs independently ----
 
 
 def test_lock_holder_killed_and_other_space_independent(tmp_path, service):
@@ -200,7 +205,7 @@ def test_lock_holder_killed_and_other_space_independent(tmp_path, service):
         )
         wait_for_file(held, holder)
 
-        # 另一空间不受影响：独立完成自己的执行
+        # Another workspace completes its own execution unaffected.
         _code, payload = run_scenario(
             "resume",
             tmp_path / "space2",
@@ -209,7 +214,7 @@ def test_lock_holder_killed_and_other_space_independent(tmp_path, service):
             tmp_path / "calls2.jsonl",
         )
         assert payload["outcome"] == "finished"
-        assert _ledger_calls(tmp_path) == 0  # space2 使用独立调用日志
+        assert _ledger_calls(tmp_path) == 0  # space2 has an independent call log.
 
         _code, payload = run_scenario(
             "resume",
@@ -219,7 +224,7 @@ def test_lock_holder_killed_and_other_space_independent(tmp_path, service):
             tmp_path / "calls.jsonl",
         )
         assert payload == {"busy": True}
-        # 持锁进程被杀死后正常再取锁，无持久身份或修复步骤。
+        # After killing the holder, acquire normally without persistent ownership or repair steps.
         holder.send_signal(signal.SIGKILL)
         holder.communicate(timeout=30)
         assert (space1.root / ".lock").exists()
@@ -239,11 +244,13 @@ def test_lock_holder_killed_and_other_space_independent(tmp_path, service):
         space2.close()
 
 
-# ---- A15 四个中断窗口 ----
+# ---- A15: four interruption windows ----
 
 
 def test_exit_before_decision_save(tmp_path, service):
-    """决定保存前退出：无半份决定，问题仍待答复，随后可正常继续。"""
+    """Exit before decision save: no partial decision; the question remains answerable and
+    can continue normally.
+    """
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, _flow, _ = start_execution(space, paper="A", request_key="a")
@@ -265,7 +272,7 @@ def test_exit_before_decision_save(tmp_path, service):
             == 1
         )
 
-        # 同一问题随后仍可答复并完成
+        # Answer the same question later and finish.
         submit_expert_decision(
             space,
             execution_id=execution.execution_id,
@@ -325,7 +332,9 @@ def test_death_inside_decision_save_rolls_back_all_staged_rows(tmp_path, service
 
 
 def test_exit_after_decision_save_before_apply(tmp_path, service):
-    """保存后未应用退出：决定可查，结果未提交，新进程应用后完成。"""
+    """Exit after save but before apply: the decision survives, results are absent, and a
+    fresh process applies/completes.
+    """
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, _flow, _ = start_execution(space, paper="A", request_key="a")
@@ -355,7 +364,7 @@ def test_exit_after_decision_save_before_apply(tmp_path, service):
                 m.paper_record_id("A", execution.execution_id)
             )
             == 1
-        )  # 未提交结果不出现
+        )  # Uncommitted results are absent.
 
         code, payload = run_scenario(
             "resume",
@@ -376,7 +385,9 @@ def test_exit_after_decision_save_before_apply(tmp_path, service):
 
 
 def test_exit_inside_apply_transaction(tmp_path, service):
-    """应用事务提交前硬退出：结果不出现，决定完好，新进程重新应用一次。"""
+    """Hard exit before application commit leaves no results; retain the decision and
+    reapply once in a fresh process.
+    """
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, _flow, _ = start_execution(space, paper="A", request_key="a")
@@ -399,7 +410,7 @@ def test_exit_inside_apply_transaction(tmp_path, service):
             "dec",
         )
         assert code == 9
-        # 事务未提交：无应用回执、无第二份论文修订；决定仍可查
+        # No commit means no application receipt or second paper revision; the decision survives.
         assert "decision_apply" not in _receipt_kinds(space, execution.execution_id)
         view = pending_questions(space, execution_id=execution.execution_id)[0]
         assert view.status == "answered"
@@ -417,13 +428,15 @@ def test_exit_inside_apply_transaction(tmp_path, service):
         assert payload["outcome"] == "finished"
         assert _paper_revisions(
             space, m.paper_record_id("A", execution.execution_id)
-        ) == [1, 2]  # 只应用一次
+        ) == [1, 2]  # Apply exactly once.
     finally:
         space.close()
 
 
 def test_exit_after_apply_before_resume(tmp_path, service):
-    """应用后未恢复退出：结果已提交，恢复后不生成第二份修订。"""
+    """Exit after application but before recovery retains results without creating another
+    revision after recovery.
+    """
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, _flow, _ = start_execution(space, paper="A", request_key="a")
@@ -450,7 +463,7 @@ def test_exit_after_apply_before_resume(tmp_path, service):
                 m.paper_record_id("A", execution.execution_id)
             )
             == 2
-        )  # 已提交结果保留
+        )  # Retain committed results.
 
         code, payload = run_scenario(
             "resume",
@@ -467,7 +480,7 @@ def test_exit_after_apply_before_resume(tmp_path, service):
         space.close()
 
 
-# ---- A17 响应后、保存前退出：外部调用可能重复 ----
+# ---- A17: exit after response but before save; external calls may repeat ----
 
 
 def test_exit_after_response_calls_again_on_resume(tmp_path, service):
@@ -483,7 +496,7 @@ def test_exit_after_response_calls_again_on_resume(tmp_path, service):
             "direct_roster",
         )
         assert code == 9
-        # 日志独立于空间：已发生调用事实保留，但业务库没有步骤结果
+        # Independent logs retain call facts while the business database has no step results.
         assert _ledger_calls(tmp_path, "direct_roster") == 1
 
         code, payload = run_scenario(
@@ -494,7 +507,7 @@ def test_exit_after_response_calls_again_on_resume(tmp_path, service):
             tmp_path / "calls.jsonl",
         )
         assert payload["outcome"] == "finished"
-        # 恢复重新调用了名单步骤：外部调用发生两次，不能宣称只发生一次
+        # Recovery calls the roster again: two external calls occurred, so never claim one.
         assert _ledger_calls(tmp_path, "direct_roster") == 2
         assert (
             space.store().current_revision(

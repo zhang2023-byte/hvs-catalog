@@ -1,4 +1,6 @@
-"""Gold 格式生成说明与有类型定义一致：产物同步、模板与 Schema 完整。"""
+"""Generated Gold documentation matches typed definitions; outputs, templates, and schemas
+stay synchronized.
+"""
 
 from __future__ import annotations
 
@@ -24,7 +26,7 @@ def test_gold_generated_files_in_sync():
 
 
 def test_record_generation_tolerates_gold_subtree():
-    # records 的检查不把 gold/ 子树当作多余文件
+    # Record checks must not classify the gold/ subtree as unexpected files.
     assert check_record_outputs(CONTRACTS) == []
 
 

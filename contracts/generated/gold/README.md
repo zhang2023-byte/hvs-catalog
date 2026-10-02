@@ -46,7 +46,8 @@ Only new/empty or exactly compatible targets are accepted. A selected parent ali
 (such as macOS /var) resolves to the real root, which the approval binds. The target
 itself (including dangling symlinks) and internal managed paths must not be symlinks.
 A parent alias redirected to a different root cannot reuse approval. Old layouts are
-not read or migrated. Real private-repository data and documentation remain unchanged.
+not read or migrated. The tool does not migrate existing private-repository data or
+update repository documentation.
 
 Python: organize drafts with compact_gold_annotation / write_compact_gold_pair;
 then check_save(pair_path=..., material_root=..., target=GoldTarget(...),

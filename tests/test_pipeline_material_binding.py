@@ -1,10 +1,11 @@
-"""共享提取入口：来源与可信模拟材料登记的联合绑定（C05）。
+"""Shared extraction entry point: joint source and trusted mock-material binding (C05).
 
-成员资格不等于实际材料绑定：快照精确修订的来源标识、受支持修订、
-论文标识、来源版本/origin 与材料文件清单/角色/指纹必须与可信 mock
-登记一致。支持集内 paper_key 的真实来源错配（换 key、换内容、未登记
-新版、别的来源编号）在任何服务调用前拒绝；不回退 v1、不改指其他来
-源、不改写快照。合法登记材料照常产出且输出引用等于执行固定修订。
+Membership alone does not establish binding. Snapshot source identity, exact supported
+revision, paper identity, origin/version, and file manifest/roles/fingerprints must
+match trusted mock registration. Reject changed keys/contents, unregistered revisions,
+or other source identities before any service call, even for supported paper keys. Never
+fall back to v1, redirect sources, or rewrite snapshots. Valid outputs reference the
+frozen revision.
 """
 
 from __future__ import annotations
@@ -74,7 +75,7 @@ def _commit_new_revision(
     file_rel: str,
     version: str = "fictional-v2",
 ) -> RecordRef:
-    """给既有来源编号提交新修订（内容/标识可变，哈希真实固定）。"""
+    """Commit a source revision with changeable contents/identity and actual fixed hashes."""
     file_ref = space.publish_source_file(file_rel, content)
     record = build_record(
         SourcePackageRecord,
@@ -146,11 +147,13 @@ def _stored_source_refs(space, handle) -> list[dict]:
     return [ref.model_dump(mode="json") for ref in run.data.input_snapshot.source_refs]
 
 
-# ---- 反例一：A 文件 + 受支持的 B paper_key（换 key 错配） ----
+# ---- Counterexample 1: A files with supported B paper_key ----
 
 
 def test_identity_swap_entry_start_rejected(space):
-    """src-r05-a v2 保留 A 文件但 paper_key=B：入口建立执行前拒绝。"""
+    """Reject src-r05-a v2 retaining A files but claiming paper_key B before execution
+    creation.
+    """
     import_mock_source(space, PAPER_A)
     import_mock_source(space, PAPER_B)
     swapped = _commit_new_revision(
@@ -166,7 +169,9 @@ def test_identity_swap_entry_start_rejected(space):
 
 
 def test_identity_swap_direct_runtime_rejected_before_service(space):
-    """同一错配经直接 runtime 恢复：failed、0 服务调用、快照不变。"""
+    """Direct runtime recovery of the same mismatch fails with zero service calls and
+    unchanged snapshots.
+    """
     import_mock_source(space, PAPER_A)
     import_mock_source(space, PAPER_B)
     swapped = _commit_new_revision(
@@ -196,7 +201,9 @@ def test_identity_swap_direct_runtime_rejected_before_service(space):
 
 
 def test_identity_swap_entry_resume_rejected(space):
-    """旁路建立的错配执行经入口恢复：同样 failed 且零调用。"""
+    """Entry-point recovery of bypass-created mismatched execution also fails with zero
+    calls.
+    """
     import_mock_source(space, PAPER_A)
     import_mock_source(space, PAPER_B)
     swapped = _commit_new_revision(
@@ -216,11 +223,13 @@ def test_identity_swap_entry_resume_rejected(space):
     assert get_extraction(space, handle.execution_id)["result_refs"] == []
 
 
-# ---- 反例二：paper_key 不变但文件换成另一份正确哈希内容 ----
+# ---- Counterexample 2: unchanged paper_key with different correctly hashed contents ----
 
 
 def test_same_paper_new_content_direct_runtime_rejected(space):
-    """src-r05-b v2 换另一份合成内容：不得回退 B v1 静态应答。"""
+    """src-r05-b v2 with different synthetic contents must not fall back to B v1 static
+    responses.
+    """
     import_mock_source(space, PAPER_B)
     revised = _commit_new_revision(
         space,
@@ -243,7 +252,7 @@ def test_same_paper_new_content_direct_runtime_rejected(space):
     assert any("登记" in error for error in report.errors)
     assert service.requests == []
     assert get_extraction(space, handle.execution_id)["result_refs"] == []
-    # 不改写快照、不退回 v1
+    # Neither rewrite the snapshot nor fall back to v1.
     assert _stored_source_refs(space, handle) == [
         {"record_id": "src-r05-b", "revision": 2}
     ]
@@ -263,11 +272,11 @@ def test_same_paper_new_content_entry_start_rejected(space):
     assert space.store().list_executions() == []
 
 
-# ---- 未登记修订：内容与登记完全相同也不得假装有静态应答 ----
+# ---- Even identical contents do not authorize static responses for an unregistered revision ----
 
 
 def test_unregistered_revision_identical_content_rejected(space):
-    """src-r05-b v2 与 v1 内容逐字相同：仍按未登记修订拒绝。"""
+    """Reject unregistered src-r05-b v2 even if its bytes equal v1."""
     import_mock_source(space, PAPER_B)
     revised = _commit_new_revision(
         space,
@@ -294,7 +303,7 @@ def test_unregistered_revision_identical_content_rejected(space):
         _start(space, revised, request_key="identical-entry")
 
 
-# ---- 同 paper_key 的其他来源身份 / 文件指纹错配 ----
+# ---- Other source identities or file fingerprints under the same paper_key ----
 
 
 def _fresh_source(space, *, record_id: str, paper_key: str, content: bytes, rel: str):
@@ -334,7 +343,9 @@ def _fresh_source(space, *, record_id: str, paper_key: str, content: bytes, rel:
 
 
 def test_other_source_identity_same_paper_key_rejected(space):
-    """src-candidate-c-alt 冒用 C paper_key 与正确文件：来源身份不一致拒绝。"""
+    """Reject src-candidate-c-alt claiming C's paper_key and valid files because source
+    identity differs.
+    """
     import_mock_source(space, PAPER_C)
     from hvs_catalog.pipeline.mock import c_tex_bytes
 
@@ -351,7 +362,9 @@ def test_other_source_identity_same_paper_key_rejected(space):
 
 
 def test_file_fingerprint_mismatch_rejected(space):
-    """文件换成另一份正确哈希内容：指纹与登记不一致拒绝。"""
+    """Reject a different correctly hashed file whose fingerprint differs from
+    registration.
+    """
     import_mock_source(space, PAPER_C)
     mismatched = _fresh_source(
         space,
@@ -365,11 +378,11 @@ def test_file_fingerprint_mismatch_rejected(space):
     assert space.store().list_executions() == []
 
 
-# ---- 合法登记材料：输出引用等于执行固定修订 ----
+# ---- Registered materials: outputs reference the frozen execution revision ----
 
 
 def test_legal_materials_bind_outputs_to_frozen_revision(space):
-    """A/B/C 正常运行的名单与论文 source_ref 都等于执行固定修订。"""
+    """Normal A/B/C roster and paper source_refs equal the frozen execution revision."""
     source_a = import_mock_source(space, PAPER_A)
     handle_a = _start(space, source_a, request_key="legal-a")
     report = resume_extraction(

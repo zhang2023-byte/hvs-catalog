@@ -1,4 +1,6 @@
-"""公开检查点 ID 完成凭据；缺失拒绝，终态前后中断安全恢复。"""
+"""Public checkpoint-ID completion credentials: reject missing credentials and recover
+safely around terminal-state interruptions.
+"""
 
 from __future__ import annotations
 
@@ -138,7 +140,9 @@ resume_execution(space, sys.argv[3], direct_flow(), service=service)
     ("window", "exit_code"), [("before_commit", 74), ("after_commit", 75)]
 )
 def test_finish_transaction_interruption_windows(tmp_path, service, window, exit_code):
-    """图已结束但完成未提交／完成已提交：新进程恢复零新增调用。"""
+    """Recovery in a fresh process makes no new calls when the graph ended, whether
+    completion was committed or not.
+    """
     root = tmp_path / "space"
     space = initialize_workspace(root)
     execution, _, _ = start_execution(space, paper="B", request_key=f"atomic-{window}")

@@ -1,12 +1,12 @@
-"""共享提取入口：来源科学元数据与登记合同（C05）。
+"""Shared extraction entry point: scientific source metadata and registration contract
+(C05).
 
-登记合同覆盖来源包影响科学可用性与来源解释的全部数据字段：文件
-``read_state``（ready/unparsed/unreadable）、``derived_from`` 派生链与
-``source.gaps`` 材料缺口与已登记 v1 语义必须完全一致。不可读文件、
-未登记派生关系或任何材料缺口都在任何服务调用前拒绝（入口建立/恢
-复与直接 runtime 共用同一核验），spy 零调用、快照不变、无错配产出。
-时间戳与执行写入簿记（created_at/execution_id）与科学输入无关，不
-做机械相等比较。
+Require all source fields affecting scientific usability/interpretation to match
+registered v1 semantics: read_state, derived_from chains, and source.gaps. Reject
+unreadable files, unregistered derivations, or any gaps before service calls, through
+shared creation/recovery/runtime checks. Require zero spy calls, unchanged snapshots,
+and no mismatched outputs. Timestamps and execution bookkeeping
+(created_at/execution_id) are not scientific input and need no mechanical equality.
 """
 
 from __future__ import annotations
@@ -100,7 +100,9 @@ def build_registered_like_b_source(
     gaps: list[Gap] | None = None,
     operation_key: str = "import:custom-b",
 ) -> RecordRef:
-    """构造记录格式合法、与登记 B 材料一致的 src-r05-b v1，仅指定元数据不同。"""
+    """Build structurally valid src-r05-b v1 matching registered B materials except
+    specified metadata.
+    """
     file_ref = space.publish_source_file("r05/b/paper.tex", m.tex_bytes("B"))
     created_at = datetime.now(UTC)
     source = build_record(
@@ -174,11 +176,13 @@ def _stored_source_refs(space, handle) -> list[dict]:
     return [ref.model_dump(mode="json") for ref in run.data.input_snapshot.source_refs]
 
 
-# ---- 审核复现一：read_state=unreadable 不可读却完成 ----
+# ---- Review reproducer 1: unreadable material must not complete ----
 
 
 def test_unreadable_file_entry_start_rejected(space):
-    """唯一文件 unreadable：入口建立执行前拒绝，不产生不可读的完成。"""
+    """Reject the sole unreadable file before creating execution; never complete unreadable
+    input.
+    """
     source = build_registered_like_b_source(space, read_state="unreadable")
     with pytest.raises(PipelineRequestError, match="read_state"):
         _start(space, source, request_key="unreadable-entry")
@@ -186,7 +190,9 @@ def test_unreadable_file_entry_start_rejected(space):
 
 
 def test_unreadable_file_direct_runtime_rejected_before_service(space):
-    """同一记录直接 runtime 恢复：failed、spy 零调用、快照不变、无产出。"""
+    """Direct runtime recovery fails with zero spy calls, unchanged snapshots, and no
+    outputs.
+    """
     source = build_registered_like_b_source(space, read_state="unreadable")
     handle = _bypass_execution(
         space, source, method_spec=DIRECT_METHOD, request_key="unreadable-rt"
@@ -208,7 +214,9 @@ def test_unreadable_file_direct_runtime_rejected_before_service(space):
 
 
 def test_unreadable_file_entry_resume_rejected(space):
-    """旁路建立的不可读来源执行经入口恢复：同样零调用失败。"""
+    """Entry-point recovery of bypass-created unreadable execution also fails without
+    calls.
+    """
     source = build_registered_like_b_source(space, read_state="unreadable")
     handle = _bypass_execution(
         space,
@@ -224,7 +232,7 @@ def test_unreadable_file_entry_resume_rejected(space):
 
 
 def test_unparsed_read_state_also_rejected(space):
-    """unparsed 同样是未登记读取状态：系统性覆盖全部非 ready 取值。"""
+    """unparsed is likewise unregistered; systematically cover every non-ready state."""
     source = build_registered_like_b_source(space, read_state="unparsed")
     with pytest.raises(PipelineRequestError, match="read_state"):
         _start(space, source, request_key="unparsed-entry")
@@ -242,11 +250,11 @@ def test_unparsed_read_state_also_rejected(space):
     assert service.requests == []
 
 
-# ---- 审核复现二：source.gaps 先调服务才失败 ----
+# ---- Review reproducer 2: source gaps must fail before calling services ----
 
 
 def test_roster_affecting_gap_rejected_before_service(space):
-    """影响名单的合法缺口：直接 runtime 在 direct_roster 前拒绝。"""
+    """Direct runtime rejects a valid roster-affecting gap before direct_roster."""
     source = build_registered_like_b_source(space, gaps=[roster_gap()])
     handle = _bypass_execution(
         space, source, method_spec=DIRECT_METHOD, request_key="gap-rt"
@@ -272,7 +280,7 @@ def test_roster_affecting_gap_entry_start_rejected(space):
 
 
 def test_quantity_only_gap_also_rejected(space):
-    """仅影响物理量的缺口同样是未登记材料语义：登记 v1 没有任何缺口。"""
+    """Quantity-only gaps are also unregistered semantics; registered v1 has no gaps."""
     source = build_registered_like_b_source(space, gaps=[quantity_gap()])
     with pytest.raises(PipelineRequestError, match="缺口"):
         _start(space, source, request_key="qgap-entry")
@@ -290,11 +298,11 @@ def test_quantity_only_gap_also_rejected(space):
     assert service.requests == []
 
 
-# ---- 派生关系与组合状态 ----
+# ---- Derivation chains and combined states ----
 
 
 def test_derived_from_mismatch_rejected(space):
-    """未登记的派生链（derived_from 指向自身）：拒绝。"""
+    """Reject an unregistered derived_from chain referencing itself."""
     source = build_registered_like_b_source(space, derived_from=["paper"])
     with pytest.raises(PipelineRequestError, match="derived_from"):
         _start(space, source, request_key="derived-entry")
@@ -314,7 +322,7 @@ def test_derived_from_mismatch_rejected(space):
 
 
 def test_combined_unreadable_and_gap_reports_both(space):
-    """组合状态一次性给出全部诊断，仍零调用。"""
+    """Report all combined-state diagnostics together while making zero calls."""
     source = build_registered_like_b_source(
         space, read_state="unreadable", gaps=[roster_gap()]
     )
@@ -325,11 +333,11 @@ def test_combined_unreadable_and_gap_reports_both(space):
     assert "缺口" in message
 
 
-# ---- 合法登记材料不退化 ----
+# ---- Valid registered materials remain supported ----
 
 
 def test_registered_ready_material_still_runs(space):
-    """与登记完全一致的 ready/无缺口来源照常完成两方法路径。"""
+    """Matching ready sources without gaps complete both methods normally."""
     source = build_registered_like_b_source(space)
     handle = _start(space, source, request_key="legal-b")
     service = SpyService()

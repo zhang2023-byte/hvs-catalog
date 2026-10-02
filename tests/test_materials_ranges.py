@@ -1,4 +1,6 @@
-"""编号范围确定性展开、技术不支持与语义歧义分类的合成测试。"""
+"""Synthetic deterministic identifier-range expansion tests, distinguishing unsupported
+syntax from semantic ambiguity.
+"""
 
 from __future__ import annotations
 
@@ -28,7 +30,7 @@ def test_leading_zeros_and_bound_members_preserved():
     assert (
         expand_range_notation(f"HVS1-{MAX_RANGE_MEMBERS + 5}").status == "unsupported"
     )
-    # remainder 只识别为尾注，绝不解释为成员
+    # Recognize remainder only as a trailing note, never as a member.
     result = expand_range_notation("HVS1-3 and others", object_context=True)
     assert result.expanded
     assert result.identifiers == ["HVS1", "HVS2", "HVS3"]

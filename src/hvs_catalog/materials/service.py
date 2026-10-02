@@ -1,13 +1,15 @@
-"""材料准备共享入口：建立、查询、恢复与无模型消费。
+"""Shared material-preparation entry points for creation, queries, recovery, and model-free
+consumption.
 
-日常与评测共用同一入口：``prepare_materials`` 以准确来源修订建立（或
-同请求复用）一个准备执行并推进；``resume_preparation`` 在歧义问题等待
-专家后继续；``get_preparation`` 只读查询；``get_prepared_input``／
-``consume_prepared_input`` 读取并核对准备输入附件（无模型合成消费者）。
+Ordinary/evaluation callers share prepare_materials for exact-revision
+creation/reuse/advancement, resume_preparation after expert ambiguity decisions,
+read-only get_preparation, and get_prepared_input/consume_prepared_input for attachment
+verification through synthetic model-free consumers.
 
-请求固定来源修订、主稿／格式选项、解析代码与依赖、实际转换器版本；
-改变输入须用新请求键建立新执行，同请求重放复用已保存结果。准备接口
-不接收 Gold，也不把真实材料接入 mock 冒充真实提取。
+Freeze source revisions, main/format options, parser code/dependencies, and actual
+converter versions. Changed input requires new request keys/executions; identical replay
+reuses saved results. Accept no Gold and never route real materials through mocks to
+claim real extraction.
 """
 
 from __future__ import annotations
@@ -42,12 +44,12 @@ PREPARED_INPUT_RELPATH = "outputs/prepared-input.json"
 
 
 class MaterialsPreparationError(Exception):
-    """材料准备的工程失败；已提交事实与诊断保留。"""
+    """Engineering preparation failure; retain committed facts and diagnostics."""
 
 
 @dataclass(frozen=True)
 class PreparationHandle:
-    """``prepare_materials`` 的返回：执行标识与冻结配置回显。"""
+    """prepare_materials result: execution identity and echoed frozen configuration."""
 
     execution_id: str
     request_key: str
@@ -62,7 +64,7 @@ class PreparationHandle:
 
 @dataclass
 class PreparationReport:
-    """一次推进的结果：状态、步骤、问题与缺口汇总。"""
+    """One advancement result: state, steps, questions, and gap summary."""
 
     execution_id: str
     outcome: str  # paused | finished | failed
@@ -97,7 +99,7 @@ def _resolve_source(
     version: int | None,
     source_ref: RecordRef | None,
 ) -> tuple[RecordRef, SourcePackageRecord]:
-    """解析准备输入的准确来源修订；不重新下载或混用版本。"""
+    """Resolve the exact preparation source revision without redownload/version mixing."""
     store = space.store()
     if source_ref is not None:
         record = store.read_record(source_ref)
@@ -109,8 +111,8 @@ def _resolve_source(
     if not paper:
         raise MaterialsPreparationError("必须提供 paper（arXiv 标识）或 source_ref")
     if version is not None:
-        # 显式历史版本优先按准确保存引用读取；不先读当前选定材料——
-        # 当前选择不可用不应挡住已保存版本（二次审核发现 25）。
+        # Read explicitly saved historical references first, not current selected materials;
+        # unavailable current selection must not block saved versions (second-review finding 25).
         wanted = AcquisitionService(space).get_version(f"{paper}v{version}")
         if wanted is None or wanted.source_record is None:
             raise MaterialsPreparationError(
@@ -127,13 +129,15 @@ def _resolve_source(
             "材料准备不下载、不猜版本"
         )
     record = store.read_record(selection.material_ref)
-    if not isinstance(record, SourcePackageRecord):  # pragma: no cover - 防御
+    if not isinstance(
+        record, SourcePackageRecord
+    ):  # pragma: no cover - defensive check
         raise MaterialsPreparationError("选定材料的来源记录缺失或类型不符")
     return selection.material_ref, record
 
 
 def _latest_checkpoint_state(space: Workspace, execution_id: str) -> dict | None:
-    """读取执行最新检查点的状态值（只读；线程缺失返回 None）。"""
+    """Read latest execution checkpoint values without writes; missing threads return None."""
     from langgraph.checkpoint.sqlite import SqliteSaver
 
     conn = space.checkpoint_connection()
@@ -148,7 +152,7 @@ def _latest_checkpoint_state(space: Workspace, execution_id: str) -> dict | None
 
 
 def _state_artifact_refs(state: dict) -> list[dict]:
-    """收集检查点状态中标准 ``{path, sha256}`` 附件引用。"""
+    """Collect standard {path, sha256} attachment references from checkpoint state."""
     from ..workspace.store import walk_artifact_refs
 
     return list(walk_artifact_refs(state))
@@ -168,13 +172,13 @@ def _frozen_converters(runner: ConverterRunner) -> dict[str, dict]:
 
 
 class MaterialsService:
-    """已初始化工作空间的材料准备入口。"""
+    """Material-preparation service for initialized workspaces."""
 
     def __init__(self, space: Workspace, *, runner: ConverterRunner | None = None):
         self._space = space
         self._runner = runner or SandboxedConverterRunner()
 
-    # ---- 建立／推进 ----
+    # ---- Creation and advancement ----
 
     def prepare_materials(
         self,
@@ -188,11 +192,11 @@ class MaterialsService:
         expert_adjudication: bool = False,
         encoding: str | None = None,
     ) -> tuple[PreparationHandle, PreparationReport]:
-        """建立（或同请求同输入复用）一个材料准备执行并推进。
+        """Create or reuse identical-request/input preparation execution and advance it.
 
-        请求内容（来源修订、主稿、格式选项、范围记号、成员编码、转换器
-        版本）全部进入固定输入快照；同请求键换任何输入都会被拒绝，改变
-        输入须用新请求键。接口不接收 Gold 或答案路径。
+        Freeze source revision, main document, format options, range notation, member
+        encodings, and converter versions. Any changed input under the same key rejects;
+        changes require a new key. Accept no Gold or answer paths.
         """
         if encoding is not None and encoding not in ("utf-8", "latin-1"):
             raise MaterialsPreparationError(
@@ -244,15 +248,15 @@ class MaterialsService:
         return prep_handle, report
 
     def resume_preparation(self, execution_id: str) -> PreparationReport:
-        """推进一个准备执行；恢复只使用执行内保存的固定输入。"""
+        """Advance preparation using only execution-saved fixed input during recovery."""
         flow = MaterialsFlow(runner=self._runner)
         runtime_report = resume_execution(self._space, execution_id, flow, service=None)
         return self._build_report(execution_id, runtime_report)
 
-    # ---- 查询／消费 ----
+    # ---- Queries and consumption ----
 
     def get_preparation(self, execution_id: str) -> dict:
-        """只读查询执行状态、配置、步骤、问题、缺口与汇总。"""
+        """Read-only state/configuration/step/question/gap/summary queries."""
         handle = get_execution(self._space, execution_id)
         run = self._current_run(handle)
         review = ReviewService(self._space)
@@ -308,7 +312,9 @@ class MaterialsService:
         }
 
     def get_prepared_input(self, execution_id: str) -> dict:
-        """读取准备输入附件；执行未完成或附件缺失时明确报错。"""
+        """Read prepared attachments, explicitly rejecting unfinished executions or missing
+        files.
+        """
         handle = get_execution(self._space, execution_id)
         run = self._current_run(handle)
         if run.data.state != "finished":
@@ -322,11 +328,12 @@ class MaterialsService:
         return bundle
 
     def consume_prepared_input(self, execution_id: str) -> dict:
-        """无模型合成消费者：核对附件中全部引用与表格回读。
+        """Model-free synthetic consumer verifying every attachment reference and rereading
+        tables.
 
-        逐项核对正文视图、ECSV、excerpt 与派生文件的路径／哈希，并用共
-        用 CSV／ECSV 逻辑记录接口回读每张成功表。任何不一致都是错误，
-        不把损坏输入当作可用材料。
+        Check body views, ECSV, excerpts, and derived path/hash references individually,
+        then use shared CSV/ECSV readers for each successful table. Every inconsistency
+        is an error, never usable material.
         """
         from ..records.tabular import TabularReadError, read_table_records
 
@@ -345,7 +352,7 @@ class MaterialsService:
                 "ranges": [],
                 "summary": {},
             }
-        # 检查点保存的全部附件引用共同核验（不只 bundle 本体）。
+        # Verify every checkpoint attachment reference, not just the bundle itself.
         handle = get_execution(self._space, execution_id)
         state = _latest_checkpoint_state(self._space, execution_id)
         for ref in _state_artifact_refs(state or {}):
@@ -425,10 +432,12 @@ class MaterialsService:
             "summary": bundle.get("summary", {}),
         }
 
-    # ---- 内部 ----
+    # ---- Internal helpers ----
 
     def _bundle_ref(self, handle: ExecutionHandle) -> ArtifactRef:
-        """以保存时的附件引用为唯一依据；读取时重算哈希不能认证改写。"""
+        """Saved attachment references are authoritative; recomputing hashes on read cannot
+        certify rewritten contents.
+        """
         state = _latest_checkpoint_state(self._space, handle.execution_id)
         saved = (state or {}).get("bundle")
         if not isinstance(saved, dict) or not saved.get("path"):

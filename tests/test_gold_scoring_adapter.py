@@ -1,8 +1,9 @@
-"""集成：既有 Gold 共同定义 → 评分输入的纯内存适配（C07）。
+"""Pure in-memory adaptation from shared Gold definitions to scoring inputs (C07).
 
-覆盖 compact v2 正式答案与 v1 标注对象两条路径：字段映射、原报/条件/
-证据保留、冲突备选进入同一物理量集合、部分覆盖需要显式子范围、
-草稿与待办被拒绝；适配不改写输入对象。
+Cover compact v2 official answers and v1 annotations: field mapping, preservation of
+printed content/conditions/evidence, conflicting alternatives in one quantity set,
+explicit partial-coverage subsets, and rejection of drafts/pending items. Never mutate
+input objects.
 """
 
 from __future__ import annotations
@@ -85,15 +86,17 @@ def test_compact_pair_maps_fields_and_preserves_originals(tmp_path):
     assert measured.condition == "heliocentric, adopted solution"
     assert measured.source == "this_paper"
     assert measured.limit_kind == "none"
-    # 证据位置与引文逐字保留在诊断 sidecar
+    # Preserve evidence locations and quotes verbatim in the diagnostic sidecar.
     assert value.context_evidence == ["Table 2, row SYN-A — SYN-A 612.0 +- 8.0 km/s"]
-    # 数值组件证据与原报字符串一致
+    # Value-component evidence matches printed strings.
     parts = {part.part: part.raw_fragment for part in measured.direct_evidence}
     assert parts == {"value": "612.0", "error": "8.0"}
 
 
 def test_compact_condition_none_is_rejected_as_preparation_gap(tmp_path):
-    """缺失条件不能破例当成“原文未报告条件”的科学断言。"""
+    """Missing conditions cannot imply the scientific claim that the paper reported no
+    conditions.
+    """
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["contributions"][0]["quantities"][0]["values"][0]["condition"] = None
@@ -101,7 +104,7 @@ def test_compact_condition_none_is_rejected_as_preparation_gap(tmp_path):
     _, pair = _pair(tmp_path, draft=draft)
     with pytest.raises(GoldAdaptationError, match="条件"):
         gold_entries_from_compact_pair(pair)
-    # 已明确填写的未报条件说明（非空字符串）照原文逐字保留
+    # Preserve explicit nonempty statements of unreported conditions verbatim.
     payload["contributions"][0]["quantities"][0]["values"][0]["condition"] = (
         "The paper reports no additional condition for this measurement."
     )
@@ -178,7 +181,7 @@ def test_conflict_alternatives_join_the_quantity_pool(tmp_path):
     entry = gold_entries_from_compact_pair(pair)[0]
     (group,) = entry.objects[0].quantities
     record_ids = [value.record_id for value in group.values]
-    # 确认值 + 冲突双方都在同一物理量集合；record_id 唯一定位诊断
+    # Confirmed values and both conflict alternatives share one quantity set; record_id locates diagnostics uniquely.
     assert record_ids == [
         "2501.00001:cand01:observed_phase_space.radial_velocity:0",
         "2501.00001:cand01:cf1:0",
@@ -203,7 +206,7 @@ def test_v1_annotation_answer_maps_and_draft_is_rejected(tmp_path):
     assert entry.objects[0].identifiers == ["SYN-A"]
     measured = entry.objects[0].quantities[0].values[0].value
     assert measured.value == "612.0"
-    # 草稿即使结构合法，未决待办也随“草稿不能评分”一并拒绝
+    # Reject structurally valid drafts together with their unresolved items because drafts are not scoreable.
     pending_payload = payload | {"kind": "draft"}
     pending_payload["pending"] = [
         {
@@ -237,7 +240,7 @@ def test_adaptation_does_not_mutate_input(tmp_path):
     assert pair.answer.model_dump(mode="json") == before
 
 
-# ---- 配对绑定校验、未决待办与 answer-only 边界 ----
+# ---- Pair binding, unresolved items, and answer-only boundary ----
 
 
 def _review_payloads():
@@ -321,7 +324,7 @@ def test_binding_is_preserved_for_report_checks(tmp_path):
 
 
 def test_answer_only_adaptation_is_not_formal_readiness(tmp_path):
-    """answer-only 输入缺 metadata 绑定，不冒称正式就绪。"""
+    """Answer-only input lacks metadata bindings and must not claim official readiness."""
     _, pair = _pair(tmp_path)
     adaptation = adapt_compact_answer(pair.answer)
     assert adaptation.entries
@@ -332,7 +335,7 @@ def test_answer_only_adaptation_is_not_formal_readiness(tmp_path):
     assert adaptation.entries[0].objects[0].identifiers == ["SYN-A"]
 
 
-# ---- 材料/科学准备缺口必须实际阻止就绪 ----
+# ---- Material/science gaps must actually block readiness ----
 
 
 def _draft(tmp_path, **overrides):
@@ -370,16 +373,16 @@ def _pair_from_draft(
 
 
 def test_source_missing_is_a_preparation_gap(tmp_path):
-    """source=None 是材料准备缺口，不能当就绪评分输入。"""
+    """source=None is a material-preparation gap, not ready scoring input."""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
-    # 无 LaTeX 来源对应：v1 草稿只能保持 pending，材料缺口真实存在
+    # Without corresponding LaTeX source, a v1 draft remains pending with an actual material gap.
     payload["material_correspondence"]["latex"] = None
     payload["material_correspondence"]["status"] = "pending"
     draft = parse_gold_annotation(payload)
     pair = _pair_from_draft(draft)
     adaptation = adapt_compact_gold_pair(pair)
-    assert adaptation.binding is not None  # 绑定结构仍可核对
+    assert adaptation.binding is not None  # Binding structure remains verifiable.
     assert adaptation.formal_readiness is False
     assert any("source_missing" in gap for gap in adaptation.readiness_gaps)
     with pytest.raises(GoldAdaptationError, match="准备缺口"):
@@ -387,7 +390,7 @@ def test_source_missing_is_a_preparation_gap(tmp_path):
 
 
 def test_material_differences_is_a_preparation_gap(tmp_path):
-    """审定记录在案的 PDF/源材料差异是科学准备缺口。"""
+    """Approved PDF/source differences still represent a scientific-preparation gap."""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["material_correspondence"]["differences"] = [
@@ -411,7 +414,7 @@ def test_material_differences_is_a_preparation_gap(tmp_path):
 
 
 def test_missing_value_evidence_is_a_preparation_gap(tmp_path):
-    """数值无证据是材料准备缺口。"""
+    """Values without evidence represent a material-preparation gap."""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["contributions"][0]["quantities"][0]["values"][0]["evidence"] = []
@@ -425,7 +428,7 @@ def test_missing_value_evidence_is_a_preparation_gap(tmp_path):
 
 
 def test_related_memory_gaps_all_block_readiness(tmp_path):
-    """纯内存中的各类材料/科学缺口同样阻止就绪。"""
+    """In-memory material and science gaps also block readiness."""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     contribution = payload["contributions"][0]
@@ -441,7 +444,7 @@ def test_related_memory_gaps_all_block_readiness(tmp_path):
                 {"file_id": "pdf-1", "location": "Table 2", "page": 2},
                 {"file_id": "pdf-1", "location": "Table 5", "page": 6},
             ],
-            "alternatives": [],  # conflict_structure_unknown：未结构化
+            "alternatives": [],  # conflict_structure_unknown: not structured.
         }
     ]
     draft = parse_gold_annotation(payload)
@@ -461,7 +464,9 @@ def test_related_memory_gaps_all_block_readiness(tmp_path):
 
 
 def test_approved_structured_conflicts_are_not_gaps(tmp_path):
-    """已审定、结构完整的冲突双方不是待办（配对仍就绪）。"""
+    """Approved, fully structured conflict alternatives are not pending items; the pair
+    remains ready.
+    """
     evidence = {
         "file_id": "pdf-1",
         "location": "Table 2, row SYN-A",
@@ -517,7 +522,7 @@ def test_approved_structured_conflicts_are_not_gaps(tmp_path):
 
 
 def test_partial_scope_with_confirmed_ranges_does_not_clear_other_gaps(tmp_path):
-    """显式封闭子范围只解决 partial_coverage，其余缺口照实保留。"""
+    """An explicit closed subset resolves only partial_coverage; preserve other gaps."""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["contributions"][0]["quantities"][0]["values"][0]["evidence"] = []
@@ -549,14 +554,20 @@ def test_partial_scope_with_confirmed_ranges_does_not_clear_other_gaps(tmp_path)
     ranges = [ConfirmedRange(object_identifiers=["SYN-A"], quantity_paths=[RV])]
     adaptation = adapt_compact_gold_pair(pair, confirmed_ranges={"2501.00001": ranges})
     joined = " ".join(adaptation.readiness_gaps)
-    assert "partial_coverage" not in joined  # 既定封闭子范围规则解决覆盖缺口
-    assert "missing_value_evidence" in joined  # 其他材料缺口不被顺带清除
-    assert "unresolved" in joined  # 科学待办不被顺带清除
+    assert (
+        "partial_coverage" not in joined
+    )  # The established closed-subset rule resolves the coverage gap.
+    assert (
+        "missing_value_evidence" in joined
+    )  # Do not incidentally clear other material gaps.
+    assert "unresolved" in joined  # Do not incidentally clear scientific pending items.
     assert adaptation.formal_readiness is False
 
 
 def test_full_checker_reports_material_gaps_and_unresolved(tmp_path):
-    """完整检查器按固定预期报告材料缺口与未决项。"""
+    """The complete checker reports material gaps and unresolved items against fixed
+    expectations.
+    """
     import hashlib
 
     material = tmp_path / "materials"
@@ -583,33 +594,39 @@ def test_full_checker_reports_material_gaps_and_unresolved(tmp_path):
         "missing_value_evidence",
         "unresolved_1",
     ]
-    assert report.blocking_count == 2  # 两个 material
+    assert report.blocking_count == 2  # Two material issues.
     assert report.pending_ids() == ["unresolved_1"]
     assert all(problem.message for problem in report.problems)
     del hashlib
 
 
-# ---- 严格入口必须携带就绪状态 ----
+# ---- Strict entry points must carry readiness ----
 
 
 def test_answer_only_strict_entry_rejects_pointing_to_informal_api(tmp_path):
-    """缺 metadata 的 answer-only 不能经严格入口拿到可当 ready 的裸条目。"""
+    """Answer-only input without metadata cannot obtain bare entries that appear ready
+    through the strict entry point.
+    """
     _, pair = _pair(tmp_path)
     with pytest.raises(GoldAdaptationError, match="adapt_compact_answer"):
         gold_entries_from_compact_answer(pair.answer)
-    # 非正式结构映射 API 仍可用，且自身不冒称就绪
+    # Unofficial structural mapping remains available without claiming readiness.
     adaptation = adapt_compact_answer(pair.answer)
     assert adaptation.binding is None
     assert adaptation.formal_readiness is False
-    assert adaptation.entries  # 结构映射仍完整，限制显式可见
+    assert (
+        adaptation.entries
+    )  # Structural mapping remains complete with explicit limitations.
 
 
 def test_strict_entries_still_reject_gaps_and_keep_legit_pair_ready(tmp_path):
-    """严格入口=绑定+就绪双门禁；合法已绑定配对不受影响。"""
+    """The strict entry point requires both binding and readiness; valid bound pairs remain
+    unaffected.
+    """
     _, pair = _pair(tmp_path)
     entries = gold_entries_from_compact_pair(pair)
     assert entries[0].coverage == "complete"
-    # 带 gap 的配对（answer-only 无绑定同理）拒绝，不无声降级
+    # Reject gapped pairs, and likewise unbound answer-only input, without silent fallback.
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["contributions"][0]["quantities"][0]["values"][0]["evidence"] = []

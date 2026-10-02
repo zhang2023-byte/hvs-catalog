@@ -1,4 +1,6 @@
-"""正文组织（主稿、包含、注释与 verbatim）的合成测试。"""
+"""Synthetic body-organization tests for main documents, includes, comments, and verbatim
+text.
+"""
 
 from __future__ import annotations
 
@@ -36,7 +38,7 @@ def test_unique_root_and_include_positions(tmp_path):
     assert graph.status == "organized"
     assert graph.root == "main.tex"
     names = [f.name for f in graph.files]
-    # 按包含顺序组织：main → macros(前言) → sec1 → tables/velocity → appendix
+    # Include order: main, macros preamble, sec1, tables/velocity, appendix.
     assert names[0] == "main.tex"
     assert set(names) == {
         "main.tex",
@@ -48,9 +50,9 @@ def test_unique_root_and_include_positions(tmp_path):
     by_name = {f.name: f for f in graph.files}
     assert by_name["sec1.tex"].included_from == "main.tex"
     assert by_name["sec1.tex"].included_at_line == 7
-    # refs.bbl 是非 TeX include，保留为上下文材料
+    # refs.bbl is a non-TeX include retained as context.
     assert ("main.tex", "refs.bbl") in graph.non_tex_includes
-    # 未引用草稿没有进入本包；行数与原文件一致
+    # The unreferenced draft is outside this bundle; line counts match original files.
     assert by_name["main.tex"].line_count == len(texts["main.tex"].split("\n"))
 
 
@@ -88,7 +90,7 @@ def test_multiple_roots_require_explicit_selection(tmp_path):
     assert graph.status == "unavailable"
     assert graph.reason == BODY_UNAVAILABLE_MULTIPLE_ROOTS
     assert set(graph.root_candidates) == {"main.tex", "draft/old.tex"}
-    # 显式选择后按选择组织；草稿保留在 excluded，不断言科学无关
+    # Honor explicit selection; keep the draft excluded without claiming scientific irrelevance.
     chosen = resolve_manuscript(texts, member_hashes=hashes, root_file="draft/old.tex")
     assert chosen.status == "organized"
     assert chosen.root == "draft/old.tex"
@@ -137,7 +139,7 @@ def test_missing_include_records_problem(tmp_path):
     assert graph.status == "organized"
     codes = [p.code for p in graph.problems]
     assert "missing_included_tex" in codes
-    # 其余正文仍组织成功：问题按缺件记录，不整体失败
+    # Organize remaining body successfully, recording missing members without failing everything.
 
 
 def test_cyclic_include_records_problem(tmp_path):
@@ -180,9 +182,13 @@ def test_outside_and_dynamic_includes_recorded(tmp_path):
     )
     graph = resolve_manuscript(texts, member_hashes=hashes)
     codes = {p.code for p in graph.problems}
-    assert "missing_included_tex" in codes  # ../outside 越界按缺件记录
-    assert "unsupported_include_directive" in codes  # \import 动态包含
-    assert "conditional_tex_include_ambiguous" in codes  # 条件 TeX 包含歧义
+    assert (
+        "missing_included_tex" in codes
+    )  # Record ../outside as an out-of-bounds missing member.
+    assert "unsupported_include_directive" in codes  # Dynamic include through \\import.
+    assert (
+        "conditional_tex_include_ambiguous" in codes
+    )  # Ambiguous conditional TeX include.
 
 
 def test_strip_comments_preserves_lines_and_verbatim():
@@ -207,7 +213,9 @@ def test_strip_comments_preserves_lines_and_verbatim():
 
 
 def test_verbatim_and_dynamic_and_draft_gating(tmp_path):
-    """verbatim 字面包含不算缺件；无花括号动态包含登记；草稿不污染主稿。"""
+    """Literal verbatim includes are not missing members; register unbraced dynamic
+    includes; drafts do not contaminate the main document.
+    """
     members = {
         "main.tex": (
             "\\documentclass{article}\n"
@@ -225,7 +233,7 @@ def test_verbatim_and_dynamic_and_draft_gating(tmp_path):
     graph = resolve_manuscript(members)
     assert graph.status == "organized"
     codes = [(p.code, p.file) for p in graph.problems]
-    # verbatim 内的 fake 不登记；动态包含登记；draft.tex 的 subfile 不登记。
+    # Ignore fake inside verbatim, register dynamic includes, and ignore draft.tex's subfile.
     assert ("missing_included_tex", "main.tex") not in codes
     assert any(
         p.code == "unsupported_include_directive"

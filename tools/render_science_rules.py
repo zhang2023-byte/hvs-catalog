@@ -1,4 +1,4 @@
-"""从英文规则来源生成阅读版；--check 仅检查，不修改文件。"""
+"""Generate readable English rules from their source; --check reads only."""
 
 from __future__ import annotations
 

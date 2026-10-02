@@ -1,17 +1,17 @@
-"""备份与恢复：锁内快照、完整清单、恢复到新目录与一致性验证。
+"""Backup/restore: locked snapshots, complete manifests, fresh targets, and consistency
+checks.
 
-备份在持锁状态下用 SQLite 备份接口分别生成业务与检查点快照，同时
-复制全部已保存记录引用的来源、运行文件与必要空间配置；清单最后写
-入完成标记，只有全部核对成功才发布完整备份。恢复只接受新的目标目
-录，先在同级临时目录完成哈希、数据库完整性与全记录引用校验，再发
-布可打开的空间；保留逻辑空间身份与执行 ID。
+Use SQLite backups for business/checkpoint databases under workspace locks, copy all
+referenced source/run files and required configuration, then write completion markers
+and publish only after validation. Restore in sibling staging directories after
+hash/database/all-reference checks, publishing fresh openable targets while retaining
+logical identities/execution IDs.
 
-一致性核对覆盖两层：全部记录修订（含历史运行修订与每次请求/响应）
-引用的归档文件按记录哈希逐一核验；检查点按线程核对执行绑定与状态引
-用。"标记完成"的执行另按框架完成凭据核对（完成时与修订同事务记录
-的最终检查点 id），通过公开检查点接口核对，与具体流程身份无关。
-备份、恢复与完成状态检查共用同一组核对
-函数。
+Verify archives at every historical revision/request/response by saved hashes and
+checkpoint execution/state bindings per thread. Completed runs also require final
+checkpoint IDs saved atomically with completion revisions, checked through public
+framework interfaces independently of specific flows. Backup/restore/completion share
+validators.
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ FRAMEWORK_FINAL_META_PREFIX = "framework_final_checkpoint:"
 
 
 def framework_final_key(execution_id: str) -> str:
-    """框架完成凭据（最终检查点 id）在业务库 meta 表中的键。"""
+    """Business meta key for final checkpoint-ID completion credentials."""
     return f"{FRAMEWORK_FINAL_META_PREFIX}{execution_id}"
 
 
@@ -72,12 +72,11 @@ def _sha256_file(path: Path) -> str:
 
 
 def _referenced_files(space: Workspace) -> list[str]:
-    """收集全部已保存记录与检查点状态引用的文件（相对根目录）。
+    """Collect files referenced by saved records/checkpoints relative to the root.
 
-    规则归档是约定路径（记录数据只存哈希不存路径），按执行清单补充，
-    否则恢复出的空间无法通过执行输入核验。检查点状态中的
-    ``{path, sha256}`` 形状引用（如材料准备输出的正文视图、ECSV 与
-    准备输入附件）同样纳入备份，恢复后消费入口才能完整回读。
+    Supplement conventional rule archives from run manifests because record data stores
+    hashes without paths. Include standard {path, sha256} checkpoint attachments such as
+    body/ECSV/input views so restored consumers can read everything.
     """
     from ..runtime.execution import rules_archive_rel
 
@@ -92,7 +91,9 @@ def _referenced_files(space: Workspace) -> list[str]:
 
 
 def _checkpoint_artifact_paths(space: Workspace) -> list[str]:
-    """读取各执行检查点状态引用的归档文件路径（不解析为记录）。"""
+    """Read archive paths referenced by execution checkpoint state without treating them as
+    records.
+    """
     from langgraph.checkpoint.sqlite import SqliteSaver
 
     conn = space.checkpoint_connection()
@@ -113,18 +114,20 @@ def _checkpoint_artifact_paths(space: Workspace) -> list[str]:
 
 
 def verify_record_artifacts(space: Workspace) -> list[str]:
-    """按记录原哈希核验全部归档文件，覆盖历史修订与每次请求/响应。"""
+    """Verify all archives against saved hashes, covering historical revisions and every
+    request/response.
+    """
     return verify_artifact_refs(space.store().list_records(), space.root)
 
 
 def walk_state_refs(value: object) -> list[RecordRef]:
-    """收集状态载荷中全部记录引用形状（record_id+revision）的引用。"""
+    """Collect record_id/revision-shaped references from state payloads."""
     refs: list[RecordRef] = []
     if isinstance(value, dict):
         if set(value) >= {"record_id", "revision"} and "item_id" not in value:
             try:
                 refs.append(RecordRef.model_validate(value))
-            except Exception:  # noqa: BLE001 - 非引用形状跳过
+            except Exception:  # noqa: BLE001 - skip non-reference shapes
                 for item in value.values():
                     refs.extend(walk_state_refs(item))
         else:
@@ -139,12 +142,12 @@ def walk_state_refs(value: object) -> list[RecordRef]:
 def checkpoint_state_problems(
     space: Workspace, execution_id: str | None = None
 ) -> list[str]:
-    """检查点内容核对：执行绑定、状态引用与业务库对应（各入口共用）。
+    """Shared checkpoint checks compare execution bindings/state references with business
+    data.
 
-    线程编号一致不代表内容一致：逐线程读取检查点状态，核对执行绑定
-    与状态中的记录引用。允许"业务已提交、框架落后"的合法阶段，只拒绝
-    无法解释的错配；完成核对另由 ``_framework_completion_problems``
-    证明框架真正到达结束节点。
+    Equal thread IDs do not prove content equality. Read each state and allow legitimate
+    committed-business/lagging-framework stages, rejecting unexplained mismatches.
+    _framework_completion_problems separately proves actual terminal framework nodes.
     """
     from langgraph.checkpoint.sqlite import SqliteSaver
 
@@ -179,9 +182,9 @@ def checkpoint_state_problems(
             bound = values.get("execution_id")
             if isinstance(bound, str) and bound != thread_id:
                 problems.append(f"检查点状态绑定执行 {bound}，当前执行为 {thread_id}")
-            # 状态中的 {path, sha256} 附件引用按保存哈希核验实际文件；
-            # 消费、恢复、完成核对与整体备份共用同一核验，改写不因"完成"
-            # 跳过。
+            # Verify {path, sha256} attachments against saved hashes through shared checks;
+            # Shared consumption/recovery/completion/backup checks prevent completed status from bypassing
+            # checks.
             for ref in walk_artifact_refs(values):
                 path = space.root / ref["path"]
                 try:
@@ -222,7 +225,9 @@ def checkpoint_state_problems(
 def _framework_completion_problems(
     space: Workspace, execution_id: str | None = None
 ) -> list[str]:
-    """完成凭据与最新公开检查点 ID 必须相符；不补记缺失凭据。"""
+    """Completion credentials must match latest public checkpoint IDs; never fabricate
+    missing credentials.
+    """
     from langgraph.checkpoint.sqlite import SqliteSaver
 
     from ..records.runs import RunRecord
@@ -271,7 +276,7 @@ def _framework_completion_problems(
 
 
 def _verify_space_consistency(space: Workspace) -> list[str]:
-    """备份与恢复共用的一致性核对：记录集合、材料与检查点绑定。"""
+    """Shared backup/restore checks for collections, materials, and checkpoint bindings."""
     from ..records.validate import CollectionValidationError, validate_collection
 
     problems: list[str] = []
@@ -281,11 +286,11 @@ def _verify_space_consistency(space: Workspace) -> list[str]:
         validate_collection(records, space.root)
     except CollectionValidationError as exc:
         problems.append(f"记录集合校验失败：{exc}")
-    except Exception as exc:  # noqa: BLE001 - 损坏库以问题形式报告
+    except Exception as exc:  # noqa: BLE001 - report corrupted databases as issues
         problems.append(f"记录集合无法读取：{exc}")
-    # 记录引用的文件先按原哈希核验，再制作备份清单
+    # Verify referenced files against original hashes before building backup manifests.
     problems.extend(verify_record_artifacts(space))
-    # 执行固定输入：备份时发现损坏立即拒绝，恢复后保证可继续执行
+    # Reject corrupted fixed inputs during backup so restored executions can continue.
     from ..runtime.execution import get_execution, verify_execution_inputs
 
     for row in store.list_executions():
@@ -295,13 +300,15 @@ def _verify_space_consistency(space: Workspace) -> list[str]:
             problems.append(str(exc))
             continue
         problems.extend(verify_execution_inputs(space, handle))
-    # 检查点内容核对：线程对应之外还核对执行绑定与状态引用
+    # Beyond thread identity, verify execution bindings and state references.
     problems.extend(checkpoint_state_problems(space))
     return problems
 
 
 def backup_workspace(space: Workspace, target: Path) -> BackupReport:
-    """持锁生成完整备份；只有全部核对成功才发布完成标记。"""
+    """Build complete backups under lock; publish completion markers only after every check
+    passes.
+    """
     target = Path(target)
     if target.exists():
         raise WorkspaceConflictError(f"备份目标已存在，拒绝覆盖：{target}")
@@ -337,7 +344,7 @@ def backup_workspace(space: Workspace, target: Path) -> BackupReport:
                     }
                 )
             for rel in _referenced_files(space):
-                # 逐段解析到空间根内：中间目录符号链接同样拒绝
+                # Resolve each component within the root; reject intermediate-directory symlinks too.
                 source = resolve_within(space.root, rel)
                 if not source.is_file():
                     raise WorkspaceIntegrityError(f"引用文件不可读：{rel}")
@@ -375,7 +382,7 @@ def backup_workspace(space: Workspace, target: Path) -> BackupReport:
                 json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
-            # 复核：每个文件按记录的哈希重新计算
+            # Recheck every file against its recorded hash.
             for entry in entries:
                 actual = _sha256_file(staging / entry["path"])
                 if actual != entry["sha256"]:
@@ -414,7 +421,7 @@ def read_backup_manifest(backup_dir: Path) -> dict:
 
 
 def restore_workspace(backup_dir: Path, target: Path) -> Workspace:
-    """把完整备份恢复到一个新的目标目录；先校验后发布。"""
+    """Restore complete backups to fresh directories, validating before publication."""
     backup_dir = Path(backup_dir)
     manifest = read_backup_manifest(backup_dir)
     target = Path(target)
@@ -432,8 +439,8 @@ def restore_workspace(backup_dir: Path, target: Path) -> Workspace:
             if rel in seen:
                 raise WorkspaceIntegrityError(f"备份清单出现重复目标路径：{rel}")
             seen.add(rel)
-            # 逐段验证路径：任何一段符号链接或越界都拒绝，防止从备份
-            # 根外读取材料（只检查末端文件不足以发现中间目录逃逸）
+            # Verify each component for symlinks/escapes, preventing reads outside backup roots;
+            # checking only leaf files misses intermediate-directory escapes.
             source = resolve_within(backup_dir, rel)
             if not source.is_file():
                 raise WorkspaceIntegrityError(f"备份文件缺失或不是普通文件：{rel}")
@@ -442,7 +449,9 @@ def restore_workspace(backup_dir: Path, target: Path) -> Workspace:
                 raise WorkspaceIntegrityError(f"备份文件哈希不符：{rel}")
             dest = staging / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
-            if dest.is_symlink():  # pragma: no cover - 目标在新建目录内
+            if (
+                dest.is_symlink()
+            ):  # pragma: no cover - target lies inside a newly created directory
                 raise WorkspaceIntegrityError(f"恢复目标包含符号链接：{rel}")
             shutil.copyfile(source, dest)
 
@@ -455,7 +464,7 @@ def restore_workspace(backup_dir: Path, target: Path) -> Workspace:
             finally:
                 conn.close()
 
-        # 逻辑空间身份与执行 ID 保留；锁文件在新位置重建
+        # Preserve logical workspace/execution IDs; recreate locks at the new location.
         lock_path = staging / ".lock"
         fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o644)
         os.close(fd)

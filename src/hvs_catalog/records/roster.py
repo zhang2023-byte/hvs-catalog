@@ -1,4 +1,4 @@
-"""名单记录：对象条目、方法、材料范围与未列清的原文范围。"""
+"""Rosters: objects, methods, material scope, and unlisted source ranges."""
 
 from __future__ import annotations
 

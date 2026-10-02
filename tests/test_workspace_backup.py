@@ -1,4 +1,6 @@
-"""备份与恢复验证：四种状态、坏备份拒绝、恢复目标保护（A19/A20/A21）。"""
+"""Backup/restore verification: four states, invalid-backup rejection, and target
+protection (A19/A20/A21).
+"""
 
 from __future__ import annotations
 
@@ -46,7 +48,9 @@ def _run_to_pause(space, service, *, paper="A", request_key="a"):
 
 
 def _run_finished(space, service, *, paper="B", request_key="b"):
-    """无歧义论文一次跑完，为备份测试提供含执行与材料的空间。"""
+    """Complete an unambiguous paper once to supply a workspace with execution/materials
+    for backup tests.
+    """
     execution, flow, _ = start_execution(space, paper=paper, request_key=request_key)
     report = resume_execution(space, execution.execution_id, flow, service=service)
     assert report.outcome == "finished"
@@ -91,7 +95,9 @@ print(json.dumps(out))
 
 
 def _continue_in_subprocess(tmp_path, space_root, execution_id, ledger):
-    """在新进程中打开恢复出的空间并继续执行（A19 的新进程要求）。"""
+    """Open the restored workspace in a fresh process and continue execution, as required
+    by A19.
+    """
     script = tmp_path / "continue_driver.py"
     script.write_text(_CONTINUE_DRIVER, encoding="utf-8")
     result = subprocess.run(
@@ -105,7 +111,9 @@ def _continue_in_subprocess(tmp_path, space_root, execution_id, ledger):
 
 @pytest.mark.integration
 def test_backup_waiting_answer_and_restore_continues(tmp_path, service):
-    """A19 状态一：等待答复时备份，恢复后在新目录新进程继续。"""
+    """A19 state 1: back up while waiting for an answer; continue in a fresh
+    directory/process after restore.
+    """
     space = initialize_workspace(tmp_path / "space")
     execution, _flow, _question = _run_to_pause(space, service)
     backup_workspace(space, tmp_path / "backup-waiting")
@@ -115,7 +123,7 @@ def test_backup_waiting_answer_and_restore_continues(tmp_path, service):
     restored = restore_workspace(tmp_path / "backup-waiting", tmp_path / "restored")
     try:
         assert restored.identity.space_id == space.identity.space_id
-        # 新空间继续：材料、业务记录与待办一致
+        # The new workspace retains consistent materials, business records, and pending questions.
         assert (
             restored.store().current_revision(
                 m.paper_record_id("A", execution.execution_id)
@@ -126,14 +134,14 @@ def test_backup_waiting_answer_and_restore_continues(tmp_path, service):
         assert questions[0].status == "open"
     finally:
         restored.close()
-    # 在新进程中继续执行；前两步结果被复用，日志不产生任何新调用
+    # Continue in a fresh process, reusing the first two steps without new logged calls.
     out = _continue_in_subprocess(
         tmp_path,
         tmp_path / "restored",
         execution.execution_id,
         tmp_path / "calls.jsonl",
     )
-    assert out["first"] == "paused"  # 仍等待答复
+    assert out["first"] == "paused"  # Still waiting for an answer.
     assert out["second"] == "finished"
     assert out["paper_revision"] == 2
     assert out["service_calls"] == calls_before
@@ -143,7 +151,7 @@ def test_backup_waiting_answer_and_restore_continues(tmp_path, service):
 
 @pytest.mark.integration
 def test_backup_pending_apply_state(tmp_path, service):
-    """A19 状态二：决定已保存、结果待应用。"""
+    """A19 state 2: decision saved, results awaiting application."""
     space = initialize_workspace(tmp_path / "space")
     execution, _flow, question = _run_to_pause(space, service)
     submit_expert_decision(
@@ -157,7 +165,7 @@ def test_backup_pending_apply_state(tmp_path, service):
     try:
         view = pending_questions(restored, execution_id=execution.execution_id)[0]
         assert view.status == "answered"
-        assert view.application is None  # 回执显示待应用
+        assert view.application is None  # The receipt shows pending application.
         out = _continue_in_subprocess(
             tmp_path, restored.root, execution.execution_id, tmp_path / "calls.jsonl"
         )
@@ -180,7 +188,7 @@ def test_backup_pending_apply_state(tmp_path, service):
 
 @pytest.mark.integration
 def test_backup_applied_awaiting_resume_state(tmp_path, service):
-    """A19 状态三：结果已应用、框架待恢复。"""
+    """A19 state 3: results applied, framework awaiting recovery."""
     space = initialize_workspace(tmp_path / "space")
     execution, _flow, question = _run_to_pause(space, service)
     submit_expert_decision(
@@ -220,7 +228,7 @@ def test_backup_applied_awaiting_resume_state(tmp_path, service):
             for r in restored.store().list_records()
             if r.record_id == m.paper_record_id("A", execution.execution_id)
         ]
-        assert revisions == [1, 2]  # 已应用结果不再生成第二份修订
+        assert revisions == [1, 2]  # Applied results create no second revision.
     finally:
         restored.close()
         space.close()
@@ -228,7 +236,9 @@ def test_backup_applied_awaiting_resume_state(tmp_path, service):
 
 @pytest.mark.integration
 def test_backup_finished_state_and_receipts_complete(tmp_path, service):
-    """A19 状态四：完成后备份；回执完整、恢复后可核对。"""
+    """A19 state 4: back up after completion with complete receipts verifiable after
+    restore.
+    """
     space = initialize_workspace(tmp_path / "space")
     execution, flow, question = _run_to_pause(space, service)
     submit_expert_decision(
@@ -242,7 +252,7 @@ def test_backup_finished_state_and_receipts_complete(tmp_path, service):
     manifest = read_backup_manifest(tmp_path / "backup-finished")
     roles = {entry["role"] for entry in manifest["files"]}
     assert {"database", "material", "space_config"} <= roles
-    # 操作回执在业务库内随快照保存
+    # Save operation receipts with the business database snapshot.
     restored = restore_workspace(tmp_path / "backup-finished", tmp_path / "restored")
     try:
         receipts = restored.store().find_receipts()
@@ -262,7 +272,7 @@ def test_backup_finished_state_and_receipts_complete(tmp_path, service):
 
 
 def test_backup_refuses_inconsistent_space(tmp_path, service):
-    """A20：空间不一致时不生成备份。"""
+    """A20: inconsistent workspaces cannot produce backups."""
     space = initialize_workspace(tmp_path / "space")
     _run_finished(space, service)
     (space.root / "sources/r05/b/paper.tex").write_bytes(b"tampered")
@@ -273,14 +283,16 @@ def test_backup_refuses_inconsistent_space(tmp_path, service):
 
 
 def test_incomplete_backup_unusable_and_source_untouched(tmp_path, service):
-    """A20：无完整标记的备份不可用；坏备份不发布有效空间。"""
+    """A20: backups without complete markers are unusable; invalid backups publish no valid
+    workspace.
+    """
     space = initialize_workspace(tmp_path / "space")
     _run_finished(space, service)
     backup_workspace(space, tmp_path / "backup")
     space.close()
     marker = tmp_path / "backup" / "backup-manifest.json"
     manifest = json.loads(marker.read_text(encoding="utf-8"))
-    # 模拟中断：清单回退为未完成
+    # Simulate interruption by reverting the manifest to incomplete.
     manifest["state"] = "incomplete"
     marker.write_text(json.dumps(manifest), encoding="utf-8")
     with pytest.raises(WorkspaceIntegrityError, match="完整标记"):
@@ -291,7 +303,7 @@ def test_incomplete_backup_unusable_and_source_untouched(tmp_path, service):
 
 
 def test_restore_detects_missing_file_wrong_hash_corrupt_db(tmp_path, service):
-    """A20：缺文件、错误哈希与损坏数据库的备份都不可用。"""
+    """A20: reject backups with missing files, incorrect hashes, or corrupted databases."""
     space = initialize_workspace(tmp_path / "space")
     _run_finished(space, service)
     backup_workspace(space, tmp_path / "backup")
@@ -319,7 +331,7 @@ def test_restore_detects_missing_file_wrong_hash_corrupt_db(tmp_path, service):
 
 
 def test_restore_refuses_existing_target_and_escapes(tmp_path, service):
-    """A21：恢复目标已存在、路径越界与符号链接逃逸明确拒绝。"""
+    """A21: reject existing restore targets, out-of-bounds paths, and escaping symlinks."""
     space = initialize_workspace(tmp_path / "space")
     _run_finished(space, service)
     backup_workspace(space, tmp_path / "backup")
@@ -332,7 +344,7 @@ def test_restore_refuses_existing_target_and_escapes(tmp_path, service):
         restore_workspace(tmp_path / "backup", existing)
     assert (existing / "keep.txt").read_text(encoding="utf-8") == "用户资料"
 
-    # 清单路径越界
+    # Manifest path escapes its root.
     evil = tmp_path / "backup-evil"
     shutil.copytree(tmp_path / "backup", evil)
     marker = evil / "backup-manifest.json"
@@ -345,7 +357,7 @@ def test_restore_refuses_existing_target_and_escapes(tmp_path, service):
         restore_workspace(evil, tmp_path / "r-evil")
     assert not (tmp_path / "escape.txt").exists()
 
-    # 符号链接逃逸：备份里的文件换成指向空间外的链接
+    # Replace a backup file with a symlink outside the workspace.
     linked = tmp_path / "backup-linked"
     shutil.copytree(tmp_path / "backup", linked)
     victim = tmp_path / "victim.txt"
@@ -359,7 +371,9 @@ def test_restore_refuses_existing_target_and_escapes(tmp_path, service):
 
 
 def test_restore_rejects_symlinked_backup_source_directory(tmp_path, service):
-    """中间目录符号链接不能让恢复读取备份根外的材料。"""
+    """Intermediate-directory symlinks cannot make restore read material outside the backup
+    root.
+    """
     space = initialize_workspace(tmp_path / "space")
     _run_finished(space, service)
     backup_workspace(space, tmp_path / "backup")
@@ -378,7 +392,7 @@ def test_restore_rejects_symlinked_backup_source_directory(tmp_path, service):
     with pytest.raises(WorkspaceIntegrityError, match="符号链接"):
         restore_workspace(backup, tmp_path / "restored")
     assert not (tmp_path / "restored").exists()
-    # 备份根外的文件字节不变，没有把外部内容复制进任何恢复产物
+    # External file bytes remain unchanged and are copied into no restored output.
     for rel, payload in outside_files.items():
         assert (outside / rel).read_bytes() == payload
     assert not (tmp_path / "restored").exists()

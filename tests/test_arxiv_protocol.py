@@ -1,7 +1,8 @@
-"""arXiv 协议层合成测试：标识、查询构造、分页解析与服务入口（lane A）。
+"""Synthetic arXiv protocol tests: identifiers, queries, pagination parsing, and service
+entry points (lane A).
 
-全部离线：服务层测试注入假传输与假时钟，不访问网络；夹具是合成
-Atom/HTML 材料，不包含任何真实论文数据。
+All tests are offline, using fake transport and clocks with synthetic Atom/HTML fixtures
+and no real paper data.
 """
 
 from __future__ import annotations
@@ -105,7 +106,7 @@ def make_service(
     return ArxivApiService(client, clock=clock)
 
 
-# ---------------------------------------------------------------- 标识解析
+# ---------------------------------------------------------------- Identifier parsing
 
 
 @pytest.mark.parametrize(
@@ -198,7 +199,7 @@ def test_parse_entry_id_url_accepts_arxiv_hosts():
         "http://arxiv.org/abs/",
         "http://arxiv.org/abs/2101.01234v1/extra",
         "not-a-url",
-        # 协议/端口/凭据/空白（审核复现：ftp 与非标准端口曾被接受）
+        # Protocols, ports, credentials, and whitespace; review reproduced acceptance of FTP and nonstandard ports.
         "ftp://arxiv.org/abs/2101.01234v1",
         "gopher://export.arxiv.org/abs/2101.01234v1",
         "http://user:pass@arxiv.org/abs/2101.01234v1",
@@ -218,8 +219,8 @@ def test_parse_entry_id_url_rejects_foreign_or_malformed(url):
 @pytest.mark.parametrize(
     "url",
     [
-        "http://arxiv.org:80/abs/2101.01234v2",  # http 对应标准端口 80
-        "https://arxiv.org:443/abs/2101.01234v2",  # https 对应标准端口 443
+        "http://arxiv.org:80/abs/2101.01234v2",  # HTTP uses standard port 80.
+        "https://arxiv.org:443/abs/2101.01234v2",  # HTTPS uses standard port 443.
     ],
 )
 def test_parse_entry_id_url_accepts_scheme_standard_ports(url):
@@ -229,13 +230,13 @@ def test_parse_entry_id_url_accepts_scheme_standard_ports(url):
 
 
 def test_parse_entry_id_url_accepts_historical_http_identifier():
-    """Atom 条目 id 的 http:// 形式是历史标识符，不是出站请求。"""
+    """An Atom entry's historical http:// identifier is not an outbound request."""
     identifier = parse_entry_id_url("http://arxiv.org/abs/2101.01234v2")
     assert identifier.canonical_id == "2101.01234"
     assert identifier.version == 2
 
 
-# ---------------------------------------------------------------- 查询构造
+# ---------------------------------------------------------------- Query construction
 
 
 def test_query_requires_explicit_dates_terms_or_categories():
@@ -310,7 +311,9 @@ def test_query_allows_full_page_and_alternate_sort():
 
 
 def test_query_window_beyond_retrieval_ceiling_is_rejected_before_request():
-    """分页窗口超出检索上限时在构造阶段拒绝，绝不发出请求。"""
+    """Reject pagination windows exceeding the retrieval ceiling during construction,
+    before any request.
+    """
     with pytest.raises(ArxivQueryError, match="检索上限"):
         ArxivSearchRequest(
             date(2026, 1, 1), date(2026, 1, 31), terms="star", start=30000
@@ -323,14 +326,14 @@ def test_query_window_beyond_retrieval_ceiling_is_rejected_before_request():
             start=29999,
             page_size=100,  # 29999 + 100 > 30000
         )
-    # 恰好落在上限内的窗口仍可用（start + page_size == 30000）。
+    # A window exactly at the ceiling remains valid: start + page_size == 30000.
     edge = ArxivSearchRequest(
         date(2026, 1, 1), date(2026, 1, 31), terms="star", start=29900, page_size=100
     )
     assert edge.to_query_params()["start"] == "29900"
 
 
-# ---------------------------------------------------------------- 分页解析
+# ---------------------------------------------------------------- Pagination parsing
 
 
 def parse_page(name: str, request: ArxivSearchRequest = REQUEST):
@@ -404,7 +407,7 @@ def test_truncated_page_is_exposed_and_never_complete():
     assert len(page.entries) == 2
     assert page.total_results == 5
     assert PaginationAnomaly.TRUNCATED_PAGE in page.anomalies
-    # 存在异常时覆盖情况无法确立：不能宣称完整，也不是确定的“还有更多”。
+    # Anomalies prevent a coverage conclusion: neither complete coverage nor definite continuation is established.
     assert page.has_more is None
 
 
@@ -420,7 +423,7 @@ def test_negative_total_is_invalid_and_blocks_completeness():
     assert page.total_results is None
     assert PaginationAnomaly.TOTAL_INVALID in page.anomalies
     assert page.has_more is None
-    assert len(page.entries) == 1  # 可用的部分条目仍保留
+    assert len(page.entries) == 1  # Retain usable partial entries.
 
 
 def test_entries_exceeding_declared_total_are_flagged():
@@ -468,7 +471,7 @@ def test_entry_without_version_is_refused():
         parse_atom_search_page(payload, REQUEST, response_url=API_URL, fetched_at=1.0)
 
 
-# ---------------------------------------------------------------- 批次解析
+# ---------------------------------------------------------------- Batch parsing
 
 
 def test_batch_result_identity_is_preserved():
@@ -529,7 +532,7 @@ def test_batch_legacy_identifier_round_trip():
     assert lookup.meta is not None and lookup.meta.version == 3
 
 
-# ---------------------------------------------------------------- 服务入口
+# ---------------------------------------------------------------- Service entry points
 
 
 def test_service_search_sends_explicit_params_and_records_provenance(tmp_path):
@@ -595,19 +598,23 @@ def test_service_metadata_by_ids_refuses_malformed_before_request(tmp_path):
 
 
 def test_service_metadata_by_ids_rejects_oversized_batch_before_request(tmp_path):
-    """超过工程单批上限的请求在发送前拒绝，不依赖服务端截断。"""
+    """Reject requests above the engineering batch limit before sending, without relying on
+    server truncation.
+    """
     transport = FakeTransport([])
     service = make_service(transport, FakeClock(), tmp_path)
     ids = [f"2101.9{i:04d}" for i in range(MAX_ID_LIST_LENGTH + 1)]
     with pytest.raises(ArxivQueryError, match="单批标识数") as excinfo:
         service.metadata_by_ids(ids)
     message = str(excinfo.value)
-    assert str(MAX_ID_LIST_LENGTH) in message  # 错误信息报告上限供拆批
+    assert (
+        str(MAX_ID_LIST_LENGTH) in message
+    )  # Include the limit in the error so callers can split batches.
     assert transport.calls == []
 
 
 def test_service_metadata_by_ids_allows_batch_at_documented_limit(tmp_path):
-    """恰好达到工程单批上限的请求正常发送（上限本身就是工程护栏）。"""
+    """Send requests exactly at the engineering batch limit normally."""
     transport = FakeTransport([atom_response("batch_page.xml")])
     service = make_service(transport, FakeClock(), tmp_path)
     ids = [f"2101.9{i:04d}" for i in range(MAX_ID_LIST_LENGTH)]
@@ -620,7 +627,9 @@ def test_service_metadata_by_ids_allows_batch_at_documented_limit(tmp_path):
 
 
 def test_service_rejects_oversized_request_url_before_network(tmp_path):
-    """请求 URL 超过工程长度护栏时在发送前拒绝，报告上限。"""
+    """Reject request URLs above the engineering length limit before sending and report the
+    limit.
+    """
     transport = FakeTransport([])
     service = make_service(transport, FakeClock(), tmp_path)
     request = ArxivSearchRequest(
@@ -683,7 +692,7 @@ def test_service_download_source_legacy_identifier_url(tmp_path):
     assert download.payload == b"legacy-bytes"
 
 
-# ------------------------------------------- 源码最终 URL 的身份/版本校验
+# ------------------------------------------- Final source URL identity/version validation
 
 
 def source_response(final_url: str, *, body: bytes = b"payload") -> TransportResponse:
@@ -697,7 +706,9 @@ def source_response(final_url: str, *, body: bytes = b"payload") -> TransportRes
 
 
 def test_download_rejects_final_url_pointing_to_different_version(tmp_path):
-    """最终 URL 指向 v3 而请求 v2：拒绝交付字节，不冒充 v2。"""
+    """Reject bytes when the final URL points to v3 but v2 was requested; do not label them
+    v2.
+    """
     transport = FakeTransport(
         [source_response("https://arxiv.org/e-print/2101.01234v3")]
     )
@@ -709,18 +720,18 @@ def test_download_rejects_final_url_pointing_to_different_version(tmp_path):
 @pytest.mark.parametrize(
     "final_url",
     [
-        # 无版本：无法确认对应关系
+        # An unversioned URL cannot establish correspondence.
         "https://arxiv.org/e-print/2101.01234",
-        # 完全不同的论文
+        # A completely different paper.
         "https://arxiv.org/e-print/2101.99999v2",
-        # 非官方路径与额外成分
+        # Unofficial paths and extra URL components.
         "https://arxiv.org/attacker/e-print/2101.01234v2",
         "https://arxiv.org/e-print/2101.01234v2?injected=1",
         "https://arxiv.org/e-print/2101.01234v2#frag",
         "https://evil.example/e-print/2101.01234v2",
         "https://user:pass@arxiv.org/e-print/2101.01234v2",
         "https://arxiv.org/e-print/2101.01234v2/extra",
-        # 协议/端口（审核复现：ftp 与非标准端口曾被接受并交付字节）
+        # Protocols/ports: review reproduced accepting FTP and nonstandard ports and delivering bytes.
         "ftp://arxiv.org/e-print/2101.01234v2",
         "http://arxiv.org/e-print/2101.01234v2",
         "https://arxiv.org:8080/e-print/2101.01234v2",
@@ -728,7 +739,9 @@ def test_download_rejects_final_url_pointing_to_different_version(tmp_path):
     ],
 )
 def test_download_rejects_untrustworthy_final_urls(tmp_path, final_url):
-    """注入客户端时的服务层独立校验：不依赖传输层的出站预检。"""
+    """Validate independently at the service boundary for injected clients, without relying
+    on outbound transport preflight.
+    """
     transport = FakeTransport([source_response(final_url)])
     service = make_service(transport, FakeClock(), tmp_path)
     with pytest.raises(ArxivSourceError):
@@ -736,7 +749,7 @@ def test_download_rejects_untrustworthy_final_urls(tmp_path, final_url):
 
 
 def test_download_accepts_official_src_path_with_exact_identity(tmp_path):
-    """官方 /src/ 路径上的精确版本标识可倏信接受。"""
+    """Accept an exact versioned identifier on the official /src/ path."""
     transport = FakeTransport([source_response("https://arxiv.org/src/2101.01234v2")])
     service = make_service(transport, FakeClock(), tmp_path)
     download = service.download_source("2101.01234v2")
@@ -822,15 +835,15 @@ def test_service_download_source_empty_body_is_failure(tmp_path):
         service.download_source("2101.01234v2")
 
 
-# ------------------------------------------------ R live-fix：内容协商与错误分类
+# ------------------------------------------------ R live-fix: negotiation and error classification
 
 
 def test_service_download_source_sends_explicit_accept_headers(tmp_path):
-    """源码下载显式声明内容协商（实况 406 的客户端侧诚实修正）。
+    """Declare source-download content negotiation explicitly, correcting the client-side
+    cause of a live 406.
 
-    旧行为（缺陷检测器）：不发送任何 Accept 头。现在必须携带能够接
-    收并分类的表示类型与 identity 传输编码——不伪造浏览器身份、不
-    换端点。
+    Previously no Accept header was sent. Require supported representations and identity
+    transfer encoding, without spoofing a browser or changing endpoints.
     """
     transport = FakeTransport(
         [
@@ -848,7 +861,7 @@ def test_service_download_source_sends_explicit_accept_headers(tmp_path):
     (call,) = transport.calls
     assert call["headers"] is not None
     accept = call["headers"].get("Accept", "")
-    # tar/gzip 源码形态可交付；pdf/html 也会被接收后按内容类型分类。
+    # Deliver tar/gzip source formats; accept PDF/HTML responses for content-type classification too.
     for expected in (
         "application/x-eprint-tar",
         "application/gzip",
@@ -861,10 +874,10 @@ def test_service_download_source_sends_explicit_accept_headers(tmp_path):
 
 
 def test_service_download_source_406_preserves_http_error(tmp_path):
-    """HTTP 406（非 404）保持为传输 HTTP 错误：状态码如实上抛。
+    """Propagate HTTP 406 and other non-404 responses as transport HTTP errors.
 
-    只有 404 映射为"该版本没有可获取的源码包"；406/403 等不由客户
-    端猜测成因，交给 CLI 的传输错误诊断。
+    Only 404 means no obtainable source package for that version. Do not guess causes
+    for 406/403; let CLI transport diagnostics report them.
     """
     transport = FakeTransport(
         [
@@ -883,14 +896,18 @@ def test_service_download_source_406_preserves_http_error(tmp_path):
 
 
 def test_service_download_source_429_propagates_rate_limited(tmp_path):
-    """429 在客户端有界重试后仍受限：以限流错误上抛（供 CLI 分类）。"""
+    """Propagate persistent 429 after bounded client retries as a rate-limit error for CLI
+    classification.
+    """
     rate_error = ArxivRateLimitedError(
         "HTTP 429：rate exceeded",
         url="https://arxiv.org/e-print/2101.01234v2",
         status_code=429,
         headers={},
     )
-    transport = FakeTransport([rate_error] * 3)  # 默认策略 3 次有界重试
+    transport = FakeTransport(
+        [rate_error] * 3
+    )  # The default policy allows three bounded retries.
     service = make_service(transport, FakeClock(), tmp_path)
     with pytest.raises(ArxivRateLimitedError):
         service.download_source("2101.01234v2")
@@ -898,7 +915,7 @@ def test_service_download_source_429_propagates_rate_limited(tmp_path):
 
 
 def test_service_download_source_timeout_propagates(tmp_path):
-    """传输超时分类上抛（不做无界重试）。"""
+    """Propagate transport timeouts with their classification, without unbounded retries."""
     timeout_error = ArxivTimeoutError(
         "请求超时：https://arxiv.org/e-print/2101.01234v2",
         url="https://arxiv.org/e-print/2101.01234v2",

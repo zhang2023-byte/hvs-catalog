@@ -1,4 +1,4 @@
-"""支持以 python -m hvs_catalog 运行命令行。"""
+"""Run the CLI through python -m hvs_catalog."""
 
 from hvs_catalog.cli import main
 

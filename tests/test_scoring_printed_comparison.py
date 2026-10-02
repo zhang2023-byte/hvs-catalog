@@ -1,10 +1,10 @@
-"""受限排版与条件短语比较的边界测试（A1–A5、B 系列判定来源、U1/U2）。
+"""Restricted formatting/condition comparison boundaries (A1-A5, B verdict sources, U1/U2).
 
-按域区分：数值用 ``compare_number``、单位用 ``compare_unit``、条件用
-``compare_condition``。白名单未命中不再证明不同；数值域
-外的英文文本、未支持单位语法与未支持条件差异均 undecidable；单位丢
-失/尺度不同、数值符号/指数符号不同与 B7 的统计结构差异仍为确定判定。
-完整分数影响由固定样例与修复回归测试覆盖。
+Use domain-specific compare_number/unit/condition. Missing the allowlist does not prove
+difference: out-of-domain English, unsupported units, and unsupported condition changes
+are undecidable. Missing/scaled units, numeric/exponent sign differences, and B7
+statistical-structure differences remain definite. Frozen examples and regression tests
+cover full score effects.
 """
 
 from __future__ import annotations
@@ -40,11 +40,14 @@ def test_number_equivalent_forms(gold, prediction):
 @pytest.mark.parametrize(
     ("gold", "prediction"),
     [
-        ("8.2", "8200"),  # B1 的数值侧：正确换算也不是排版等价
-        ("600", "610"),  # B2：中心值不同
-        ("8.2", "8.20"),  # C1 反向：尾零不能丢也不能补
-        ("1.20\\times10^{3}", "1.20\\times10^{-3}"),  # 指数符号不同
-        ("-8.2", "8.2"),  # 数值符号不同
+        (
+            "8.2",
+            "8200",
+        ),  # B1 numeric side: correct conversion is still not formatting equivalence.
+        ("600", "610"),  # B2: differing central values.
+        ("8.2", "8.20"),  # Reverse C1: neither remove nor add trailing zeros.
+        ("1.20\\times10^{3}", "1.20\\times10^{-3}"),  # Different exponent signs.
+        ("-8.2", "8.2"),  # Different numeric signs.
         ("12h34m56.7s", "12h34m56.8s"),
     ],
 )
@@ -55,10 +58,16 @@ def test_number_different_forms(gold, prediction):
 @pytest.mark.parametrize(
     ("gold", "prediction"),
     [
-        ("\\mystery{8.2}", "8.2"),  # U1：未知宏不能剥离
+        ("\\mystery{8.2}", "8.2"),  # U1: never strip unknown macros.
         ("8.2", "\\mystery{8.2}"),
-        ("about eight", "eight"),  # 数值域外的英文差异不能确定语义
-        ("< 600", "≤ 600"),  # 包含符差异属统计结构，由 inclusive 字段判定
+        (
+            "about eight",
+            "eight",
+        ),  # English differences outside the numeric domain cannot establish semantics.
+        (
+            "< 600",
+            "≤ 600",
+        ),  # Inclusion-symbol differences are statistical structure, judged through inclusive.
     ],
 )
 def test_number_undecidable_forms(gold, prediction):
@@ -79,8 +88,8 @@ def test_unit_equivalent_forms(gold, prediction):
 @pytest.mark.parametrize(
     ("gold", "prediction"),
     [
-        ("kpc", "pc"),  # 单位尺度不同（B1 单位侧）
-        ("km s⁻¹", "km s⁻²"),  # 指数不同
+        ("kpc", "pc"),  # Different unit scales: B1 unit side.
+        ("km s⁻¹", "km s⁻²"),  # Different exponents.
     ],
 )
 def test_unit_different_forms(gold, prediction):
@@ -90,7 +99,7 @@ def test_unit_different_forms(gold, prediction):
 @pytest.mark.parametrize(
     ("gold", "prediction"),
     [
-        ("km s⁻¹", "km/s"),  # 未支持语法不能确定语义
+        ("km s⁻¹", "km/s"),  # Unsupported syntax cannot establish semantics.
         ("kpc", "\\mysteryunit"),
     ],
 )
@@ -133,10 +142,10 @@ def test_condition_whitelist_and_model_distinction():
         compare_condition("assuming potential M2", "under Galactic potential M2")
         == "equivalent"
     )
-    # A5：白名单外的句式不能因包含 M1 而同义，也不能据此证明不同
+    # A5: an unallowlisted phrase mentioning M1 proves neither equivalence nor difference.
     assert compare_condition(M1, "not assuming potential M1") == "different"
     assert compare_condition(M1, "under Galactic potential M1 and M2") == "undecidable"
-    # B8/U2：明确 M1 与 M2 不同；缺失限定无法判定
+    # B8/U2: explicit M1 and M2 differ; missing qualifiers remain undecidable.
     assert compare_condition(M1, M2) == "different"
     assert (
         compare_condition(M1, "adopting the Galactic potential model") == "undecidable"
@@ -150,7 +159,7 @@ def test_condition_whitelist_and_model_distinction():
 
 
 def test_condition_unsupported_differences_are_undecidable():
-    # 白名单未命中不能证明不同（原先被编码为 different）
+    # An allowlist miss cannot prove difference, despite the previous different encoding.
     assert compare_condition(
         M1, "under Galactic potential M1 (same adopted model)"
     ) == ("undecidable")

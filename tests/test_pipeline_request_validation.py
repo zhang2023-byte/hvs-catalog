@@ -1,8 +1,8 @@
-"""共享提取入口：严格请求与入口校验（C01）。
+"""Shared extraction entry point: strict requests and entry validation (C01).
 
-请求只接受强类型字段，没有 Gold、评分或答案路径参数，也不接受自由
-metadata；未知字段与非法模型配置一律拒绝。日常与评测经同一入口建
-立执行，输入快照同样不含答案通道。
+Accept strongly typed fields only, with no Gold/scoring/answer paths or free metadata.
+Reject unknown fields and invalid model configuration. Ordinary/evaluation execution
+uses one entry point with no answer channels in snapshots.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ def _request(source_ref, **overrides):
 
 
 def test_request_fields_are_strict_and_closed():
-    """字段集固定：无 Gold/score/答案路径，也无自由 metadata。"""
+    """Fixed fields exclude Gold/scoring/answer paths and free metadata."""
     fields = set(ExtractionRequest.model_fields)
     assert fields == {
         "mode",
@@ -61,7 +61,7 @@ def test_request_fields_are_strict_and_closed():
     forbidden = ("gold", "gold_path", "answers", "answer_path", "score", "scoring")
     for name in forbidden:
         assert name not in fields
-    # 未知/额外字段拒绝（extra=forbid），答案不能借道 metadata 偷渡
+    # extra=forbid rejects unknown fields; metadata cannot smuggle answers.
     with pytest.raises(ValidationError, match="metadata"):
         _request(None, metadata={"gold_answer": 42})
     with pytest.raises(ValidationError, match="gold_path"):
@@ -88,13 +88,13 @@ def test_models_need_unique_default_and_unique_steps(source):
 
 
 def test_unknown_step_model_rejected_before_execution(space, source):
-    """给不存在或未启用的步骤设置模型时，运行前报错。"""
+    """Reject models assigned to nonexistent or disabled steps before running."""
     request = _request(
         source, models=[StepModel(model="d1"), StepModel(step_id="nope", model="m")]
     )
     with pytest.raises(PipelineRequestError, match="没有步骤 'nope'"):
         start_extraction(space, request=request, request_key="bad-step")
-    # 未建立任何执行
+    # No execution was created.
     assert space.store().list_executions() == []
 
 
@@ -105,7 +105,9 @@ def test_unknown_method_rejected_before_execution(space, source):
 
 
 def test_preflight_rejects_unsupported_material(space, tmp_path):
-    """模拟实现之外的论文在建立执行前拒绝，不退化为空结果。"""
+    """Reject papers outside the mock implementation before execution creation, without
+    empty-result fallback.
+    """
     from datetime import UTC, datetime
 
     from hvs_catalog.records.common import build_record
@@ -184,7 +186,9 @@ def test_preflight_rejects_missing_fixed_decision(space, source):
 def test_daily_and_evaluation_share_one_entry_and_snapshot_has_no_answer_channel(
     space, source
 ):
-    """评测与日常经同一入口建立执行；快照字段固定、无答案通道。"""
+    """Evaluation and ordinary runs share execution creation with fixed snapshot fields and
+    no answer channels.
+    """
     snapshot_fields = set(InputSnapshot.model_fields)
     assert snapshot_fields == {
         "source_refs",

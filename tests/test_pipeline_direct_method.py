@@ -1,8 +1,9 @@
-"""共享提取入口：direct 方法的模拟执行与名单→数值传递（C02/C03）。
+"""Shared extraction entry point: mock direct execution and roster-to-value transfer
+(C02/C03).
 
-名单步骤产出按执行隔离的名单记录；数值步骤只接受名单中收录的条
-目，被排除或未决对象进入数值响应时明确失败。后续步骤失败不抹去已
-保存名单；恢复时输入相同直接复用，不再调用模拟服务。
+Roster outputs are isolated by execution. Values accept included entries only; excluded
+or unresolved response objects fail explicitly. Later failures retain saved rosters, and
+identical recovery input reuses them without another mock service call.
 """
 
 from __future__ import annotations
@@ -66,7 +67,9 @@ def _record(space, record_id):
 
 
 def test_direct_clear_paper_finishes_without_pause(space, service):
-    """B 篇含义明确：默认开启裁决也不产生问题，一次完成。"""
+    """Unambiguous paper B completes once with default expert review enabled and no
+    questions.
+    """
     source = import_mock_source(space, PAPER_B)
     handle = _start(space, source, request_key="b-on")
     report = resume_extraction(space, handle.execution_id, service=service)
@@ -89,7 +92,7 @@ def test_direct_clear_paper_finishes_without_pause(space, service):
 
 
 def test_roster_to_quantities_passing_only_included_entries(space, service):
-    """数值步骤的输入来自名单实际内容；固定值与夹具一致。"""
+    """Value-step input comes from actual roster content; fixed values match fixtures."""
     source = import_mock_source(space, PAPER_A)
     handle = _start(space, source, request_key="a-off", expert=False, mode="synthetic")
     report = resume_extraction(space, handle.execution_id, service=service)
@@ -104,7 +107,9 @@ def test_roster_to_quantities_passing_only_included_entries(space, service):
 
 
 def test_later_step_failure_preserves_roster_and_reuses_on_resume(space, service):
-    """数值步骤失败不抹名单；恢复复用已保存名单，不再调用服务。"""
+    """A value-step failure retains the roster, which recovery reuses without another
+    roster call.
+    """
     source = import_mock_source(space, PAPER_B)
 
     def fail_quantities():
@@ -130,14 +135,14 @@ def test_later_step_failure_preserves_roster_and_reuses_on_resume(space, service
 
     report = resume_extraction(space, handle.execution_id, service=service)
     assert report.outcome == "finished"
-    # 名单复用：没有第二次名单调用；数值步骤在响应后、归档前中断，恢复重调一次
+    # Reuse the roster; the value step interrupted before archiving calls once more on recovery.
     assert service.calls_for_step("direct_roster") == 1
     assert service.calls_for_step("quantities") == 2
     assert report.state == "finished"
 
 
 def test_roster_step_failure_is_not_empty_success(space, service):
-    """名单步骤失败时整篇失败，不把失败当空成功名单。"""
+    """Roster-step failure fails the paper instead of returning a successful empty roster."""
     source = import_mock_source(space, PAPER_B)
 
     def fail_roster():
@@ -167,7 +172,7 @@ def test_roster_step_failure_is_not_empty_success(space, service):
 
 
 class RogueQuantityService(PipelineMockService):
-    """把被排除对象的数值塞进响应的恶意/故障服务。"""
+    """Malicious/faulty service injects excluded-object values into its response."""
 
     def __init__(self, mode):
         super().__init__()
@@ -194,7 +199,9 @@ class RogueQuantityService(PipelineMockService):
 
 
 def test_quantities_rejects_excluded_or_pending_objects(space):
-    """数值不接受被排除/未决对象；缺失收录条目也不是空成功。"""
+    """Reject excluded/unresolved values and missing included entries rather than treating
+    them as successful empty output.
+    """
     from hvs_catalog.pipeline import PAPER_C
 
     source = import_mock_source(space, PAPER_C)
@@ -227,7 +234,9 @@ def test_finished_execution_rerun_is_idempotent(space, service):
 
 
 def test_step_specific_model_reaches_service(space, service):
-    """逐步模型经请求传到模拟服务；fallback 未覆盖步骤用默认模型。"""
+    """Send step-specific models through requests; uncovered fallback steps use the default
+    model.
+    """
     source = import_mock_source(space, PAPER_B)
     models = [
         StepModel(model="mock-default"),

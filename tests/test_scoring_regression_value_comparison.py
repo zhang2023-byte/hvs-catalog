@@ -1,10 +1,10 @@
-"""评分回归：数值比较与合并优先级的独立构造反例（合成材料）。
+"""Synthetic scoring regressions for value comparison and merge precedence.
 
-覆盖：同一确定身份重复预测的 L2 记录池一对一、完整受限数值语法而
-非字符白名单、结构化 unit/value/分量路径的真实字段传参、多组件合并
-中确定 different 优先于不再影响分数的 unknown/技术失败（失败事实仍
-保留）。全部走完整 score_batch 入口或真实比较器，先复现反例再验证
-组合不变量。
+Cover one-to-one L2 pools for duplicate definite identities, full restricted numeric
+grammar beyond character allowlists, actual structured unit/value/component arguments,
+and definite different taking precedence over unknown/technical failures that no longer
+affect scores while retaining failure facts. Exercise full score_batch or actual
+comparators, reproducing counterexamples before checking combined invariants.
 """
 
 from __future__ import annotations
@@ -59,12 +59,14 @@ def _l2_rows(paper):
 
 
 # ---------------------------------------------------------------------------
-# 同一确定身份重复预测的 L2 记录池一对一
+# One-to-one L2 record pools for duplicate predictions with definite identities.
 # ---------------------------------------------------------------------------
 
 
 def test_s08_duplicate_pool_order_and_label_invariant():
-    """固定 S08（一条 5.0、一条 9.9）：反序/改内部编号结果不变。"""
+    """Frozen S08 values 5.0/9.9 retain results under reversed order or renamed internal
+    IDs.
+    """
     plan, gold, preds, auxiliary = load_bundle("synthetic-s08")
     forward = score_batch(plan, gold, preds, auxiliary=auxiliary)
     reversed_preds = copy.deepcopy(preds)
@@ -86,16 +88,18 @@ def test_s08_duplicate_pool_order_and_label_invariant():
 
 
 def test_duplicate_pool_complementary_quantities():
-    """重复条目互补物理量：合并记录池后两量都可一对一，不漏计 P/G。"""
+    """Duplicate entries with complementary quantities merge into pools where both
+    quantities match one-to-one without losing P/G.
+    """
     plan, gold, preds = _bundle(
         [
             ("g1", STD, {"value": "8.2", "error": "0.3", "unit": "kpc"}, []),
             ("g2", STD, {"value": "600", "error": "20", "unit": "km s^{-1}"}, []),
         ],
         [("p1", STD, {"value": "8.2", "error": "0.3", "unit": "kpc"}, [])],
-        # 需要多 quantity 构造，见下方专用 builder
+        # Use the specialized multi-quantity builder below.
     )
-    # _bundle 是单物理量构造，这里改用显式双物理量输入
+    # _bundle handles one quantity; use explicit two-quantity input here.
     gold[0].objects[0].quantities.append(
         GoldQuantityEntry(
             quantity_path=RV,
@@ -140,7 +144,7 @@ def test_duplicate_pool_complementary_quantities():
         quantities=[],
     )
     preds[0].objects.append(dup)
-    # 互补：把 RV 值放进 dup 对象（模拟重复条目报告另一物理量）
+    # Put RV into the duplicate object to simulate complementary quantity reporting.
     preds[0].objects[1].quantities = preds[0].objects[0].quantities[1:]
     preds[0].objects[0].quantities = preds[0].objects[0].quantities[:1]
     plan = plan.model_copy(
@@ -163,7 +167,7 @@ def test_duplicate_pool_complementary_quantities():
 
 
 def test_duplicate_pool_extra_values_consume_gold_once():
-    """多余重复值：Gold 只消耗一次，全部预测值入 P。"""
+    """Extra duplicate values consume Gold once while every prediction enters P."""
     plan, gold, preds = _bundle(
         [("g1", STD, {"value": "5.0", "error": "0.2", "unit": "kpc"}, [])],
         [
@@ -171,7 +175,7 @@ def test_duplicate_pool_extra_values_consume_gold_once():
             ("p2", STD, {"value": "6.0", "error": "0.2", "unit": "kpc"}, []),
         ],
     )
-    # 第二条记录放入重复对象条目
+    # Put the second record in the duplicate object entry.
     second = preds[0].objects[0].quantities[0].values.pop()
     dup = PredictionObjectEntry(
         paper_key=preds[0].paper_key,
@@ -203,7 +207,9 @@ def test_duplicate_pool_extra_values_consume_gold_once():
 
 
 def test_duplicate_pool_condition_different_candidate():
-    """条件不同的重复身份候选：不重复消耗 Gold，差异如实诊断。"""
+    """Same-identity candidates with different conditions cannot consume Gold twice;
+    diagnose differences accurately.
+    """
     plan, gold, preds = _bundle(
         [("g1", M1, {"value": "5.0", "error": "0.2", "unit": "kpc"}, [])],
         [("p1", M1, {"value": "5.0", "error": "0.2", "unit": "kpc"}, [])],
@@ -239,7 +245,9 @@ def test_duplicate_pool_condition_different_candidate():
 
 
 def test_ambiguity_not_merged_into_duplicate_pool():
-    """共享别名的真实身份歧义不入池：仍 pending，不借数值消歧。"""
+    """True shared-alias identity ambiguity remains pending outside pools; values cannot
+    disambiguate it.
+    """
     key = "synthetic-ambiguous-duplicates"
     common_kwargs = {"condition": STD, "representation": HELI}
 
@@ -358,11 +366,11 @@ def test_ambiguity_not_merged_into_duplicate_pool():
     )
     report = score_batch(plan, gold, predictions, auxiliary=protocol_only_config())
     paper = report.papers[0]
-    # 确定身份的记录池照常一对一：A 与 A-dup 中 5.0 正确
+    # Definite-identity pools still match one-to-one: 5.0 in A and A-dup is correct.
     assert (paper.l1.tp, paper.l1.fp, paper.l1.fn) == (1, 1, 0)
-    assert paper.l1.pending == 2  # P 歧义 + Gold B 待定，不入池
+    assert paper.l1.pending == 2  # Ambiguous P and pending Gold B stay outside pools.
     assert paper.l1.precision is None
-    # 歧义值计入 P/G、保留未决行，不参与池匹配也不标漏报/多报
+    # Count ambiguous values in P/G and retain unresolved rows, without pool matching or missing/extra labels.
     statuses = [row.status for row in _l2_rows(paper)]
     assert statuses.count("unresolved_object_identity") == 2
     assert "matched" in statuses
@@ -372,20 +380,23 @@ def test_ambiguity_not_merged_into_duplicate_pool():
 
 
 # ---------------------------------------------------------------------------
-# 完整受限数值语法（字符白名单不代表语法有效）
+# Full restricted numeric grammar: a character allowlist does not establish valid syntax.
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
     ("gold", "prediction"),
     [
-        ("8.2e+", "8.2e3"),  # 未完成指数
+        ("8.2e+", "8.2e3"),  # Incomplete exponent.
         ("8.2e3", "8.2e+"),
-        ("10^{", "10"),  # 非配对括号/断裂乘幂
+        ("10^{", "10"),  # Unmatched parentheses or broken power syntax.
         ("8.2*10^{3", "8.2*10^{3}"),
-        ("8.2e+", "8.2e+"),  # 双侧同畸形也不能确认等价
+        (
+            "8.2e+",
+            "8.2e+",
+        ),  # Identical malformed syntax on both sides still cannot establish equivalence.
         ("1.2e", "1.2"),
-        ("12h34", "12h34m"),  # 时分秒链断裂（缺标记）
+        ("12h34", "12h34m"),  # Broken sexagesimal chain with a missing marker.
     ],
 )
 def test_malformed_number_syntax_is_undecidable(gold, prediction):
@@ -413,7 +424,7 @@ def test_incomplete_exponent_not_mismatched_in_score_batch():
     )
     report = _score(plan, gold, preds)
     paper = report.papers[0]
-    assert paper.l2.precision is None  # 不能最终判 0
+    assert paper.l2.precision is None  # Cannot assign a final zero.
     assert report.batch_provisional is True
     assert any(
         row.status == "unresolved_value" and row.fields == ["value"]
@@ -422,7 +433,9 @@ def test_incomplete_exponent_not_mismatched_in_score_batch():
 
 
 def test_identical_malformed_syntax_not_confirmed_equivalent():
-    """键捷径不得把畸形语法确认为安全等价（双侧相同畸形仍未知）。"""
+    """A key shortcut must not certify malformed syntax as equivalent; identical malformed
+    sides remain unknown.
+    """
     plan, gold, preds = _bundle(
         [("g1", STD, {"value": "8.2e+", "error": "0.3", "unit": "kpc"}, [])],
         [("p1", STD, {"value": "8.2e+", "error": "0.3", "unit": "kpc"}, [])],
@@ -469,12 +482,12 @@ def test_complete_syntax_differences_stay_final():
 
 
 # ---------------------------------------------------------------------------
-# 结构化字段的真正待判内容传参
+# Pass actual compared contents from structured fields.
 # ---------------------------------------------------------------------------
 
 
 def _report_bundle(report_field, gold_pair, pred_pair, fragments=("coverage.unit",)):
-    """结构化报告字段变体：gold_pair/pred_pair 是 (value, unit)。"""
+    """Structured reported-field variant: gold_pair/pred_pair are (value, unit)."""
     base = {"value": "8.2", "error": "0.3", "unit": "kpc"}
     gold_fragments = [_fragment("gf", f"gold {report_field} text", list(fragments))]
     pred_fragments = [_fragment("pf", f"pred {report_field} text", list(fragments))]
@@ -528,16 +541,18 @@ def test_report_requests_carry_real_field_content(
     assert len(seen) == 1
     field_name, left, right = seen[0]
     assert field_name == f"{report_field}.{undecided_sub}"
-    # 请求携带真正待判内容：.unit 传单位、.value 传报告值
+    # Send actual compared content: .unit supplies units and .value supplies reported values.
     assert left == (gold_pair[1] if undecided_sub == "unit" else gold_pair[0])
     assert right == (pred_pair[1] if undecided_sub == "unit" else pred_pair[0])
     paper = report.papers[0]
-    assert paper.l2.precision == 0.0  # 明确 different → 确定不匹配
+    assert (
+        paper.l2.precision == 0.0
+    )  # Explicit different establishes a definite mismatch.
     assert report.batch_provisional is False
 
 
 def test_component_path_requests_carry_named_subfield():
-    """具名误差分量：按名称与侧别取真正待判子字段。"""
+    """Named error components supply the actual subfield selected by name and side."""
     base = {"value": "8.2", "unit": "kpc"}
     gold_fragments = [_fragment("gf", "sys err text", ["error_components.sys.error"])]
     pred_fragments = [_fragment("pf", "macro def", ["error_components.sys.error"])]
@@ -581,7 +596,9 @@ def test_component_path_requests_carry_named_subfield():
 
 
 def test_missing_component_subfield_needs_no_agent():
-    """分量子字段一侧缺失：程序已判确定不同，不需要 Agent。"""
+    """A missing component subfield on one side is a definite programmatic difference
+    needing no Agent.
+    """
     base = {"value": "8.2", "unit": "kpc"}
     plan, gold, preds = _bundle(
         [
@@ -619,12 +636,14 @@ def test_missing_component_subfield_needs_no_agent():
 
 
 # ---------------------------------------------------------------------------
-# 多组件合并优先级——确定 different 优先
+# Component merge precedence: definite different wins.
 # ---------------------------------------------------------------------------
 
 
 def test_insufficient_then_determined_different_wins():
-    """value 缺证据 + error 明确 different：最终不匹配，不暂定。"""
+    """Missing value evidence plus explicitly different error yields a final mismatch, not
+    provisional.
+    """
     plan, gold, preds = _bundle(
         [
             (
@@ -652,7 +671,9 @@ def test_insufficient_then_determined_different_wins():
         plan, gold, preds, auxiliary=protocol_only_config(), agent_adapter=mock
     )
     paper = report.papers[0]
-    assert [c["field_name"] for c in mock.calls] == ["error"]  # 只调用有证据字段
+    assert [c["field_name"] for c in mock.calls] == [
+        "error"
+    ]  # Call only for evidence-supported fields.
     assert any(
         row.status == "value_mismatch" and row.fields == ["error"]
         for row in _l2_rows(paper)
@@ -662,7 +683,9 @@ def test_insufficient_then_determined_different_wins():
 
 
 def test_technical_failure_then_determined_different_wins():
-    """value 技术失败 + error 明确 different：最终不匹配，失败事实保留。"""
+    """Value technical failure plus explicitly different error yields a final mismatch
+    while retaining failure facts.
+    """
     plan, gold, preds = _bundle(
         [
             (
@@ -699,12 +722,14 @@ def test_technical_failure_then_determined_different_wins():
         for row in _l2_rows(paper)
     )
     assert paper.l2.precision == 0.0
-    assert report.batch_provisional is False  # 失败不再影响得分
-    assert report.auxiliary.technical_failures == 1  # 失败事实保留
+    assert report.batch_provisional is False  # The failure no longer affects the score.
+    assert report.auxiliary.technical_failures == 1  # Retain failure facts.
 
 
 def test_reversed_field_combination_determined_different_wins():
-    """error 缺证据 + value 明确 different（反序组合）：最终不匹配。"""
+    """Missing error evidence plus explicitly different value, in reverse order, yields a
+    final mismatch.
+    """
     plan, gold, preds = _bundle(
         [
             (
@@ -742,7 +767,7 @@ def test_reversed_field_combination_determined_different_wins():
 
 
 def test_all_unknown_stays_provisional():
-    """全部字段未知且无确定差异：仍暂定。"""
+    """All fields unknown with no definite difference remain provisional."""
     plan, gold, preds = _bundle(
         [
             (
@@ -769,7 +794,7 @@ def test_all_unknown_stays_provisional():
 
 
 def test_program_difference_needs_no_agent():
-    """程序已有确定不同：不需要 Agent 去推翻。"""
+    """Programmatically established differences need no Agent to overturn them."""
     plan, gold, preds = _bundle(
         [("g1", STD, {"value": "8.2", "error": "0.3", "unit": "kpc"}, [])],
         [("p1", STD, {"value": "9.9", "error": "\\mystery{0.3}", "unit": "kpc"}, [])],
@@ -787,7 +812,9 @@ def test_program_difference_needs_no_agent():
 
 
 def test_unaffecting_failure_does_not_pollute_batch():
-    """不影响最终匹配的候选失败：失败事实保留，整批不暂定。"""
+    """Retain failures on candidates irrelevant to final matching without making the batch
+    provisional.
+    """
     plan, gold, preds = _bundle(
         [
             (
@@ -819,13 +846,15 @@ def test_unaffecting_failure_does_not_pollute_batch():
     assert (paper.l2.correct, paper.l2.predicted, paper.l2.gold) == (1, 2, 1)
     assert paper.l2.precision == 0.5
     assert report.batch_provisional is False
-    assert report.auxiliary.technical_failures == 1  # 失败事实仍保留
+    assert report.auxiliary.technical_failures == 1  # Still retain failure facts.
     statuses = [row.status for row in _l2_rows(paper)]
     assert "matched" in statuses and "unknown_candidate_extra" in statuses
 
 
 def test_affecting_failure_still_provisional():
-    """影响得分的失败仍如实暂定（不得借优先级吞掉真实未决）。"""
+    """Score-affecting failures remain provisional; precedence must not hide actual
+    unresolved cases.
+    """
     plan, gold, preds = _bundle(
         [
             (

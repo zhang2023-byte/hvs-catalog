@@ -1,7 +1,7 @@
-"""POSIX 非阻塞 flock；稳定锁文件、同线程重入与 fork/exec 清理。
+"""POSIX nonblocking flock with stable files, same-thread reentry, and fork/exec cleanup.
 
-可信操作者不得删除或替换运行中的锁文件；正常释放不删除文件。
-不支持 flock 的平台导入失败，不退化成不加锁。
+Trusted operators must not delete/replace active lock files; normal release retains
+them. Platforms lacking flock fail import rather than running unlocked.
 """
 
 from __future__ import annotations
@@ -24,12 +24,12 @@ class _Holder:
 
 
 class SpaceLock:
-    """同空间跨进程／线程互斥；同线程可重入。"""
+    """Exclude other workspace processes/threads while allowing same-thread reentry."""
 
     _registry: ClassVar[dict[str, _Holder]] = {}
     _registry_guard = threading.Lock()
-    # 覆盖尚未登记 holder 的在途 fd。fork 只与 open/登记、close/移除
-    # 的短临界区协调，不等待 registry guard 或在途 flock。
+    # Include in-flight descriptors without registered holders. fork coordinates only brief open/register
+    # and close/remove sections, never waiting for registry guards or in-flight flock.
     _descriptors: ClassVar[set[int]] = set()
     _descriptor_guard = threading.Lock()
 
@@ -44,7 +44,7 @@ class SpaceLock:
             return holder is not None and holder.thread_ident == threading.get_ident()
 
     def acquire(self) -> None:
-        # 在同一注册表临界区完成 flock 与登记，避免线程借用尚未登记的锁。
+        # flock and registration share one registry section so threads cannot borrow unregistered locks.
         with self._registry_guard:
             key = str(self.path)
             holder = self._registry.get(key)
@@ -86,7 +86,7 @@ class SpaceLock:
 
     @classmethod
     def _close_descriptor(cls, fd: int) -> None:
-        # fork 不能看到已 close、尚未移除的号码，否则可能误关复用 fd。
+        # fork cannot observe closed-but-not-removed numbers and accidentally close reused descriptors.
         with cls._descriptor_guard:
             try:
                 os.close(fd)
@@ -110,8 +110,8 @@ def _after_fork_in_parent() -> None:
 
 
 def _after_fork_in_child() -> None:
-    # before 回调已排除 open/登记、close/移除的中间态。子回调不等待
-    # 继承的线程锁，只关闭自己继承的 fd 副本，不 LOCK_UN 父进程。
+    # Before-fork callbacks exclude open/register and close/remove intermediate states. Child callbacks never wait
+    # on inherited thread locks; close child descriptor copies without unlocking parent locks.
     for fd in SpaceLock._descriptors:
         try:
             os.close(fd)

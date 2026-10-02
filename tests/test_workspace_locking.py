@@ -1,7 +1,8 @@
-"""空间排他锁：跨进程互斥、线程重入、进程终止释放（A03/A04 基础）。
+"""Exclusive workspace locks: process exclusion, thread reentry, and release on process
+exit (A03/A04).
 
-跨进程场景用真实子进程验证；持锁进程终止后的释放与并发启动竞争
-在 test_runtime_subprocess.py 中覆盖完整任务链路。
+Use real subprocesses; test_runtime_subprocess.py covers full task chains for holder
+termination and concurrent startup.
 """
 
 from __future__ import annotations
@@ -47,7 +48,7 @@ def test_same_thread_reentrant_other_thread_busy(tmp_path):
     space = initialize_workspace(tmp_path / "space")
     lock = space.lock()
     with lock:
-        with lock:  # 同线程重入
+        with lock:  # Same-thread reentry.
             assert lock.held_by_current_thread
         errors: list[Exception] = []
 
@@ -103,7 +104,7 @@ def test_lock_released_after_holder_process_termination(tmp_path):
     )
     _wait_ready(holder, "LOCKED")
     holder.wait(timeout=10)
-    # 进程退出后锁可重新获得；锁文件本身保留
+    # Acquire again after process exit; retain the lock file itself.
     lock = space.lock()
     lock.acquire()
     lock.release()
@@ -114,7 +115,7 @@ def test_lock_released_after_holder_process_termination(tmp_path):
 def test_two_spaces_lock_independently(tmp_path):
     a = initialize_workspace(tmp_path / "a")
     b = initialize_workspace(tmp_path / "b")
-    with a.lock(), b.lock():  # 另一空间不受影响
+    with a.lock(), b.lock():  # Another workspace remains unaffected.
         pass
     a.close()
     b.close()
@@ -142,7 +143,7 @@ def test_lock_file_not_inherited_by_subprocess(tmp_path):
             check=False,
         )
         assert probe.returncode == 0, probe.stderr
-        # 子进程不应通过继承的描述符持有锁：本进程仍能正常释放
+        # Children must not retain the lock through inherited descriptors; the parent can release normally.
     finally:
         lock.release()
     reopened = open_workspace(space.root)
@@ -154,7 +155,9 @@ def test_lock_file_not_inherited_by_subprocess(tmp_path):
 
 @pytest.mark.integration
 def test_exec_closes_lock_descriptor_without_normal_release(tmp_path):
-    """锁持有者直接 exec，存活的新程序不能继续占用旧锁。"""
+    """A live program replacing its lock-holding process through exec cannot retain the old
+    lock.
+    """
     space = initialize_workspace(tmp_path / "space")
     child = subprocess.Popen(
         [
@@ -197,7 +200,9 @@ def test_exec_closes_lock_descriptor_without_normal_release(tmp_path):
 
 @pytest.mark.integration
 def test_forked_child_must_reacquire_and_sees_parent_busy(tmp_path):
-    """父进程持锁时 fork 的子进程不能借用重入记录进入临界区。"""
+    """A child forked while its parent owns the lock cannot borrow reentry records to enter
+    the critical section.
+    """
 
     space = initialize_workspace(tmp_path / "space")
     lock = space.lock()
@@ -206,14 +211,14 @@ def test_forked_child_must_reacquire_and_sees_parent_busy(tmp_path):
         read_fd, write_fd = os.pipe()
         pid = os.fork()
         if pid == 0:
-            # 子进程：注册表与描述符已在 fork 后清理，重新打开空间取锁
+            # After fork, child registries/descriptors are cleared; reopen the workspace and acquire anew.
             os.close(read_fd)
             try:
                 child = open_workspace(space.root)
                 with child.lock():
                     os.write(write_fd, b"child entered while parent holds lock")
                 os._exit(0)
-            except BaseException as exc:  # noqa: BLE001 - 结果经管道报告
+            except BaseException as exc:  # noqa: BLE001 - report results through the pipe
                 os.write(write_fd, repr(exc).encode())
                 os._exit(1)
         os.close(write_fd)
@@ -226,7 +231,7 @@ def test_forked_child_must_reacquire_and_sees_parent_busy(tmp_path):
     finally:
         lock.release()
 
-    # 父进程释放后，fork 出的子进程可以正常取锁
+    # After parent release, the forked child acquires normally.
     read_fd, write_fd = os.pipe()
     pid = os.fork()
     if pid == 0:
@@ -250,10 +255,11 @@ def test_forked_child_must_reacquire_and_sees_parent_busy(tmp_path):
 
 @pytest.mark.integration
 def test_fork_child_survives_registry_guard_held_by_other_thread(tmp_path):
-    """fork 瞬间注册表锁被其他线程持有时，子进程回调不得死锁。
+    """Child callbacks must not deadlock if another thread holds the registry lock at fork.
 
-    子进程只有发起 fork 的线程存活，不能等待继承的普通线程锁；回调
-    必须直接重置注册表并换新锁，让子进程正常返回并继续可用。
+    Only the forking thread survives in the child, so it cannot wait for inherited
+    ordinary thread locks. Reset the registry directly and replace its lock so the child
+    returns and remains usable.
     """
     code = """
 import os
@@ -284,8 +290,8 @@ read_fd, write_fd = os.pipe()
 pid = os.fork()
 if pid == 0:
     os.close(read_fd)
-    # at-fork 回调返回后子进程才走到这里：注册表已重置且换了新锁，
-    # 新的锁操作必须仍然可用
+    # Child execution reaches here after at-fork callbacks reset the registry and replace its lock;
+    # new locking operations must remain usable.
     lock = SpaceLock(sys.argv[1])
     try:
         lock.acquire()
@@ -298,7 +304,7 @@ if pid == 0:
 os.close(write_fd)
 release.set()
 t.join()
-# 子进程死锁在 at-fork 回调时永远不写管道：限时观察并击杀，避免悬挂
+# Deadlocked at-fork children never write the pipe; bound observation and kill to avoid hanging.
 if select.select([read_fd], [], [], 5)[0]:
     message = os.read(read_fd, 4096).decode()
 else:
@@ -352,8 +358,8 @@ if worker_pid == 0:
     worker_thread = None
     guarded = window in {"before-open", "after-open", "before-close", "after-close"}
 
-    # open/登记及 close/移除期间，before-fork 必须等待完整的号码转换。
-    # 观察真正的 before-fork 取 guard 动作才放行 worker，不按睡眠猜窗口。
+    # During open/register and close/remove, before-fork must wait for complete descriptor transitions.
+    # Release workers after observing actual before-fork guard acquisition, not guessed sleep windows.
     if guarded:
         guard = locking.SpaceLock._descriptor_guard
         class GuardProbe:
@@ -405,7 +411,7 @@ if worker_pid == 0:
             pause()
         original_close(fd)
         if target and window in {"before-close", "after-close"}:
-            # 最低空闲号码刚被释放：在 close 返回／集合移除前复用成用户 fd。
+            # Reuse the just-freed lowest descriptor as a user fd before close returns and registration removal.
             reused = original_open(space.root / "sentinel", os.O_RDONLY)
             assert reused == target_fd
             if window == "after-close":
@@ -430,7 +436,7 @@ if worker_pid == 0:
     ack_read, ack_write = os.pipe()
     child_pid = os.fork()
     if child_pid == 0:
-        # 清理已在子回调完成；移除测试 wrapper 后检查继承的真实 fd。
+        # Child callbacks already cleaned up; remove test wrappers and inspect inherited actual descriptors.
         locking.os.open, locking.os.close = original_open, original_close
         locking.fcntl.flock = original_flock
         os.close(ack_read)
@@ -456,7 +462,7 @@ if worker_pid == 0:
         os.write(alive_write, json.dumps(payload).encode() + b"\n")
         os.write(ack_write, b"ready")
         os.close(ack_write)
-        # 即使锁持有父进程已硬退出，也保持子进程存活到外层重取锁之后。
+        # Keep children alive until external lock reacquisition even after the lock-holding parent exits abruptly.
         os.read(release_read, 1)
         os._exit(0)
     os.close(ack_write)
@@ -475,7 +481,7 @@ try:
     _, status = os.waitpid(worker_pid, 0)
     assert os.waitstatus_to_exitcode(status) == 70
     os.kill(child_pid, 0)
-    # 子进程仍存活；父进程死亡后不能因在途 fd 副本继续 busy。
+    # A surviving child's in-flight descriptor copies must not keep locks busy after parent death.
     try:
         with locking.SpaceLock(space.root):
             pass
@@ -489,7 +495,7 @@ try:
 finally:
     os.write(release_write, b"exit")
     os.close(release_write)
-    # EOF 证明唯一剩余写端随子进程退出关闭，不留下后台持锁子进程。
+    # EOF proves the last writer closed when the child exited, leaving no background lock holder.
     if not select.select([alive_read], [], [], 10)[0]:
         if child_pid is not None:
             os.kill(child_pid, signal.SIGKILL)
@@ -514,7 +520,9 @@ finally:
     ],
 )
 def test_fork_inflight_descriptor_parent_hard_exit(tmp_path, window):
-    """真实 fork 精准覆盖创建、flock、解锁及关闭窗口，包括号码复用。"""
+    """Real fork precisely covers creation, flock, unlock, close, and descriptor-number
+    reuse windows.
+    """
     import signal
 
     probe = subprocess.Popen(
@@ -529,7 +537,7 @@ def test_fork_inflight_descriptor_parent_hard_exit(tmp_path, window):
         assert probe.returncode == 0, out + err
         assert out.strip() == f"fork-window-ok:{window}"
     finally:
-        # 若中途断言或 timeout，整个测试进程组（含 fork 孙进程）也会回收。
+        # On assertion failure or timeout, reap the entire test process group, including forked grandchildren.
         try:
             os.killpg(probe.pid, signal.SIGKILL)
         except ProcessLookupError:

@@ -1,9 +1,10 @@
-"""裁决共同接口：创建与查询待办、保存决定、替代问题。
+"""Shared review interfaces create/query pending questions, save decisions, and supersede
+questions.
 
-事务、锁与恢复机制由工作空间与运行模块提供；本模块只负责问题与
-决定的业务规则：绑定核对、指纹核对、请求重放、冲突与过期拒绝、
-未决答复保留。接口供合成流程与 Python 调用；网页与正式裁决 CLI、
-判例接入尚未提供。
+Workspace/runtime provide transactions/locks/recovery. This module owns bindings,
+fingerprints, replay, conflicting/stale rejection, and retained unresolved answers.
+Synthetic flows/Python use it; web, official review CLI, and precedents are not yet
+provided.
 """
 
 from __future__ import annotations
@@ -42,7 +43,7 @@ from ..workspace import (
 if TYPE_CHECKING:
     from ..workspace import Workspace
 
-#: 决定保存回执的类型标记；应用阶段回执由运行层写入。
+#: Decision-save receipt marker; runtime writes application receipts separately.
 DECISION_SAVE_KIND = "decision_save"
 QUESTION_CREATE_KIND = "question_create"
 QUESTION_SUPERSEDE_KIND = "question_supersede"
@@ -51,7 +52,9 @@ DECISION_APPLY_KIND = "decision_apply"
 
 @dataclass(frozen=True)
 class QuestionContent:
-    """问题的完整科学上下文；编号、修订与指纹由程序生成。"""
+    """Complete scientific question context; programs derive identities, revisions, and
+    fingerprints.
+    """
 
     category: str
     target_refs: list[ItemRef]
@@ -79,7 +82,9 @@ class QuestionContent:
 
 @dataclass(frozen=True)
 class DecisionSubmission:
-    """专家决定提交内容；重放比较以此为摘要，不含程序生成字段。"""
+    """Expert submission contents used for replay digests, excluding program-generated
+    fields.
+    """
 
     question_ref: RecordRef
     fingerprint: str
@@ -119,7 +124,9 @@ class ApplicationState:
 
 @dataclass
 class QuestionView:
-    """问题的当前展示状态：记录、绑定、答复与应用进度。"""
+    """Current question display state: records, bindings, answers, and application
+    progress.
+    """
 
     record: QuestionRecord
     question_ref: RecordRef
@@ -137,7 +144,7 @@ class QuestionView:
             return True
         if self.status == "superseded":
             return False
-        # answered：仍未决或待应用的问题仍需处理；已应用或受阻则不再等待
+        # Answered but unresolved/unapplied questions still need handling; applied/blocked questions stop waiting.
         if self.answered_outcome == "unresolved":
             return True
         return self.application is None
@@ -160,14 +167,13 @@ def _ref(payload: object) -> RecordRef:
 def derive_question_id(
     execution_id: str, content: QuestionContent, *, space_id: str
 ) -> str:
-    """按逻辑空间、执行与完整问题内容派生问题编号。
+    """Derive question IDs from logical workspace, execution, and complete contents.
 
-    执行编号是各空间独立的计数器，问题编号必须同时区别逻辑空间，
-    否则两个空间对同一论文按相同顺序创建的问题会得到相同编号，决定
-    请求可能串入另一空间。同一执行内同内容的问题只有一个身份（同请求
-    重放或换请求键重建都返回同一条记录）；备份恢复保留逻辑空间身份，
-    恢复空间内重算编号仍一致。调用方可据此在问题与它指向的目标记录仍
-    不存在时预先组装互相引用的同批记录。
+    Execution counters are workspace-local, so workspace identity prevents identical
+    paper/order questions from sharing IDs and receiving foreign decisions. Identical
+    contents within one execution yield one identity across replays/new keys. Backup
+    preserves logical identity and recomputation. Callers may preassemble mutually
+    referencing question/target records before either exists.
     """
     digest = sha256_of(
         {
@@ -180,7 +186,7 @@ def derive_question_id(
 
 
 def _decision_content_key(data: DecisionData) -> str:
-    """同一问题版本内比较两份决定内容是否一致的键。"""
+    """Key comparing decision contents within one question version."""
     return canonical_json(
         {
             "actor": data.actor.model_dump(mode="json"),
@@ -199,12 +205,12 @@ def _decision_content_key(data: DecisionData) -> str:
 
 
 class ReviewService:
-    """一个工作空间内的待办与决定服务。"""
+    """Workspace pending-question/decision service."""
 
     def __init__(self, space: Workspace) -> None:
         self.space = space
 
-    # ---- 查询 ----
+    # ---- Queries ----
 
     def get_question(self, ref: RecordRef) -> QuestionView:
         record = self.space.store().read_record(ref)
@@ -252,7 +258,7 @@ class ReviewService:
                 )
         return None
 
-    # ---- 创建与提交 ----
+    # ---- Creation and submission ----
 
     def create_question(
         self,
@@ -264,12 +270,12 @@ class ReviewService:
         records: list[AnyRecord] | None = None,
         expected_revisions: dict[str, int] | None = None,
     ) -> QuestionView:
-        """保存问题及执行/步骤绑定；同请求同内容返回原问题。
+        """Save questions with execution/step bindings; identical request/content returns
+        the original.
 
-        ``records`` 允许调用方把问题与它指向的目标记录在同一业务事务
-        中提交（例如论文贡献与其歧义问题相互引用时）。问题的步骤绑定
-        与记录、回执同事务保存：中断不会留下没有绑定的问题，重放直接
-        返回原问题及其绑定。
+        records permits mutually referencing target/question records in one business
+        transaction. Save bindings, records, and receipts together so interruption
+        leaves no unbound question; replay returns original questions/bindings.
         """
         with self.space.lock():
             store = self.space.store()
@@ -356,13 +362,14 @@ class ReviewService:
         submission: DecisionSubmission,
         request_key: str,
     ) -> DecisionReceipt:
-        """先校验适用性，再在同一业务事务保存决定与问题的答复修订。
+        """Validate applicability, then save decisions and answered-question revisions
+        atomically.
 
-        重放比较的内容不含程序管理的问题修订号；重放入口按原成功回执
-        关联的修订单独核验提交引用（原修订或答复修订）。首次提交必须
-        指向准确的问题修订（问题版本以指纹与修订共同核对），已答复问
-        题只开放答复前后的最短修订链，同一问题版本换请求键提交相同内
-        容也返回原决定。
+        Replay content excludes program-managed revisions, while replay independently
+        verifies original/answered revisions linked by successful receipts. Initial
+        submissions target exact revisions validated by fingerprint/revision. Answered
+        questions expose only the minimal adjacent answer chain; new-key identical
+        content still returns original decisions.
         """
         with self.space.lock():
             store = self.space.store()
@@ -371,12 +378,12 @@ class ReviewService:
                 "step_id": step_id,
                 "decision": {
                     **submission.content_payload(),
-                    # 修订号由程序管理，重试时可能指向答复后的新修订
+                    # Programs manage revisions; retries may reference the post-answer revision.
                     "question_ref": {"record_id": submission.question_ref.record_id},
                 },
             }
             digest = sha256_of(payload)
-            # 先查已成功的重放，再判问题当前状态：已成功的重复提交不误报为过期
+            # Look up successful replay before current-state checks so successful duplicates are not falsely stale.
             existing = store.find_receipt(request_key)
             if existing is not None:
                 if existing.content_digest != digest:
@@ -384,8 +391,8 @@ class ReviewService:
                         f"操作键 {request_key!r} 已用于不同内容；"
                         "重试须携带相同内容，或为新内容更换操作键"
                     )
-                # 重放同样核验提交引用：只承认原成功回执明确关联的原修订
-                # 与答复修订，不存在或无关的修订不构成同一请求
+                # Replay verifies references too: only original/answered revisions explicitly linked by successful receipts
+                # belong to the same request; absent/unrelated revisions do not.
                 original = _ref(existing.links["question_ref_before"])
                 answered = _ref(existing.links["question_ref_after"])
                 if submission.question_ref.revision not in {
@@ -444,7 +451,7 @@ class ReviewService:
                 )
 
             if question.data.status == "answered":
-                # 同一问题版本：相同内容返回原决定，不同内容拒绝
+                # Identical contents within one question version return the original; differing contents reject.
                 submission_key = _decision_content_key(
                     _submission_as_data(question, submission)
                 )
@@ -457,7 +464,7 @@ class ReviewService:
                         f"已保存决定 {decision.record_id}，"
                         "本次提交内容与之冲突，被拒绝"
                     )
-                raise DecisionConflictError(  # pragma: no cover - 校验保证非空
+                raise DecisionConflictError(  # pragma: no cover - validation ensures nonempty
                     f"问题 {question.record_id} 已有答复，本次提交被拒绝"
                 )
 
@@ -539,7 +546,9 @@ class ReviewService:
         new_content: QuestionContent,
         reason: str,
     ) -> QuestionView:
-        """为变化后的问题建立新记录，旧问题追加失效修订；旧答复保留。"""
+        """Create replacement questions and superseding old revisions while retaining old
+        answers.
+        """
         with self.space.lock():
             store = self.space.store()
             payload = {
@@ -640,7 +649,7 @@ class ReviewService:
             store.commit(request)
             return self._view(new_id)
 
-    # ---- 内部 ----
+    # ---- Internal helpers ----
 
     def _next_id(self, prefix: str) -> str:
         with self.space.store().transaction() as tx:
@@ -649,11 +658,11 @@ class ReviewService:
     def _require_exact_revision(
         self, question_ref: RecordRef, latest: QuestionRecord
     ) -> None:
-        """首次提交必须指向仍然适用的准确修订。
+        """Initial submissions must target still-applicable exact revisions.
 
-        已答复的问题只开放明确的最短答复链：答复前后的相邻修订；其余
-        旧修订或未知修订均按过期拒绝。重放走原成功回执，回放入口按回
-        承关联的修订另行核验，不受当前修订限制。
+        Answered questions accept only adjacent pre/post-answer revisions; reject other
+        old/unknown revisions as stale. Replay uses original successful receipts and
+        verifies their linked revisions independently of current revision.
         """
         if question_ref.revision == latest.revision:
             return
@@ -661,7 +670,7 @@ class ReviewService:
             latest.data.status == "answered"
             and question_ref.revision == latest.revision - 1
         ):
-            return  # 答复前修订的合法重试（同版本内容比对在后续进行）
+            return  # Valid retry on the pre-answer revision; compare same-version contents later.
         raise RevisionStaleError(
             f"提交指向问题 {question_ref.record_id} 修订 {question_ref.revision}，"
             f"当前有效修订为 {latest.revision}；过期或未知修订被拒绝"
@@ -691,11 +700,11 @@ class ReviewService:
     def _binding_checked_question(
         self, *, execution_id: str, step_id: str, question_ref: RecordRef
     ) -> QuestionRecord:
-        """核对提交指向的问题属于本执行与步骤，返回其当前修订。
+        """Verify question ownership by execution/step and return current revisions.
 
-        引用的准确修订必须存在；绑定缺失不视为通配——问题创建时绑定
-        与记录同事务保存，缺失即数据不一致。指定的修订号是否仍适用由
-        调用方按状态与答复链核对。
+        Exact referenced revisions must exist; missing bindings are inconsistencies,
+        never wildcards. Creation saves bindings atomically. Callers judge requested
+        revision applicability through state/answer chains.
         """
         store = self.space.store()
         row = next(
@@ -736,7 +745,7 @@ class ReviewService:
         if row is None:
             raise WorkspaceIntegrityError(f"未知问题：{question_id}")
         latest = store.read_record_current(question_id)
-        if not isinstance(latest, QuestionRecord):  # pragma: no cover - 防御
+        if not isinstance(latest, QuestionRecord):  # pragma: no cover - defensive check
             raise WorkspaceIntegrityError(f"问题 {question_id} 记录损坏")
         decisions = [self.get_decision(ref) for ref in latest.data.decision_refs]
         answered_outcome = decisions[-1].data.outcome if decisions else None
@@ -782,7 +791,7 @@ class ReviewService:
                     question_status=view.status,
                     note=note,
                 )
-        raise WorkspaceIntegrityError(  # pragma: no cover - 数据应一致
+        raise WorkspaceIntegrityError(  # pragma: no cover - data should be consistent
             f"决定 {decision_ref.record_id} 缺少保存回执"
         )
 
@@ -790,7 +799,7 @@ class ReviewService:
 def _submission_as_data(
     question: QuestionRecord, submission: DecisionSubmission
 ) -> DecisionData:
-    """把提交内容包装成可比较的 DecisionData（时间戳为占位）。"""
+    """Wrap submissions as comparable DecisionData using placeholder timestamps."""
     return DecisionData.model_validate(
         {
             "question_ref": question.ref().model_dump(mode="json"),

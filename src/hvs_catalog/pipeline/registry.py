@@ -1,9 +1,8 @@
-"""提取方法与步骤的可信登记：代码内注册、按标识查询。
+"""Trusted code-bound extraction method/step registration and identifier lookup.
 
-登记只绑定调用方传入的可信程序对象（方法规格、流程构建器与运行前
-检查），不从请求或记录字符串动态导入或执行代码。当前只登记已实现
-的 ``synthetic-mock`` 版本；真实 ``direct``/``candidate_review`` 提取
-在后续任务交付后另行登记，本模块不宣称真实提取已可运行。
+Bind trusted caller specs/builders/preflight objects only, never import/execute
+record/request strings. Register implemented synthetic-mock only; real
+direct/candidate_review follows later delivery without current real-extraction claims.
 """
 
 from __future__ import annotations
@@ -12,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:  # pragma: no cover - 仅类型引用
+if TYPE_CHECKING:  # pragma: no cover - typing references only
     from ..workspace import Workspace
     from .flow import ExtractionFlow
     from .params import ParameterPolicy
@@ -20,24 +19,24 @@ if TYPE_CHECKING:  # pragma: no cover - 仅类型引用
 
 
 class RegistryError(ValueError):
-    """方法登记或查询不满足约定。"""
+    """Method registration/query violates its contract."""
 
 
 class MethodRegistrationError(RegistryError):
-    """登记内容本身不合法（重复方法、步骤缺失或重复等）。"""
+    """Invalid registration, including duplicate methods or missing/duplicate steps."""
 
 
 class UnknownMethodError(RegistryError):
-    """查询的方法标识未登记。"""
+    """Requested method is unregistered."""
 
 
-#: 步骤边界固定为三类：名单（可含发现与逐个判定）、数值与收尾。
+#: Fixed boundaries: roster discovery/judgment, quantities, and finalization.
 STEP_KINDS = ("roster", "quantities", "finalize")
 
 
 @dataclass(frozen=True)
 class StepSpec:
-    """一个提取步骤的登记信息；``kind`` 固定步骤边界。"""
+    """Registered step information; kind fixes its boundary."""
 
     step_id: str
     kind: str
@@ -55,13 +54,11 @@ class StepSpec:
 
 @dataclass(frozen=True)
 class MethodSpec:
-    """一种名单提取方法：有序步骤、实现标记与模型参数支持集。
+    """Roster method with ordered steps, implementation marker, and restricted parameters.
 
-    ``implementation`` 标记当前登记的实现来源；当前只有
-    ``synthetic-mock``。``real_extraction=False`` 表示该登记不代表真实
-    论文提取已可运行。``parameter_policy`` 是该方法实现声明的受限模型
-    参数支持集（字段/类型/值域）；缺省为空策略，即不接受任何模型参
-    数——配置不提供随意内容容器，支持集由可信登记代码声明。
+    implementation currently identifies synthetic-mock; real_extraction=False denies
+    real-paper capability. Trusted parameter_policy declares fields/types/ranges; absent
+    means empty, accepting none rather than arbitrary contents.
     """
 
     method_id: str
@@ -99,11 +96,11 @@ class MethodSpec:
 
 @dataclass(frozen=True)
 class MethodRegistration:
-    """登记条目：规格加上绑定的可信流程构建器与运行前检查。
+    """Registered specification and trusted builder/preflight.
 
-    ``build_flow(spec, mode=...)`` 返回流程适配器；``preflight`` 在建立
-    执行前检查请求与实现支持范围，返回问题清单（空列表表示通过）。
-    两者都是调用方提供的可信对象。
+    build_flow(spec, mode=...) returns an adapter. preflight validates requests/support
+    before creation and returns issues or empty success. Both are trusted caller
+    objects.
     """
 
     spec: MethodSpec
@@ -117,7 +114,7 @@ class MethodRegistration:
 
 
 class PipelineRegistry:
-    """方法登记表；重复方法标识或非法规格拒绝登记。"""
+    """Registry rejecting duplicate IDs and invalid specs."""
 
     def __init__(self) -> None:
         self._methods: dict[str, MethodRegistration] = {}
@@ -126,8 +123,8 @@ class PipelineRegistry:
         spec = registration.spec
         if spec.method_id in self._methods:
             raise MethodRegistrationError(f"方法 {spec.method_id!r} 已登记，不能重复")
-        # 触发规格校验（frozen dataclass 的 __post_init__ 已在构造时执行，
-        # 这里对登记表整体再做一次步骤边界与参数策略复核）
+        # Frozen dataclass __post_init__ validates construction; registration also
+        # checks overall step boundaries and parameter policies.
         MethodSpec(
             method_id=spec.method_id,
             steps=spec.steps,

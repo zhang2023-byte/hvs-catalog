@@ -1,9 +1,8 @@
-"""工作空间模块：目录、锁、业务事务、操作回执与备份恢复。
+"""Workspace directories, locks, business transactions, receipts, and backup/restore.
 
-公共入口见 ``layout``（初始化与打开）、``locking``（排他锁）、
-``store``（记录与事务）、``backup``（备份与恢复）；错误类型见
-``errors``。使用方式与设计约束见
-[架构设计](../../../docs/design/architecture.md#工作空间与恢复接口方案)。
+layout initializes/opens; locking provides exclusion; store handles
+records/transactions; backup handles backup/restore; errors defines failures. See
+../../../docs/design/architecture.md for usage/constraints.
 """
 
 from __future__ import annotations

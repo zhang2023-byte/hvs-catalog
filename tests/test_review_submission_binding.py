@@ -1,10 +1,12 @@
-"""裁决身份与准确修订回归：跨空间误投拒绝、不存在/过期修订拒绝。
+"""Decision identity/exact-revision regressions: reject cross-workspace delivery and
+missing/stale revisions.
 
-两个空间对同一论文按相同顺序创建执行与问题时，执行编号相同但问题
-编号按逻辑空间派生；原样投递另一空间的提交被拒绝且目标库不新增决
-定。提交与查询使用准确修订：不存在的修订、已答复问题答复链之外的
-旧修订均拒绝，同请求重试与答复链内的合法重试保持幂等；重放入口同
-样只承认原成功回执明确关联的修订。
+Workspaces creating executions/questions for one paper in identical order may share
+execution IDs, but question IDs derive from logical workspace identity. Reject unchanged
+foreign submissions without new decisions. Exact-revision submission/query rejects
+missing revisions and old revisions outside the minimal answer chain, while
+same-request/valid-chain retries remain idempotent. Replay accepts only revisions
+explicitly linked to the original successful receipt.
 """
 
 from __future__ import annotations
@@ -46,17 +48,19 @@ def _paused_with_question(space, service, *, request_key="a"):
 
 
 def test_cross_space_submission_rejected_verbatim(tmp_path, service):
-    """两空间同论文同顺序，原样误投被拒且目标库不新增决定。"""
+    """Reject unchanged cross-workspace submissions despite identical paper/order, adding
+    no target decisions.
+    """
     space_a = initialize_workspace(tmp_path / "a")
     space_b = initialize_workspace(tmp_path / "b")
     try:
         exec_a, question_a = _paused_with_question(space_a, service)
         exec_b, question_b = _paused_with_question(space_b, service)
-        # 各空间独立计数的执行编号相同；问题编号因空间身份而不同
+        # Per-workspace execution counters coincide, but workspace-derived question IDs differ.
         assert exec_a.execution_id == exec_b.execution_id
         assert question_a.record.record_id != question_b.record.record_id
         assert space_a.identity.space_id != space_b.identity.space_id
-        # A 空间的完整原样提交（问题引用、指纹、执行、步骤与答复）投入 B
+        # Deliver A's unchanged question reference, fingerprint, execution, step, and answer into B.
         submission = DecisionSubmission(
             question_ref=question_a.question_ref,
             fingerprint=question_a.record.data.fingerprint,
@@ -73,13 +77,13 @@ def test_cross_space_submission_rejected_verbatim(tmp_path, service):
                 submission=submission,
                 request_key="from-space-a",
             )
-        # 目标库不新增任何决定；B 空间自己的问题仍为 open
+        # Add no decision to B; its own question remains open.
         decisions = [
             r for r in space_b.store().list_records() if r.RECORD_NAME == "decision"
         ]
         assert decisions == []
         assert question_b.status == "open"
-        # B 空间对自己的问题正常提交仍然成功
+        # B can still submit an answer to its own question normally.
         receipt = submit_expert_decision(
             space_b,
             execution_id=exec_b.execution_id,
@@ -93,7 +97,7 @@ def test_cross_space_submission_rejected_verbatim(tmp_path, service):
 
 
 def test_nonexistent_question_revision_rejected(tmp_path, service):
-    """提交不存在的问题修订被拒，不产生决定或新修订。"""
+    """Reject nonexistent question revisions without decisions or new revisions."""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, question = _paused_with_question(space, service)
@@ -110,7 +114,7 @@ def test_nonexistent_question_revision_rejected(tmp_path, service):
             r for r in space.store().list_records() if r.RECORD_NAME == "decision"
         ]
         assert decisions == []
-        # 查询同样拒绝不存在的修订
+        # Queries also reject nonexistent revisions.
         with pytest.raises(WorkspaceIntegrityError, match="不存在"):
             ReviewService(space).get_question(nonexistent)
     finally:
@@ -118,7 +122,7 @@ def test_nonexistent_question_revision_rejected(tmp_path, service):
 
 
 def test_answered_question_accepts_only_answer_chain(tmp_path, service):
-    """已答复问题只开放答复前后的最短修订链。"""
+    """Answered questions accept only the minimal pre/post-answer revision chain."""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, question = _paused_with_question(space, service)
@@ -130,7 +134,7 @@ def test_answered_question_accepts_only_answer_chain(tmp_path, service):
         )
         current = ReviewService(space).get_question(question.question_ref)
         assert current.record.revision == 2
-        # 答复前修订（v1）的同内容换键提交：合法重试，返回原决定
+        # Same answer to pre-answer v1 under a new key is a valid retry returning the original decision.
         before = RecordRef(record_id=question.record.record_id, revision=1)
         replay = submit_expert_decision(
             space,
@@ -143,7 +147,7 @@ def test_answered_question_accepts_only_answer_chain(tmp_path, service):
             r for r in space.store().list_records() if r.RECORD_NAME == "decision"
         ]
         assert len(decisions) == 1
-        # 答复链之外的修订（不存在）拒绝
+        # Reject nonexistent revisions outside the answer chain.
         stale = RecordRef(record_id=question.record.record_id, revision=999)
         with pytest.raises((RevisionStaleError, WorkspaceIntegrityError)):
             submit_expert_decision(
@@ -156,7 +160,7 @@ def test_answered_question_accepts_only_answer_chain(tmp_path, service):
         space.close()
 
 
-# ---- 重放入口同样核验提交引用 ----
+# ---- Replay also validates submitted references ----
 
 
 def _unresolved_submission(question):
@@ -172,7 +176,7 @@ def _unresolved_submission(question):
 
 
 def test_replay_with_unrelated_revision_rejected(tmp_path, service):
-    """同请求键携带不存在的 v999 重放被拒（直接覆盖公共服务）。"""
+    """Reject same-key replay carrying nonexistent v999 through the public service."""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, question = _paused_with_question(space, service)
@@ -199,7 +203,7 @@ def test_replay_with_unrelated_revision_rejected(tmp_path, service):
                 request_key="same-key",
             )
 
-        # 原修订（v1）与答复修订（v2）的重放保持幂等
+        # Replay of original v1 and answered v2 remains idempotent.
         replay_v1 = review.submit_decision(
             execution_id=execution.execution_id,
             step_id=step_id,
@@ -227,7 +231,9 @@ def test_replay_with_unrelated_revision_rejected(tmp_path, service):
 
 
 def test_old_success_receipt_queryable_after_supersede(tmp_path, service):
-    """问题随后被替代后，原成功请求的回执仍可按原修订重放查询。"""
+    """After later supersession, query the original successful receipt by replaying its
+    original revision.
+    """
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, question = _paused_with_question(space, service)
@@ -240,7 +246,7 @@ def test_old_success_receipt_queryable_after_supersede(tmp_path, service):
             submission=submission,
             request_key="dec-then-supersede",
         )
-        # 决定后问题被替代；替代需新内容，这里复用内容派生新身份
+        # Supersede after the decision; reuse contents with a derived new identity for the required new question.
         from hvs_catalog.review.service import QuestionContent
 
         content = QuestionContent(

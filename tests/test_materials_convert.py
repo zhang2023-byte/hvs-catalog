@@ -1,4 +1,6 @@
-"""转换链合成测试：联合成功判定、回退顺序、backing CSV 与 ECSV 证据。"""
+"""Synthetic conversion-chain tests: joint success criteria, fallback order, backing CSV,
+and ECSV evidence.
+"""
 
 from __future__ import annotations
 
@@ -16,7 +18,9 @@ from hvs_catalog.materials.sandbox import ProcessOutcome
 
 
 def test_latexml_exit_zero_with_conversion_errors_is_failure():
-    """缺宏时退出码 0 但 Status:conversion:2 且有错误节点：必须判失败。"""
+    """Missing macros with exit code zero, Status:conversion:2, and error nodes must count
+    as failure.
+    """
     html = good_latexml_html([("FIC-A", "525", "10")]).replace(
         "FIC-A", '<span class="ltx_ERROR">undefined</span>'
     )
@@ -73,11 +77,11 @@ def test_html_parser_handles_rowspan_colspan_and_multilevel_headers():
     parsed, count = conversion.parse_html_tables(html, method="latexml")
     assert count == 1
     assert parsed.status == "success"
-    # 合并格展开：第一行表头 3 列，第二行表头补齐 rowspan
+    # Expand merged cells: three columns in the first header row and completed rowspan in the second.
     assert parsed.header_rows[0] == ["Object", "Motion", ""]
     assert parsed.header_rows[1] == ["Object", "PM", "Err"]
     assert parsed.data_rows[0] == ["FIC-A", "8.1", "0.3"]
-    # 中性机器列名与多层表头保留
+    # Retain neutral machine column names and multilevel headers.
     assert [c["name"] for c in parsed.columns] == ["col_001", "col_002", "col_003"]
     assert parsed.columns[0]["original_header"] == "Object"
     assert parsed.columns[1]["original_header"] == "Motion | PM"
@@ -123,7 +127,7 @@ def test_ecsv_roundtrip_preserves_strings_and_metadata():
     assert "col_001" in ecsv
     problems = conversion.verify_ecsv_roundtrip(ecsv, parsed)
     assert problems == []
-    # 有效位数与符号逐字保留
+    # Preserve significant digits and symbols verbatim.
     from hvs_catalog.records.tabular import read_ecsv_records
 
     records = read_ecsv_records(ecsv.encode("utf-8"))
@@ -215,11 +219,13 @@ def test_pgf_backing_missing_macro_or_file_fails_honestly():
     assert "缺失或越界" in parsed2.error
 
 
-# ---- 初审反例回归：内部解析器边界、表头对应与逐表上下文 ----
+# ---- Initial-review regressions: parser boundaries, header alignment, and per-table context ----
 
 
 def test_internal_rejects_unresolved_macro_instead_of_warning():
-    """未解析宏的表不能被内部回退认证成功（初审反例 unresolved）。"""
+    """Internal fallback cannot certify tables containing unresolved macros (review example
+    unresolved).
+    """
     excerpt = "\\begin{tabular}{cc}\n\\hline A & B \\\\\n\\hline \\unknownFIC & 5 \\\\\n\\hline\n\\end{tabular}\n"
     parsed = parse_latex_table_excerpt(excerpt)
     assert parsed.status == "failed"
@@ -240,7 +246,9 @@ def test_native_expands_author_macro_while_internal_does_not_guess(tmp_path):
 
 
 def test_internal_rejects_ragged_rows_without_multicolumn():
-    """非合并格列数不一致不能补齐认证（初审反例 ragged）。"""
+    """Do not pad inconsistent unmerged row widths to certify success (review example
+    ragged).
+    """
     excerpt = (
         "\\begin{tabular}{ccc}\n\\hline A & B & C \\\\\n\\hline FIC-A & 525 & 10 \\\\\n"
         "FIC-B & 430 \\\\\n\\hline\n\\end{tabular}\n"
@@ -251,7 +259,9 @@ def test_internal_rejects_ragged_rows_without_multicolumn():
 
 
 def test_internal_rejects_two_content_tables_in_one_block():
-    """同一表块两份内容表不能取首张（初审反例 two-tables）。"""
+    """Do not choose the first of two content tables in one block (review example
+    two-tables).
+    """
     excerpt = (
         "\\begin{table}\n\\begin{tabular}{cc}\nA & B \\\\\nFIC-A & 1 \\\\\n\\end{tabular}\n"
         "\\begin{tabular}{cc}\nC & D \\\\\nFIC-B & 2 \\\\\n\\end{tabular}\n\\end{table}\n"
@@ -262,7 +272,7 @@ def test_internal_rejects_two_content_tables_in_one_block():
 
 
 def test_scan_registers_both_tables_in_one_float():
-    """扫描层登记同一浮动体内的两张表，不静默丢第二张。"""
+    """Register both tables in a float rather than silently discarding the second."""
     from hvs_catalog.materials.tables import scan_tables
     from hvs_catalog.materials.texgraph import resolve_manuscript
 
@@ -281,7 +291,9 @@ def test_scan_registers_both_tables_in_one_float():
 
 
 def test_html_text_and_missing_data_rows_are_not_stolen_as_header():
-    """明确 thead 时不按数字启发式迁移对象行（初审反例 html-text-data-row）。"""
+    """Explicit thead prevents numeric heuristics from moving object rows (review example
+    html-text-data-row).
+    """
     from hvs_catalog.materials.convert import parse_html_tables
 
     html = (
@@ -297,7 +309,9 @@ def test_html_text_and_missing_data_rows_are_not_stolen_as_header():
 
 
 def test_html_without_thead_keeps_all_rows_as_data_with_note():
-    """无明确表头时全部行按数据保留并登记不确定性，不猜表头。"""
+    """Without explicit headers, retain all rows as data and register uncertainty rather
+    than guessing.
+    """
     from hvs_catalog.materials.convert import parse_html_tables
 
     html = (
@@ -312,7 +326,9 @@ def test_html_without_thead_keeps_all_rows_as_data_with_note():
 
 
 def test_mapping_preserves_headers_spans_and_presentation_changes():
-    """映射附件保留原表头层次、合并格跨度与呈现差异（含 nodata 标记）。"""
+    """Mapping attachments preserve header hierarchy, merged-cell spans, and presentation
+    differences, including nodata.
+    """
     from hvs_catalog.materials.convert import parse_html_tables
 
     html = (
@@ -330,7 +346,9 @@ def test_mapping_preserves_headers_spans_and_presentation_changes():
 
 
 def test_pgf_read_selection_uses_assignment_before_typeset(tmp_path):
-    """表块之后（含其后文件）的重赋值不作用于该表（初审反例 after.csv）。"""
+    """Assignments after a table block, including later files, do not affect it (review
+    example after.csv).
+    """
     from hvs_catalog.materials.tables import PgfTypeset
 
     typeset = PgfTypeset(
@@ -360,9 +378,9 @@ def test_pgf_read_selection_uses_assignment_before_typeset(tmp_path):
         read_member=read_member,
         referring_file="main.tex",
     )
-    # 表块在第 6 行（第二个 typeset）：其之前最近的读入是 after.csv，
-    # 其前的表块应取 before.csv。这里 typeset 行 6 恰在 after 读入之后，
-    # 选 after（FIC-B）才是位置正确；再验证前一个表块位置取 before。
+    # The second typeset block is on line 6, immediately after reading after.csv;
+    # the earlier block should use before.csv. Here line 6 follows the after.csv read,
+    # so after (FIC-B) is positionally correct; also verify that the preceding block uses before.
     assert parsed.status == "success"
     assert parsed.data_rows == [["FIC-B", "610"]]
     early = PgfTypeset(
@@ -385,7 +403,7 @@ def test_pgf_read_selection_uses_assignment_before_typeset(tmp_path):
 
 
 def test_pgf_unknown_row_filter_option_keeps_gap():
-    """skip rows between index 等未知过滤必须留缺口（初审反例）。"""
+    """Unknown filters such as skip rows between index must leave a gap (review example)."""
     from hvs_catalog.materials.tables import pgf_unexplained_transforms
 
     unexplained = pgf_unexplained_transforms(
@@ -395,7 +413,9 @@ def test_pgf_unknown_row_filter_option_keeps_gap():
 
 
 def test_pgf_declared_delimiter_is_used_and_unknown_value_fails():
-    """不按内容猜分隔符，依照作者声明或 PGF 已知默认。"""
+    """Use the author's delimiter declaration or known PGF default rather than guessing
+    from contents.
+    """
     from hvs_catalog.materials.tables import PgfTypeset
 
     typeset = PgfTypeset(

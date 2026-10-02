@@ -1,13 +1,15 @@
-"""从 Gold 有类型定义生成格式说明、JSON Schema 与标注模板。
+"""Generate Gold documentation, JSON schemas, and annotation templates from typed
+definitions.
 
-生成内容写入 ``contracts/generated/gold/``，由
-``tools/render_record_contracts.py`` 一并渲染与检查；生成文件不手工修
-改。旧 v4 读取适配器的 JSON Schema 一并生成，便于对照迁移输入范围。
+Write contracts/generated/gold/ through tools/render_record_contracts.py
+rendering/checking; never hand-edit outputs. Also generate legacy v4 adapter schemas to
+document migration input scope.
 """
 
 from __future__ import annotations
 
 import json
+from inspect import cleandoc
 from pathlib import Path
 from typing import Any, get_args, get_origin
 
@@ -162,7 +164,7 @@ def _model_table(model: type[BaseModel]) -> list[str]:
     title = model.__name__
     rows = _field_rows(model)
     lines = [f"#### `{title}`", ""]
-    doc = (model.__doc__ or "").strip()
+    doc = cleandoc(model.__doc__ or "")
     if doc and doc.isascii():
         lines += [doc, ""]
     lines += [
@@ -501,7 +503,8 @@ Only new/empty or exactly compatible targets are accepted. A selected parent ali
 (such as macOS /var) resolves to the real root, which the approval binds. The target
 itself (including dangling symlinks) and internal managed paths must not be symlinks.
 A parent alias redirected to a different root cannot reuse approval. Old layouts are
-not read or migrated. Real private-repository data and documentation remain unchanged.
+not read or migrated. The tool does not migrate existing private-repository data or
+update repository documentation.
 
 Python: organize drafts with compact_gold_annotation / write_compact_gold_pair;
 then check_save(pair_path=..., material_root=..., target=GoldTarget(...),
@@ -745,7 +748,7 @@ def write_outputs(root: Path) -> dict[str, str]:
 
 
 def check_outputs(root: Path) -> list[str]:
-    """返回与生成结果不一致的文件列表；空列表表示同步。"""
+    """Return files differing from generated results; an empty list means synchronized."""
     expected = build_outputs()
     problems: list[str] = []
     for relative, content in expected.items():

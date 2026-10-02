@@ -1,15 +1,16 @@
-"""固定的旧输入与草稿/新答案的逐项比较：只读，不自动修订答案。
+"""Read-only item comparison between fixed legacy input and drafts/new answers, without
+automatic revisions.
 
-报告包含所比较内容的哈希，逐项给出一致、调整、缺失与新增；比较不判
-断科学对错，只陈述两侧内容差异。旧条目按草稿记录的 ``legacy_index``
-对应，全新草稿（无旧输入对应）不适用本接口。
+Reports include content hashes and identify matching/adjusted/missing/new entries
+without judging scientific correctness. Match legacy entries by draft legacy_index;
+fresh drafts without legacy counterparts cannot use this interface.
 
-含义相同的表达按以下约定正规化后比较：旧空字符串与新格式 null 视为
-同一含义；证据集合、误差分量集合不参与排列比较（排序后比较）；证据
-的 PDF 文件绑定（``file_id``）属于新格式的格式级信息，不参与内容比
-较（迁移报告已单独记录）。其余字段——包括科学状态、上下文证据、嵌
-套证据、冲突结构与页序号——全部参与比较；新增内容（如专家填写的
-新词表状态、页序号）计为差异项，须由专家审定，不由本工具判断对错。
+Normalize legacy empty strings and new null as equally absent. Sort evidence/component
+collections to ignore ordering. New PDF file_id bindings are format metadata excluded
+from content comparison and reported separately by migration. Compare all other fields,
+including scientific state, context/nested evidence, conflicts, and page ordinals. New
+vocabulary states/page ordinals are differences requiring expert review, not tool
+judgments.
 """
 
 from __future__ import annotations
@@ -70,12 +71,12 @@ _NUMERIC_FIELDS = (
 
 
 def _norm(text: object) -> object:
-    """旧空字符串与新格式 null 视为同一含义：未提供。"""
+    """Treat legacy empty strings and new null identically as not provided."""
     return None if text in _EMPTY else text
 
 
 def _evidence_entry(data: dict) -> dict:
-    """证据的参与比较内容：位置、引文与页序号（不含 file_id）。"""
+    """Compare evidence location, quote, and page ordinal, excluding file_id."""
     return {
         "location": data["location"],
         "quote": _norm(data.get("quote")),
@@ -88,7 +89,9 @@ def _evidence_set(entries: list[dict]) -> list[dict]:
 
 
 def _value_dump(value) -> dict:
-    """数值的完整规范化表达：全部科学字段、嵌套证据与区间元数据。"""
+    """Complete normalized value representation including scientific fields, nested
+    evidence, and interval metadata.
+    """
     data = value.model_dump(mode="json")
     dump: dict[str, object] = {key: _norm(data.get(key)) for key in _NUMERIC_FIELDS}
     dump["evidence"] = _evidence_set(data.get("evidence", []))
@@ -125,7 +128,7 @@ def _value_signature(value) -> str:
 
 
 def _value_brief(dump: dict) -> str:
-    """数值差异报告中的一行摘要：科学字段与全部证据位置。"""
+    """Summarize one value-difference row with science fields and every evidence location."""
     parts: list[str] = []
     for key in (
         "value",
@@ -237,7 +240,9 @@ def _quantity_differences(
 def _boundness_item(
     old_contribution, new_contribution: GoldContribution
 ) -> CompareItem:
-    """作者总体状态单独比较：旧状态逐字保留情况与新词表状态的填写。"""
+    """Compare overall author state separately: preserved legacy state and newly filled
+    vocabulary state.
+    """
     subject = f"contributions/{new_contribution.contribution_id}/paper_boundness"
     old_status = old_contribution.paper_boundness.status
     boundness = new_contribution.paper_boundness
@@ -485,7 +490,7 @@ def compare_legacy_with_current(
     current_path: str | Path,
     mapping_path: str | Path | None = None,
 ) -> CompareReport:
-    """比较旧输入与草稿/新答案；两侧文件都只读。"""
+    """Compare legacy input with drafts/new answers while keeping both files read-only."""
     legacy_path = Path(legacy_path)
     current_path = Path(current_path)
     legacy_raw = legacy_path.read_text(encoding="utf-8")

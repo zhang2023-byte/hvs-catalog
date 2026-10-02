@@ -22,7 +22,9 @@ from ..records.common import Config
 from ..records.rules import author_state_ids
 from .errors import GoldFormatError, GoldIntegrityError
 
-if TYPE_CHECKING:  # 仅类型标注；运行时在函数内导入避免加载环
+if (
+    TYPE_CHECKING
+):  # Type annotations only; import inside functions at runtime to avoid cycles.
     from .checking import CheckProblem
 from .models import (
     GOLD_COORDINATE_FORMATS,
@@ -672,7 +674,7 @@ def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path)
         )
     source = pair.metadata.source
     if source is not None:
-        # source=None 的准备缺口由 pair_preparation_problems 统一报告
+        # pair_preparation_problems uniformly reports the source=None preparation gap.
         source_path = resolve_within(root, source.name)
         if not source_path.is_file():
             problems.append(
@@ -694,7 +696,7 @@ def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path)
             )
     for subject, evidence in iter_gold_evidence(pair.answer):
         analysis = analysis_by_id.get(evidence.file_id)
-        # evidence.file_id 为 None 的准备缺口由 pair_preparation_problems 统一报告
+        # pair_preparation_problems uniformly reports missing evidence.file_id.
         if evidence.file_id is not None and (
             evidence.page is not None
             and analysis is not None
@@ -724,9 +726,9 @@ def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path)
                 note=note,
             )
         )
-    # 纯内存可判定的准备缺口（结构/材料/科学待办）与文件核对共用同一
-    # 判定逻辑；混合场景下列表内部顺序可能与逐块内联时不同，问题集合
-    # （含重复项数量）、category/code/subject/message 均不变。
+    # In-memory structural/material/science preparation checks share logic with file verification.
+    # Combined cases may change list order compared with inline block checks, but preserve the issue multiset,
+    # including multiplicity, and every category/code/subject/message.
     problems.extend(pair_preparation_problems(pair))
     return GoldCheckReport(
         document_sha256=_sha256(compact_answer_to_json(pair.answer).encode("utf-8")),

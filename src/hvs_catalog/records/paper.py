@@ -1,4 +1,4 @@
-"""论文记录与对象贡献：名单条目对应的研究摘要、判断、数值与完成情况。"""
+"""Paper/object contributions: roster-linked summaries, judgments, values, and completion."""
 
 from __future__ import annotations
 
@@ -96,7 +96,7 @@ def _error_form_allowed(
 def _check_printed_fragments(
     parts: list[DirectEvidencePart], part_name: str, number: str, where: str
 ) -> None:
-    """数值组件的原报片段必须与保存的数字字符串完全一致。"""
+    """Numeric fragments must exactly match saved printed number strings."""
     mismatched = [
         part.raw_fragment
         for part in parts
@@ -272,7 +272,7 @@ class QuantityGroup(Config):
         return self
 
 
-# 没有科学顺序含义的证据集合：识别同一测量时不参与排列比较
+# Evidence sets have no scientific order; ignore ordering for measurement identity.
 _ORDER_INSENSITIVE_LISTS = ("direct_evidence", "context_evidence_refs")
 _REPORT_LISTS = ("coverage", "lower_quantile", "upper_quantile")
 
@@ -284,7 +284,9 @@ def _sorted_evidence(items: object) -> object:
 
 
 def _expression_dump(value: MeasuredValue) -> dict:
-    """除技术编号外的完整数值表达；嵌套证据集合先规范化再排序上层集合。"""
+    """Complete value expression excluding technical IDs, normalizing nested evidence
+    before outer sorting.
+    """
     data = value.model_dump(mode="json", exclude={"value_id"})
     for key in _ORDER_INSENSITIVE_LISTS:
         data[key] = _sorted_evidence(data.get(key))
@@ -302,12 +304,16 @@ def _expression_dump(value: MeasuredValue) -> dict:
 
 
 def _expression_key(value: MeasuredValue) -> str:
-    """除技术编号与证据排列顺序外的完整数值表达键，用于识别同一待决测量。"""
+    """Complete value key excluding technical IDs/evidence order for unresolved measurement
+    identity.
+    """
     return canonical_json(_expression_dump(value))
 
 
 def find_conflict_exclusivity_violation(quantity_conflicts, quantities) -> str | None:
-    """返回冲突待决测量混入已确认数值的说明；无违例时返回 None。"""
+    """Explain pending conflict values mixed into confirmed values, or None without
+    violations.
+    """
     pending: dict[str, set[str]] = {}
     for conflict in quantity_conflicts:
         keys = pending.setdefault(conflict.quantity, set())

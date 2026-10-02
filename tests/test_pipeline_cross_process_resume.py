@@ -1,9 +1,10 @@
-"""共享提取入口：独立进程恢复与真实中断窗口（C05）。
+"""Shared extraction entry point: independent-process recovery and real interruption
+windows (C05).
 
-子进程 1 执行到暂停（或在中断窗口内 ``os._exit`` 模拟进程死亡），
-子进程 2 打开同一空间恢复：固定输入、归档响应与调用日志（可选
-journal 文件）跨进程核对。调用窗口分两段验证：收到响应但未归档会重
-新调用；已归档未提交则复用归档响应。
+Process 1 pauses or uses os._exit in a failure window; process 2 opens the same
+workspace and verifies frozen input, archived responses, and call logs, optionally
+through a journal file. Responses received but not archived require another call;
+archived but uncommitted responses are reused.
 """
 
 from __future__ import annotations
@@ -184,7 +185,9 @@ def test_pause_decide_resume_across_processes(tmp_path):
 
 
 def test_crash_after_response_repeats_call(tmp_path):
-    """收到响应但未归档就退出：账上多一次调用，恢复后完成。"""
+    """Exit after response receipt but before archiving: record an extra call and complete
+    after recovery.
+    """
     journal = tmp_path / "journal.jsonl"
     code, payload, stderr = run_driver(
         tmp_path, "crash-after-response", tmp_path / "space", journal
@@ -197,12 +200,14 @@ def test_crash_after_response_repeats_call(tmp_path):
     assert code == 0, stderr
     assert payload["outcome"] == "finished"
     counts = journal_counts(tmp_path)
-    # 中断窗口内的调用 + 恢复时的重新调用 = 2 次名单调用
+    # The interrupted call plus the recovery call totals two roster calls.
     assert counts["steps"]["direct_roster"] == 2
 
 
 def test_crash_after_archive_reuses_response(tmp_path):
-    """已归档未提交就退出：恢复复用归档响应，不重复调用。"""
+    """Exit after archiving but before commit: reuse the response without repeating the
+    call.
+    """
     journal = tmp_path / "journal.jsonl"
     code, payload, stderr = run_driver(
         tmp_path, "crash-after-archive", tmp_path / "space", journal
@@ -214,6 +219,6 @@ def test_crash_after_archive_reuses_response(tmp_path):
     )
     assert code == 0, stderr
     assert payload["outcome"] == "finished"
-    assert payload["roster_calls"] == 1  # 只有归档前那一次真实调用
+    assert payload["roster_calls"] == 1  # Only the original pre-archive call occurs.
     counts = journal_counts(tmp_path)
     assert counts["steps"]["direct_roster"] == 1

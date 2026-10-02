@@ -1,8 +1,8 @@
-"""合成输入的构造帮助：为 ``MeasuredValue`` 补齐证据样板。
+"""Synthetic-input builders supplying MeasuredValue evidence scaffolding.
 
-这些函数只填充直接证据样板，不绕过 ``records.paper.MeasuredValue``
-的任何校验，也不引入评分逻辑；供固定样例、测试和集成侧数据适配
-复用。所有材料均为合成（SYN-* / synthetic-*），不涉及真实论文。
+Never bypass records.paper.MeasuredValue validation or add scoring logic. Reuse in
+frozen examples, tests, and integration adaptation. All SYN-*/synthetic-* materials are
+fictional, with no real papers.
 """
 
 from __future__ import annotations
@@ -66,7 +66,7 @@ def build_measured_value(
     evidence_record_id: str = "synthetic-source",
     evidence_revision: int = 1,
 ) -> MeasuredValue:
-    """构造一条完整校验的合成 ``MeasuredValue``；证据样板自动生成。"""
+    """Build a fully validated synthetic MeasuredValue with generated evidence scaffolding."""
     evidence_ref = RecordRef(record_id=evidence_record_id, revision=evidence_revision)
     direct: list[DirectEvidencePart] = []
     for part_name, raw in (

@@ -1,4 +1,6 @@
-"""日常准确引用闭包与执行范围；备份仍检查全量历史。"""
+"""Ordinary paths verify exact reference closure and execution scope; backup still verifies
+all history.
+"""
 
 from __future__ import annotations
 
@@ -72,7 +74,7 @@ def test_unrelated_history_does_not_block_daily_operations_but_backup_rejects(
                 data=run.data.model_copy(update={"steps": [step, *run.data.steps[1:]]}),
             )
             _commit(space, [changed], "add-response")
-            # 最新运行已不引用此响应，当前执行仍须核验其历史修订。
+            # Even if the latest run no longer references this response, current execution must verify its historical revisions.
             clean = build_record(
                 type(run),
                 record_id=run.record_id,
@@ -96,7 +98,7 @@ def test_unrelated_history_does_not_block_daily_operations_but_backup_rejects(
         else:
             space.store().set_meta(framework_final_key(old.execution_id), "wrong-id")
 
-        # 若日常路径意外扫描全历史，即使数据没被读取也会失败。
+        # An accidental all-history scan fails even without reading data.
         with monkeypatch.context() as patch:
             patch.setattr(
                 StoreTransaction,
@@ -165,7 +167,7 @@ def test_exact_old_revision_used_not_corrupt_newest_and_dependency_damage_reject
         assert space.store().read_record(next_evidence.ref()).data.source_ref == old_ref
         with pytest.raises(WorkspaceIntegrityError):
             backup_workspace(space, tmp_path / "backup")
-        # 本批所依赖的准确旧修订材料损坏则提交整体拒绝。
+        # Corruption of an exact old revision required by this batch rejects the entire commit.
         (space.root / source.data.files[0].path).write_bytes(b"corrupt pinned source")
         rejected = build_record(
             type(evidence),

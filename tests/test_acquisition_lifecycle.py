@@ -1,7 +1,9 @@
-"""获取格式 v2 的离线行为测试；仅使用新的临时合成空间。
+"""Offline acquisition-format v2 tests using fresh temporary synthetic workspaces.
 
-旧世代/索引/逐项回执补偿测试由原子提交、公开重启及版本回查测试替代。
-精确故障窗口使用提交/发布注入点，进程竞争用管道握手而不是睡眠。
+Atomic commits, public restart, and version lookups replace legacy
+generation/index/per-item compensation tests. Inject precise failures at
+commit/publication points; use pipe handshakes rather than sleeps for process
+contention.
 """
 
 from __future__ import annotations
@@ -304,7 +306,7 @@ def test_discovery_response_provenance_and_binding(space):
     assert record.data.query["submitted_from"] == "2024-01-01"
     assert record.data.query["categories"] == ["astro-ph.CO"]
     state = json.loads(space.store().get_meta("acquisition:state"))
-    # 无重复 papers、页字节/元数据快照及索引。
+    # No duplicate papers, page-byte/metadata snapshots, or indexes.
     assert set(state["rounds"][status.round_id]["pages"][0]) == {
         "record_id",
         "revision",
@@ -461,7 +463,7 @@ def test_revisions_outside_discovery_window_and_honest_unknown(space, clock):
     assert result.entries[0].state == "pending"
     assert result.entries[0].latest_version == 5
     assert service.selected_material("2101.01234").material_ref == old.material_ref
-    # 同秒/跨句柄的检查不靠唯一操作键；后一次真实结果替换之前结果。
+    # Same-second and cross-handle checks need no unique operation key; later actual results replace earlier results.
     other = build_service(space, api, clock)
     api.metadata.clear()
     unknown = other.check_revisions(["2101.01234", "2101.99999"])
@@ -615,7 +617,7 @@ def test_material_delivery_refuses_missing_conflicting_data(space, damage):
                     (result.material_ref.record_id,),
                 )
             else:
-                # 故障窗口不要求自动修复；准确身份必须检查。
+                # Failure windows need no automatic repair, but exact identity must be verified.
                 conn.execute(
                     "UPDATE records SET payload=replace(payload, '2401.01234v1', '2401.99999v1') WHERE record_id=?",
                     (result.material_ref.record_id,),
@@ -627,7 +629,7 @@ def test_material_delivery_refuses_missing_conflicting_data(space, damage):
     before = snapshot(space)
     with pytest.raises((AcquisitionError, WorkspaceIntegrityError)):
         service.selected_material("2401.01234")
-    # 不修改、不补造缺失材料。
+    # Do not modify or fabricate missing materials.
     assert snapshot(space) == before
 
 
@@ -692,7 +694,7 @@ space.close()
                 )
             else:
                 service.check_revisions([] if operation == "empty-revisions" else None)
-        assert service.list_selections() == []  # 已提交事实仍能查询。
+        assert service.list_selections() == []  # Committed facts remain queryable.
     finally:
         process.communicate("release\n", timeout=30)
     assert process.returncode == 0

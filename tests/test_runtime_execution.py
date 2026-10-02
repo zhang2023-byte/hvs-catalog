@@ -1,6 +1,8 @@
-"""运行与步骤：固定输入、快照隔离、归档核验与裁决开关（A07/A08/A12）。
+"""Runtime/steps: frozen inputs, snapshot isolation, archive checks, and review switches
+(A07/A08/A12).
 
-合成材料见 ``hvs_catalog.synthetic``；科学内容固定在测试输入中。
+Synthetic materials come from hvs_catalog.synthetic; scientific contents are fixed in
+test inputs.
 """
 
 from __future__ import annotations
@@ -97,7 +99,7 @@ def test_changed_input_creates_new_execution(space):
     )
     assert not reused
     assert second.execution_id != first.execution_id
-    # 两份运行清单分别固定各自输入
+    # Separate run manifests freeze their own inputs.
     runs = {
         first.execution_id: space.store().read_record_current(first.run_ref.record_id),
         second.execution_id: space.store().read_record_current(
@@ -112,7 +114,7 @@ def test_resume_uses_original_snapshot_after_config_change(space, service, tmp_p
     execution, flow, _ = start_execution(space, paper="B", request_key="b")
     report = resume_execution(space, execution.execution_id, flow, service=service)
     assert report.outcome == "finished"
-    # 本机配置改变不影响已完成的固定输入执行
+    # Local configuration changes cannot affect completed frozen-input execution.
     space.update_config({"download": {"concurrency": 8}})
     again = resume_execution(space, execution.execution_id, flow, service=service)
     assert again.mode == "already-finished"
@@ -128,7 +130,7 @@ def test_missing_source_file_blocks_resume(space, service):
 
 def test_modified_source_file_blocks_resume(space, service):
     execution, flow, _ = start_execution(space, paper="B", request_key="b")
-    # 篡改来源文件内容后，当前文件不能冒充固定输入
+    # Tampered current source files cannot impersonate fixed input.
     (space.root / "sources/r05/b/paper.tex").write_bytes(b"tampered\n")
     with pytest.raises(RecoveryInconsistentError, match="哈希改变"):
         resume_execution(space, execution.execution_id, flow, service=service)
@@ -167,7 +169,9 @@ def test_code_version_mismatch_blocks_resume(space, service):
 
 
 def test_expert_and_pure_ai_groups_isolated(tmp_path):
-    """A12：两组使用相同论文；关闭组拒绝本轮专家决定及衍生结果。"""
+    """A12: groups use identical papers; the disabled group rejects current-round expert
+    decisions and derived results.
+    """
     expert_space = initialize_workspace(tmp_path / "expert")
     pure_space = initialize_workspace(tmp_path / "pure-ai")
     service = open_service(tmp_path / "calls.jsonl")
@@ -204,13 +208,15 @@ def test_expert_and_pure_ai_groups_isolated(tmp_path):
         pure_paper = pure_space.store().read_record_current(
             m.paper_record_id("A", ex_p.execution_id)
         )
-        assert pure_paper.revision == 1  # 模型判断不进入专家决定
+        assert (
+            pure_paper.revision == 1
+        )  # Model judgments never become expert decisions.
         run_p = pure_space.store().read_record_current(f"run-{ex_p.execution_id}")
         assert run_p.data.model_judgments
         questions_p = pending_questions(pure_space, execution_id=ex_p.execution_id)
         assert [q.status for q in questions_p] == ["open"]
 
-        # 关闭组提交专家决定被拒绝；专家组的决定不能移植到关闭组
+        # Reject expert submissions to the disabled group and transplantation of enabled-group decisions.
         from hvs_catalog.workspace import AdjudicationNotAllowedError
 
         with pytest.raises(AdjudicationNotAllowedError):
@@ -227,20 +233,20 @@ def test_expert_and_pure_ai_groups_isolated(tmp_path):
 
 
 def test_cross_execution_decision_rejected_in_same_space(space, service):
-    """换执行标识不能绕过隔离：跨执行提交决定被拒绝。"""
+    """Changing execution IDs cannot bypass isolation; reject cross-execution decisions."""
     from shared_scenarios import pending_questions, submit_expert_decision
 
     from hvs_catalog.workspace import WorkspaceIntegrityError
 
     ex_b, flow_b, _ = start_execution(space, paper="B", request_key="b")
     resume_execution(space, ex_b.execution_id, flow_b, service=service)
-    # 另一空间的执行 A 的问题不存在于本空间
+    # Another workspace's execution-A question does not exist here.
     other = initialize_workspace(space.root.parent / "other-space")
     try:
         ex_a, flow_a, _ = start_execution(other, paper="A", request_key="a")
         resume_execution(other, ex_a.execution_id, flow_a, service=service)
         question = pending_questions(other, execution_id=ex_a.execution_id)[0]
-        # 跨空间提交：另一空间的问题在本空间不存在，明确拒绝
+        # Reject foreign submissions explicitly because their questions do not exist in this workspace.
         with pytest.raises(WorkspaceIntegrityError, match="未知问题|不属于执行|不存在"):
             submit_expert_decision(
                 space,
@@ -253,11 +259,13 @@ def test_cross_execution_decision_rejected_in_same_space(space, service):
 
 
 def test_step_results_cached_within_execution_only(space, service, tmp_path):
-    """首版步骤缓存限定在本执行内：另一执行不自动复用中间结果。"""
+    """Initial step caching is execution-local; another execution never automatically
+    reuses intermediate results.
+    """
     ex1, flow1, _ = start_execution(space, paper="B", request_key="b1")
     resume_execution(space, ex1.execution_id, flow1, service=service)
     calls_after_first = service.summary()["calls"]
-    # 相同输入的另一次执行（不同请求键、不同空间记录）重新走完整链路
+    # Identical input with a new request key/workspace record reruns the complete chain.
     other = initialize_workspace(tmp_path / "other")
     try:
         ex2, flow2, _ = start_execution(other, paper="B", request_key="b2")

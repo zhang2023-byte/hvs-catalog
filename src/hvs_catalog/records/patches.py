@@ -1,8 +1,8 @@
-"""结果补丁的应用纯函数：校验与实际应用共用目标定位与字段约束。
+"""Pure result patches sharing validation/application target and field rules.
 
-函数不写数据库、不分配正式修订、不改变输入对象；运行层取得新修订
-后调用这里完成实际修改，再与共同记录的集合校验一起提交。条目目标只能
-修改该条目模型的字段，记录级字段须由明确的记录级目标承载。
+Never write databases, allocate revisions, or mutate inputs. Runtime assigns revisions,
+applies here, and commits with collection validation. Item targets alter item fields
+only; record fields need explicit record targets.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ UNSUPPORTED_ITEM_TARGET = object()
 
 
 def locate_patch_item(record: Record, item_id: str) -> Any:
-    """解析补丁目标指向的实际条目模型；不支持条目定位时返回 sentinel。"""
+    """Resolve targeted item models, returning a sentinel for unsupported locations."""
     if isinstance(record, PaperRecord):
         return next(
             (
@@ -38,7 +38,7 @@ def locate_patch_item(record: Record, item_id: str) -> Any:
 
 
 def apply_item_changes(item: Any, changes: list) -> Any:
-    """把补丁改动合入条目副本并整体校验；不逐字段检查中间状态。"""
+    """Merge into item copies and validate the whole result, not intermediate fields."""
     item_model = type(item)
     payload = item.model_dump(mode="json")
     for change in changes:
@@ -64,7 +64,7 @@ def apply_item_changes(item: Any, changes: list) -> Any:
 
 
 class PatchApplicationError(ValueError):
-    """补丁不能按共同定义应用到目标条目；reasons 汇总全部问题。"""
+    """Patch violates shared application definitions; reasons aggregates issues."""
 
     def __init__(self, reasons: list[str]) -> None:
         self.reasons = reasons
@@ -72,10 +72,10 @@ class PatchApplicationError(ValueError):
 
 
 def apply_decision_patch(record: Record, patch: DecisionPatch) -> Record:
-    """返回应用补丁后的记录副本；修订、时间与执行绑定保持不变。
+    """Return patched copies with unchanged revision/time/execution bindings.
 
-    目标不存在或不支持时抛出 PatchApplicationError；调用方负责核对
-    补丁目标属于问题范围、按预期修订提交并整体校验集合。
+    Missing/unsupported targets raise PatchApplicationError. Callers check question
+    scope, expected revisions, and complete collections.
     """
     item = locate_patch_item(record, patch.target.item_id)
     if item is UNSUPPORTED_ITEM_TARGET:
@@ -117,6 +117,6 @@ def apply_decision_patch(record: Record, patch: DecisionPatch) -> Record:
         return record.model_copy(
             update={"data": record.data.model_copy(update={"entries": entries})}
         )
-    raise PatchApplicationError(  # pragma: no cover - locate 已限定类型
+    raise PatchApplicationError(  # pragma: no cover - locate already restricts types
         [f"补丁目标条目类型不受支持：{type(patched_item).__name__}"]
     )

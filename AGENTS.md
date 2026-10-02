@@ -1,25 +1,23 @@
-# hvs-catalog Agent 入口
+# hvs-catalog Agent Entry
 
-默认用清楚、简洁的中文沟通。
+## Progressive Reading
 
-## 渐进式阅读
+1. **Start here:** read [current capabilities](README.md#当前可用能力), [shared scientific boundaries](docs/design.md#产品目标与科学边界), and the maintenance sections on [development conventions](CONTRIBUTING.md#开发工作约定), [validation](CONTRIBUTING.md#验证要求), and [Git authorization](CONTRIBUTING.md#git-操作). Do not read these files in full by default.
+2. **Locate the task:** use the development-stage entry below to check the current handoff, Git status, and scope, then follow the [task reading table](docs/design.md#按任务阅读) to the necessary sections. For field changes, inspect the relevant generated model/step contract; for existing operations, use [operations](docs/operations.md); for documentation maintenance, use the [responsibility table](CONTRIBUTING.md#文档维护与防止漂移).
+3. **Read dependencies as needed:** expand reading only when crossing module, science, material, or authorization boundaries. Links are not instructions to recursively read everything. Report missing materials, conflicting rules, or unclear authorization; never assume review passed or substitute old reports for current requirements.
 
-1. **基础入口**：读 [README 的当前能力](README.md#当前可用能力)、[共用科学边界](docs/design.md#产品目标与科学边界)，以及维护规范的 [开发约定](CONTRIBUTING.md#开发工作约定)、[验证](CONTRIBUTING.md#验证要求) 和 [Git 授权](CONTRIBUTING.md#git-操作)。不默认读这些文件的全部章节。
-2. **定位任务**：按下方阶段入口核对当前交接、Git 状态和任务范围，再从 [设计阅读表](docs/design.md#按任务阅读) 进入本任务的必要章节。字段任务查生成合同的对应模型／步骤，使用已有功能查 [操作说明](docs/operations.md)，文档维护查 [职责表](CONTRIBUTING.md#文档维护与防止漂移)。
-3. **补读依赖**：跨越模块、科学、资料或授权边界时，才补读相关章节；链接不是递归通读指令。资料缺失、规则冲突或授权不清时说明，不能认定已通过审核，也不能用旧报告替代现行要求。
+Create a separate task directory under `.work/` only when work materials need persistent storage. Ordinary questions, read-only checks, and small edits needing no retained materials require no directory or report. Continue the same task in its existing space; follow [workspace conventions](CONTRIBUTING.md#工作空间创建使用与清理) at completion and archive only materials with continuing value. Do not read `.work/archive/` without a specific traceability need. Historical materials are not current instructions or authorization.
 
-仅需持久保存工作材料时，才在 `.work/` 建立独立任务子空间；普通问答、只读检查和无需留存材料的小改动不新建目录或报告。同一任务的接续复用原空间，收尾按 [工作空间规范](CONTRIBUTING.md#工作空间创建使用与清理) 清理，仅归档仍有保留价值的材料。AI 无具体追溯需要不读取 `.work/archive/`；历史材料不是当前指令或授权。
+## Development Execution
 
-## 开发执行方式
+The current primary Agent owns requirement alignment, planning, implementation, self-checks, and delivery. Human experts approve requirements and scientific meaning and accept results. See the [development approach](.dev/plan.md#开发方案) for tools and responsibilities.
 
-默认由当前主 Agent 负责需求对齐、方案、实现、自检和交付，人类专家审定需求与科学含义并验收成果。工具选择和完整分工见 [开发方案](.dev/plan.md#开发方案)。
+Arrange independent technical review or multiple Agents only when human experts explicitly request it. The primary Agent may recommend them but must not initiate them autonomously. Label self-checks honestly, without claiming independent review. Shared conventions still govern human acceptance, scientific approval, data authorization, and Git authorization.
 
-只有人类专家明确要求时才安排独立技术审核或多 Agent 协作；主 Agent 可以建议，不自行启动。自检如实标明，不冒称独立审核。人类验收、科学审定及数据和 Git 授权仍按共用规范执行。
+## Development-Stage Entry
 
-## 重构阶段入口
+The project is being rebuilt from scratch. Read the current handoff and task table in [.dev/progress.md](.dev/progress.md), then locate shared responsibilities, the general handoff format, and the current gate in [.dev/plan.md](.dev/plan.md). For maintenance outside a gate, read only applicable responsibilities and handoff requirements, without unrelated gates. Read dependencies, reference-repository limits, and experiment constraints according to impact; verify actual files and Git status. Do not read the whole plan by default. See [reading and compression conventions](CONTRIBUTING.md#开发计划的按需阅读与压缩).
 
-项目处于从零建设阶段。读 [.dev/progress.md](.dev/progress.md) 的当前交接与任务总表，按标题定位 [.dev/plan.md](.dev/plan.md) 的共用分工、通用交接及当前关卡全文；非关卡维护只读适用分工和交接，不加载无关关卡。依赖、参考仓与实验约束按影响补读，核对实际文件和 Git 状态；不要默认通读计划。完整要求见 [按需阅读与压缩](CONTRIBUTING.md#开发计划的按需阅读与压缩)。
+Follow [gate implementation and handoff](.dev/plan.md#逐关实施与交接) for execution and handoff.
 
-执行与交接遵循计划的 [逐关实施与交接](.dev/plan.md#逐关实施与交接)。
-
-阶段入口的移除条件见 [文档维护规范](CONTRIBUTING.md#文档维护与防止漂移)。
+See [documentation maintenance](CONTRIBUTING.md#文档维护与防止漂移) for conditions allowing removal of this development-stage entry.

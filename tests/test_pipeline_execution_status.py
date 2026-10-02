@@ -1,7 +1,9 @@
-"""共享提取入口：执行状态、结果引用与用量查询（C01/C02 返回）。
+"""Shared extraction entry point: execution status, result references, and usage queries
+(C01/C02 returns).
 
-``get_extraction`` 与执行报告提供可供评分适配的结果引用、配置回显、
-问题/模型判断计数与原始故障信息；用量未知时保持 null，不伪造 0。
+get_extraction and execution reports provide references for scoring adaptation, echoed
+configuration, question/model-judgment counts, and original errors. Unknown usage stays
+null rather than becoming zero.
 """
 
 from __future__ import annotations
@@ -69,7 +71,7 @@ def test_status_contains_config_steps_questions_and_usage(space, service):
     expected_tokens = STEP_TOKENS["direct_roster"] + STEP_TOKENS["quantities"]
     assert status["usage"] == {"attempts": 2, "tokens": expected_tokens}
     assert status["errors"] == []
-    # 结果引用可回读（评分适配入口）
+    # Read back result references through the scoring-adaptation entry point.
     refs = execution_result_refs(space, handle.execution_id)
     assert [ref.record_id for ref in refs] == [
         ref["record_id"] for ref in status["result_refs"]
@@ -87,7 +89,9 @@ def test_report_is_json_serializable(space, service):
 
 
 def test_pending_report_carries_question_and_timing_data(space, service):
-    """暂停报告带待办问题；状态查询提供创建与决定时间（专家用时来源）。"""
+    """Paused reports list pending questions; status exposes creation/decision times for
+    measuring expert time.
+    """
     source = import_mock_source(space, PAPER_A)
     handle = _start(space, source, request_key="timing", expert=True, mode="daily")
     first = resume_extraction(space, handle.execution_id, service=service)
@@ -110,7 +114,7 @@ def test_pending_report_carries_question_and_timing_data(space, service):
 
 
 def test_unknown_usage_stays_null_not_zero(space):
-    """用量未知的调用保持 null，不伪造成 0。"""
+    """Unknown call usage stays null, not fabricated zero."""
 
     class NoUsageService(PipelineMockService):
         def call(self, *, step, request, material):

@@ -1,7 +1,9 @@
-"""安装级合成提取与评分走查的核对函数与驱动的离线单元测试。
+"""Offline unit tests for installed synthetic extraction/scoring drivers and validators.
 
-用合成的返回值验证 tools/installed_pipeline_checks.py 的失败报告能力；
-不构建发行包、不创建虚拟环境。"""
+Use synthetic return values to verify failure reporting in
+tools/installed_pipeline_checks.py, without building distributions or creating virtual
+environments.
+"""
 
 from __future__ import annotations
 
@@ -170,7 +172,9 @@ def test_drivers_have_no_source_path_injection_and_compile():
 
 
 def test_verify_pipeline_reports_problems_for_failing_installation(tmp_path):
-    """命令失败时逐项报告而不是静默通过：用必然失败的环境验证。"""
+    """Verify itemized failures rather than silent success in an environment guaranteed to
+    fail.
+    """
     venv_dir = tmp_path / "venv"
     venv_dir.mkdir()
     (venv_dir / "bin").mkdir()
@@ -200,7 +204,9 @@ def test_verify_pipeline_reports_problems_for_failing_installation(tmp_path):
 def test_zero_exit_with_bad_artifact_reports_context(
     tmp_path, monkeypatch, artifact, damage
 ):
-    """零退出不等于产物有效：所有文件读取失败均有上下文，不抛未处理异常。"""
+    """A zero exit does not establish valid outputs; report every file-reading failure with
+    context instead of unhandled exceptions.
+    """
     venv = tmp_path / "venv"
     script = venv / "bin" / "hvs-catalog"
     monkeypatch.setattr(checks, "CHECK_PAPERS", ("FIC-R05-A",))

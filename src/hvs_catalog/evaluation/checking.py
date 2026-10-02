@@ -1,11 +1,12 @@
-"""Gold 草稿与正式答案的检查：结构、材料对应与科学待审分别报告。
+"""Read-only Gold draft/answer checks report structure, material correspondence, and
+pending science separately.
 
-检查是只读的。结构错误与材料缺口是客观问题，正式保存前必须为零；科
-学待核查项留给人类专家处理，按规则明确保留的未决状态可以经批准接
-受。检查覆盖完整草稿：草稿声明的每一项待办都有明确去向——结构/资料
-缺口计入阻断，须科学处理的项目进入待核查清单并由批准显式接受，不会
-在转为正式答案时静默消失。工具不把结构检查通过解释为科学审定通过，
-也不把无法自动核验写成检查通过。
+Structural/material problems must be absent before official save. Experts handle
+scientific pending items and may explicitly approve unresolved states permitted by
+rules. Check every draft item: structural/material gaps block, science items remain on
+review lists and require explicit acceptance; none silently disappear during conversion.
+Structural success is neither science approval nor a claim that unverifiable material
+passed.
 """
 
 from __future__ import annotations
@@ -67,7 +68,7 @@ class GoldCheckReport(Config):
 
     @property
     def blocking_count(self) -> int:
-        """结构与材料问题数量；这些必须为零才能进入正式保存。"""
+        """Count structural/material issues, which must be zero before official save."""
         return len(
             [
                 item
@@ -88,7 +89,7 @@ class _Checker:
     problems: list[CheckProblem] = field(default_factory=list)
     files: list[FileVerification] = field(default_factory=list)
     quotes: list[QuoteVerification] = field(default_factory=list)
-    # 每份材料只做一次成熟解析器分析；None 表示文件缺失或无法读取
+    # Analyze each material once with an established parser; None means missing or unreadable.
     pdf_analyses: dict[str, PdfAnalysis | None] = field(default_factory=dict)
     file_names: dict[str, str] = field(default_factory=dict)
 
@@ -109,11 +110,12 @@ class _Checker:
 def check_gold_annotation(
     annotation: GoldAnnotation, *, material_root: Path
 ) -> GoldCheckReport:
-    """检查一份 Gold 文档（迁移草稿、全新草稿或正式答案）。
+    """Check migrated/fresh Gold drafts or official answers.
 
-    结构错误与材料缺口是客观问题，正式保存前必须为零；科学待核查项与
-    引文辅助核对结果在两种文档上如实报告，不由本函数解释为通过或失败。
-    草稿待办逐项处理：科学待办进入待核查清单，结构/资料待办计入阻断。
+    Structural/material gaps must be zero before official save. Report science pending
+    items and auxiliary quote checks accurately for both document types, without
+    interpreting them as overall pass/fail. Process every draft item: science enters
+    review lists; structural/material items block.
     """
     checker = _Checker(material_root=Path(material_root))
     raw = annotation.model_dump(mode="json", by_alias=True)
@@ -252,7 +254,9 @@ def _check_metadata(annotation: GoldAnnotation, checker: _Checker) -> None:
 
 
 def _material_path(material_root: Path, name: str) -> Path:
-    """材料路径解析到根内；越界或符号链接逃逸时明确拒绝。"""
+    """Resolve material paths within the root; explicitly reject escapes and escaping
+    symlinks.
+    """
     try:
         return resolve_within(material_root, name)
     except WorkspaceIntegrityError as exc:

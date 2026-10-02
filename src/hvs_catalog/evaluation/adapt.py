@@ -1,28 +1,26 @@
-"""既有 Gold 与提取输出到评分输入的纯内存适配（评分集成）。
+"""Pure in-memory adaptation from existing Gold and extraction outputs to scoring inputs.
 
-适配方向与边界：
+adapt_compact_gold_pair/adapt_compact_answer/adapt_annotation map compact v2 official
+pairs, answer-only inputs, or v1 annotations to GoldPaperEntry. Preserve printed values,
+errors, units, interval interpretations, conditions, and sources verbatim without
+rewriting PDF annotation formats. PDF locations/quotes enter context_evidence as
+diagnostics, never as verified materials.
 
-- ``adapt_compact_gold_pair`` / ``adapt_compact_answer`` /
-  ``adapt_annotation``：把既有 Gold 共同定义对象（compact v2 正式
-  答案配对、单份答案或 v1 标注答案）映射为评分侧 ``GoldPaperEntry``。
-  原报数值、误差、单位、区间解释、条件与来源逐字保留，不改写 PDF
-  标注格式；数值证据的 PDF 位置与引文进入 ``context_evidence`` 供诊
-  断，不冒充已核对材料。配对适配先执行内存可完成的绑定校验
-  （论文、scope、``answer_sha256``、证据文件声明）并保留绑定供报告
-  与计划核对；再复用 Gold 完整检查器中不读文件的同一准备检查
-  （``pair_preparation_problems``），材料缺口与科学待决都程序化阻止
-  就绪输出。answer-only 输入不做 metadata 绑定核对，不构成正式就绪
-  （严格条目入口拒绝并指向 ``adapt_compact_answer`` 非正式结构）。
-- ``prediction_from_execution``：把一次共享提取执行保存的结果记录映
-  射为 ``PredictionPaperEntry``；交付与完成状态来自运行清单实际状
-  态和已保存记录（后续失败不抹已存名单），科学完成状态另见
-  ``science_completion``。
+Pair adaptation validates in-memory bindings (paper, scope, answer_sha256, evidence-file
+declarations), retains bindings for report/plan checks, and reuses the full checker's
+file-free pair_preparation_problems. Material/science gaps block readiness. Answer-only
+inputs lack metadata validation and official readiness; strict entry points reject them
+and direct callers to unofficial structural adaptation.
 
-适配是纯内存转换：不读文件、不调用服务、不修改输入对象，也不把
-Gold 或评分诊断回写提取。Gold 值未给条件（null/空白）时拒绝适配并
-报告准备缺口——字段缺失不等于“原文未报告条件”的科学断言；原已
-明确填写并审定的条件说明逐字保留。真实 Gold 的读取与使用仍按获准
-私有评分空间执行，本模块不提供真实仓扫描。
+prediction_from_execution maps saved shared-execution results to PredictionPaperEntry.
+Delivery/runtime state and saved records establish output; later failures never erase
+rosters. science_completion separately determines scientific completion.
+
+Read no files, call no services, mutate no inputs, and feed no Gold/diagnostics back
+into extraction. Missing/blank Gold conditions are preparation gaps, not claims that
+conditions were unreported; preserve explicitly filled approved explanations verbatim.
+Real Gold access still requires an authorized private scoring workspace; this module
+never scans real repositories.
 """
 
 from __future__ import annotations
@@ -79,10 +77,12 @@ __all__ = [
 
 
 class GoldAdaptationError(ValueError):
-    """Gold 或提取输出无法诚实映射为评分输入（准备缺口等）。"""
+    """Gold or extraction output cannot be honestly mapped to scoring input, for example
+    due to preparation gaps.
+    """
 
 
-#: answer-only 适配的就绪边界说明：不阻断结构映射，但不构成正式就绪。
+#: Answer-only adaptation permits structural mapping but never establishes official readiness.
 ANSWER_ONLY_LIMITATION = (
     "answer-only：未执行 metadata 绑定核对（answer_sha256/范围审定/材料"
     "声明），不构成正式就绪；正式评分请使用经检查的完整配对"
@@ -90,7 +90,7 @@ ANSWER_ONLY_LIMITATION = (
 
 
 def _evidence_texts(evidences: list[Any]) -> list[str]:
-    """逐字保留证据位置与可选引文（评分诊断用 sidecar）。"""
+    """Preserve evidence locations and optional quotes verbatim in a diagnostic sidecar."""
     texts: list[str] = []
     for evidence in evidences:
         location = str(evidence.location)
@@ -100,8 +100,8 @@ def _evidence_texts(evidences: list[Any]) -> list[str]:
 
 
 def _ref(record_id: str) -> RecordRef:
-    # 评分输入的证据引用只用于定位诊断；Gold 的 PDF 证据不是空间记录，
-    # 使用派生定位标识，不冒充已核对的记录引用。
+    # Scoring evidence references locate diagnostics only; Gold PDF evidence is not a workspace record.
+    # Derive locator identifiers without impersonating verified record references.
     return RecordRef(record_id=record_id, revision=1)
 
 
@@ -132,7 +132,7 @@ def _quantile(report: Any, evidence_id: str) -> QuantileReport | None:
 
 
 def _measured_value(value: Any, *, value_id: str) -> MeasuredValue:
-    """把一条 Gold 数值映射为 ``MeasuredValue``；原报内容逐字保留。"""
+    """Map one Gold value to MeasuredValue, preserving printed contents verbatim."""
     condition = value.condition
     if condition is None or not condition.strip():
         raise GoldAdaptationError(
@@ -284,15 +284,13 @@ def _partial_needs_ranges(
 
 @dataclass(frozen=True)
 class GoldAdaptation:
-    """一次 Gold 适配的结果：条目、绑定与就绪状态。
+    """One Gold adaptation result: entry, bindings, and readiness.
 
-    - ``binding``：配对适配保留的可核对绑定（论文、规则、材料声明、
-      ``answer_sha256``、覆盖/scope 审定）；answer-only 适配为 ``None``。
-    - ``formal_readiness``：仅当绑定校验通过且无影响评分就绪的缺口时
-      为 ``True``；answer-only 输入恒为 ``False``。
-    - ``readiness_gaps``：影响评分就绪的具体缺口（未决科学待办等）；
-      非空的 Gold 不能当作就绪评分输入（严格封装会拒绝）。
-    - ``limitations``：就绪保证边界说明，不阻断结构映射。
+    binding retains pair-checkable paper/rules/material/answer_sha256/coverage/scope
+    approvals; answer-only input has None. formal_readiness is true only with valid
+    bindings and no scoring-readiness gaps, and always false for answer-only input.
+    Nonempty readiness_gaps block strict readiness. limitations describe readiness
+    guarantees without blocking structural mapping.
     """
 
     paper_key: str
@@ -334,15 +332,14 @@ def _preparation_gaps(
     *,
     confirmed_ranges: dict[str, list[ConfirmedRange]] | None,
 ) -> list[str]:
-    """把共用纯内存准备检查映射为就绪缺口说明（分类诊断）。
+    """Map shared in-memory preparation checks to categorized readiness gaps.
 
-    复用 Gold 完整检查器中不读文件的同一判定（``pair_preparation_
-    problems``，前置 ``validate_compact_gold_pair`` 绑定校验），不改
-    变其类别/代码/主题/消息。``partial_coverage`` 按既定规则处理：
-    仅当获准的评分准备方为该论文显式声明了已确认完整的封闭子范围时
-    才不算缺口，且只解决覆盖声明本身——其余材料/科学缺口照实保留。
-    纯内存核验不冒充真实 PDF/材料核对（``formal_readiness`` 的保证
-    范围见 ``GoldAdaptation``）。
+    After validate_compact_gold_pair binding checks, reuse the full checker's file-free
+    pair_preparation_problems without changing categories, codes, subjects, or messages.
+    Resolve partial_coverage only when an authorized preparation party explicitly
+    declares an approved complete closed subset for the paper; this resolves coverage
+    alone, retaining other material/science gaps. In-memory checks do not claim actual
+    PDF/material verification; see GoldAdaptation for formal_readiness guarantees.
     """
     ranges = _confirmed_for(pair.answer.arxiv_id, confirmed_ranges)
     gaps: list[str] = []
@@ -360,7 +357,9 @@ def _preparation_gaps(
 
 
 def _answer_only_gaps(answer: CompactGoldAnswer) -> list[str]:
-    """answer-only 可判定的未决科学待办；材料核对缺口由绑定缺失表达。"""
+    """Identify answer-only unresolved scientific items in memory; absent bindings
+    represent material-verification gaps.
+    """
     return [
         f"科学待决缺口 science_pending/unresolved_{index + 1}"
         f"（{item.subject}）：{item.value}"
@@ -393,17 +392,15 @@ def adapt_compact_gold_pair(
     *,
     confirmed_ranges: dict[str, list[ConfirmedRange]] | None = None,
 ) -> GoldAdaptation:
-    """compact v2 正式答案配对 → 评分 Gold 输入与绑定（纯内存）。
+    """Adapt compact v2 official pairs to scoring Gold inputs and bindings in memory.
 
-    先执行内存可完成的既有绑定校验（论文、scope、``answer_sha256``、
-    证据文件声明），失败即拒绝适配；绑定保留在 ``binding`` 供报告与
-    计划核对。再复用 Gold 完整检查器中不读文件的同一准备检查
-    （``pair_preparation_problems``）：材料缺口（缺源对应、缺证据、
-    缺条件）与科学待决（未决待办、未结构化冲突、在案材料差异）都进
-    入 ``readiness_gaps`` 并阻止 ``formal_readiness``——完整覆盖声明
-    不掩盖它们。已审定且结构完整的冲突双方不是待办，正常映射；部分
-    覆盖按既定规则需显式封闭子范围。本函数不读取真实 PDF、不宣称为
-    真实材料或科学审定完成。
+    Validate paper/scope/answer_sha256/evidence-file bindings first; reject failures and
+    retain bindings for reports/plans. Shared file-free preparation checks populate
+    readiness_gaps for missing sources/evidence/conditions and unresolved science,
+    unstructured conflicts, or documented material differences. Complete coverage never
+    hides gaps. Approved structured conflicts map normally; partial coverage requires an
+    explicit closed subset. Read no actual PDFs and claim no completed material/science
+    review.
     """
     try:
         validate_compact_gold_pair(pair)
@@ -426,12 +423,12 @@ def adapt_compact_answer(
     *,
     confirmed_ranges: dict[str, list[ConfirmedRange]] | None = None,
 ) -> GoldAdaptation:
-    """compact v2 单份答案（answer-only）→ 评分 Gold 输入。
+    """Adapt compact v2 answer-only inputs to scoring Gold.
 
-    缺 metadata：不执行 ``answer_sha256``/范围审定/材料声明核对，不构
-    成正式就绪（``formal_readiness`` 恒为 ``False``，边界见
-    ``limitations``）。适用于调用方已在内存中另行完成核对的上下文；
-    未决科学待办仍计为准备缺口。
+    Without metadata, do not check answer_sha256, scope approval, or material
+    declarations. formal_readiness stays false with explicit limitations. This supports
+    callers performing separate in-memory checks; unresolved scientific items remain
+    preparation gaps.
     """
     gaps = _answer_only_gaps(answer)
     return GoldAdaptation(
@@ -449,11 +446,12 @@ def adapt_annotation(
     *,
     confirmed_ranges: dict[str, list[ConfirmedRange]] | None = None,
 ) -> GoldAdaptation:
-    """v1 标注对象 → 评分 Gold 输入（纯内存，自包含绑定）。
+    """Adapt self-bound v1 annotations to scoring Gold in memory.
 
-    v1 格式没有独立覆盖声明：仅接受无待办的正式答案并按完整覆盖映
-    射；草稿或带待办的标注存在准备缺口，明确报错而不是默认完整。
-    绑定取自标注自身携带的模式版本、规则与材料声明。
+    v1 has no independent coverage declaration: accept only official answers without
+    pending items and map complete coverage. Reject drafts/pending annotations rather
+    than assuming completeness. Bindings come from the annotation's schema version,
+    rules, and material declarations.
     """
     if annotation.kind != "answer":
         raise GoldAdaptationError(
@@ -504,7 +502,7 @@ def adapt_annotation(
 
 
 def _require_ready(adaptation: GoldAdaptation) -> list[GoldPaperEntry]:
-    """严格就绪门禁：绑定核对与准备状态缺一不可（程序保证）。"""
+    """Strict readiness gate: require both valid bindings and preparation readiness."""
     if adaptation.binding is None:
         raise GoldAdaptationError(
             "Gold 输入缺少可核对的绑定（answer-only 未执行 metadata 绑定"
@@ -527,9 +525,10 @@ def gold_entries_from_compact_pair(
     *,
     confirmed_ranges: dict[str, list[ConfirmedRange]] | None = None,
 ) -> list[GoldPaperEntry]:
-    """compact v2 正式答案对 → 就绪评分 Gold 输入（严格封装）。
+    """Adapt compact v2 official pairs to ready scoring Gold through the strict wrapper.
 
-    先做配对绑定校验；未决科学待办等准备缺口拒绝映射，不能变 ready。
+    Validate pair bindings first; reject unresolved scientific items and other
+    preparation gaps rather than marking ready.
     """
     return _require_ready(
         adapt_compact_gold_pair(pair, confirmed_ranges=confirmed_ranges)
@@ -541,14 +540,13 @@ def gold_entries_from_compact_answer(
     *,
     confirmed_ranges: dict[str, list[ConfirmedRange]] | None = None,
 ) -> list[GoldPaperEntry]:
-    """compact v2 单份答案不能作为就绪评分输入（严格入口拒绝）。
+    """Reject compact v2 answer-only inputs as ready scoring Gold.
 
-    answer-only 输入缺 metadata：无法执行 ``answer_sha256``/范围审定/
-    材料声明的绑定核对，即使结构可映射也不是正式就绪评分输入（已
-    裁定）。本严格入口程序化拒绝，不做警告式放行；需要结构
-    映射做诊断时使用 :func:`adapt_compact_answer`（返回 ``binding=
-    None``、``formal_readiness=False`` 与 ``limitations`` 的非正式结
-    构）。参数 ``confirmed_ranges`` 仅为兼容旧签名保留，不改变拒绝。
+    Missing metadata prevents answer_sha256/scope/material binding checks, so structural
+    mapping cannot establish official readiness. Reject programmatically rather than
+    merely warning. For diagnostic structure, use adapt_compact_answer, returning
+    binding=None, formal_readiness=False, and limitations. confirmed_ranges remains for
+    legacy signature compatibility and cannot change rejection.
     """
     del confirmed_ranges
     raise GoldAdaptationError(
@@ -564,32 +562,34 @@ def gold_entries_from_annotation(
     *,
     confirmed_ranges: dict[str, list[ConfirmedRange]] | None = None,
 ) -> list[GoldPaperEntry]:
-    """v1 标注答案 → 就绪评分 Gold 输入（严格封装）。
+    """Adapt v1 annotation answers to ready scoring Gold through the strict wrapper.
 
-    绑定取自标注自身（schema/规则/材料声明），经同一就绪门禁；合法
-    已绑定的正式答案不受影响，草稿与带待办标注在适配层已拒绝。
+    Use self-contained schema/rules/material bindings and the same readiness gate. Valid
+    official bound answers remain supported; adaptation already rejects drafts/pending
+    items.
     """
-    del confirmed_ranges  # v1 按完整覆盖映射，无部分覆盖声明
+    del (
+        confirmed_ranges
+    )  # v1 maps complete coverage and has no partial-coverage declaration.
     return _require_ready(adapt_annotation(annotation))
 
 
-# ---- 提取输出 → 评分预测 ----
+# ---- Extraction outputs to scoring predictions ----
 
 
 def science_completion(status: dict, roster, paper) -> tuple[str, list[str]]:
-    """科学完成状态（与运行图终止状态分开）。
+    """Scientific completion independently of runtime graph termination.
 
-    取舍顺序：仍有开放或已答仍未决的科学问题、名单未决条目、未列清
-    的原文范围（``unresolved_groups``，按既定语义保留未决）或未决作
-    者总体判断时为 ``pending``（另保留错误/失败等独立诊断）；无待决
-    但存在运行错误、未到图终止、数值未产出、名单覆盖不完整/带材料缺
-    口（``coverage.state`` 非 complete 或 ``gap_refs`` 非空）、作者总
-    体判断仅因材料缺口未完成（``status=None`` 且只有 ``gap_refs``）或
-    物理量覆盖未完成时为 ``partial``；真正完整且无待决才是
-    ``complete``。没有任何有效输出时，失败为 ``failed``、其余为
-    ``unfinished``。排除条目不算未完成；已 resolved 的问题不阻止
-    complete。参数接受只读视图或结构相同的简单对象（duck typing），
-    不修改它们。
+    Return pending for open or answered-but-unresolved scientific questions, unresolved
+    roster entries/groups, or unresolved overall author assessments; retain
+    errors/failures separately. Otherwise partial applies to runtime
+    errors/nontermination, missing values, incomplete/gapped roster coverage,
+    material-only unfinished author assessments (status=None with gap_refs only), or
+    incomplete quantity coverage. Only truly complete results without unresolved items
+    are complete. With no valid output, return failed for failures and unfinished
+    otherwise. Excluded entries and resolved questions do not block completion. Accept
+    read-only views or structurally equivalent duck-typed objects without modifying
+    them.
     """
     reasons: list[str] = []
     questions = status.get("questions", [])
@@ -651,9 +651,9 @@ def science_completion(status: dict, roster, paper) -> tuple[str, list[str]]:
     if not has_output:
         return ("failed" if status.get("state") == "failed" else "unfinished"), reasons
     if status.get("state") != "finished":
-        # 仍处失败/未终止：错误是现存事实；已恢复到 finished 的历史错误
-        # 保留在报告 failures 诊断里，但不再阻止科学 complete（既定裁
-        # 定），完整性由当前有效结果、问题状态与覆盖检查证明
+        # Current failures/nontermination remain facts. Historical errors after recovery to finished remain
+        # in report failure diagnostics but no longer block scientific complete under the established ruling;
+        # current valid results, question state, and coverage checks prove completeness.
         if status.get("errors"):
             reasons.append(f"运行错误 {len(status['errors'])} 项")
         reasons.append(f"运行图状态为 {status.get('state')!r}，未到终止")
@@ -679,12 +679,13 @@ def science_completion(status: dict, roster, paper) -> tuple[str, list[str]]:
 
 
 def _l0_from_status(status: dict, roster, paper) -> dict:
-    """评分输入的 L0 映射：交付按实际有效记录，完成按科学状态。
+    """Map L0 delivery from actual valid records and completion from science state.
 
-    已交付且科学状态非 complete 时用 ``partial``——评分输入模型
-    （已审）不允许已交付论文标 pending，"部分结果"是如实下界；待决
-    事实由 ``science_completion`` 在报告层单独表达。后续失败不抹已存
-    名单；真正无有效结果的失败仍 failed，不冒充空名单成功。
+    Delivered but scientifically incomplete output is partial because the approved
+    scoring model cannot mark delivered papers pending; partial results are an honest
+    lower bound. Reports express pending science separately through science_completion.
+    Later failures never erase saved rosters; failures without valid results remain
+    failed, never successful empty rosters.
     """
     errors = list(status["errors"])
     has_output = paper is not None or roster is not None
@@ -733,7 +734,9 @@ def _objects_from_paper(paper: PaperRecord) -> list[PredictionObjectEntry]:
 
 
 def _objects_from_roster(roster: RosterRecord) -> list[PredictionObjectEntry]:
-    """尚无论文记录时，用名单的收录条目作为对象层预测（无数值）。"""
+    """Without a paper record, use included roster entries as object predictions without
+    values.
+    """
     return [
         PredictionObjectEntry(
             paper_key=roster.data.paper_key,
@@ -751,10 +754,12 @@ def _objects_from_roster(roster: RosterRecord) -> list[PredictionObjectEntry]:
 def prediction_from_execution(
     space: Workspace, execution_id: str
 ) -> PredictionPaperEntry:
-    """一次共享提取执行 → 评分预测输入（L0 状态来自运行清单）。
+    """Map one shared extraction execution to scoring predictions, with L0 state derived
+    from the run manifest.
 
-    数值直接复用记录中的 ``MeasuredValue``；名单中的未决与排除条目
-    不进入预测对象（未决不是多报，排除不是遗漏）。
+    Reuse MeasuredValue records directly. Exclude unresolved/excluded roster entries
+    from predicted objects: unresolved entries are not extras, and exclusions are not
+    omissions.
     """
     status = get_extraction(space, execution_id)
     paper: PaperRecord | None = None
@@ -801,7 +806,7 @@ def _paper_key_from(
         return paper.data.paper_key
     if roster is not None:
         return roster.data.paper_key
-    # 没有任何输出记录时，从执行固定的来源包读取论文标识，保住分母
+    # With no output records, read paper identity from the frozen source package to retain the denominator.
     handle = runtime_get_execution(space, execution_id)
     for ref in handle.input_snapshot.source_refs:
         record = space.store().read_record(ref)

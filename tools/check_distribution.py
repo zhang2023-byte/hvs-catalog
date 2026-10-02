@@ -1,36 +1,32 @@
-"""构建发行包，并在仓库外的全新环境中验证安装。
+"""Build distributions and verify installation in fresh environments outside the
+repository.
 
-执行内容：
+1. uv build creates wheel/sdist in external temporary directories.
+2. Check package contents contain only build/install files, excluding official data,
+   development materials, and run outputs.
+3. Create external fresh uv environments and install wheels.
+4. Independently check CLI help/version, python -m, and package imports with PYTHONPATH
+   cleared.
+5. Exercise installed persistence/recovery demos: retained pending items/results, single
+   decision application, conflicting rejection, and actual-exit duplicate-call counts.
+6. Exercise public workspace initialization, synthetic import/pause, fresh-process
+   decision/completion, backup/restore, terminal checks, and duplicate-submission
+   protection.
+7. Exercise synthetic source import, body/table preparation, and model-free consumption
+   through installed_pipeline_checks.MATERIALS_DRIVER.
+8. Exercise Gold v4 migration, fresh drafts/conversion, simulated approvals, paired
+   additions/revisions, CLI, stale-approval rejection, interrupted partial-read
+   refusal/manual recovery, and lost-return retries without second versions.
+9. Exercise package provenance/method queries, 3 papers x 2 methods x 2 review modes (12
+   CLI cases), repeated scoring consistency, plan-tampering rejection, fresh-process
+   pause/decision/recovery, and isolated comparison reports with unknown expert time.
+10. Exercise installed model interfaces/CLI against local synthetic HTTP/SSE: four
+    parameter conversions, tools, persistence, and recovery without duplicate calls or
+    paid models.
 
-1. 调用 uv build 把 wheel 与源码包生成到仓库外的临时目录；
-2. 检查两个包的内容只含构建安装所需文件，排除正式数据、开发材料与运行产物；
-3. 用 uv 在仓库外创建全新虚拟环境并安装 wheel；
-4. 以独立子进程验证 ``hvs-catalog --help``、``--version``、``python -m`` 与包导入，
-   子进程在仓库外目录运行并清除 PYTHONPATH；
-5. 用安装后的 ``hvs-catalog demo`` 在仓库外走查持久化恢复演示：重启找回待办
-   与复用结果、同一决定只生效一次、冲突决定被拒绝、真实进程终止后的重复
-   调用次数；
-6. 用安装后的工作空间公共接口在仓库外走查工作空间全链路：初始化空间、导入
-   合成材料、执行暂停、新进程提交专家决定并完成、备份、恢复到新目录后
-   在新进程核对已完成状态且重复提交保护仍然有效；
-7. 用安装后的材料准备公共入口在仓库外走查合成链路：导入合成源码
-   包、准备正文与表格材料、无模型消费核对（驱动见 installed_pipeline_
-   checks 的 MATERIALS_DRIVER）；
-8. 用安装后的 Gold 公共接口与 CLI 在仓库外走查维护链路：旧 v4 合成文档
-   迁移成草稿、全新草稿检查与显式转换、当前配对的模拟人类批准与新增／修订、
-   CLI、旧批准不能覆盖后来修订；真实进程中断后拒绝半份读取并人工恢复，
-   完成但丢失返回后重试仅核对当前内容，不生成第二版；
-9. 用安装后的共享提取入口与评分组件在仓库外走查合成链路（驱动与核对
-   函数见 installed_pipeline_checks）：包来源与方法查询、3 篇合成论文
-   × 2 方法 × 裁决开/关共 12 个 CLI 用例、保存输入的重复评分一致性与
-   计划篡改拒绝、独立进程暂停→决定→恢复，以及两组对照实验的隔离与
-   专家用时未知边界。全部合成材料，不依赖仓库源码路径；
-10. 用安装后的模型接口与 CLI 访问本机合成 HTTP/SSE 服务，核对四种
-    参数转换、工具输出、持久保存与不重复调用的恢复，不调用付费模型。
-
-用法：uv run python tools/check_distribution.py [Python 版本]
-
-可选参数为创建虚拟环境使用的 Python 版本（如 3.12），默认使用 uv 的默认解释器。
+All materials are synthetic and independent of repository source paths. Usage: uv run
+python tools/check_distribution.py [Python version]. The optional version, such as 3.12,
+selects environment Python; otherwise use uv's default.
 """
 
 from __future__ import annotations
@@ -50,7 +46,7 @@ from installed_pipeline_checks import verify_pipeline_and_scoring
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-# 不允许出现在任何发行包中的内容：正式星表数据、开发材料与运行产物。
+# Exclude official catalog data, development materials, and run outputs from every distribution.
 FORBIDDEN_SEGMENTS = frozenset(
     {
         ".dev",
@@ -69,7 +65,7 @@ FORBIDDEN_SEGMENTS = frozenset(
     }
 )
 
-# 已明确退役的七个模块不得随发行重新出现；包入口及有效模块仍保留。
+# Seven explicitly retired modules must never reappear; retain valid modules/package entry points.
 RETIRED_MODULE_PATHS = frozenset(
     {
         "hvs_catalog/demo/graph.py",
@@ -82,7 +78,7 @@ RETIRED_MODULE_PATHS = frozenset(
     }
 )
 
-# 源码包根目录下只允许构建安装所需文件；.gitignore 由 hatchling 固定加入。
+# sdist roots allow build/install files only; hatchling adds .gitignore automatically.
 SDIST_ALLOWED_ROOTS = frozenset(
     {".gitignore", "PKG-INFO", "pyproject.toml", "README.md", "src"}
 )
@@ -108,12 +104,12 @@ def find_forbidden_paths(names: Iterable[str]) -> list[str]:
 
 
 def check_wheel(names: Sequence[str]) -> list[str]:
-    """wheel 顶层只允许包目录 hvs_catalog/ 及其 dist-info 元数据。"""
+    """Wheel top level allows only hvs_catalog/ and its dist-info metadata."""
     violations = find_forbidden_paths(names)
     violations.extend(name for name in names if name in RETIRED_MODULE_PATHS)
     for top in sorted(top_levels(names)):
         if top in FORBIDDEN_SEGMENTS:
-            continue  # 这些路径已按完整成员路径报告
+            continue  # These paths were already reported by full member path.
         is_package = top == "hvs_catalog"
         is_dist_info = top.startswith("hvs_catalog-") and top.endswith(".dist-info")
         if not is_package and not is_dist_info:
@@ -122,7 +118,9 @@ def check_wheel(names: Sequence[str]) -> list[str]:
 
 
 def check_sdist(names: Sequence[str], version: str) -> list[str]:
-    """源码包顶层只允许 hvs_catalog-<version>/，其下只允许构建安装所需文件。"""
+    """Source archives allow only hvs_catalog-<version>/ with required build/install
+    contents.
+    """
     violations = find_forbidden_paths(names)
     root = f"hvs_catalog-{version}"
     for name in names:
@@ -158,7 +156,7 @@ def fail(result: subprocess.CompletedProcess[str], step: str) -> int:
 
 
 def verify_installation(venv_dir: Path, work_dir: Path, version: str) -> list[str]:
-    """在仓库外目录用独立子进程验证已安装的命令与包。"""
+    """Verify installed commands/imports in independent external-directory subprocesses."""
     problems = []
     bin_dir = venv_dir / ("Scripts" if os.name == "nt" else "bin")
     python = bin_dir / "python"
@@ -350,10 +348,11 @@ else:
 
 
 def verify_workspace(python: Path, work_dir: Path) -> list[str]:
-    """仓库外用安装后的工作空间公共接口走查保存、裁决与备份恢复。
+    """Exercise installed workspace save/review/backup/restore outside the repository.
 
-    三个独立子进程分别完成执行暂停、决定与完成、备份恢复与重放保护，
-    全部清除 PYTHONPATH，只依赖安装后的包。
+    Three independent processes cover pause, decisions/completion, and
+    backup/restore/replay protection, with PYTHONPATH cleared and installed-package-only
+    imports.
     """
     problems: list[str] = []
     driver = work_dir / "workspace_check.py"
@@ -408,12 +407,9 @@ def verify_workspace(python: Path, work_dir: Path) -> list[str]:
 
 
 GOLD_DRIVER = '''
-"""仓库外 Gold 工具走查：迁移、检查、模拟内容批准、保存与人工恢复。
+"""External installed Gold checks: migration, validation, simulated approval, saves, and manual recovery.
 
-只用安装后的包内公共入口与 CLI，材料全部合成，不依赖仓库源码路径、
-旧仓或真实 Gold。步骤：migrate（旧 v4 合成文档 → 草稿）、check、
-fresh（全新草稿 → 准备 → 批准 → 保存 v1 → 查询重放）、crash（在
-after_files 故障窗口硬退出，由下一个子进程恢复保存并核对单一版本）。
+Use installed public APIs/CLI with synthetic materials only, without repository paths, legacy repositories, or real Gold. Steps: migrate legacy synthetic v4 to drafts; check; fresh preparation/approval/v1 save/replay; crash at after_files, then recover in a new subprocess and verify one version.
 """
 
 import hashlib
@@ -427,7 +423,7 @@ root = Path(sys.argv[1])
 step = sys.argv[2]
 material = root / "materials"
 material.mkdir(exist_ok=True)
-# 全部步骤共用的合成论文 PDF
+# Synthetic paper PDF shared by every step.
 PDF_SHA256 = None
 
 
@@ -467,7 +463,7 @@ def ensure_pdf():
 
 
 def synthetic_pdf(pages):
-    """带完整 xref 与字体资源的合成 PDF（成熟解析器可按页树读取）。"""
+    """Synthetic PDF with complete xref/font resources for parser page-tree reads."""
     header = b"%PDF-1.4\\n"
     objects = [b"", b"", b""]
     objects[0] = b"<< /Type /Catalog /Pages 2 0 R >>"
@@ -835,17 +831,9 @@ else:
 
 
 ACQUISITION_DRIVER = '''
-"""仓库外获取子系统 CLI 走查：全部离线合成材料。
+"""External installed acquisition CLI checks using offline synthetic materials.
 
-用文档化的公开 Python 初始化命令初始化工作空间并生成合成 tar.gz
-源码包，然后用安装的 console 脚本在独立子进程里走 import →
-status（人读与 JSON 两种）→ material → 错误码边界。netflow 阶段
-补齐安装后 discover/fetch/revisions 的成功与新进程恢复证据：由
-安装的解释器运行子进程脚本（清除 PYTHONPATH，只依赖安装后的包），
-在子进程内把 CLI 服务工厂替换为注入合成假协议服务的替身（测试侧
-注入，产品不提供绕过限流/离线的后门），跨两个独立子进程完成：
-页界中断 → 新进程恢复完整 → 获取 → 修订 pending → 材料输出。
-不触真实 arXiv。
+Initialize via documented public Python commands, build synthetic tar.gz source packages, then use installed console scripts in independent subprocesses for import/status (human and JSON)/material/error codes. netflow verifies discovery/fetch/revision success and fresh-process recovery using installed Python, cleared PYTHONPATH, and test-side injected fake protocol services. The product exposes no rate-limit/offline bypass. Two subprocesses cover page-boundary interruption, complete recovery, fetch, pending revisions, and material output without real arXiv access.
 """
 
 import io
@@ -860,10 +848,10 @@ root = Path(sys.argv[1])
 step = sys.argv[2]
 script = Path(sys.argv[3])
 space = root / "acquisition-space"
-# 步骤工作目录（子进程 cwd）；工作空间本身仍由文档化命令初始化。
+# Subprocess step cwd; initialize the workspace itself through the documented public command.
 root.mkdir(parents=True, exist_ok=True)
 
-# 与 README 文档化初始化完全一致的公开命令（唯一初始化入口）。
+# Same public initialization command as README, the sole initialization entry point.
 DOCUMENTED_INIT = (
     "from hvs_catalog.workspace import initialize_workspace; "
     "initialize_workspace(r'%s')" % space
@@ -872,10 +860,10 @@ DOCUMENTED_INIT = (
 NETCHILD_SOURCE = """import sys
 from pathlib import Path
 
-# 安装后获取子系统网络路径子进程走查（离线合成）。由安装的解释器执行：
-# 导入安装的 hvs_catalog，把 CLI 服务工厂替换为注入合成假协议服务
-# 的替身（测试侧注入；产品 CLI 无离线/绕限流后门），再调用 CLI main。
-# 两个独立进程分别承担"页界中断"与"恢复+获取+修订+材料"。
+# Check acquisition network paths in subprocesses after installation (offline synthetic).
+# Use the installed interpreter to import hvs_catalog and replace the CLI service factory
+# with a synthetic protocol service (test injection; no offline/rate-limit bypass in the
+# product CLI). Call CLI main in separate interruption and resume/fetch/revision/material processes.
 
 import io
 import tarfile
@@ -1104,7 +1092,7 @@ def make_package(path: Path) -> None:
 
 
 if step == "setup":
-    # 与 README 文档完全一致的公开初始化命令（子进程、安装解释器）。
+    # Use README's exact public initialization command in a subprocess with installed Python.
     result = run_child(sys.executable, "-c", DOCUMENTED_INIT)
     if result.returncode != 0:
         print("[问题] 文档化初始化失败：%s%s" % (result.stdout, result.stderr))
@@ -1155,7 +1143,7 @@ if step == "flow":
     if material.returncode != 0 or "arxiv-source-2401.01234" not in material.stdout:
         problems.append("material 失败：%d %s %s" % (
             material.returncode, material.stdout, material.stderr))
-    # 获取格式 v2：切换与声明复用分开；旧版回查不改变当前指针。
+    # Acquisition v2 separates selection from declaration reuse; old-version lookup leaves current unchanged.
     newer = run_cli(
         "import", "--space", space, "--file", root / "smoke.tar.gz",
         "--id", "2401.01234v2", "--provenance", "distribution v2",
@@ -1192,8 +1180,8 @@ if step == "flow":
     raise SystemExit(0)
 
 if step == "netflow":
-    # 安装后 discover/fetch/revisions 的离线合成成功与跨进程恢复：
-    # 两个独立子进程（安装解释器、清 PYTHONPATH、测试侧注入假服务）。
+    # Installed offline synthetic discover/fetch/revisions success and cross-process recovery:
+    # two independent installed-Python subprocesses with cleared PYTHONPATH and test-side fake-service injection.
     netchild = root / "acquisition_network.py"
     netchild.write_text(NETCHILD_SOURCE, encoding="utf-8")
     partial = run_child(sys.executable, netchild, "partial", space)
@@ -1206,7 +1194,7 @@ if step == "netflow":
         print("[问题] 恢复步骤异常：%d %s %s" % (
             resume.returncode, resume.stdout, resume.stderr))
         raise SystemExit(1)
-    # 恢复后的存储事实可被纯 CLI 状态查询独立复核（不注入）。
+    # Independently verify restored stored facts with pure CLI status, without injection.
     verify = run_cli("status", "--space", space)
     if verify.returncode != 0 or "state=complete" not in verify.stdout:
         print("[问题] 恢复后状态查询异常：%d %s %s" % (
@@ -1220,10 +1208,11 @@ raise SystemExit(2)
 
 
 def verify_gold(python: Path, work_dir: Path, script: Path) -> list[str]:
-    """仓库外用安装后的 Gold 公共接口与 CLI 走查维护链路。
+    """Exercise installed Gold APIs/CLI outside the repository.
 
-    独立子进程完成迁移、检查、统一配对新增／修订、CLI 全流程，
-    中断拒绝与明确人工恢复、丢失返回的重复核对；清除 PYTHONPATH。
+    Independent subprocesses cover migration/checks/paired additions-revisions/full CLI,
+    interruption rejection/manual recovery, and lost-return repeated checks with
+    PYTHONPATH cleared.
     """
     problems: list[str] = []
     driver = work_dir / "gold_check.py"
@@ -1273,11 +1262,11 @@ def verify_gold(python: Path, work_dir: Path, script: Path) -> list[str]:
 
 
 def verify_acquisition(python: Path, work_dir: Path, script: Path) -> list[str]:
-    """仓库外用安装后的 acquisition CLI 走查离线获取链路。
+    """Exercise installed acquisition CLI offline outside the repository.
 
-    独立子进程完成工作空间初始化与合成包生成，再用安装的 console
-    脚本在多个独立进程里走导入/重放、状态（人读+JSON）、材料输出与
-    错误码边界；全部清除 PYTHONPATH、不触网。
+    Initialize workspaces/build synthetic packages in subprocesses, then independently
+    test imports/replay, human/JSON status, materials, and error codes using installed
+    console scripts, cleared PYTHONPATH, and no networks.
     """
     problems: list[str] = []
     driver = work_dir / "acquisition_check.py"

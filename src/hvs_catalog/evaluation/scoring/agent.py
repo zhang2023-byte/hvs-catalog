@@ -1,26 +1,29 @@
-"""辅助评分 Agent 协议、同步 mock、冻结判定存储与启用门禁。
+"""Auxiliary scoring Agent protocol, synchronous mock, frozen judgment storage, and
+enablement gates.
 
-请求只携带允许关系中的两段原报/字段、双方可定位且绑定材料的原文
-片段、候选科学归属和固定输入摘要，不包含待测方法或实验组名。响应
-严格枚举 equivalent/different/undecidable，必须带非空依据和指向实际
-提供片段的来源引用；结构错误、空白/重复/越界/占位引用、异常或超时
-一律记为 ``technical_failure``，不当作 different，也不允许新数值、
-新对应 ID 或分数。材料不足时不调用适配器并保持 undecidable。
+Requests carry only allowed paired printed fields, locatable source fragments bound to
+materials, candidate scientific attribution, and fixed-input digests, never tested
+methods/group names. Responses enumerate equivalent/different/undecidable with nonempty
+rationale and actual-fragment references.
+Malformed/blank/duplicate/out-of-range/placeholder references, exceptions, and timeouts
+become technical_failure, never different; new values, correspondence IDs, and scores
+are forbidden. Insufficient evidence makes no adapter call and remains undecidable.
 
-冻结保存在评分侧显式目录：条目键为完整请求（含 Gold/预测/材料/
-规则/方案/程序及模型+提示+参数+预算摘要）的规范 JSON 摘要；读取和
-写入都校验条目完整性（verdict/依据/引用与原始响应一致，不只是对
-raw 求摘要）。发布用临时文件 + 原子排他链接：同键首次写入唯一，
-同内容幂等、异内容拒绝且绝不覆盖，半写不会进入正式路径；摘要校验
-用于发现假冒/改写缓存，不是对抗性身份认证。相同上下文复算复用，
-包括失败与 undecidable，不重抽有利答案。
+Explicit scoring-side directories freeze canonical complete-request keys, binding
+Gold/predictions/materials/rules/scheme/program and model/prompt/parameters/budget.
+Reads/writes validate verdict/rationale/references against raw responses, beyond raw
+digests. Temporary files plus exclusive atomic links publish once: identical retries
+reuse, conflicting writes reject without overwriting, and partial files never become
+official. Integrity digests detect forged/rewritten caches but are not adversarial
+identity authentication. Reuse failures and undecidable too, without resampling
+favorable answers.
 
-启用门禁：``protocol_only`` 仅限合成用途且只允许项目内置模拟适配器；
-``production`` 当前 fail closed——即使调用方现场构造全部通过的验证
-记录也不能开启；正式验证凭据的可信来源尚未接入，保持禁用。验证记
-录模型仍实现并测试预定样例内容指纹、配置绑定与全部复测轮次 100%
-一致性的规则；模拟通过只证明协议，不构成正式授权。没有
-``validated=true`` 之类的逃生口。
+protocol_only permits synthetic use with built-in mocks only. production remains fail
+closed because trusted capability-validation credentials are not connected; even
+fabricated passing records cannot enable it. Record models still validate predetermined
+example fingerprints, configuration binding, and 100% agreement across retest rounds.
+Mock success establishes protocol only, not authorization; no validated=true escape
+exists.
 """
 
 from __future__ import annotations
@@ -45,11 +48,12 @@ HEX64_PATTERN = r"^[0-9a-f]{64}$"
 
 
 class AgentRequest(Config):
-    """隔离评分进程的一次判定请求；不含待测方法或组名。
+    """One judgment request for an isolated scoring process, excluding tested method/group
+    names.
 
-    ``left``/``right`` 是待比较的两段原报字段串；``left_fragments``/
-    ``right_fragments`` 是双方绑定材料的可定位原文片段，响应引用只能
-    指向这些实际提供的片段。
+    left/right are compared printed-field strings. left_fragments/right_fragments are
+    locatable material-bound source fragments; response references must point only to
+    supplied fragments.
     """
 
     request_kind: Literal["printed_expression", "condition_attribution"]
@@ -82,7 +86,7 @@ class AgentResponse(Config):
 
 
 class AgentAdapter(Protocol):
-    """同步、可注入的判定适配器；真实联网 adapter 尚未实现。"""
+    """Synchronous injectable judgment adapter; no real network adapter is implemented."""
 
     name: str
 
@@ -90,7 +94,7 @@ class AgentAdapter(Protocol):
 
 
 class MockAgentAdapter:
-    """protocol_only 同步 mock：仅用于合成测试，不做任何网络调用。"""
+    """Synchronous protocol_only mock for synthetic tests with no network calls."""
 
     def __init__(
         self,
@@ -113,7 +117,7 @@ class MockAgentAdapter:
 
 
 # ---------------------------------------------------------------------------
-# 启用门禁
+# Enablement gates.
 # ---------------------------------------------------------------------------
 
 
@@ -141,11 +145,12 @@ class ValidationRound(Config):
 
 
 class AgentValidationRecord(Config):
-    """预定测试集内容指纹、模型/提示/参数/预算绑定与逐轮复测结果。
+    """Predetermined test-set fingerprints, model/prompt/parameter/budget bindings, and
+    per-round retest results.
 
-    当前只用于协议一致性检查：模拟通过不能开启 production（见
-    ``AuxiliaryScoringConfig.agent_allowed``），正式验证凭据的可信来源
-    尚未接入。
+    Currently establish protocol consistency only: mock success cannot enable production
+    (see AuxiliaryScoringConfig.agent_allowed); trusted official credential provenance
+    is not connected.
     """
 
     test_set_id: str = Field(min_length=1)
@@ -194,10 +199,11 @@ class AgentValidationRecord(Config):
 
 
 class AuxiliaryScoringConfig(Config):
-    """辅助判定配置：模式、模型/提示/参数/预算摘要与显式冻结目录。
+    """Auxiliary configuration: mode, model/prompt/parameter/budget digests, and explicit
+    frozen directory.
 
-    ``production`` 在本实现中 fail closed：正式能力验证与可信验证凭据
-    尚未接入，任何现场构造的验证记录都不能开启生产调用。
+    Production fails closed until official capability checks/trusted credentials are
+    connected; locally fabricated validation records cannot enable production calls.
     """
 
     mode: Literal["protocol_only", "production"] = "protocol_only"
@@ -221,7 +227,7 @@ class AuxiliaryScoringConfig(Config):
 
 
 def auxiliary_config_digest(config: AuxiliaryScoringConfig) -> str:
-    """绑定辅助配置内容的规范 JSON 摘要；目录路径是环境，不参与摘要。"""
+    """Canonical auxiliary-config digest; directory paths are environmental and excluded."""
     payload = config.model_dump(mode="json", exclude={"store_directory"})
     return sha256_of(payload)
 
@@ -229,7 +235,7 @@ def auxiliary_config_digest(config: AuxiliaryScoringConfig) -> str:
 def protocol_only_config(
     *, store_directory: str | None = None
 ) -> AuxiliaryScoringConfig:
-    """合成测试默认配置：protocol_only，摘要为固定合成值。"""
+    """Default synthetic configuration uses protocol_only and fixed synthetic digests."""
     return AuxiliaryScoringConfig(
         mode="protocol_only",
         model_config_digest=sha256_of({"synthetic": "model"}),
@@ -241,12 +247,14 @@ def protocol_only_config(
 
 
 # ---------------------------------------------------------------------------
-# 冻结判定存储
+# Frozen judgment storage.
 # ---------------------------------------------------------------------------
 
 
 class FrozenJudgment(Config):
-    """一条冻结判定：绑定完整请求与响应，持久保存原始响应与错误。"""
+    """Frozen judgment binding complete requests/responses and retaining raw
+    responses/errors.
+    """
 
     entry_key: str = Field(pattern=HEX64_PATTERN)
     request: dict[str, Any]
@@ -338,7 +346,9 @@ def _same_binding(left: FrozenJudgment, right: FrozenJudgment) -> bool:
 
 
 class FrozenDecisionStore:
-    """仅评分侧使用的显式冻结目录；原子排他发布、完整性与冲突校验。"""
+    """Explicit scoring-only frozen directory with exclusive atomic publication and
+    integrity/conflict checks.
+    """
 
     def __init__(self, directory: Path) -> None:
         self.directory = Path(directory)
@@ -382,7 +392,7 @@ class FrozenDecisionStore:
                 handle.flush()
                 os.fsync(handle.fileno())
             try:
-                # 原子排他发布：同键首次写入唯一，并发写只有一个成功。
+                # Exclusive atomic publication: exactly one concurrent first writer succeeds per key.
                 os.link(tmp, path)
             except FileExistsError:
                 existing = self._read_and_verify(path)
@@ -403,7 +413,7 @@ class FrozenDecisionStore:
 
 
 # ---------------------------------------------------------------------------
-# 判定客户端
+# Judgment client.
 # ---------------------------------------------------------------------------
 
 
@@ -426,7 +436,9 @@ class AgentResolution:
 
 @dataclass
 class AuxiliaryAdjudicator:
-    """程序 undecidable 部分的唯一入口：先查冻结，再调用适配器。"""
+    """Sole entry point for programmatically undecidable relations: look up frozen results
+    before adapter calls.
+    """
 
     config: AuxiliaryScoringConfig
     adapter: AgentAdapter
@@ -465,8 +477,8 @@ class AuxiliaryAdjudicator:
             return cached
         entry = self._call_adapter(request)
         if self.store is not None:
-            # 持久化成功（或同内容幂等返回已有赢家）后才发布内存缓存；
-            # 冲突拒绝时不缓存被拒判定，后续调用读取冻结赢家或继续拒绝
+            # Publish memory cache only after persistence succeeds or identical retry returns the winner.
+            # Never cache rejected conflicts; later calls read the frozen winner or reject again.
             entry = self.store.record(entry)
         self._memory[key] = entry
         self.uses.append(
@@ -488,7 +500,7 @@ class AuxiliaryAdjudicator:
         try:
             response = self.adapter.judge(request)
             raw = response.model_dump(mode="json")
-        except Exception as error:  # noqa: BLE001 - 异常/超时统一技术失败
+        except Exception as error:  # noqa: BLE001 - exceptions/timeouts uniformly become technical failures
             return build_judgment(
                 request,
                 response_raw=None,
@@ -537,10 +549,10 @@ class AuxiliaryAdjudicator:
 
 
 class ScoringAgentResolver:
-    """评分层使用的同步解析入口；仅供程序 undecidable 的关系调用。
+    """Synchronous scoring resolver used only for programmatically undecidable relations.
 
-    双侧必须提供绑定计划材料的可定位原文片段；材料不足时返回
-    ``insufficient_evidence``（undecidable，不调用适配器）。
+    Both sides need locatable fragments bound to plan materials; insufficient evidence
+    returns insufficient_evidence/undecidable without calling the adapter.
     """
 
     def __init__(
@@ -561,11 +573,12 @@ class ScoringAgentResolver:
     def _usable_fragments(
         self, fragments: list[EvidenceFragment], field_name: str
     ) -> list[EvidenceFragment] | None:
-        """筛出绑定计划材料且支持当前待判字段的片段。
+        """Select fragments bound to plan materials and supporting the compared field.
 
-        绑定不符（名称/指纹/空文本/空位置）整侧不可用；与当前字段无关
-        的片段被排除；两侧都没有相关片段时不发起请求（材料不足，保持
-        未知）。不证明片段内容的真实科学正确性。
+        Name/fingerprint/empty-text/empty-location mismatches invalidate the whole side.
+        Exclude unrelated fragments; without relevant fragments on both sides, make no
+        request and retain uncertainty. These checks do not prove actual scientific
+        correctness.
         """
         if not fragments:
             return None

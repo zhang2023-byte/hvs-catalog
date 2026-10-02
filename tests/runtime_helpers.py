@@ -1,9 +1,9 @@
-"""子进程中断与锁竞争驱动：测试以独立进程运行这些场景。
+"""Drivers for subprocess interruption and lock contention.
 
-每个场景完成固定动作后打印单行 JSON 结果；配合信号文件定位故障
-窗口（父子进程通信），由父测试进程在准确的时点结束或放行子进程。
-``os._exit`` 跳过一切清理，等价于进程被杀死：文件系统与 SQLite 已
-提交事实保留，未提交事务丢弃。
+Each scenario prints one JSON line after its fixed actions. Signal files coordinate
+failure windows so the parent can terminate or release the child at the exact point.
+``os._exit`` skips cleanup, like a killed process: committed filesystem and SQLite state
+survives; uncommitted transactions are discarded.
 """
 
 from __future__ import annotations
@@ -72,11 +72,13 @@ def _submit(space, execution_id: str, question_ref_json: str, request_key: str):
     return {"first_save": receipt.first_save}
 
 
-# ---- 场景 ----
+# ---- Scenarios ----
 
 
 def scenario_hold_lock(root: str, signal: str, release: str) -> dict:
-    """持有空间锁直到收到放行信号；持锁事实用信号文件告知父进程。"""
+    """Hold the workspace lock until released; signal ownership to the parent through a
+    file.
+    """
     space = _space(root)
     with space.lock():
         Path(signal).write_text("held", encoding="utf-8")
@@ -95,7 +97,9 @@ def scenario_resume(root: str, execution_id: str, paper: str, ledger: str) -> di
 def scenario_resume_block(
     root: str, execution_id: str, paper: str, ledger: str, marker: str, release: str
 ) -> dict:
-    """推进执行并在收到名单响应后阻塞：锁保持持有，用标记文件告知。"""
+    """Advance execution and block after the roster response, retaining the lock and
+    signaling through a file.
+    """
 
     def block_after_roster():
         Path(marker).write_text("responded", encoding="utf-8")
@@ -116,7 +120,7 @@ def scenario_resume_block(
 def scenario_resume_pause_exit(
     root: str, execution_id: str, paper: str, ledger: str
 ) -> dict:
-    """推进到等待专家答复后立即退出（决定保存前中断）。"""
+    """Exit immediately after reaching expert wait, before saving a decision."""
     space = _space(root)
     report = resume_execution(
         space, execution_id, direct_flow(), service=open_service(ledger)
@@ -128,7 +132,7 @@ def scenario_resume_pause_exit(
 def scenario_submit_exit(
     root: str, execution_id: str, question_ref_json: str, request_key: str
 ) -> dict:
-    """提交决定保存成功后立即退出（保存后、应用前中断）。"""
+    """Exit immediately after saving a decision, before applying it."""
     space = _space(root)
     _submit(space, execution_id, question_ref_json, request_key)
     os._exit(9)
@@ -160,7 +164,7 @@ def scenario_exit_in_apply(
     question_ref_json: str,
     request_key: str,
 ) -> dict:
-    """在应用决定的单次业务事务提交前硬退出（应用事务中中断）。"""
+    """Exit abruptly before the decision application business transaction commits."""
     import hvs_catalog.workspace.store as store_mod
     from hvs_catalog.review.service import DECISION_APPLY_KIND
 
@@ -187,7 +191,7 @@ def scenario_exit_after_apply(
     question_ref_json: str,
     request_key: str,
 ) -> dict:
-    """决定应用事务提交成功后、流程恢复前硬退出。"""
+    """Exit abruptly after the application transaction commits, before flow resumes."""
     space = _space(root)
     _submit(space, execution_id, question_ref_json, request_key)
     _resume(space, execution_id, paper, ledger, hooks={"after_apply": _exit9})
@@ -197,7 +201,9 @@ def scenario_exit_after_apply(
 def scenario_exit_after_response(
     root: str, execution_id: str, paper: str, ledger: str, step: str
 ) -> dict:
-    """模拟服务已记录响应、业务保存前硬退出（外部调用可能重复）。"""
+    """Simulate abrupt exit after the service records a response but before business state
+    is saved; an external call may repeat.
+    """
     space = _space(root)
     _resume(
         space, execution_id, paper, ledger, hooks={f"after_response:{step}": _exit9}

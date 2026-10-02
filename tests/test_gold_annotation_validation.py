@@ -29,7 +29,7 @@ from hvs_catalog.evaluation import (
 from hvs_catalog.records.common import RecordRef
 from hvs_catalog.records.paper import DirectEvidencePart, ErrorComponent, MeasuredValue
 
-# ---- 共用准备 ----
+# ---- Shared setup ----
 
 
 def _material(tmp_path, pages=None, name="paper.pdf"):
@@ -44,11 +44,13 @@ def _write_draft(tmp_path, draft, name="draft.json"):
     return path
 
 
-# ---- 迁移输出与旧输入重合 ----
+# ---- Migration output overlaps legacy input ----
 
 
 def test_migration_refuses_output_equal_to_legacy_input(tmp_path):
-    """旧 v4 恰好放在输出目录的 draft.json：拒绝写入，旧输入逐字节不变。"""
+    """Reject writing when legacy v4 input is the output directory's draft.json; preserve
+    its bytes.
+    """
     legacy = tmp_path / "legacy.json"
     payload = json.dumps(build_legacy_v4_doc(), ensure_ascii=False)
     legacy.write_text(payload, encoding="utf-8")
@@ -74,14 +76,14 @@ def test_migration_refuses_hardlink_and_symlink_aliases(tmp_path):
     legacy = tmp_path / "legacy.json"
     payload = json.dumps(build_legacy_v4_doc(), ensure_ascii=False)
     legacy.write_text(payload, encoding="utf-8")
-    # 硬链接别名：draft.json 与旧输入同一 inode
+    # Hard-link alias: draft.json and legacy input share an inode.
     hard_dir = tmp_path / "hard"
     hard_dir.mkdir()
     os.link(legacy, hard_dir / "draft.json")
     with pytest.raises(GoldOutputConflictError, match="硬链接"):
         migrate_legacy_annotation(legacy_path=legacy, draft_dir=hard_dir)
     assert legacy.read_bytes() == payload.encode("utf-8")
-    # 符号链接别名：draft.json 指向旧输入
+    # Symlink alias: draft.json points to legacy input.
     link_dir = tmp_path / "link"
     link_dir.mkdir()
     (link_dir / "draft.json").symlink_to(legacy)
@@ -101,7 +103,9 @@ def test_migration_refuses_overwriting_different_existing_draft(tmp_path):
     (draft_dir / "draft.json").write_bytes(existing)
     with pytest.raises(GoldOutputConflictError, match="内容不同"):
         migrate_legacy_annotation(legacy_path=legacy, draft_dir=draft_dir)
-    assert (draft_dir / "draft.json").read_bytes() == existing  # 不静默截断
+    assert (
+        draft_dir / "draft.json"
+    ).read_bytes() == existing  # Never silently truncate.
 
 
 def test_migration_identical_existing_output_is_idempotent(tmp_path):
@@ -115,7 +119,9 @@ def test_migration_identical_existing_output_is_idempotent(tmp_path):
     second = migrate_legacy_annotation(legacy_path=legacy, draft_dir=draft_dir)
     assert second.draft_path.read_bytes() == first.draft_path.read_bytes()
     stat_after = second.draft_path.stat()
-    assert stat_after.st_mtime_ns == stat_before.st_mtime_ns  # 重试不重写
+    assert (
+        stat_after.st_mtime_ns == stat_before.st_mtime_ns
+    )  # Retrying does not rewrite.
     assert legacy.read_bytes() == legacy.read_bytes()
 
 
@@ -124,7 +130,7 @@ def test_migration_output_never_overlaps_known_pdf(tmp_path):
     legacy.write_text(
         json.dumps(build_legacy_v4_doc(), ensure_ascii=False), encoding="utf-8"
     )
-    # 一份恰好叫 draft.json 的 PDF 材料与迁移草稿输出同名：拒绝写入
+    # Reject a PDF named draft.json that collides with migration draft output.
     work = tmp_path / "work"
     work.mkdir()
     pdf_bytes = write_synthetic_pdf(work / "draft.json")
@@ -137,7 +143,7 @@ def test_migration_output_never_overlaps_known_pdf(tmp_path):
     assert hashlib.sha256((work / "draft.json").read_bytes()).hexdigest() == pdf_bytes
 
 
-# ---- 草稿待办的完整去向 ----
+# ---- Complete disposition of draft pending items ----
 
 
 def _draft_with_pending(tmp_path, category):
@@ -173,7 +179,7 @@ def test_structural_and_missing_info_pending_block_validation(tmp_path, category
     assert report.problems_of("structure")[0].code == f"pending_{category}"
 
 
-# ---- Gold 与共同记录的科学规则一致 ----
+# ---- Shared science rules for Gold and common records ----
 
 
 def _draft_with_value(tmp_path, **overrides):
@@ -184,7 +190,7 @@ def _draft_with_value(tmp_path, **overrides):
 
 
 def _measured_value(**kwargs):
-    """构造共同记录 MeasuredValue 的最小有效形态（证据片段与数值一致）。"""
+    """Build a minimal valid common-record MeasuredValue with matching evidence fragments."""
     base = {
         "value_id": "v1",
         "value": "612.0",
@@ -238,7 +244,7 @@ def test_one_sided_error_accepted_like_common_record(tmp_path):
         "upper_error": None,
     }
     common = _measured_value(**overrides)
-    assert common.lower_error == "5.0"  # 当前共同规则接受单侧误差
+    assert common.lower_error == "5.0"  # Current shared rules accept one-sided errors.
     _, draft = _draft_with_value(tmp_path, **overrides)
     annotation = parse_gold_annotation(draft)
     value = annotation.contributions[0].quantities[0].values[0]
@@ -281,7 +287,9 @@ def test_total_error_with_components_accepted_like_common_record(tmp_path):
         }
     )
     common = _measured_value(error="9.0", error_components=[component])
-    assert common.error == "9.0"  # 当前共同规则允许总误差与分量并存
+    assert (
+        common.error == "9.0"
+    )  # Current shared rules permit total errors and components together.
     _, draft = _draft_with_value(tmp_path, **overrides)
     annotation = parse_gold_annotation(draft)
     value = annotation.contributions[0].quantities[0].values[0]
@@ -315,7 +323,7 @@ def test_component_one_sided_and_empty_shapes(tmp_path):
     annotation = parse_gold_annotation(draft)
     component = annotation.contributions[0].quantities[0].values[0].error_components[0]
     assert component.lower_error == "2.0"
-    # 分量没有任何误差数值：拒绝
+    # Reject a component containing no error values.
     _, empty = _draft_with_value(
         tmp_path,
         error=None,
@@ -363,7 +371,7 @@ def test_range_without_stated_interpretation_uses_unspecified(tmp_path):
     assert value.interval_kind == "unspecified"
 
 
-# ---- PDF 结构、页码与引文检查 ----
+# ---- PDF structure, page numbers, and quotes ----
 
 
 def _reportlab_pdf(pages: list[list[str]], *, compress: bool = True) -> bytes:
@@ -381,7 +389,9 @@ def _reportlab_pdf(pages: list[list[str]], *, compress: bool = True) -> bytes:
 
 
 def _independent_pdf(pages: list[list[str]], *, compressed: bool, reorder: bool):
-    """与被检实现独立构造的 PDF：对象可乱序、内容流可选 Flate 压缩。"""
+    """Build PDFs independently of the implementation under test, with arbitrary object
+    ordering and optional Flate content compression.
+    """
 
     def text_line(line: str) -> bytes:
         escaped = line.replace("(", "\\(").replace(")", "\\)")
@@ -393,7 +403,7 @@ def _independent_pdf(pages: list[list[str]], *, compressed: bool, reorder: bool)
     font_number = 3 if reorder else 1
     catalog_number = 1 if reorder else 2
     pages_number = 2 if reorder else 3
-    # 页对象与内容流固定从 4 号开始；目录、页树与字体编号可交换（重排）
+    # Page objects/content streams begin at object 4; catalog, page-tree, and font numbers may be permuted.
     objects[catalog_number] = f"<< /Type /Catalog /Pages {pages_number} 0 R >>".encode()
     objects[pages_number] = (
         f"<< /Type /Pages /Kids [{kids}] /Count {len(pages)} >>".encode()
@@ -448,7 +458,9 @@ def _analyze(data: bytes):
 
 
 def test_valid_pdf_with_page_marker_in_text_counts_real_pages(tmp_path):
-    """正文里印出字面 /Type /Page 的有效 PDF：按真实页树计数，不靠正则。"""
+    """Count a valid PDF with literal /Type /Page text through its real page tree, not a
+    regex.
+    """
     data = _reportlab_pdf(
         [
             ["introduction mentions /Type /Page literally"],
@@ -482,7 +494,7 @@ def test_fake_pdf_with_markers_rejected(tmp_path):
     analysis = _analyze(fake)
     assert not analysis.openable
     assert analysis.page_count is None
-    # 检查报告按材料问题报告，不当作通过
+    # Report material problems rather than success.
     material = tmp_path / "materials"
     material.mkdir()
     (material / "paper.pdf").write_bytes(fake)
@@ -500,7 +512,7 @@ def test_truncated_pdf_reported_not_openable(tmp_path):
 
 
 def test_boundary_page_ordinals(tmp_path):
-    material, digest = _material(tmp_path)  # 3 页
+    material, digest = _material(tmp_path)  # Three pages.
     draft = build_fresh_draft(pdf_sha256=digest, page=3)
     report = check_gold_annotation(parse_gold_annotation(draft), material_root=material)
     assert "page_out_of_range" not in [
@@ -523,7 +535,7 @@ def test_quote_checks_on_compressed_reportlab_pdf(tmp_path):
     assert result == "not_found"
 
 
-# ---- 逐项比较完整性 ----
+# ---- Complete item comparisons ----
 
 
 def _migrated(tmp_path, document=None):
@@ -574,7 +586,7 @@ def test_context_evidence_change_is_a_difference_with_values(tmp_path):
     report = compare_legacy_with_current(legacy_path=legacy, current_path=changed)
     item = next(item for item in report.items if "radial_velocity" in item.subject)
     assert item.status == "different"
-    # 差异说明列出旧值/新值与确切位置，不只给计数
+    # Differences identify old/new values and exact locations, not merely counts.
     assert "612.0" in item.description
     assert "Table 2, row SYN-A" in item.description
     assert "Section 4.2" in item.description

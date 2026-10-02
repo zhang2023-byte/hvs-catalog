@@ -1,8 +1,10 @@
-"""arXiv 节流门合成测试：连接租约、间距下限、冷却与跨进程（lane A）。
+"""Synthetic arXiv throttle tests: connection leases, minimum spacing, cooldown, and
+cross-process coordination (lane A).
 
-单元层面注入假时钟（3 秒间距在虚拟时间内等待，不真实睡眠）；跨进
-程场景用真实子进程与真实时钟验证文件锁、连接不重叠与共享冷却。所
-有状态文件写在测试临时目录，不触碰用户缓存目录。
+Unit tests inject clocks so the three-second spacing uses virtual time. Cross-process
+tests use real subprocesses and clocks to verify file locks, nonoverlapping connections,
+and shared cooldown. State files stay in temporary test directories, outside user
+caches.
 """
 
 from __future__ import annotations
@@ -42,7 +44,7 @@ class FakeClock:
         self._now += max(0.0, float(seconds))
 
 
-# ---------------------------------------------------------------- 间距下限
+# ---------------------------------------------------------------- Minimum spacing
 
 
 def test_interval_floor_is_enforced(tmp_path):
@@ -66,11 +68,13 @@ def test_state_file_created_with_owner_only_permissions(tmp_path):
     state = json.loads((tmp_path / "gate.json").read_text(encoding="utf-8"))
     assert state["version"] == 2
     assert state["next_allowed_at"] == 1003.0
-    assert state.get("in_flight_since") is None  # 完成收尾后标记已清除
+    assert state.get("in_flight_since") is None  # Finalization clears the marker.
 
 
 def test_atomic_write_leaves_no_temp_artifacts(tmp_path):
-    """原子替换写入：不留 .tmp 残留，锁文件独立于数据文件。"""
+    """Atomic replacement leaves no temporary files; the lock file is separate from the
+    data file.
+    """
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(tmp_path / "gate.json", clock=clock)
     for _ in range(3):
@@ -78,7 +82,7 @@ def test_atomic_write_leaves_no_temp_artifacts(tmp_path):
             pass
         gate.record_cooldown(clock.now() + 5)
     assert not (tmp_path / "gate.json.tmp").exists()
-    assert (tmp_path / "gate.json.lock").exists()  # 稳定协调锁
+    assert (tmp_path / "gate.json.lock").exists()  # Stable coordination lock.
     lock_mode = os.stat(tmp_path / "gate.json.lock").st_mode & 0o777
     assert lock_mode == 0o600
 
@@ -94,7 +98,7 @@ def test_transfer_max_wait_allows_wait_within_bound(tmp_path):
 
 
 def test_transfer_max_wait_rejects_without_reserving(tmp_path):
-    """等待超过上限时拒绝且不占用许可；状态不被修改。"""
+    """Reject waits above the limit without granting a permit or modifying state."""
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(tmp_path / "gate.json", clock=clock)
     gate.record_cooldown(1040.0)
@@ -102,9 +106,11 @@ def test_transfer_max_wait_rejects_without_reserving(tmp_path):
         pass
     assert excinfo.value.wait_seconds == pytest.approx(40.0)
     snapshot = gate.snapshot()
-    assert snapshot.cooldown_until == 1040.0  # 未被占用或改写
+    assert (
+        snapshot.cooldown_until == 1040.0
+    )  # No permit is held and state is unchanged.
     assert snapshot.next_allowed_at is None
-    # 未占用许可：不带上限的租约仍在原时刻获得许可。
+    # An unlimited lease still obtains its permit at the original time.
     with gate.transfer() as lease:
         assert lease.granted_at == 1040.0
 
@@ -123,16 +129,16 @@ def test_transfer_max_wait_zero_allows_immediate_permit(tmp_path):
         assert lease.granted_at == 1000.0
 
 
-# --------------------------------------- 固定总预算与有界准入
+# --------------------------------------- Fixed total budget and bounded admission
 
 
 def make_extending_clock(clock: FakeClock, state_path, *, extend_seconds: float):
-    """每次锁外等待步后把共享冷却延长到当前时刻之后 extend_seconds。
+    """After each wait outside the lock, extend shared cooldown to now + extend_seconds.
 
-    模拟其他进程反复登记短冷却（审核复现场景）；用另一门实例在主门
-    已让出锁的窗口内写入。返回恢复函数：后续不模拟延长的断言前必须
-    调用，否则无限额租约会因冷却被无限延长而永远等待（这是
-    ``max_wait=None`` 的文档化语义，不是缺陷）。
+    Simulate repeated short cooldown extensions by another gate while the main gate
+    yields its lock. Return a restoration function; call it before assertions without
+    extension simulation. Otherwise an unlimited lease waits forever under repeatedly
+    extended cooldown, as documented for max_wait=None.
     """
     original_sleep = clock.sleep
 
@@ -150,11 +156,12 @@ def make_extending_clock(clock: FakeClock, state_path, *, extend_seconds: float)
 
 
 def test_transfer_total_budget_not_reset_by_repeated_cooldown_extensions(tmp_path):
-    """审核复现场景：冷却被反复小步延长时，总预算固定不重置。
+    """Review reproducer: repeated small cooldown extensions must not reset the fixed total
+    budget.
 
-    max_wait=3，每次等待步后另一门把冷却延至当前时刻 +2：无固定截止
-    时（旧缺陷）每轮剩余都 ≤ 上限，永不拒绝；修复后在预算耗尽时抛出
-    且不占用许可、不丢弃冷却。
+    With max_wait=3, another gate extends cooldown to now +2 after every step. Without a
+    fixed deadline, each remaining wait stays within the limit and never rejects. Reject
+    once the budget expires, without granting a permit or discarding cooldown.
     """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
@@ -166,54 +173,61 @@ def test_transfer_total_budget_not_reset_by_repeated_cooldown_extensions(tmp_pat
         gate.transfer(max_wait=3.0),
     ):
         pass
-    # 等待只消耗了固定预算内的秒数，每步不超过重核步长。
+    # Consume only the fixed budget; each wait stays within the recheck step.
     assert clock.sleeps and all(step <= WAIT_RECHECK_SECONDS for step in clock.sleeps)
     assert sum(clock.sleeps) <= 3.0
-    # 不占用许可、不改写已持久化冷却（最后一次延长后为 1004）。
+    # Grant no permit and retain the persisted cooldown, last extended to 1004.
     snapshot = RateLimitGate(state, clock=FakeClock(1000.0)).snapshot()
     assert snapshot.next_allowed_at is None
     assert snapshot.cooldown_until == 1004.0
-    # 停止模拟延长后，无限额租约在冷却结束时获得许可（冷却未被丢弃）。
+    # After extensions stop, an unlimited lease obtains a permit when retained cooldown expires.
     restore()
     with gate.transfer() as lease:
         assert lease.granted_at == 1004.0
 
 
 def test_transfer_max_wait_exact_boundary_grants(tmp_path):
-    """冷却恰好在预算截止时刻结束：正常签发，不拒绝。"""
+    """Issue a permit when cooldown ends exactly at the budget deadline."""
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(tmp_path / "gate.json", clock=clock)
-    gate.record_cooldown(1003.0)  # 需要等 3 秒 == max_wait
+    gate.record_cooldown(1003.0)  # Required wait is three seconds, equal to max_wait.
     with gate.transfer(max_wait=3.0) as lease:
         assert lease.granted_at == 1003.0
     assert sum(clock.sleeps) == pytest.approx(3.0)
 
 
 def test_transfer_max_wait_exceeded_rejects_without_sleeping(tmp_path):
-    """总需求从一开始就超出预算：立即拒绝（不睡眠），状态不被改写。
+    """Reject immediately without sleeping or changing state if the initial wait exceeds
+    the budget.
 
-    预算是上限：超出时不必先睡满预算；需要先睡再耗尽的场景由反复延
-    长冷却的回归覆盖（上一测试）。
+    The budget is a ceiling, not a required sleep duration. The preceding
+    repeated-extension regression covers exhaustion after actual waits.
     """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(state, clock=clock)
-    gate.record_cooldown(1003.5)  # 需要 3.5 秒 > max_wait=3
+    gate.record_cooldown(1003.5)  # Required wait 3.5 seconds exceeds max_wait=3.
     with (
         pytest.raises(RateLimitError, match="总等待预算"),
         gate.transfer(max_wait=3.0),
     ):
         pass
-    assert clock.sleeps == []  # 明显超出：立即拒绝，不消耗时间
+    assert (
+        clock.sleeps == []
+    )  # Clearly excessive: reject immediately without consuming time.
     snapshot = gate.snapshot()
-    assert snapshot.next_allowed_at is None  # 未占用许可
-    assert snapshot.cooldown_until == 1003.5  # 冷却未被改写/丢弃
+    assert snapshot.next_allowed_at is None  # No permit is granted.
+    assert (
+        snapshot.cooldown_until == 1003.5
+    )  # Cooldown is neither changed nor discarded.
     with gate.transfer() as lease:
         assert lease.granted_at == 1003.5
 
 
 def test_transfer_initial_lock_contention_bounded_by_deadline(tmp_path):
-    """初始取锁竞争计入同一固定预算：超时拒绝且未取得锁、未改状态。"""
+    """Initial lock contention consumes the same fixed budget; timeout grants no lock and
+    changes no state.
+    """
     import fcntl
 
     state = tmp_path / "gate.json"
@@ -228,22 +242,22 @@ def test_transfer_initial_lock_contention_bounded_by_deadline(tmp_path):
             gate.transfer(max_wait=0.5),
         ):
             pass
-        # 轮询步长受限，总等待恰好为预算。
+        # Bounded polling consumes exactly the allowed total wait.
         assert clock.sleeps and all(
             step <= LOCK_WAIT_POLL_SECONDS for step in clock.sleeps
         )
         assert sum(clock.sleeps) == pytest.approx(0.5)
-        # 无许可、未创建数据文件（无任何持久化副作用）。
+        # No permit or data file is created: no persistent side effects.
         assert not state.exists()
     finally:
         fcntl.flock(holder_fd, fcntl.LOCK_UN)
         os.close(holder_fd)
-    with gate.transfer() as lease:  # 释放后正常取许可
+    with gate.transfer() as lease:  # Obtain a permit normally after release.
         assert lease.granted_at == pytest.approx(1000.5)
 
 
 def test_transfer_reacquire_contention_bounded_by_deadline(tmp_path):
-    """等待期间重取锁的竞争同样计入固定预算。"""
+    """Lock reacquisition contention during waiting consumes the same fixed budget."""
     import fcntl
 
     state = tmp_path / "gate.json"
@@ -256,8 +270,8 @@ def test_transfer_reacquire_contention_bounded_by_deadline(tmp_path):
 
     def interleaved(seconds: float) -> None:
         original_sleep(seconds)
-        # 主门已让出锁：另一持有者尝试抢住锁并不释放。用非阻塞获取：
-        # 已有持有者时无需重复持有（阻塞获取会与既有持有者互锁）。
+        # While the main gate yields, another holder acquires the lock without releasing it; use nonblocking acquisition.
+        # Do not acquire twice when already held; blocking acquisition would deadlock with the existing holder.
         fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
         try:
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -273,19 +287,21 @@ def test_transfer_reacquire_contention_bounded_by_deadline(tmp_path):
             gate.transfer(max_wait=3.0),
         ):
             pass
-        # 先记录断言材料，再在 finally 释放持有者（snapshot 会取阻塞
-        # 锁，不能在持有者仍持锁时调用）。
+        # Record assertion evidence before releasing the holder in finally. snapshot takes a blocking
+        # lock, so do not call it while the holder still owns the lock.
         first_step = clock.sleeps[0]
         later_steps = tuple(clock.sleeps[1:])
         total_slept = sum(clock.sleeps)
     finally:
-        clock.sleep = original_sleep  # 恢复，避免后续无限额租约被钩子卡住
+        clock.sleep = original_sleep  # Restore the hook so subsequent unlimited leases do not block forever.
         for fd in holder_fds:
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
-    assert first_step == 1.0  # 第一步是冷却重核步
+    assert first_step == 1.0  # The first step rechecks cooldown.
     assert all(step <= LOCK_WAIT_POLL_SECONDS for step in later_steps)
-    assert total_slept == pytest.approx(3.0)  # 重取锁竞争耗尽余下预算
+    assert total_slept == pytest.approx(
+        3.0
+    )  # Lock reacquisition exhausts the remaining budget.
     snapshot = gate.snapshot()
     assert snapshot.next_allowed_at is None
     assert snapshot.cooldown_until == 1002.0
@@ -307,33 +323,40 @@ def test_transfer_max_wait_zero_rejects_lock_contention_immediately(tmp_path):
             gate.transfer(max_wait=0.0),
         ):
             pass
-        assert clock.sleeps == []  # 零预算：立即拒绝，不睡眠
+        assert clock.sleeps == []  # Zero budget rejects immediately without sleeping.
     finally:
         fcntl.flock(holder_fd, fcntl.LOCK_UN)
         os.close(holder_fd)
 
 
-# ------------------------------- 迟到准入核对：迟到锁/迟到读取不签发
+# ------------------------------- Late admission: reject delayed locks or reads
 
 
 def test_transfer_late_lock_poll_oversleep_rejects_beyond_budget(tmp_path):
-    """初始取锁轮询期间实际睡眠超步（迟到调度）：即使锁随后取得且
-    状态已就绪，也必须在严格超出预算时拒绝，不能凭迟到的锁签发。"""
+    """If polling sleeps beyond its requested step, reject admission strictly past the
+    deadline even when the lock subsequently becomes available and state is ready.
+    """
     import fcntl
 
     state = tmp_path / "gate.json"
     lock_path = tmp_path / "gate.json.lock"
     clock = FakeClock(start=1000.0)
     seed = RateLimitGate(state, clock=FakeClock(1000.0))
-    seed.record_cooldown(1000.5)  # 已就绪：若无迟到核对会直接签发
+    seed.record_cooldown(
+        1000.5
+    )  # Ready state would grant immediately without the late-admission check.
     holder_fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o600)
     fcntl.flock(holder_fd, fcntl.LOCK_EX)
     original_sleep = clock.sleep
 
     def oversleeping_poll(seconds: float) -> None:
         original_sleep(seconds)
-        original_sleep(1.0)  # 模拟调度延迟：实际睡超请求步长
-        fcntl.flock(holder_fd, fcntl.LOCK_UN)  # 预算耗尽后锁才空出
+        original_sleep(
+            1.0
+        )  # Simulate scheduling delay by sleeping beyond the requested step.
+        fcntl.flock(
+            holder_fd, fcntl.LOCK_UN
+        )  # The lock becomes available only after budget expiry.
 
     clock.sleep = oversleeping_poll  # type: ignore[method-assign]
     gate = RateLimitGate(state, clock=clock)
@@ -344,20 +367,22 @@ def test_transfer_late_lock_poll_oversleep_rejects_beyond_budget(tmp_path):
         ):
             pass
         assert clock.sleeps[0] <= LOCK_WAIT_POLL_SECONDS
-        assert sum(clock.sleeps) > 0.5  # 实际等待已超出预算
+        assert sum(clock.sleeps) > 0.5  # Actual wait has exceeded the budget.
     finally:
         clock.sleep = original_sleep
         fcntl.flock(holder_fd, fcntl.LOCK_UN)
         os.close(holder_fd)
     snapshot = gate.snapshot()
-    assert snapshot.next_allowed_at is None  # 未占用许可
-    assert snapshot.cooldown_until == 1000.5  # 冷却保留
-    with gate.transfer() as lease:  # 锁/文件描述符未泄漏
+    assert snapshot.next_allowed_at is None  # No permit is granted.
+    assert snapshot.cooldown_until == 1000.5  # Retain cooldown.
+    with gate.transfer() as lease:  # No lock or file descriptor leaks.
         assert lease.granted_at >= 1000.5
 
 
 def test_transfer_reacquire_oversleep_rejects_late_lock_success(tmp_path):
-    """冷却等待步实际睡眠超步：重取锁虽成功但已落在截止之后，拒绝。"""
+    """Reject delayed cooldown waits when successful lock reacquisition occurs after the
+    deadline.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(state, clock=clock)
@@ -366,7 +391,7 @@ def test_transfer_reacquire_oversleep_rejects_late_lock_success(tmp_path):
 
     def oversleeping(seconds: float) -> None:
         original_sleep(seconds)
-        original_sleep(3.0)  # 迟到调度：单步 1 秒实际睡到 1004
+        original_sleep(3.0)  # Scheduling delay: a nominal one-second step reaches 1004.
 
     clock.sleep = oversleeping  # type: ignore[method-assign]
     try:
@@ -376,19 +401,24 @@ def test_transfer_reacquire_oversleep_rejects_late_lock_success(tmp_path):
         ):
             pass
         assert clock.sleeps[0] == 1.0
-        assert sum(clock.sleeps) == 4.0  # 请求 1 秒 + 迟到 3 秒
+        assert (
+            sum(clock.sleeps) == 4.0
+        )  # One requested second plus three delayed seconds.
     finally:
         clock.sleep = original_sleep
     snapshot = gate.snapshot()
     assert snapshot.next_allowed_at is None
     assert snapshot.cooldown_until == 1001.0
     with gate.transfer() as lease:
-        assert lease.granted_at == 1004.0  # 无泄漏：迟到后仍可正常取许可
+        assert (
+            lease.granted_at == 1004.0
+        )  # No leak: normal permit acquisition still works after delayed rejection.
 
 
 def test_transfer_slow_state_read_past_deadline_rejects_before_permit(tmp_path):
-    """状态读取缓慢（每轮读耗时 0.2 秒）：状态就绪但读取后已超出正预
-    算，签发许可前拒绝；许可未写、冷却保留。"""
+    """Slow state reads (0.2 seconds each) exhaust a positive budget before admission even
+    when state is ready; write no permit and retain cooldown.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(state, clock=clock)
@@ -396,7 +426,7 @@ def test_transfer_slow_state_read_past_deadline_rejects_before_permit(tmp_path):
     original_read = gate._read_state_file
 
     def slow_read():
-        clock.sleep(0.2)  # 模拟状态 I/O 延迟
+        clock.sleep(0.2)  # Simulate state I/O delay.
         return original_read()
 
     gate._read_state_file = slow_read  # type: ignore[method-assign]
@@ -406,7 +436,7 @@ def test_transfer_slow_state_read_past_deadline_rejects_before_permit(tmp_path):
             gate.transfer(max_wait=1.0),
         ):
             pass
-        # 每轮读取都计入预算：等待与读取合计超出 1 秒预算后拒绝。
+        # Count every read toward the budget; reject when waiting plus reading exceeds one second.
         assert sum(clock.sleeps) > 1.0
     finally:
         gate._read_state_file = original_read  # type: ignore[method-assign]
@@ -418,8 +448,10 @@ def test_transfer_slow_state_read_past_deadline_rejects_before_permit(tmp_path):
 
 
 def test_transfer_max_wait_zero_tolerates_state_read_latency(tmp_path):
-    """零预算 = 非阻塞尝试：不等待锁/冷却，但容忍状态 I/O 耗时——
-    就绪状态下缓慢读取不使零预算立即许可失败（不是零耗时承诺）。"""
+    """Zero budget means a nonblocking attempt: do not wait for lock/cooldown, but tolerate
+    state I/O time. A slow ready-state read does not reject immediately; zero budget is
+    not a zero-duration promise.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(state, clock=clock)
@@ -440,8 +472,9 @@ def test_transfer_max_wait_zero_tolerates_state_read_latency(tmp_path):
 
 @pytest.mark.integration
 def test_transfer_real_clock_delayed_read_rejects_late_admission(tmp_path):
-    """真实时钟复核（审核者复现同构）：0.02 秒预算遇到 0.12 秒的读取
-    延迟必须拒绝；不建立连接、不写许可。"""
+    """Real-clock review reproducer: reject a 0.12-second read under a 0.02-second budget;
+    open no connection and write no permit.
+    """
     import time
 
     gate = RateLimitGate(tmp_path / "gate.json", clock=SystemClock())
@@ -460,33 +493,39 @@ def test_transfer_real_clock_delayed_read_rejects_late_admission(tmp_path):
             pass
     finally:
         gate._read_state_file = original_read  # type: ignore[method-assign]
-    assert not (tmp_path / "gate.json").exists()  # 未写任何许可/状态
-    with gate.transfer(max_wait=5.0) as lease:  # 无锁泄漏，正常签发
+    assert not (tmp_path / "gate.json").exists()  # No permit or state is written.
+    with gate.transfer(
+        max_wait=5.0
+    ) as lease:  # No lock leak; ordinary admission works.
         assert lease.granted_at > 0
 
 
 @pytest.mark.integration
 def test_transfer_real_clock_immediate_attempt_succeeds(tmp_path):
-    """真实时钟正常路径：无延迟、就绪状态，小预算立即签发且写入预登记。"""
+    """Real-clock normal path: ready state without delay grants immediately under a small
+    budget and persists preregistration.
+    """
     clock = SystemClock()
     gate = RateLimitGate(tmp_path / "gate.json", clock=clock)
     with gate.transfer(max_wait=1.0) as lease:
         granted = lease.granted_at
-        assert clock.now() - granted < 1.0  # 未耗尽预算即签发
+        assert clock.now() - granted < 1.0  # Grant before the budget expires.
     snapshot = gate.snapshot()
     assert snapshot.next_allowed_at == pytest.approx(granted + MIN_REQUEST_INTERVAL)
 
 
-# ------------------- 写入/fsync 边界与实际发送间距（extra1）
+# ------------------- Write/fsync boundaries and actual send spacing (extra1)
 
 
 def make_slow_write_gate(state, clock, *, delay: float, max_wait=None):
-    """构造写入延迟注入的门：每次状态写入耗时 delay 秒（虚拟时间）。"""
+    """Build a gate with injected write delay: every state write consumes delay seconds of
+    virtual time.
+    """
     gate = RateLimitGate(state, clock=clock)
     original_write = gate._write_state_file
 
     def slow_write(payload: dict) -> None:
-        clock.sleep(delay)  # 模拟阻塞写入/fsync 延迟
+        clock.sleep(delay)  # Simulate blocking write/fsync delay.
         original_write(payload)
 
     gate._write_state_file = slow_write  # type: ignore[method-assign]
@@ -494,11 +533,12 @@ def make_slow_write_gate(state, clock, *, delay: float, max_wait=None):
 
 
 def test_transfer_write_delay_beyond_budget_rejects_without_delivery(tmp_path):
-    """写入耗时超出正预算：不交付租约、不发送；已落盘的在途标记与预
-    登记保守保留（extra2 语义修正：迟到拒绝也留下标记，后续必须
-    fail-closed 而非按可能过早的预登记放行——旧的“等待后正常签发”
-    断言 assert grant@1004 属旧设计的不安全自动恢复，已按标记设计
-    改为更强的新言）。"""
+    """Reject positive-budget admission after an overlong write, delivering no lease and
+    sending nothing. Retain persisted in-flight markers and preregistration
+    conservatively. Under extra2 semantics, later requests fail closed instead of
+    waiting out potentially premature preregistration; the old grant@1004 assertion
+    allowed unsafe automatic recovery.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = make_slow_write_gate(state, clock, delay=4.0)
@@ -508,10 +548,12 @@ def test_transfer_write_delay_beyond_budget_rejects_without_delivery(tmp_path):
     ):
         pass
     snapshot = gate.snapshot()
-    assert snapshot.next_allowed_at == 1003.0  # 写前基准的预登记保留
+    assert (
+        snapshot.next_allowed_at == 1003.0
+    )  # Retain preregistration based on the pre-write time.
     assert snapshot.cooldown_until is None
-    assert snapshot.in_flight_since == 1000.0  # 在途标记同样保留
-    # 未确认在途：后续请求 fail-closed，不能等预登记过期绕过。
+    assert snapshot.in_flight_since == 1000.0  # Retain the in-flight marker too.
+    # Unconfirmed in-flight state makes later requests fail closed; preregistration expiry cannot bypass it.
     with (
         pytest.raises(RateLimitUnconfirmedError, match="在途"),
         gate.transfer(max_wait=100.0),
@@ -521,7 +563,9 @@ def test_transfer_write_delay_beyond_budget_rejects_without_delivery(tmp_path):
 
 @pytest.mark.integration
 def test_transfer_real_clock_slow_write_rejects_before_delivery(tmp_path):
-    """真实时钟（审核者同构）：0.12 秒写入延迟 × 0.02 秒预算 → 拒绝。"""
+    """Real-clock review reproducer: a 0.12-second write under a 0.02-second budget
+    rejects.
+    """
     import time
 
     gate = RateLimitGate(tmp_path / "gate.json", clock=SystemClock())
@@ -541,11 +585,13 @@ def test_transfer_real_clock_slow_write_rejects_before_delivery(tmp_path):
     finally:
         gate._write_state_file = original_write  # type: ignore[method-assign]
     snapshot = gate.snapshot()
-    assert snapshot.next_allowed_at is not None  # 保守预登记已落盘保留
+    assert (
+        snapshot.next_allowed_at is not None
+    )  # Retain persisted conservative preregistration.
     assert snapshot.cooldown_until is None
-    assert snapshot.in_flight_since is not None  # 在途标记保留
-    # 锁已释放（OS 层面无泄漏）：零预算尝试被在途标记拒绝（extra2 语
-    # 义修正：不再按预登记等待，fail-closed 更强）。
+    assert snapshot.in_flight_since is not None  # Retain the in-flight marker.
+    # The OS lock is released without leaks; a zero-budget attempt rejects the in-flight marker under extra2
+    # semantics rather than waiting for preregistration, providing stronger fail-closed behavior.
     with (
         pytest.raises(RateLimitUnconfirmedError, match="在途"),
         gate.transfer(max_wait=0.0),
@@ -554,41 +600,51 @@ def test_transfer_real_clock_slow_write_rejects_before_delivery(tmp_path):
 
 
 def test_transfer_write_delay_persists_send_basis_reservation(tmp_path):
-    """每次写入延迟 4 秒：完成式间隔以完成时刻为基准（不早于实际发送
-    时刻 1004），标记在收尾中清除，下一个许可不早于实际发送 +3 秒。"""
+    """With four-second writes, completion-based spacing starts no earlier than actual send
+    time 1004. Finalization clears the marker; the next permit is no earlier than actual
+    send +3 seconds.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = make_slow_write_gate(state, clock, delay=4.0)
     with gate.transfer() as lease:
-        assert lease.granted_at == 1000.0  # 准入决定时刻（写前）
-        send_time = clock.now()  # 实际发送时刻：在途标记写入完成后
+        assert lease.granted_at == 1000.0  # Admission decision time before writing.
+        send_time = clock.now()  # Actual send time after writing the in-flight marker.
         assert send_time == 1004.0
     snapshot = gate.snapshot()
     assert snapshot.next_allowed_at == send_time + MIN_REQUEST_INTERVAL
     assert snapshot.cooldown_until is None
-    assert snapshot.in_flight_since is None  # 收尾已清除标记
-    with gate.transfer() as lease2:  # 完成式间隔后下一个许可正常签发，无泄漏
+    assert snapshot.in_flight_since is None  # Finalization cleared the marker.
+    with (
+        gate.transfer() as lease2
+    ):  # Grant normally after completion-based spacing, without leaks.
         assert lease2.granted_at >= send_time + MIN_REQUEST_INTERVAL
 
 
 def test_transfer_error_exit_still_persists_send_spacing(tmp_path):
-    """传输异常退出：收尾写入仍在解锁前清除标记并保存完成式间隔，且
-    不触碰交换中登记的冷却（完成时刻不早于实际发送，间隔只强不弱）。"""
+    """On transport exceptions, finalize before unlocking: clear the marker and preserve
+    completion-based spacing without changing cooldown registered during the exchange.
+    Completion is no earlier than actual send, so spacing never weakens.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = make_slow_write_gate(state, clock, delay=4.0)
     with pytest.raises(RuntimeError, match="boom"), gate.transfer() as lease:
         send_time = clock.now()
-        lease.record_cooldown(send_time + 1.0)  # 交换中登记服务端冷却
+        lease.record_cooldown(
+            send_time + 1.0
+        )  # Register server cooldown during the exchange.
         raise RuntimeError("boom")
     snapshot = gate.snapshot()
     assert snapshot.next_allowed_at >= send_time + MIN_REQUEST_INTERVAL
-    assert snapshot.cooldown_until == send_time + 1.0  # 冷却未被触碰
-    assert snapshot.in_flight_since is None  # 错误退出同样清除标记
+    assert snapshot.cooldown_until == send_time + 1.0  # Cooldown is unchanged.
+    assert snapshot.in_flight_since is None  # Error exit clears the marker too.
 
 
 def test_transfer_zero_budget_tolerates_write_latency_and_extends_basis(tmp_path):
-    """零预算非阻塞尝试容忍写入 I/O 耗时，且间距基准同样跟随实际发送。"""
+    """Zero-budget nonblocking attempts tolerate write I/O time and still base spacing on
+    actual send time.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = make_slow_write_gate(state, clock, delay=0.2)
@@ -616,9 +672,11 @@ CRASH_SCRIPT = textwrap.dedent(
 
 @pytest.mark.integration
 def test_crashed_exchange_leaves_conservative_spacing_state(tmp_path):
-    """交换中硬崩溃（丢失收尾写入）：OS 释放锁，在途标记在场使下一
-    个许可 fail-closed（extra2 语义修正：不再按可能过早的预登记等
-    待后放行——旧断言属不安全自动恢复，新言更强：直接拒绝）。"""
+    """After a hard crash during exchange skips finalization, the OS releases the lock but
+    the in-flight marker makes the next permit fail closed. Extra2 replaces unsafe
+    automatic recovery based on possibly premature preregistration with immediate
+    rejection.
+    """
     state = tmp_path / "gate.json"
     crashed = subprocess.run(
         [sys.executable, "-c", CRASH_SCRIPT, str(state)],
@@ -633,9 +691,9 @@ def test_crashed_exchange_leaves_conservative_spacing_state(tmp_path):
     gate = RateLimitGate(state, clock=SystemClock())
     snapshot = gate.snapshot()
     assert snapshot.state_error is None
-    # 崩溃时标记在场：未确认在途，任何接管者 fail-closed。
+    # A retained crash marker means unconfirmed in-flight state; every successor fails closed.
     assert snapshot.in_flight_since is not None
-    assert snapshot.next_allowed_at >= send_time - 1.0  # 预登记也在场
+    assert snapshot.next_allowed_at >= send_time - 1.0  # Preregistration remains too.
     with (
         pytest.raises(RateLimitUnconfirmedError, match="在途"),
         gate.transfer(max_wait=0.0),
@@ -676,8 +734,10 @@ SLOW_CRASH_SCRIPT = textwrap.dedent(
 
 @pytest.mark.integration
 def test_slow_write_crash_fast_successor_refuses_immediately(tmp_path):
-    """审核者同构场景：慢写入首客户端实际发送后崩溃，重启的快速接
-    管者必须**立即拒绝**（在途标记），而不是等已过期的预登记放行。"""
+    """Review reproducer: a slow writer crashes after sending; a restarted fast successor
+    must reject immediately on the in-flight marker rather than admit after expired
+    preregistration.
+    """
     state = tmp_path / "gate.json"
     crashed = subprocess.run(
         [sys.executable, "-c", SLOW_CRASH_SCRIPT, str(state)],
@@ -688,12 +748,16 @@ def test_slow_write_crash_fast_successor_refuses_immediately(tmp_path):
     )
     assert crashed.returncode == 9, crashed.stderr
     (line,) = [ln for ln in crashed.stdout.splitlines() if ln.startswith("SEND")]
-    assert float(line.split()[1]) == 1004.0  # 实际发送时刻（写前基准 1000）
+    assert (
+        float(line.split()[1]) == 1004.0
+    )  # Actual send time; the pre-write reference was 1000.
     successor = RateLimitGate(state, clock=FakeClock(start=1004.0))
     snapshot = successor.snapshot()
-    assert snapshot.in_flight_since == 1000.0  # 标记在场
-    assert snapshot.next_allowed_at == 1003.0  # 预登记已过期（旧缺陷会放行）
-    # 快速接管者立即拒绝，零等待（不是把过期预登记等过去）。
+    assert snapshot.in_flight_since == 1000.0  # The marker remains.
+    assert (
+        snapshot.next_allowed_at == 1003.0
+    )  # Preregistration has expired; the old defect would admit.
+    # The fast successor rejects immediately with no wait, rather than relying on expired preregistration.
     with (
         pytest.raises(RateLimitUnconfirmedError, match="在途"),
         successor.transfer(max_wait=100.0),
@@ -703,7 +767,9 @@ def test_slow_write_crash_fast_successor_refuses_immediately(tmp_path):
 
 
 def test_marker_initial_write_failure_never_fetches(tmp_path):
-    """在途标记首次写入失败：不交付租约、不进入交换体（未发送）。"""
+    """If the initial in-flight write fails, deliver no lease and never enter the exchange
+    body.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(state, clock=clock)
@@ -716,16 +782,18 @@ def test_marker_initial_write_failure_never_fetches(tmp_path):
     entered = []
     try:
         with pytest.raises(OSError, match="initial write"), gate.transfer():
-            entered.append(True)  # 不应执行
+            entered.append(True)  # Must not execute.
     finally:
         gate._write_state_file = original_write  # type: ignore[method-assign]
-    assert entered == []  # 未交付：交换体从未运行
-    assert not state.exists()  # 未写入任何状态
+    assert entered == []  # No lease was delivered; the exchange body never ran.
+    assert not state.exists()  # No state was written.
 
 
 def test_exit_persistence_failure_keeps_marker_and_refuses_successor(tmp_path):
-    """收尾写入失败：错误可观察（不静默吞掉），标记保留，快速接管者
-    fail-closed；无主体异常时链指向持久化错误本身。"""
+    """Finalization write failures remain observable, retain the marker, and make fast
+    successors fail closed. Without a body exception, chain directly to the persistence
+    error.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(state, clock=clock)
@@ -744,9 +812,9 @@ def test_exit_persistence_failure_keeps_marker_and_refuses_successor(tmp_path):
             pytest.raises(RateLimitPersistenceError, match="未能可靠落盘"),
             gate.transfer(),
         ):
-            pass  # 正常完成，但收尾写入失败
+            pass  # Normal exchange completion followed by a failed finalization write.
         snapshot = gate.snapshot()
-        assert snapshot.in_flight_since == 1000.0  # 标记保守保留
+        assert snapshot.in_flight_since == 1000.0  # Retain the marker conservatively.
         assert snapshot.next_allowed_at == 1003.0
         with (
             pytest.raises(RateLimitUnconfirmedError, match="在途"),
@@ -758,8 +826,9 @@ def test_exit_persistence_failure_keeps_marker_and_refuses_successor(tmp_path):
 
 
 def test_exit_persistence_failure_chains_body_error(tmp_path):
-    """交换体异常 + 收尾写入失败：持久化错误经 __cause__ 链保留原始
-    传输异常，可诊断。"""
+    """If the exchange body and finalization both fail, preserve the original transport
+    exception through the persistence error's __cause__ chain.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(state, clock=clock)
@@ -784,13 +853,12 @@ def test_exit_persistence_failure_chains_body_error(tmp_path):
 
 
 def test_safe_completed_replacement_then_dir_fsync_error(tmp_path, monkeypatch):
-    """替换成功后目录 fsync 失败（替换模糊性的安全侧）：目录 fsync 错
-    误被有意容忍（部分文件系统不支持）；替换已完成，盘上为完成式状
-    态（无标记、有安全间隔），接管者按正常间距等待而非 fail-closed。
-    崩溃边界解释：此时若断电，目录项可能回滚到旧状态（含标记 →
-    fail-closed）或保持新状态（完成式间隔 → 正常等待），两种结果都
-    不产生“无标记且无安全间隔”的已发送请求；替换**前**的写入/
-    fsync 失败则会传播（见收尾失败测试：标记保留、fail-closed）。"""
+    """Tolerate directory fsync failure after successful replacement on filesystems that do
+    not support it. The new state has no marker and includes safe completion spacing, so
+    successors wait normally. A power loss may restore old marked state (fail closed) or
+    retain new spacing; neither outcome loses both safeguards for a sent request.
+    Write/fsync failures before replacement still propagate and retain the marker.
+    """
     import stat as stat_module
 
     state = tmp_path / "gate.json"
@@ -805,12 +873,18 @@ def test_safe_completed_replacement_then_dir_fsync_error(tmp_path, monkeypatch):
         return real_fsync(fd)
 
     monkeypatch.setattr(os, "fsync", flaky_fsync)
-    with gate.transfer():  # 目录 fsync 失败被容忍：正常完成、不抛错
-        fail["on"] = True  # 从收尾开始让目录 fsync 失败（替换已完成）
+    with (
+        gate.transfer()
+    ):  # Directory fsync failure is tolerated; completion raises no error.
+        fail["on"] = (
+            True  # Fail directory fsync starting with finalization, after replacement succeeds.
+        )
     payload = json.loads(state.read_text(encoding="utf-8"))
-    assert payload.get("in_flight_since") is None  # 替换已生效：无标记
-    assert payload["next_allowed_at"] == 1003.0  # 完成式间隔在场
-    # 接管者不 fail-closed：按正常间距等待（零预算被间距拒绝）。
+    assert (
+        payload.get("in_flight_since") is None
+    )  # Replacement took effect: no marker remains.
+    assert payload["next_allowed_at"] == 1003.0  # Completion-based spacing remains.
+    # Successors wait normally instead of failing closed; zero-budget attempts reject on spacing.
     successor = RateLimitGate(state, clock=FakeClock(start=1001.0))
     with (
         pytest.raises(RateLimitError, match="节流门要求再等待"),
@@ -820,22 +894,27 @@ def test_safe_completed_replacement_then_dir_fsync_error(tmp_path, monkeypatch):
 
 
 def test_marker_retained_by_lease_and_standalone_cooldown_writes(tmp_path):
-    """交换中的租约冷却登记与传输外的独立冷却登记都不得丢失在途标
-    记（标记只能由正常收尾清除）。"""
+    """Cooldown registration through either an active lease or an independent call must
+    retain the in-flight marker; only normal finalization clears it.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(state, clock=clock)
     with gate.transfer() as lease:
         on_disk = json.loads(state.read_text(encoding="utf-8"))
-        assert on_disk["in_flight_since"] == 1000.0  # 交付前已持久化标记
+        assert (
+            on_disk["in_flight_since"] == 1000.0
+        )  # Persist the marker before delivering the lease.
         lease.record_cooldown(1050.0)
         on_disk = json.loads(state.read_text(encoding="utf-8"))
-        assert on_disk["in_flight_since"] == 1000.0  # 冷却登记后标记仍在
+        assert (
+            on_disk["in_flight_since"] == 1000.0
+        )  # The marker survives cooldown registration.
         assert on_disk["cooldown_until"] == 1050.0
     snapshot = gate.snapshot()
-    assert snapshot.in_flight_since is None  # 正常收尾后清除
+    assert snapshot.in_flight_since is None  # Normal finalization clears it.
     assert snapshot.cooldown_until == 1050.0
-    # 独立 record_cooldown 同样保留既有标记（用手工标记状态模拟崩溃现场）。
+    # Independent record_cooldown also retains existing markers; manually mark state to simulate a crash.
     write_state(
         state, '{"version": 2, "in_flight_since": 1000.0, "next_allowed_at": 1003.0}'
     )
@@ -847,33 +926,39 @@ def test_marker_retained_by_lease_and_standalone_cooldown_writes(tmp_path):
 
 
 def test_reset_and_snapshot_handle_unconfirmed_marker(tmp_path):
-    """reset 不能清除或绕过在途标记；snapshot 明确报告未确认状态。"""
+    """reset cannot clear or bypass an in-flight marker; snapshot explicitly reports
+    unconfirmed state.
+    """
     state = tmp_path / "gate.json"
     write_state(
         state,
         '{"version": 2, "in_flight_since": 1000.0, "next_allowed_at": 1003.0, "cooldown_until": 1002.0}',
     )
-    gate = RateLimitGate(state, clock=FakeClock(start=1100.0))  # 间隔/冷却均早已过期
+    gate = RateLimitGate(
+        state, clock=FakeClock(start=1100.0)
+    )  # Spacing and cooldown expired long ago.
     snapshot = gate.snapshot()
     assert snapshot.in_flight_since == 1000.0
     assert snapshot.state_error is None
     with pytest.raises(RateLimitUnconfirmedError, match="在途"):
-        gate.reset()  # 即使间隔/冷却都过期，标记仍不可被恢复操作绕过
+        gate.reset()  # Expired spacing/cooldown still cannot let recovery bypass the marker.
     assert json.loads(state.read_text(encoding="utf-8"))["in_flight_since"] == 1000.0
 
 
-# ---------------------------------------------------------------- 连接租约
+# ---------------------------------------------------------------- Connection leases
 
 
 def test_transfer_spacing_survives_process_restart(tmp_path):
     clock = FakeClock(start=1000.0)
     grants = []
     for _ in range(3):
-        gate = RateLimitGate(tmp_path / "gate.json", clock=clock)  # 每次新实例=重启
+        gate = RateLimitGate(
+            tmp_path / "gate.json", clock=clock
+        )  # Every new instance represents a restart.
         with gate.transfer() as lease:
             grants.append(lease.granted_at)
     assert grants == [1000.0, 1003.0, 1006.0]
-    # 等待在锁外小步进行：总等待量正确，且每步不超过重核步长。
+    # Wait in small steps outside the lock; total time is correct and each step respects the recheck bound.
     assert sum(clock.sleeps) == pytest.approx(6.0)
     assert clock.sleeps and all(step <= WAIT_RECHECK_SECONDS for step in clock.sleeps)
 
@@ -892,21 +977,22 @@ def test_transfer_waits_for_cooldown_registered_before_start(tmp_path):
 
 
 def test_transfer_rechecks_cooldown_registered_while_waiting(tmp_path):
-    """等待期间登记的冷却必须在发送前生效（无预留许可绕过新冷却）。
+    """Cooldown registered while waiting must apply before sending; no reserved permit
+    bypasses it.
 
-    等待在锁外小步进行：第一步等待内由另一门实例（模拟另一进程）
-    登记亚长冷却；主门下一步重读时看到并等到冷却结束才签发租约。
+    During the first unlocked wait, another gate simulates a process registering longer
+    cooldown. The main gate rereads it on the next step and grants only after expiry.
     """
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(tmp_path / "gate.json", clock=clock)
-    gate.record_cooldown(1010.0)  # 先有一个较短冷却
+    gate.record_cooldown(1010.0)  # Begin with a shorter cooldown.
     cooldown_added = False
     original_sleep = clock.sleep
 
     def interleaved_sleep(seconds: float) -> None:
         nonlocal cooldown_added
         if not cooldown_added:
-            # 此刻主门已让出锁（锁外分段等待）：另一进程可以登记冷却。
+            # The main gate has yielded the lock during segmented waiting, so another process can register cooldown.
             other = RateLimitGate(tmp_path / "gate.json", clock=clock)
             other.record_cooldown(1050.0)
             cooldown_added = True
@@ -924,7 +1010,7 @@ def test_lease_records_cooldown_without_nested_lock(tmp_path):
     gate = RateLimitGate(tmp_path / "gate.json", clock=clock)
     with gate.transfer() as lease:
         lease.record_cooldown(1020.0)
-        lease.record_cooldown(1015.0)  # 合并保留较晚者
+        lease.record_cooldown(1015.0)  # Merge by retaining the later deadline.
     fresh = RateLimitGate(tmp_path / "gate.json", clock=FakeClock(1000.0))
     assert fresh.snapshot().cooldown_until == 1020.0
 
@@ -946,7 +1032,7 @@ def test_lease_rejects_nonfinite_cooldown(tmp_path):
             lease.record_cooldown(float("nan"))
 
 
-# ---------------------------------------------------------------- 冷却持久
+# ---------------------------------------------------------------- Persistent cooldown
 
 
 def test_record_cooldown_rejects_invalid_values(tmp_path):
@@ -965,7 +1051,7 @@ def test_cooldown_merge_keeps_the_later_deadline(tmp_path):
     assert gate.snapshot().cooldown_until == 1050.0
 
 
-# ---------------------------------------------------------------- 状态健壮性（fail-closed）
+# ---------------------------------------------------------------- State robustness: fail closed
 
 
 def write_state(path, payload: str) -> None:
@@ -1003,20 +1089,20 @@ def test_corrupt_state_fails_closed_and_preserves_evidence(tmp_path, payload):
     with pytest.raises(RateLimitStateError):
         gate.record_cooldown(200.0)
     with pytest.raises(RateLimitStateError):
-        gate.reset()  # 损坏状态的冷却是未知而非零：默认恢复同样拒绝
-    # 现场保留：损坏内容未被自动重置或覆盖。
+        gate.reset()  # Corrupted state means unknown cooldown, not zero; default recovery also rejects.
+    # Preserve the scene: do not automatically reset or overwrite corrupted contents.
     assert path.read_text(encoding="utf-8") == payload
 
 
 def test_corrupt_state_does_not_discard_known_unexpired_cooldown(tmp_path):
-    """损坏前已登记的冷却不能因状态损坏而被静默丢弃。"""
+    """State corruption must not silently discard previously registered cooldown."""
     path = tmp_path / "gate.json"
     clock = FakeClock(start=100.0)
     gate = RateLimitGate(path, clock=clock)
     gate.record_cooldown(9999.0)
-    write_state(path, "{broken")  # 模拟崩溃写入
+    write_state(path, "{broken")  # Simulate a crash during writing.
     gate2 = RateLimitGate(path, clock=clock)
-    # 无法确认冷却是否有效：拒绝发送（fail-closed），等待显式恢复。
+    # Cooldown validity is unknown: refuse sending and await explicit recovery.
     with pytest.raises(RateLimitStateError), gate2.transfer():
         pass
     assert path.read_text(encoding="utf-8") == "{broken"
@@ -1034,13 +1120,13 @@ def test_snapshot_reports_corruption_without_overwriting(tmp_path):
 
 
 def test_recovery_reset_clears_fully_expired_state(tmp_path):
-    """间隔与冷却都已自然过期的有效状态可清空（清空不绕过任何约束）。"""
+    """Clear valid state only after both spacing and cooldown naturally expire."""
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(tmp_path / "gate.json", clock=clock)
     with gate.transfer():
         pass  # next_allowed_at = 1003
     gate.record_cooldown(1010.0)
-    clock.sleep(20.0)  # 两个约束都自然过期
+    clock.sleep(20.0)  # Both constraints have naturally expired.
     gate.reset()
     assert gate.snapshot().next_allowed_at is None
     assert gate.snapshot().cooldown_until is None
@@ -1049,35 +1135,41 @@ def test_recovery_reset_clears_fully_expired_state(tmp_path):
 
 
 def test_reset_refuses_unexpired_cooldown_with_no_bypass_flag(tmp_path):
-    """未过期冷却不可被恢复操作清除，且不存在强制清除标志。"""
+    """Recovery cannot clear unexpired cooldown and exposes no force-clear flag."""
     import inspect
 
     parameters = inspect.signature(RateLimitGate.reset).parameters
-    assert list(parameters) == ["self"]  # 没有强制清除参数
+    assert list(parameters) == ["self"]  # No force-clear argument exists.
     clock = FakeClock(start=1000.0)
     gate = RateLimitGate(tmp_path / "gate.json", clock=clock)
     gate.record_cooldown(5000.0)
     with pytest.raises(RateLimitError, match="未到期"):
         gate.reset()
-    assert gate.snapshot().cooldown_until == 5000.0  # 未被静默丢弃
-    clock.sleep(4001.0)  # 冷却自然过期后清空才被允许
+    assert (
+        gate.snapshot().cooldown_until == 5000.0
+    )  # Cooldown was not silently discarded.
+    clock.sleep(
+        4001.0
+    )  # Clearing becomes permissible only after natural cooldown expiry.
     gate.reset()
     assert gate.snapshot().cooldown_until is None
 
 
 def test_reset_refuses_active_spacing(tmp_path):
-    """审核复现场景：租约后立即 reset 不得绕过生产 3 秒间隔。"""
+    """Review reproducer: reset immediately after a lease must not bypass the production
+    three-second spacing.
+    """
     clock = FakeClock(start=100.0)
     gate = RateLimitGate(tmp_path / "gate.json", clock=clock)
     with gate.transfer():
         pass  # next_allowed_at = 103
     with pytest.raises(RateLimitError, match="未到期"):
         gate.reset()
-    # 间隔内的新租约仍受 3 秒约束；自然过期后恢复可用。
+    # A new lease still respects three seconds; recovery works after natural expiry.
     with gate.transfer() as lease:
         assert lease.granted_at == 103.0
     with pytest.raises(RateLimitError):
-        gate.reset()  # 新租约又登记了 106
+        gate.reset()  # The new lease preregisters 106 again.
     clock.sleep(3.0)
     gate.reset()
     with gate.transfer() as lease:
@@ -1094,7 +1186,7 @@ def test_snapshot_defaults_when_no_file(tmp_path):
     assert not (tmp_path / "gate.json").exists()
 
 
-# ---------------------------------------------------------------- 跨进程
+# ---------------------------------------------------------------- Cross-process coordination
 
 
 MULTI_PROCESS_SCRIPT = textwrap.dedent(
@@ -1157,7 +1249,7 @@ TRANSFER_SCRIPT = textwrap.dedent(
 
 
 def test_reset_on_missing_state_normalizes_fresh(tmp_path):
-    """尚无状态文件时 reset 写入干净空状态（不涉及任何约束）。"""
+    """With no state file, reset writes clean empty state without bypassing constraints."""
     gate = RateLimitGate(tmp_path / "gate.json", clock=FakeClock(start=100.0))
     gate.reset()
     assert gate.snapshot().state_error is None
@@ -1167,11 +1259,11 @@ def test_reset_on_missing_state_normalizes_fresh(tmp_path):
 
 @pytest.mark.integration
 def test_first_creation_race_with_held_coordination_lock(tmp_path):
-    """首次创建竞态：稳定锁先于数据文件可见性。
+    """First-creation race: the stable lock precedes data-file visibility.
 
-    进程 A 持有锁文件（模拟正在初始化/写入的另一使用者）期间，进程
-    B 的完整 transfer 并发运行：B 必须阻塞等待而不是把未见数据文件
-    误判为损坏；A 释放后 B 正常获得许可并初始化状态。
+    While process A holds the lock as an initializing writer, process B runs transfer
+    concurrently. B must wait rather than classify a missing data file as corrupt. After
+    A releases, B obtains a permit and initializes state normally.
     """
     state = tmp_path / "gate.json"
     holder = subprocess.Popen(
@@ -1182,7 +1274,7 @@ def test_first_creation_race_with_held_coordination_lock(tmp_path):
     )
     try:
         assert holder.stdout is not None
-        assert holder.stdout.readline().strip() == "HELD"  # A 已持有锁
+        assert holder.stdout.readline().strip() == "HELD"  # A already owns the lock.
         import time as time_module
 
         started = time_module.monotonic()
@@ -1196,23 +1288,27 @@ def test_first_creation_race_with_held_coordination_lock(tmp_path):
         elapsed = time_module.monotonic() - started
         assert waiter.returncode == 0, waiter.stderr
         assert "GRANTED" in waiter.stdout
-        # B 确实等待了锁（而非误判损坏立即失败）。
+        # B actually waited for the lock rather than immediately misclassifying corruption.
         assert elapsed >= 1.0
     finally:
         holder_rest, holder_err = holder.communicate(timeout=120)
         assert holder.returncode == 0, holder_err
         assert "RELEASED" in holder_rest
-        if holder.poll() is None:  # pragma: no cover - 清理未退出进程
+        if (
+            holder.poll() is None
+        ):  # pragma: no cover - clean up a process that has not exited
             holder.kill()
             holder.wait(timeout=30)
-    # 状态文件完整存在（原子替换后无空文件窗口）。
+    # A complete state file exists; atomic replacement leaves no empty-file window.
     payload = json.loads(state.read_text(encoding="utf-8"))
     assert payload["version"] == 2
 
 
 @pytest.mark.integration
 def test_concurrent_first_use_two_processes_both_succeed(tmp_path):
-    """两个进程同时首次使用同一状态：都成功且许可间隔 ≥3 秒。"""
+    """Two processes first using shared state both succeed with at least three seconds
+    between permits.
+    """
     state = tmp_path / "gate.json"
     processes = [
         subprocess.Popen(
@@ -1235,10 +1331,12 @@ def test_concurrent_first_use_two_processes_both_succeed(tmp_path):
 
 @pytest.mark.integration
 def test_client_transfers_do_not_overlap_across_processes(tmp_path):
-    """两个真实进程经客户端传输（每次 >3 秒）：连接窗口不得重叠。
+    """Two real processes use client transfers lasting over three seconds; connection
+    windows must not overlap.
 
-    同时核对实际发送时刻的间距 ≥3 秒：租约覆盖整个 HTTP 交换，第二
-    个进程只有在第一个释放锁后才可能开始。
+    Verify actual send starts are at least three seconds apart. The lease covers the
+    entire HTTP exchange, so the second process cannot start before the first releases
+    the lock.
     """
     state = tmp_path / "gate.json"
     processes = [
@@ -1258,16 +1356,16 @@ def test_client_transfers_do_not_overlap_across_processes(tmp_path):
         start_text, end_text = line.split()[1:3]
         windows.append((float(start_text), float(end_text)))
     (start1, end1), (start2, _end2) = sorted(windows)
-    # 连接窗口不重叠（允许调度层面的极小 epsilon）。
+    # Connection windows do not overlap, allowing a tiny scheduling epsilon.
     assert start2 >= end1 - 0.25
-    # 实际发送时刻间距满足 3 秒下限。
+    # Actual send starts satisfy the three-second minimum.
     assert start2 - start1 >= 2.95
-    # 状态文件记录了两次预登记。
+    # The state file records both preregistrations.
     state_json = json.loads(state.read_text(encoding="utf-8"))
     assert state_json["version"] == 2
 
 
-# ---------------------------------------------------------------- 副作用与默认路径
+# ---------------------------------------------------------------- Side effects and default paths
 
 
 @pytest.mark.integration

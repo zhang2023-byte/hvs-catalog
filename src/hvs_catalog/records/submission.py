@@ -1,7 +1,8 @@
-"""按步骤裁剪的简化填写模型：提取者只填科学内容，证据就地给出。
+"""Step-specific simplified science submissions with inline evidence.
 
-可选数值字段省略后由程序补 null 或空列表；必需列表即使为空也必须显式给出。
-程序负责编号、证据记录、引用和全部运行信息，详见生成说明。
+Programs fill omitted optional values with null/empty lists; required lists stay
+explicit even if empty. Programs assign IDs/evidence/references/runtime details; see
+generated documentation.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from .source import Locator
 
 
 class SubmissionError(ValueError):
-    """填写结果不满足填写格式或与给定输入矛盾。"""
+    """Submission violates its format or contradicts supplied inputs."""
 
 
 class InlineEvidencePart(Config):
@@ -65,7 +66,7 @@ class InlineQuestion(Config):
 
 
 # ---------------------------------------------------------------------------
-# 名单提取（direct 方法）
+# Roster extraction with direct.
 # ---------------------------------------------------------------------------
 
 
@@ -167,7 +168,7 @@ class RosterSubmission(Config):
 
 
 # ---------------------------------------------------------------------------
-# 候选判断（candidate_review 的逐项判定步骤）
+# Per-candidate judgment with candidate_review.
 # ---------------------------------------------------------------------------
 
 
@@ -200,7 +201,7 @@ class CandidateSubmission(Config):
 
 
 # ---------------------------------------------------------------------------
-# 数值提取
+# Quantity extraction.
 # ---------------------------------------------------------------------------
 
 
@@ -229,7 +230,9 @@ class ErrorComponentSubmission(Config):
 
 
 class ValueSubmission(Config):
-    """按适用形式填写的数值；省略的可选字段由程序补 null 或空列表。"""
+    """Values filled in applicable forms; programs complete omitted optional fields with
+    null/empty lists.
+    """
 
     value: str | None = None
     error: str | None = None

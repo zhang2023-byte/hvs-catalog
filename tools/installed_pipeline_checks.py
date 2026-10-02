@@ -1,13 +1,11 @@
-"""安装级合成提取与评分的仓库外走查驱动与核对函数。
+"""External installed-package synthetic extraction/scoring drivers and validators.
 
-``tools/check_distribution.py`` 在仓库外全新虚拟环境安装 wheel 后调用
-本模块：驱动脚本只用安装后的包内公共入口（不注入仓库源码路径），核
-对函数把实际输出与期望逐项比较并返回问题清单，便于离线单元测试。
-
-覆盖（全部合成材料）：包来源、方法查询、3 篇合成论文 × 2 方法 × 裁决
-开/关共 12 个 CLI 用例、保存输入的重复评分一致性与计划篡改拒绝
-（退出码 2）、独立进程暂停→决定→恢复与调用日志核对，以及两组对照
-实验（歧义论文与候选论文）的隔离、专家用时未知为 null。
+check_distribution installs fresh wheels then calls these public-API-only drivers
+without repository path injection. Compare actual/expected outputs itemwise and return
+issues for offline unit tests. Cover package provenance/method queries, 12
+paper-method-review combinations, saved-input rescoring consistency, plan-tampering code
+2, fresh-process pause/decision/recovery/call logs, and ambiguity/candidate comparisons
+with isolated outputs and null expert time.
 """
 
 from __future__ import annotations
@@ -19,19 +17,18 @@ from collections.abc import Sequence
 from pathlib import Path
 from subprocess import TimeoutExpired
 
-#: 组合走查的合成论文、方法与裁决开关（与 CLI 支持集一致）。
+#: Synthetic papers/methods/review switches match CLI supported sets.
 CHECK_PAPERS = ("FIC-R05-A", "FIC-R05-B", "FIC-CANDIDATE-C")
 CHECK_METHODS = ("direct", "candidate_review")
 CHECK_ADJUDICATION = ("on", "off")
 
-#: 子进程超时（秒）：任一步骤超时按失败报告，不无限等待。
+#: Subprocess timeout in seconds; timed-out steps report failure rather than wait indefinitely.
 SUBPROCESS_TIMEOUT = 180
 
 MATERIALS_DRIVER = r'''
-"""仓库外安装包走查：材料准备共享入口的端到端合成链路。
+"""External installed preparation checks through the shared public API.
 
-只用安装后的公共入口：导入合成包、准备材料（默认转换器路径，本机缺
-工具时内部解析器兜底）、无模型消费核对。
+Import synthetic packages, prepare with default converters or internal-parser fallback when tools are unavailable, and verify consumption without models. Use installed entry points only.
 """
 
 import io
@@ -46,7 +43,7 @@ from hvs_catalog.materials.service import MaterialsService
 from hvs_catalog.pipeline.acquisition.lifecycle import AcquisitionService
 from hvs_catalog.workspace import initialize_workspace, open_workspace
 
-ROW = chr(92) + chr(92)  # LaTeX 行分隔
+ROW = chr(92) + chr(92)  # LaTeX row separator.
 MAIN_TEX = (
     "\\" + "documentclass{article}" + "\n"
     + "\\" + "newcommand{\\objname}[1]{#1}" + "\n"
@@ -116,11 +113,9 @@ if __name__ == "__main__":
 
 
 PIPELINE_DRIVER = '''
-"""仓库外安装包走查：共享提取入口的跨进程暂停、决定与恢复。
+"""External installed shared-extraction pause/decision/recovery checks.
 
-只用安装后的包内公共入口，不依赖仓库源码路径。步骤：run-to-pause
-（执行到专家裁决暂停）、decide-and-resume（提交固定模拟决定并恢复）、
-journal（核对调用日志的步骤计数）。
+Use installed public APIs without repository paths. Steps: run-to-pause for expert wait, decide-and-resume with fixed simulated decisions, and journal verification of per-step call counts.
 """
 
 import json
@@ -193,11 +188,9 @@ else:
 '''
 
 EXPERIMENT_DRIVER = '''
-"""仓库外安装包走查：裁决开关两组对照实验（歧义论文与候选论文）。
+"""External installed two-group comparisons for ambiguous and candidate papers.
 
-只用安装后的包内公共入口；模拟决定来自固定合成材料，不从 Gold、
-评分或诊断读取。断言两组执行隔离、专家次数与科学完成状态、纯 AI
-组不写专家决定、专家用时未知为 null。
+Use installed public APIs. Simulated decisions derive from fixed materials, never Gold/scoring/diagnostics. Verify group isolation, expert counts, scientific completion, no expert decisions in AI-only runs, and null unknown expert time.
 """
 
 import json
@@ -226,7 +219,9 @@ print("EXPERIMENTS-OK")
 
 
 def _clean_env() -> dict[str, str]:
-    """仓库外子进程环境：清除源码路径注入，禁用用户 site。"""
+    """External subprocess environment clears source-path injection and disables user site
+    packages.
+    """
     env = os.environ.copy()
     env.pop("PYTHONPATH", None)
     env.pop("PYTHONHOME", None)
@@ -235,7 +230,7 @@ def _clean_env() -> dict[str, str]:
 
 
 def module_origin_problems(origins: Sequence[str], venv_dir: Path) -> list[str]:
-    """核对模块来源都位于该虚拟环境的 site-packages 内。"""
+    """Verify every module originates from environment site-packages."""
     problems = []
     for origin in origins:
         path = Path(origin)
@@ -247,7 +242,9 @@ def module_origin_problems(origins: Sequence[str], venv_dir: Path) -> list[str]:
 
 
 def methods_payload_problems(payload: object) -> list[str]:
-    """核对方法查询输出：两个 synthetic-mock 方法，且都不是真实提取。"""
+    """Check method queries expose two synthetic-mock methods without real extraction
+    claims.
+    """
     if not isinstance(payload, list) or len(payload) != 2:
         return [f"方法查询应返回 2 个方法，实际：{payload!r}"]
     problems = []
@@ -269,7 +266,7 @@ def methods_payload_problems(payload: object) -> list[str]:
 
 
 def scoring_repeat_problems(first: object, second: object) -> list[str]:
-    """核对同一保存输入的两次评分报告一致（论文与摘要逐字相同）。"""
+    """Verify repeated scoring of identical saved input has identical papers/digests."""
     problems = []
     for field in ("papers", "digests", "micro"):
         if first.get(field) != second.get(field):
@@ -280,7 +277,7 @@ def scoring_repeat_problems(first: object, second: object) -> list[str]:
 def cross_process_problems(
     paused: object, resumed: object, journal: object
 ) -> list[str]:
-    """核对跨进程暂停→决定→恢复与调用日志。"""
+    """Verify cross-process pause/decision/recovery and call logs."""
     problems = []
     if paused.get("outcome") != "paused":
         problems.append(f"首进程应暂停，实际 {paused.get('outcome')!r}")
@@ -297,7 +294,7 @@ def cross_process_problems(
 
 
 def experiment_report_problems(reports: Sequence[object]) -> list[str]:
-    """核对两组对照实验报告：隔离、专家次数、科学完成与专家用时。"""
+    """Check group isolation, expert counts, scientific completion, and expert time."""
     if len(reports) != 2:
         return [f"应有两份实验报告（歧义论文与候选论文），实际 {len(reports)} 份"]
     problems = []
@@ -335,7 +332,7 @@ def experiment_report_problems(reports: Sequence[object]) -> list[str]:
 
 
 def materials_check_problems(payload: object) -> list[str]:
-    """核对材料准备走查输出：完成、正文组织、表格与无模型消费。"""
+    """Check preparation completion, body organization, tables, and model-free consumption."""
     if not isinstance(payload, dict):
         return ["材料准备走查输出不是 JSON 对象"]
     problems: list[str] = []
@@ -366,7 +363,9 @@ def materials_check_problems(payload: object) -> list[str]:
 def verify_pipeline_and_scoring(
     venv_dir: Path, work_dir: Path, script: Path
 ) -> list[str]:
-    """仓库外用安装后的包走查合成提取、评分、跨进程恢复与两组实验。"""
+    """Exercise installed synthetic extraction, scoring, cross-process recovery, and
+    comparisons externally.
+    """
     problems: list[str] = []
     bin_dir = venv_dir / ("Scripts" if os.name == "nt" else "bin")
     python = bin_dir / "python"
@@ -429,7 +428,7 @@ def verify_pipeline_and_scoring(
             return None
         return payload
 
-    # 1) 包来源：模块必须来自安装环境的 site-packages
+    # 1) Package provenance: modules must originate from installed site-packages.
     origin = run_json(
         [
             python,
@@ -447,13 +446,13 @@ def verify_pipeline_and_scoring(
         return problems
     problems.extend(module_origin_problems(origin, venv_dir))
 
-    # 2) 方法查询：两个 synthetic-mock 方法，不冒称真实提取
+    # 2) Method query: two synthetic-mock methods without real extraction claims.
     payload = run_json([script, "methods", "list", "--json"])
     if payload is None:
         return problems
     problems.extend(methods_payload_problems(payload))
 
-    # 3) 3 论文 × 2 方法 × 裁决开/关：提取 demo + 重复评分一致
+    # 3) Three papers x two methods x two review modes: extraction demo and consistent rescoring.
     bundle_path = None
     for paper in CHECK_PAPERS:
         for method in CHECK_METHODS:
@@ -517,7 +516,7 @@ def verify_pipeline_and_scoring(
     if bundle_path is None:
         problems.append("没有任何 extract demo 用例产出评分输入集")
 
-    # 4) 计划篡改：任一内容被改动后必须拒绝按旧指纹重评（退出码 2）
+    # 4) Changed plan content rejects old-fingerprint rescoring with code 2.
     if bundle_path is not None:
         tampered = read_artifact(bundle_path, "计划篡改检查", dict)
         if tampered is not None:
@@ -535,7 +534,7 @@ def verify_pipeline_and_scoring(
                         f"{rejected.stdout}{rejected.stderr}"
                     )
 
-    # 5) 独立进程暂停→决定→恢复（无源码路径注入）与调用日志核对
+    # 5) Fresh-process pause/decision/recovery without source injection, plus call-log checks.
     driver = work_dir / "installed_pipeline_check.py"
     driver.write_text(PIPELINE_DRIVER, encoding="utf-8")
     space = work_dir / "resume-space"
@@ -562,7 +561,7 @@ def verify_pipeline_and_scoring(
     else:
         problems.append(f"首进程应暂停，实际 {paused.get('outcome')!r}")
 
-    # 6) 两组对照实验：隔离、专家次数、科学完成与专家用时未知
+    # 6) Group comparisons: isolation, expert counts, science completion, and unknown expert time.
     experiment = work_dir / "installed_experiment_check.py"
     experiment.write_text(EXPERIMENT_DRIVER, encoding="utf-8")
     reports_path = work_dir / "installed-experiment-reports.json"
@@ -574,7 +573,7 @@ def verify_pipeline_and_scoring(
         if reports is not None:
             problems.extend(experiment_report_problems(reports))
 
-    # 7) 材料准备链路：合成包导入 → 准备 → 无模型消费核对
+    # 7) Preparation: synthetic import, preparation, and model-free consumption.
     materials_driver = work_dir / "installed_materials_check.py"
     materials_driver.write_text(MATERIALS_DRIVER, encoding="utf-8")
     materials_space = work_dir / "materials-work"

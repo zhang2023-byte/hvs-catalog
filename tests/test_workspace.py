@@ -1,6 +1,7 @@
-"""工作空间初始化、打开、配置与材料发布（A01、A02）。
+"""Workspace initialization/opening, configuration, and material publication (A01/A02).
 
-全部材料为合成内容。整目录初始化的真实中断与发布竞争见子进程测试。
+All materials are synthetic. Subprocess tests cover interrupted whole-directory
+initialization and publication races.
 """
 
 from __future__ import annotations
@@ -42,7 +43,9 @@ def test_repeated_initialize_reads_existing_config_without_changes(tmp_path):
     first = initialize_workspace(root, config={"keep": 1})
     space_id = first.identity.space_id
     first.close()
-    second = initialize_workspace(root, config={"keep": 2})  # 配置参数被忽略
+    second = initialize_workspace(
+        root, config={"keep": 2}
+    )  # Configuration arguments are ignored.
     assert second.identity.space_id == space_id
     assert second.read_config() == {"keep": 1}
     second.close()
@@ -51,7 +54,7 @@ def test_repeated_initialize_reads_existing_config_without_changes(tmp_path):
 def test_existing_unmanaged_files_preserved_and_reserved_conflicts_reject_all(
     tmp_path,
 ):
-    # 任意非空未知目录拒绝；用户资料保持不变
+    # Reject arbitrary nonempty unknown directories while retaining user materials.
     root = tmp_path / "ok-space"
     root.mkdir()
     (root / "user-notes.txt").write_text("用户自有资料", encoding="utf-8")
@@ -59,7 +62,7 @@ def test_existing_unmanaged_files_preserved_and_reserved_conflicts_reject_all(
         initialize_workspace(root)
     assert (root / "user-notes.txt").read_text(encoding="utf-8") == "用户自有资料"
 
-    # 预留文件名冲突：整体拒绝，已有资料逐字节保留，不留任何空间文件
+    # Reserved-name collisions reject atomically, preserve existing bytes, and leave no workspace files.
     conflict = tmp_path / "conflict-space"
     conflict.mkdir()
     (conflict / "sources").mkdir()
@@ -125,8 +128,8 @@ def test_interrupted_init_does_not_take_over_old_products(tmp_path):
     root.mkdir()
     staging = root / ".workspace-init"
     staging.mkdir()
-    # 模拟中断现场：清单记录了已发布的目录与文件（含哈希），未列出的
-    # 用户资料不动
+    # Simulate interruption: the manifest lists published directories/files and hashes; unlisted
+    # user materials remain untouched.
     (staging / "journal.json").write_text(
         json.dumps(
             {
@@ -165,7 +168,7 @@ def test_interrupted_init_refuses_unknown_same_name_files(tmp_path):
         json.dumps({"state": "active", "space_id": "probe-space", "published": []}),
         encoding="utf-8",
     )
-    # 身份不明的同名资料：清单没有记录，初始化拒绝接管
+    # Same-named content without known identity is absent from the manifest; reject initialization takeover.
     (root / "business.db").write_bytes(b"someone else's data")
     with pytest.raises(WorkspaceConflictError, match="非空"):
         initialize_workspace(root)
@@ -176,7 +179,7 @@ def test_partial_init_without_marker_is_not_complete_workspace(tmp_path):
     root = tmp_path / "space"
     root.mkdir()
     (root / "business.db").write_bytes(b"partial")
-    # 部分初始化（无完成标记）不被当作完成：打开被拒绝，初始化因冲突被拒绝
+    # Incomplete initialization without a completion marker cannot open; collisions also reject reinitialization.
     with pytest.raises(UnknownWorkspaceError):
         open_workspace(root)
     with pytest.raises(WorkspaceConflictError):

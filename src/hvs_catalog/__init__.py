@@ -1,5 +1,5 @@
-"""hvs-catalog：高速星文献提取与星表系统。
+"""hvs-catalog: high-velocity-star literature extraction and catalog tools.
 
-当前为最小工程骨架，仅提供命令行帮助与版本查询。软件版本只在
-pyproject.toml 中定义，运行时从已安装包的元数据读取。
+Define the software version only in pyproject.toml; read installed package metadata at
+runtime.
 """

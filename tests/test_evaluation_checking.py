@@ -1,4 +1,6 @@
-"""检查行为：PDF 文件与定位、证据缺口、科学待审与引文辅助核对（场景六、九、十）。"""
+"""Checking behavior: PDF files/locators, evidence gaps, pending science review, and
+auxiliary quote checks (scenarios 6, 9, 10).
+"""
 
 from __future__ import annotations
 
@@ -36,11 +38,13 @@ def test_fresh_draft_with_complete_pdf_passes(tmp_path):
     assert report.problems_of("science_pending") == []
     assert report.files[0].page_count == 3
     quotes = [q.result for q in report.quotes]
-    assert "matched" in quotes  # 引文辅助核对命中
+    assert "matched" in quotes  # Auxiliary quote check matches.
 
 
 def test_scenario_10_empty_quote_alone_is_not_an_error(tmp_path):
-    """有明确 PDF 位置但引文为空：保留位置与已知验证结果，不单独判错。"""
+    """With an explicit PDF location but no quote, retain the location and known validation
+    results without a separate error.
+    """
     material = tmp_path / "materials"
     digest = write_synthetic_pdf(material / "paper.pdf")
     draft = build_fresh_draft(pdf_sha256=digest, include_quote=False)
@@ -51,16 +55,18 @@ def test_scenario_10_empty_quote_alone_is_not_an_error(tmp_path):
 
 
 def test_scenario_10_unextractable_text_reported_not_passed(tmp_path):
-    """页面文字无法可靠提取：如实报告，不声称自动完成语义核查。"""
+    """Report unreliable page-text extraction accurately without claiming automatic
+    semantic verification.
+    """
     material = tmp_path / "materials"
-    # 构造无文本层的合成 PDF：每页无显示文本
+    # Build a synthetic PDF with no text layer or display text on any page.
     write_synthetic_pdf(material / "paper.pdf", pages=[[""], [""], [""]])
     import hashlib
 
     digest = hashlib.sha256((material / "paper.pdf").read_bytes()).hexdigest()
     draft = build_fresh_draft(pdf_sha256=digest, include_quote=True)
     report = check_gold_annotation(parse_gold_annotation(draft), material_root=material)
-    assert report.blocking_count == 0  # 引文辅助核对不是错误
+    assert report.blocking_count == 0  # Auxiliary quote checking is not an error.
     results = {q.result for q in report.quotes}
     assert "not_extractable" in results
     assert any("未自动核验" in q.note for q in report.quotes)
@@ -70,7 +76,7 @@ def test_scenario_9_pdf_replaced_hash_mismatch(tmp_path):
     material = tmp_path / "materials"
     digest = write_synthetic_pdf(material / "paper.pdf")
     draft = build_fresh_draft(pdf_sha256=digest)
-    # 保存后 PDF 被替换
+    # Replace the PDF after saving.
     write_synthetic_pdf(
         material / "paper.pdf",
         pages=[["different content"], ["x"], ["y"]],
@@ -81,7 +87,7 @@ def test_scenario_9_pdf_replaced_hash_mismatch(tmp_path):
 
 def test_scenario_9_page_ordinal_out_of_range(tmp_path):
     material = tmp_path / "materials"
-    digest = write_synthetic_pdf(material / "paper.pdf")  # 3 页
+    digest = write_synthetic_pdf(material / "paper.pdf")  # Three pages.
     draft = build_fresh_draft(pdf_sha256=digest, page=9)
     report = check_gold_annotation(parse_gold_annotation(draft), material_root=material)
     assert "page_out_of_range" in _codes(report, "material")
@@ -198,7 +204,7 @@ def test_quote_not_found_is_auxiliary_only(tmp_path):
         "this sentence does not exist"
     )
     report = check_gold_annotation(parse_gold_annotation(draft), material_root=material)
-    assert report.blocking_count == 0  # 辅助结果不阻断
+    assert report.blocking_count == 0  # Auxiliary results do not block.
     assert any(q.result == "not_found" for q in report.quotes)
 
 

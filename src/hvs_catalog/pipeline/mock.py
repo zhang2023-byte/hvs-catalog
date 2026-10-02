@@ -1,11 +1,10 @@
-"""共享提取入口的模拟材料与服务（仅 synthetic-mock 实现）。
+"""Mock shared-extraction materials/services, synthetic-mock only.
 
-材料沿用既有 synthetic 合成素材（``FIC-R05-A`` 作者判断歧义、
-``FIC-R05-B`` 含义明确），另增 ``FIC-CANDIDATE-C`` 覆盖候选方法的
-纳入/排除/未决三种处置。服
-务按固定材料快照确定性应答并记录调用与 token 用量，不产生任何货币费
-用。全部标识为虚构，不是真实论文、Gold 或正式判例；真实提取不在本
-里程碑内，未支持的论文明确报错而不是退化为空结果。
+Reuse FIC-R05-A author ambiguity and unambiguous FIC-R05-B; FIC-CANDIDATE-C covers
+included/excluded/unresolved dispositions. Fixed snapshots determine responses and
+token/call logs without currency fees. All identifiers are fictional, not real
+papers/Gold/precedents. Unsupported papers fail, never fall back to empty results; real
+extraction is outside this milestone.
 """
 
 from __future__ import annotations
@@ -28,10 +27,10 @@ PAPER_C = "FIC-CANDIDATE-C"
 
 SUPPORTED_PAPER_KEYS = (PAPER_A, PAPER_B, PAPER_C)
 
-#: 既有 synthetic 合成素材的论文标识字母（A/B 两篇历史合成论文）。
+#: Letters identifying existing synthetic papers A/B.
 BASE_LETTERS = {PAPER_A: "A", PAPER_B: "B"}
 
-#: 模拟服务的固定 token 用量（模拟调用“知道”自己的用量；不涉及费用）。
+#: Fixed known mock token usage, without monetary fees.
 STEP_TOKENS = {
     "direct_roster": 120,
     "discover_candidates": 80,
@@ -77,7 +76,7 @@ def _slug(value: str) -> str:
 
 
 def roster_record_id(paper_key: str, execution_id: str) -> str:
-    """提取输出按执行隔离编号；来源与证据是可共享的固定输入。"""
+    """Isolate output identifiers by execution while sharing fixed sources/evidence."""
     return f"roster-{_slug(paper_key)}-{execution_id}"
 
 
@@ -338,7 +337,7 @@ _MOCK_PAPERS: dict[str, dict[str, Any]] = {
 
 
 def material_spec(paper_key: str) -> dict:
-    """返回固定材料规格；未知论文明确报错，不退化为空结果。"""
+    """Return fixed material specs; reject unknown papers without empty-result fallback."""
     try:
         return _MOCK_PAPERS[paper_key]
     except KeyError:
@@ -350,17 +349,19 @@ def material_spec(paper_key: str) -> dict:
 
 
 class MaterialBindingError(ValueError):
-    """来源记录与可信登记的模拟材料绑定不一致。
+    """Source records disagree with trusted mock bindings.
 
-    成员资格（paper_key 在支持集内）不等于实际材料绑定：来源标识、
-    受支持修订、来源版本、origin 与材料文件清单/角色/指纹必须与可信
-    mock 定义全部一致。未登记的版本或内容不能使用静态应答，也不能
-    改指其他来源或修订。
+    Supported paper_key membership is insufficient. Require matching source
+    identity/revision/version/origin and file manifests/roles/fingerprints. Unregistered
+    contents/versions cannot use static responses or redirect to other
+    sources/revisions.
     """
 
 
 def registered_source_binding(paper_key: str) -> dict:
-    """从可信 mock 定义派生论文的登记来源绑定（相对路径，不依赖空间位置）。"""
+    """Derive registered bindings from trusted mock definitions with workspace-independent
+    relative paths.
+    """
 
     def _sha(data: bytes) -> str:
         import hashlib
@@ -396,15 +397,12 @@ def registered_source_binding(paper_key: str) -> dict:
 
 
 def resolve_registered_material(record) -> dict:
-    """集中核验来源记录与登记模拟材料的绑定，返回材料规格。
+    """Shared source/mock-binding verification returns material specs.
 
-    入口运行前检查、恢复与流程解析共用本入口：paper_key 成员资格、
-    来源标识、受支持修订、来源版本/origin、材料文件清单/角色/指纹与
-    影响科学可用性的元数据（文件读取状态 read_state、派生链
-    derived_from、材料缺口 source.gaps）联合核对，任一不一致即在任何
-    服务调用前拒绝；时间戳与执行写入簿记（created_at/execution_id）
-    与科学输入无关，不做机械相等比较。文件实际内容与指纹的相符由
-    既有 runtime 完整性核验保证，这里不重复读文件。
+    Entry preflight/recovery/flow jointly check paper membership, source
+    identity/supported revision/version/origin, file manifests/roles/fingerprints, and
+    read_state/derived_from/source.gaps before calls. Ignore created_at/execution_id
+    bookkeeping. Existing runtime checks actual file integrity; do not reread here.
     """
     from ..records.source import SourcePackageRecord
 
@@ -493,9 +491,11 @@ def source_ref(spec: dict) -> RecordRef:
 
 
 def import_mock_source(space: Workspace, paper_key: str) -> RecordRef:
-    """发布合成论文文件并提交来源包与证据记录（显式本地清单导入）。
+    """Publish synthetic papers and commit source/evidence records through explicit local
+    import.
 
-    固定来源与证据可跨执行复用；提取结果按执行隔离。
+    Sources/evidence may be shared across executions; extraction results remain
+    isolated.
     """
     letter = BASE_LETTERS.get(paper_key)
     if letter is not None:
@@ -578,14 +578,14 @@ def import_mock_source(space: Workspace, paper_key: str) -> RecordRef:
     return source.ref()
 
 
-# ---- 问题内容与固定测试决定 ----
+# ---- Question contents and fixed test decisions ----
 
 
 def author_assessment_question(
     paper_key: str, *, paper_id: str, source: RecordRef, rules: RulesRef
 ) -> QuestionContent:
-    """A 篇作者判断歧义的问题内容；目标指向论文贡献条目。"""
-    if paper_key != PAPER_A:  # pragma: no cover - 模拟材料只有 A 有此歧义
+    """Paper A author-ambiguity question targeting a paper contribution."""
+    if paper_key != PAPER_A:  # pragma: no cover - only mock A has this ambiguity
         raise ValueError(f"{paper_key} 没有作者判断歧义材料")
     from ..records.common import ItemRef
 
@@ -618,7 +618,7 @@ def inclusion_question(
     source: RecordRef,
     rules: RulesRef,
 ) -> QuestionContent:
-    """C 篇候选处置歧义的问题内容；目标指向名单条目。"""
+    """Paper C candidate ambiguity targeting a roster entry."""
     spec = material_spec(paper_key)
     return QuestionContent(
         category="inclusion",
@@ -642,10 +642,10 @@ def _item_ref(spec: dict, *, roster_id: str, item_id: str):
 
 
 def expert_patch_for(question_category: str, *, target, evidence: RecordRef):
-    """固定测试决定补丁：按问题类别选择补丁内容。
+    """Fixed patches selected by question category.
 
-    作者判断歧义按既有 synthetic 固定内容读为“无总体结论”；候选处置可把未决
-    条目改为收录（contribution_id 与证据随补丁给出）。
+    Established synthetic author ambiguity means no overall conclusion. Candidate
+    inclusion supplies contribution_id/evidence and admits pending entries.
     """
     from ..records.questions import DecisionPatch, PatchChange
 
@@ -690,12 +690,10 @@ def submit_expert_decision(
     request_key: str,
     choice: str,
 ):
-    """按固定测试内容提交模拟人类专家决定。
+    """Submit fixed simulated human decisions.
 
-    ``choice`` 只接受固定值：``no_overall_conclusion``（作者判断歧义，
-    resolved）、``include``（候选处置，resolved）与 ``keep_pending``
-    （unresolved，不携带补丁）。决定内容来自模拟材料，不从 Gold 或
-    评分读取。
+    Allow resolved no_overall_conclusion/include or unresolved keep_pending without
+    patches. Derive contents from mock materials, never Gold/scoring.
     """
     from ..records.questions import Actor
     from ..review import DecisionSubmission, ReviewService
@@ -756,7 +754,7 @@ def submit_expert_decision(
     )
 
 
-# ---- 模拟服务 ----
+# ---- Mock services ----
 
 
 def _respond(step: str, request: dict, material: dict) -> dict:
@@ -818,11 +816,12 @@ def _entry_responses(entries: list[dict]) -> list[dict]:
 
 
 class PipelineMockService:
-    """按固定材料快照确定性应答的模拟模型服务。
+    """Deterministic mock service responding from fixed materials.
 
-    无 journal_path 时保留进程内调用；指定时在返回响应前追加并同步
-    独立 JSON 行日志，查询包括此前进程的事实。日志须放在客户端空间
-    外，不进入业务事务或备份。旧 SQLite 账本不接受、不迁移、不追加。
+    Without journal_path retain in-process calls; otherwise append/fsync independent
+    JSON lines before response, exposing previous-process facts. Keep logs outside
+    workspace transactions/backups. Reject legacy SQLite ledgers without
+    migration/appending.
     """
 
     def __init__(self, journal_path: str | Path | None = None) -> None:
@@ -830,11 +829,11 @@ class PipelineMockService:
         self.journal_path = Path(journal_path) if journal_path is not None else None
         if self.journal_path is not None:
             if self.journal_path.exists():
-                self._read_journal()  # 写入前拒绝未知格式，不改变旧文件
+                self._read_journal()  # Reject unknown formats before writes, preserving old files.
             self.journal_path.parent.mkdir(parents=True, exist_ok=True)
 
     def close(self) -> None:
-        """服务不持有长期开启的文件或数据库。"""
+        """Keep no long-lived files or databases open."""
 
     def _read_journal(self) -> list[dict]:
         if self.journal_path is None:
@@ -889,10 +888,10 @@ class PipelineMockService:
 
 
 def mock_preflight(space: Workspace, request) -> list[str]:
-    """运行前检查：模拟实现的支持范围与来源登记绑定。
+    """Preflight mock support and source registration.
 
-    与流程/恢复共用 ``resolve_registered_material`` 同一核验入口，
-    避免不同路径采用不同材料。
+    Share resolve_registered_material with flow/recovery to avoid differing material
+    paths.
     """
     problems: list[str] = []
     if len(request.source_refs) != 1:
@@ -916,7 +915,7 @@ def mock_preflight(space: Workspace, request) -> list[str]:
 
 
 def material_snapshot_file(path: str | Path, paper_key: str) -> None:
-    """把固定材料规格写为规范 JSON（测试夹具与诊断用）。"""
+    """Write fixed specs as canonical JSON for fixtures/diagnostics."""
     Path(path).write_text(
         json.dumps(
             material_spec(paper_key), ensure_ascii=False, sort_keys=True, indent=2

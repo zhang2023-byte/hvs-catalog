@@ -1,7 +1,8 @@
-"""独立子进程验证：控制台命令与 python -m 都能查询帮助和版本。
+"""Independent subprocess verification of console and python -m help/version entry points.
 
-子进程在仓库外临时目录运行，清除 PYTHONPATH，验证当前安装环境的
-入口与实际包导入；全新 wheel 的独立安装由 tools/check_distribution.py 验证。
+Run outside the repository in temporary directories with PYTHONPATH cleared, checking
+installed entry points and actual package imports. tools/check_distribution.py verifies
+fresh wheel installation separately.
 """
 
 import json

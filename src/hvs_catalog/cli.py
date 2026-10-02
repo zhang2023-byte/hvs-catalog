@@ -1,10 +1,10 @@
-"""命令行入口，当前提供帮助、版本查询、离线持久化恢复演示、Gold
-工具、合成提取与独立评分演示，以及 arXiv 获取子系统的
-发现/获取/修订/导入与状态查询。
+"""CLI entry point for help/version, offline persistence/recovery demos, Gold tools,
+synthetic extraction and independent scoring demos, and arXiv
+discovery/fetch/revision/import/status.
 
-命令行只列出已经实现的操作；真实 direct/candidate_review 提取
-与正式评分尚未提供，演示入口不冒充这些能力。其余命令随
-对应功能交付时补充。
+List implemented operations only. Real direct/candidate_review extraction and official
+scoring are not available; demos do not claim these capabilities. Add commands when
+their corresponding features ship.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ DEMO_CHOICES = ["no_overall_conclusion", "keep_pending"]
 
 
 def get_version() -> str:
-    """返回已安装包的软件版本，版本只定义在 pyproject.toml 中。"""
+    """Return the installed package version, defined only in pyproject.toml."""
     return version("hvs-catalog")
 
 
@@ -616,7 +616,7 @@ def _run_extract_demo(args: argparse.Namespace) -> int:
             print(f"[决定] 模拟人类决定：{choice}")
             report = resume_extraction(space, handle.execution_id, service=service)
             if choice == "keep_pending":
-                break  # 答复仍未决不能循环重投同一决定
+                break  # An unresolved answer must not repeatedly resubmit the same decision.
         status = get_extraction(space, handle.execution_id)
         if report.outcome not in ("finished", "paused"):
             for error in report.errors:
@@ -729,9 +729,9 @@ def _rate(value: float | None) -> str:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)  # --help 与 --version 在解析时直接退出
+    args = parser.parse_args(argv)  # --help and --version exit directly during parsing.
     if args.command is None:
-        # 尚未实现其他顶层操作，先展示帮助
+        # Show help until another top-level operation is implemented.
         parser.print_help()
         return 0
     if args.command == "demo":

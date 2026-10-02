@@ -41,7 +41,7 @@
     },
     "GoldBoundness": {
       "additionalProperties": false,
-      "description": "作者总体状态：新词表状态待定时为 null，旧状态原样保留供核查。",
+      "description": "Overall author state: unresolved new vocabulary state is null; preserve legacy state\nverbatim for checking.",
       "properties": {
         "status": {
           "anyOf": [
@@ -84,7 +84,7 @@
     },
     "GoldConflict": {
       "additionalProperties": false,
-      "description": "未决的竞争证据；双方完整数值结构可选，缺失时由检查报告待补。",
+      "description": "Unresolved competing evidence; complete alternative value structures are optional,\nwith missing contents reported for completion.",
       "properties": {
         "conflict_id": {
           "minLength": 1,
@@ -213,7 +213,7 @@
     },
     "GoldErrorComponent": {
       "additionalProperties": false,
-      "description": "一个具名的原始误差分量；不推算总误差。\n\n误差形式与共同记录 ``ErrorComponent`` 一致：单侧非对称误差允许，\n对称与非对称不能混用，至少提供一个误差数值。",
+      "description": "One named original error component, without inferred total errors.\n\nFollow shared ErrorComponent rules: one-sided asymmetric errors are allowed,\nsymmetric/asymmetric forms cannot mix, and at least one error value is required.",
       "properties": {
         "name": {
           "minLength": 1,
@@ -274,7 +274,7 @@
     },
     "GoldEvidence": {
       "additionalProperties": false,
-      "description": "专家在固定 PDF 中看到该内容的位置。\n\n``location`` 逐字保留原位置说明（页、表、节或对象行）；``page`` 是\nPDF 文件页序号（从 1 起），与书页上印刷的页码不同，只在明确知道时\n填写，不从位置文本猜测；``quote`` 是可选引文，空字符串表示未提供。",
+      "description": "Location where an expert saw the content in the fixed PDF.\n\nPreserve location descriptions (page/table/section/object row) verbatim. page is the\none-based file page ordinal, distinct from printed page numbers; fill only when\nexplicitly known, never inferred from text. quote is optional; an empty string means\nabsent.",
       "properties": {
         "file_id": {
           "anyOf": [
@@ -320,7 +320,7 @@
     },
     "GoldExclusion": {
       "additionalProperties": false,
-      "description": "论文层面的排除记录；旧结构没有独立对象标识，作为待对应项目保留。",
+      "description": "Paper-level exclusions; missing independent object IDs in legacy structures remain\npending correspondence items.",
       "properties": {
         "exclusion_id": {
           "minLength": 1,
@@ -427,7 +427,7 @@
     },
     "GoldLegacySource": {
       "additionalProperties": false,
-      "description": "迁移来源：旧输入的原始标注信息，逐字保留，不构成新批准。",
+      "description": "Migration provenance preserves original legacy annotation metadata verbatim without\nconstituting new approval.",
       "properties": {
         "schema_name": {
           "minLength": 1,
@@ -660,7 +660,7 @@
     },
     "GoldPdfFile": {
       "additionalProperties": false,
-      "description": "一份固定 PDF 材料；哈希未核定时保持待补，不虚构。",
+      "description": "One fixed PDF material; an unverified hash stays pending rather than fabricated.",
       "properties": {
         "file_id": {
           "minLength": 1,
@@ -695,7 +695,7 @@
     },
     "GoldPendingItem": {
       "additionalProperties": false,
-      "description": "草稿显式记录的未解决事项；正式答案不得携带。",
+      "description": "Explicit unresolved draft items, forbidden in official answers.",
       "properties": {
         "item_id": {
           "minLength": 1,
@@ -770,7 +770,7 @@
     },
     "GoldProbability": {
       "additionalProperties": false,
-      "description": "显式印出的覆盖概率或分位点；换算由消费方负责，不写回记录。",
+      "description": "Explicitly printed coverage probability or quantile; consumers perform conversions\nwithout writing them back.",
       "properties": {
         "value": {
           "minLength": 1,
@@ -897,7 +897,7 @@
     },
     "GoldRulesRef": {
       "additionalProperties": false,
-      "description": "标注所依据的科学规则版本；旧规则版本不能替代。",
+      "description": "Scientific rule version used for annotation; legacy versions cannot substitute.",
       "properties": {
         "version": {
           "minLength": 1,
@@ -940,7 +940,7 @@
     },
     "GoldValue": {
       "additionalProperties": false,
-      "description": "一组科学数值的 Gold 保存形式；未提供的内容为 null，草稿允许空证据。\n\n误差形式复用共同记录 ``MeasuredValue`` 的当前规则：单侧非对称误差\n允许，总误差可与具名分量并存（各有独立依据），仅对称与非对称不能\n混用；空字符串一律用 null 表示未提供。",
+      "description": "Gold representation of scientific values; absent contents are null and drafts permit\nempty evidence.\n\nFollow shared MeasuredValue rules: allow one-sided asymmetric errors and\nindependently evidenced total/named components together, but never mix\nsymmetric/asymmetric forms. Represent empty strings as absent null values.",
       "properties": {
         "value": {
           "anyOf": [

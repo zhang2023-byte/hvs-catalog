@@ -1,9 +1,11 @@
-"""材料准备流程：固定输入下的展开、正文、表格、范围与收尾。
+"""Material-preparation flow: expansion, body, tables, ranges, and finalization under fixed
+inputs.
 
-复用 ``runtime`` 的执行／检查点／恢复机制（``DefaultFlowAdapter``），
-不自建状态机。步骤按表隔离失败：单个表转换失败记入缺口，不阻断其余
-材料。歧义编号范围在开启专家裁决时经 R05 共同接口提问并中断等待；
-决定只应用一次（运行层回执保证），未决范围不当作完整名单。
+Reuse runtime execution/checkpoint/recovery through DefaultFlowAdapter, not a separate
+state machine. Isolate failures by table so one failed conversion becomes a gap without
+blocking other materials. Ambiguous ranges ask through the shared R05 interface when
+review is enabled and pause for experts. Runtime receipts apply decisions once;
+unresolved ranges never imply complete rosters.
 """
 
 from __future__ import annotations
@@ -56,7 +58,7 @@ STEPS = (
     STEP_FINALIZE,
 )
 
-#: 决定答复可给出的"非对象编号"选项代码；其余代码来自请求候选解释。
+#: Decision code for non-object identifiers; other codes come from requested candidate interpretations.
 RANGE_OPTION_NOT_OBJECTS = "not-objects"
 
 _UNPARSED_MEDIA_SUFFIXES = (
@@ -73,7 +75,7 @@ _UNPARSED_MEDIA_SUFFIXES = (
 
 
 class MaterialsState(TypedDict, total=False):
-    """准备流程的检查点状态（纯 JSON 可序列化）。"""
+    """JSON-serializable preparation checkpoint state."""
 
     execution_id: str
     request: dict
@@ -122,12 +124,14 @@ _EXTERNAL_RESOURCE_RE = re.compile(
 
 
 def _derived_name(kind: str, digest: str, suffix: str) -> str:
-    """派生文件的确定性唯一名：内容寻址，不依赖可碰撞的扁平路径名。"""
+    """Deterministic content-addressed derived filename, avoiding collisions from flattened
+    paths.
+    """
     return f"outputs/{kind}/{digest[:16]}{suffix}"
 
 
 class MaterialsFlow(DefaultFlowAdapter):
-    """一篇论文材料的确定性准备流程；``runner`` 可注入假转换器。"""
+    """Deterministic preparation flow for one paper; runner can inject fake converters."""
 
     flow_id = FLOW_ID
     flow_version = FLOW_VERSION
@@ -147,7 +151,7 @@ class MaterialsFlow(DefaultFlowAdapter):
         if callback is not None:
             callback()
 
-    # ---- 流程定义 ----
+    # ---- Flow definition ----
 
     def initial_state(self, ctx: RuntimeContext) -> dict:
         request = self.request_payload(ctx)
@@ -202,7 +206,7 @@ class MaterialsFlow(DefaultFlowAdapter):
         builder.add_edge(previous, END)
         return builder.compile(checkpointer=ctx.checkpointer)
 
-    # ---- 通用工具 ----
+    # ---- Shared utilities ----
 
     def _step_digest(self, ctx: RuntimeContext, step_id: str, extra: dict) -> str:
         return sha256_of(
@@ -216,7 +220,7 @@ class MaterialsFlow(DefaultFlowAdapter):
     def _publish(self, ctx: RuntimeContext, rel: str, data: bytes) -> ArtifactRef:
         return ctx.space.publish_run_file(ctx.execution.execution_id, rel, data)
 
-    # ---- 步骤：展开来源包 ----
+    # ---- Step: source-package expansion ----
 
     def _expand_source(self, ctx: RuntimeContext, state: dict) -> dict:
         digest = self._step_digest(ctx, STEP_EXPAND, {"input": state["request"]})
@@ -273,9 +277,9 @@ class MaterialsFlow(DefaultFlowAdapter):
                 },
             }
             if member.decode_note:
-                # 成功编码转换（latin-1 显式派生）的说明留在元数据中，不
-                # 是不可读事实；只有解码未成功（无文本、无派生）才登记
-                # 不可读缺口（二次审核反例 latin-ready）。
+                # Keep successful explicit latin-1 derivation explanations in metadata rather than
+                # classifying them unreadable. Register unreadability only when decoding produced
+                # neither text nor a derived view (second-review latin-ready case).
                 entry["decode_note"] = member.decode_note
                 if member.text is None and member.derived_text is None:
                     gaps.append(
@@ -294,7 +298,7 @@ class MaterialsFlow(DefaultFlowAdapter):
                 )
                 entry["derived_path"] = published.path
                 entry["derived_published_sha256"] = published.sha256
-                # 标准形状引用：检查点备份据此收集文件
+                # Standard reference shape allows checkpoint backup to collect files.
                 entry["derived_ref"] = {
                     "path": published.path,
                     "sha256": published.sha256,
@@ -324,7 +328,7 @@ class MaterialsFlow(DefaultFlowAdapter):
             "package_format": expanded.package_format,
         }
 
-    # ---- 步骤：组织正文 ----
+    # ---- Step: body organization ----
 
     def _organize_body(self, ctx: RuntimeContext, state: dict) -> dict:
         digest = self._step_digest(ctx, STEP_BODY, {"members": len(state["members"])})
@@ -402,9 +406,9 @@ class MaterialsFlow(DefaultFlowAdapter):
             body["view_sha256"] = view.sha256
             body["view_ref"] = {"path": view.path, "sha256": view.sha256}
             body["edges"] = {key: list(value) for key, value in graph.edges.items()}
-        # 明确的包外数据资源提及：保留位置与提及，不下载、不推断科学含
-        # 义；影响未知，作为缺口随输入交付（初审反例：链接保留为正文但
-        # gaps 为空）。
+        # Retain explicit external-data mentions and locations without fetching or inferring science.
+        # Their impact is unknown, so deliver gaps with input; the initial-review counterexample retained
+        # links in body text while gaps stayed empty.
         for name, text in body_texts.items():
             for match in _EXTERNAL_RESOURCE_RE.finditer(text):
                 url = match.group(1)
@@ -476,7 +480,7 @@ class MaterialsFlow(DefaultFlowAdapter):
         )
         return {"body": body, "gaps": list(state["gaps"])}
 
-    # ---- 步骤：扫描表块 ----
+    # ---- Step: table-block scanning ----
 
     def _scan_tables(self, ctx: RuntimeContext, state: dict) -> dict:
         digest = self._step_digest(
@@ -539,7 +543,7 @@ class MaterialsFlow(DefaultFlowAdapter):
         )
         return {"table_blocks": blocks}
 
-    # ---- 步骤：转换表块 ----
+    # ---- Step: table-block conversion ----
 
     def _convert_tables(self, ctx: RuntimeContext, state: dict) -> dict:
         digest = self._step_digest(
@@ -578,11 +582,11 @@ class MaterialsFlow(DefaultFlowAdapter):
         for member in state["members"]:
             name = member["name"].lower()
             if name.endswith((".csv", ".ecsv")):
-                # 包内独立 CSV／ECSV 附表：接入共享读取器准备（发现 11）。
+                # Prepare standalone in-package CSV/ECSV supplements through shared readers (finding 11).
                 continue
             if member.get("text") is None and not member.get("derived_path"):
-                # 实际未解析的附带材料：不以固定后缀清单筛选，未支持格
-                # 式一律登记未处理范围与未知影响（二次审核反例 h5-gap）。
+                # Register every actually unparsed supplemental format with unprocessed scope and unknown impact,
+                # rather than filtering through a fixed suffix list (second-review h5-gap case).
                 state["gaps"].append(
                     {
                         "gap_id": f"gap-material-{len(state['gaps']) + 1:03d}",
@@ -600,8 +604,8 @@ class MaterialsFlow(DefaultFlowAdapter):
         conversions = [*conversions, *attached["tables"]]
         for gap in attached["gaps"]:
             state["gaps"].append(gap)
-        # 准备来源修订在范围状态明确后（收尾步骤）提交，全部缺口随最终
-        # 状态进入 prepared_source_ref（二次审核发现 14）。
+        # Commit the prepared source revision at finalization after range state is established;
+        # prepared_source_ref includes every final gap (second-review finding 14).
         commit_step_result(
             ctx.space,
             ctx.execution,
@@ -617,7 +621,7 @@ class MaterialsFlow(DefaultFlowAdapter):
             "gaps": list(state["gaps"]),
         }
 
-    # ---- 步骤：编号范围 ----
+    # ---- Step: identifier ranges ----
 
     def _resolve_ranges(self, ctx: RuntimeContext, state: dict) -> dict:
         request = state["request"]
@@ -706,8 +710,8 @@ class MaterialsFlow(DefaultFlowAdapter):
                     }
                 )
             if expansion.status == "unsupported":
-                # 显式登记的不支持形式同样保留缺口：来源修订与公开输入
-                # 不能只有结果没有未知影响（二次审核发现 14）。
+                # Explicitly registered unsupported forms also retain gaps; source revisions and public input
+                # must not expose results without unknown-impact information (second-review finding 14).
                 state["gaps"].append(
                     {
                         "gap_id": f"gap-range-{len(state['gaps']) + 1:03d}",
@@ -764,8 +768,8 @@ class MaterialsFlow(DefaultFlowAdapter):
                     }
                 )
             results.append(entry)
-        # 有界发现：正文中已批准的明确对象编号记法（稳定前缀＋数字区间）。
-        # 不是通用语义识别；发现结果登记实际原文位置，显式登记优先。
+        # Bounded discovery recognizes approved explicit object notation with stable prefixes and numeric ranges.
+        # This is not general semantic inference; retain actual source locations and prioritize explicit registrations.
         for item in _discover_range_notations(body_texts, exclude=registered_spans):
             notation = item["notation"]
             expansion = expand_range_notation(
@@ -934,8 +938,8 @@ class MaterialsFlow(DefaultFlowAdapter):
     ) -> ApplicationPlan | None:
         if question.data.category != "interpretation":
             return None
-        # 材料准备的决定不产生科学记录修订；应用回执由运行层写入，范围
-        # 结果在步骤重入时由已应用决定确定性重建（不从自由文本推断）。
+        # Preparation decisions create no science-record revisions. Runtime writes application receipts;
+        # step reentry deterministically rebuilds range results from applied decisions, never free-text inference.
         return ApplicationPlan(
             records=[],
             expected_revisions={},
@@ -958,7 +962,7 @@ class MaterialsFlow(DefaultFlowAdapter):
         step_id = interrupt_payload.get("step_id")
         return str(step_id) if step_id else None
 
-    # ---- 步骤：收尾 ----
+    # ---- Step: finalization ----
 
     def _finalize(self, ctx: RuntimeContext, state: dict) -> dict:
         digest = self._step_digest(
@@ -1022,7 +1026,7 @@ class _ScanGraph:
         self.files = files
 
 
-# ---- 表块转换（按表隔离失败） ----
+# ---- Table-block conversion with isolated failures ----
 
 
 def convert_all_tables(
@@ -1032,7 +1036,7 @@ def convert_all_tables(
     read_member,
     runner: ConverterRunner | None = None,
 ) -> dict:
-    """转换全部表块；按表隔离失败并产出缺口。"""
+    """Convert all table blocks, isolating failures per table and producing gaps."""
     from .document import convert_document
 
     resolved_runner = runner or SandboxedConverterRunner()
@@ -1167,11 +1171,13 @@ def _prepare_attached_tables(
     publish,
     read_member,
 ) -> dict:
-    """把包内独立 CSV／ECSV 附表接入共享读取器与准备附件（发现 11）。
+    """Prepare standalone in-package CSV/ECSV supplements through shared readers (finding
+    11).
 
-    每个成员按媒体类型／后缀用共用逻辑记录读取器读取：成功则发布为
-    附表 ECSV（保留原列名，不赋科学含义），登记为准备结果表；格式／
-    方言不能确定或读取失败时保留缺口与原文件，不把成功解码当已处理。
+    Use media types/suffixes to select logical-record readers. Successful tables publish
+    as ECSV while retaining original column names without scientific meaning.
+    Indeterminate formats/dialects or read failures preserve gaps/original files;
+    successful decoding alone is not processing.
     """
     from ..records.tabular import TabularReadError, read_table_records
     from . import convert as conversion
@@ -1183,7 +1189,7 @@ def _prepare_attached_tables(
         if not name.endswith((".csv", ".ecsv")):
             continue
         payload = read_member(member["name"])
-        if payload is None:  # pragma: no cover - 成员存在则可读
+        if payload is None:  # pragma: no cover - an existing member is readable
             continue
         record: dict = {
             "table_id": f"att-{sha256_of({'member': member['name'], 'sha256': member['sha256']})[:16]}",
@@ -1278,7 +1284,9 @@ def _prepare_attached_tables(
 
 
 def _verify_frozen_converters(state: dict, availability: dict) -> None:
-    """转换器版本与固定输入不一致时拒绝转换（改输入须新执行）。"""
+    """Reject converter-version mismatches against fixed input; changes require new
+    execution.
+    """
     frozen = state.get("request", {}).get("converters") or {}
     for tool, current in availability.items():
         recorded = frozen.get(tool) or {}
@@ -1330,10 +1338,12 @@ def _pandoc_literal_fallback(excerpt, *, block, runner, available, publish):
 
 
 def _pandoc_verdict(outcome, html_bytes: bytes, *, excerpt: str = ""):
-    """Pandoc 回退与主路径相同的联合核对：进程、表身份、结构与内容对应。
+    """Pandoc fallback shares primary-path checks for process status, table identity,
+    structure, and content correspondence.
 
-    逐行逐格核对原字符串与数值配对；不允许词集合或弱结构认证。
-    本路径只接收原件已经可以确定性读取的字面网格。
+    Verify original strings/numeric pairings cell by cell and row by row; word sets or
+    weak structure cannot certify success. Accept only deterministically readable
+    literal grids.
     """
     problems: list[str] = []
     if outcome.error:
@@ -1381,8 +1391,8 @@ def _publish_success(publish, record: dict, parsed, base: str) -> dict:
         record["error"] = "ECSV 回读核对未通过：" + "；".join(roundtrip[:5])
         return record
     published = publish(f"{base}/table.ecsv", ecsv_text.encode("utf-8"))
-    # 轻量工程映射附件：原表头层次、合并格跨度、呈现差异与输出对应
-    # （表块粒度），不伪造精细行号。
+    # Lightweight per-table engineering mapping retains header hierarchy, merged spans,
+    # presentation differences, and output correspondence without fabricated precise line numbers.
     mapping = {
         "table_id": record.get("table_id"),
         "granularity": "table-block",
@@ -1427,8 +1437,8 @@ def _publish_success(publish, record: dict, parsed, base: str) -> dict:
             "ecsv_sha256": published.sha256,
             "mapping_path": mapping_ref.path,
             "mapping_sha256": mapping_ref.sha256,
-            # backing 直读的结构化出处：实际数值来源成员与原选列
-            # （二次审核发现 10）。
+            # Structured provenance for direct backing reads: actual value-source member and selected original columns
+            # (second-review finding 10).
             "backing_member": parsed.backing_member,
             "backing_columns": list(parsed.backing_columns),
         }
@@ -1437,16 +1447,19 @@ def _publish_success(publish, record: dict, parsed, base: str) -> dict:
 
 
 def candidate_preview(candidate: dict, notation: str) -> list[str]:
-    """按候选解释对完整原记法确定性展开预览；不可应用返回空列表。"""
+    """Deterministically preview the complete original notation under a candidate
+    interpretation; return empty when inapplicable.
+    """
     return _apply_interpretation(notation, candidate) or []
 
 
 def _apply_interpretation(notation: str, candidate: dict) -> list[str] | None:
-    """把候选解释应用于**完整**原记法（不截首段）并确定性展开。
+    """Apply candidate interpretation to the entire original notation and expand
+    deterministically.
 
-    对 object_range 候选：给记法中的裸数字补候选前缀后整体展开；列表、
-    区间、前导零均按同一规则处理。不能完整确定性展开时返回 None（保持
-    未决），不输出部分成员。
+    For object_range, prefix bare numbers before whole-expression expansion; lists,
+    intervals, and leading zeros use common rules. Return None if complete deterministic
+    expansion is impossible, preserving unresolved state without partial members.
     """
     if candidate.get("kind") != "object_range":
         return None
@@ -1522,7 +1535,9 @@ class _RegistrationCheck:
 
 
 def _verify_registered_notation(body_texts: dict[str, str], item: dict, notation: str):
-    """显式登记作为补充时核验文件、行范围与记法文本与固定材料对应。"""
+    """Validate supplementary explicit registrations against fixed file, line range, and
+    notation contents.
+    """
     file = item.get("file")
     if not file:
         return _RegistrationCheck(False, "缺少出处文件")
@@ -1672,15 +1687,15 @@ def _discover_range_notations(
 def _commit_prepared_revision(
     ctx: RuntimeContext, state: dict, *, conversions: list[dict] | None = None
 ) -> RecordRef:
-    """提交准备后的来源包新修订：成员、派生文件与全部已知缺口。"""
+    """Commit prepared source revisions with members, derived files, and all known gaps."""
     store = ctx.space.store()
     source_ref = _ref(state["request"]["source_ref"])
     basis = store.read_record(source_ref)
     if basis is None:
         raise WorkspaceIntegrityError("固定来源记录缺失，不能提交准备修订")
-    # 事务重入按本执行的操作键查已保存回执，不借 current 修订猜测：同
-    # 来源的后续执行 B 先完成时，current 已属于 B，A 恢复仍应复用 A 的
-    # 回执（二次审核反例 interleave）。
+    # Transaction reentry looks up receipts by this execution's operation key, never infers from current.
+    # If later same-source B finishes before A recovers, current belongs to B, but A must still reuse
+    # its own receipt (second-review interleave case).
     operation_key = f"materials-prepare:{ctx.execution.execution_id}:revision"
     receipt = store.find_receipt(operation_key)
     if (
@@ -1692,7 +1707,7 @@ def _commit_prepared_revision(
         if saved is not None:
             return saved.ref()
     record = store.read_record_current(basis.record_id)
-    if record is None:  # pragma: no cover - basis 存在则 current 存在
+    if record is None:  # pragma: no cover - existing basis implies existing current
         record = basis
     raw_entry = next((f for f in basis.data.files if f.role == "raw_package"), None)
     files: list[SourceFile] = [raw_entry] if raw_entry is not None else []
@@ -1741,8 +1756,8 @@ def _commit_prepared_revision(
         if conversion_record.get("status") != "success":
             continue
         source_member = f"member:{conversion_record.get('file')}"
-        # backing CSV 直读的实际数值来源成员也进入派生关系（双来源，
-        # 二次审核发现 10）。
+        # Actual direct-read backing CSV members also enter derivation links as a second source
+        # (second-review finding 10).
         derived_from = list(
             dict.fromkeys(
                 [
@@ -1782,8 +1797,8 @@ def _commit_prepared_revision(
                     derived_from=derived_from,
                 )
             )
-        # 转换诊断与上下文附件接入来源修订：可消费的引用而非文件名约定
-        # （二次审核发现 10）；同一表的多份诊断按序号区分。
+        # Conversion diagnostics/context enter source revisions as consumable references, not filename conventions
+        # (second-review finding 10); sequence numbers distinguish multiple diagnostics for one table.
         for diag_index, diagnostic in enumerate(
             conversion_record.get("diagnostic_refs", [])
         ):
@@ -1855,10 +1870,12 @@ def _commit_prepared_revision(
 
 
 def build_bundle(state: dict) -> dict:
-    """组装准备输入附件（轻量工程 JSON，非独立科学业务记录）。"""
+    """Assemble lightweight engineering JSON input attachments, not separate scientific
+    business records.
+    """
     body = dict(state.get("body", {}))
     body_files = body.pop("files", None)
-    # 正文视图引用保留在公开输入中（可消费的引用，二次审核发现 10）。
+    # Public input retains consumable body-view references (second-review finding 10).
     tables = []
     for record in state.get("conversions", []):
         entry = {

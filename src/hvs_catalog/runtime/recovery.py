@@ -1,12 +1,12 @@
-"""执行恢复：固定输入核对、待应用决定、检查点一致性与继续流程。
+"""Execution recovery validates fixed inputs, pending decisions, checkpoints, and flow
+continuation.
 
-裁决恢复分三个可识别阶段：保存决定（review 负责）、应用决定与继续
-流程（本模块）。恢复顺序固定：先读取并完整核对当前执行的检查点，
-再应用待应用决定——已知不一致时保留已保存的决定、记录诊断，但不产
-生新的科学结果修订或应用回执；"业务已提交、框架落后"的合法阶段仍
-允许继续。应用前重查适用性；已存在应用回执时复用对应结果，不再次
-增加修订。完成状态须同时证明业务结果与框架到达结束节点，不能仅因
-调用返回就宣布完成。
+Review saves decisions; recovery applies and advances. Validate the complete current
+checkpoint before application. Known inconsistencies preserve decisions/diagnostics but
+create no scientific revisions/receipts. Allow legitimate
+committed-business/lagging-framework stages. Recheck applicability and reuse existing
+application receipts without repeated revisions. Completion requires both valid business
+output and terminal framework nodes, never merely a returned call.
 """
 
 from __future__ import annotations
@@ -76,10 +76,10 @@ def resume_execution(
     *,
     service: Any | None = None,
 ) -> ExecutionReport:
-    """推进一个执行：应用待应用决定并从匹配检查点继续。
+    """Advance execution by applying pending decisions and continuing matching checkpoints.
 
-    持有空间锁期间完成框架写入；暂停或完成后释放。固定输入、流程
-    与代码版本不符时报告恢复受阻，不读取当前新版替代原输入。
+    Hold locks for framework writes and release on pause/completion. Mismatched frozen
+    input/flow/code blocks recovery, never substituting current versions.
     """
     lock = space.lock()
     lock.acquire()
@@ -112,8 +112,8 @@ def _resume_locked(
 
     review = ReviewService(space)
     run = _current_run(space, execution)
-    # 先读取并核对检查点，再做任何可能产生业务结果的恢复动作：
-    # 已知不一致时不得先应用决定或生成新修订
+    # Read/validate checkpoints before recovery actions that can generate business results;
+    # known inconsistencies prohibit applying decisions or creating revisions first.
     conn = space.checkpoint_connection()
     try:
         ctx = RuntimeContext(
@@ -124,7 +124,7 @@ def _resume_locked(
         graph = flow.build_graph(ctx)
         config = {"configurable": {"thread_id": execution_id}}
         snapshot = graph.get_state(config)
-        # 本执行全部历史及状态引用共用一个准确闭包，损坏不能靠“完成”跳过。
+        # Verify execution history/state through one exact closure; completion cannot bypass corruption.
         record_problems = _execution_record_problems(
             space, execution_id, snapshot.values
         )
@@ -137,7 +137,7 @@ def _resume_locked(
             problems = flow.verify_state(ctx, dict(snapshot.values))
             problems.extend(_runtime_state_problems(space, execution, snapshot.values))
             if problems:
-                # 标记失败尽力而为：记录集合本身损坏时也必须报告不一致
+                # Failure marking is best-effort, but corrupted collections still require inconsistency reporting.
                 try:
                     append_run_revision(
                         space,
@@ -158,7 +158,7 @@ def _resume_locked(
                 )
 
         if run.data.state == "finished":
-            # 已完成执行仍核对实际终态与原完成凭据；缺失不补记。
+            # Completed runs still verify terminal state/original credentials; never fabricate missing credentials.
             problems = _verify_business_results(space, execution)
             if snapshot.created_at is None or snapshot.next != ():
                 problems.append("运行清单标记完成，但框架仍有待执行节点，未到达结束")
@@ -176,7 +176,7 @@ def _resume_locked(
             report.applied = _apply_pending_decisions(space, ctx, review)
         except RecoveryInconsistentError:
             raise
-        except Exception as exc:  # noqa: BLE001 - 任意应用故障都转为失败报告
+        except Exception as exc:  # noqa: BLE001 - all application failures become failure reports
             message = f"{type(exc).__name__}: {exc}"
             append_run_revision(
                 space,
@@ -199,7 +199,7 @@ def _resume_locked(
         mode = "resumed"
         if snapshot.created_at is None:
             mode = "fresh"
-            # 外部调用前提交恢复检查点，避免硬退出丢失尚在后台写入的进度。
+            # Commit recovery checkpoints before external calls so hard exits retain asynchronous progress.
             graph.invoke(flow.initial_state(ctx), config, durability="sync")
         elif _has_interrupt(snapshot):
             payload = _interrupt_payload(snapshot)
@@ -223,7 +223,7 @@ def _resume_locked(
                     durability="sync",
                 )
             else:
-                # 待答复、已答复仍未决或应用受阻：受影响步骤保留等待
+                # Unanswered, answered-but-unresolved, or blocked applications keep affected steps waiting.
                 _mark_waiting(space, execution, flow, payload, None)
                 report.pending_question = question
                 report.outcome = "paused"
@@ -236,7 +236,7 @@ def _resume_locked(
         end = graph.get_state(config)
     except RecoveryInconsistentError:
         raise
-    except Exception as exc:  # noqa: BLE001 - 任意节点故障都转为失败报告
+    except Exception as exc:  # noqa: BLE001 - all node failures become failure reports
         message = f"{type(exc).__name__}: {exc}"
         append_run_revision(
             space,
@@ -291,7 +291,7 @@ def _resume_locked(
         report.service_summary = _service_summary(service)
         return report
 
-    # 匹配流程确证业务完整且框架终态；最终 ID 与完成修订同事务保存。
+    # Matching flows prove business/framework completion; save final IDs and completion revisions atomically.
     final_id = final_checkpoint_id(end, execution_id)
     append_run_revision(
         space,
@@ -307,7 +307,9 @@ def _resume_locked(
 
 
 def final_checkpoint_id(snapshot: Any, execution_id: str) -> str:
-    """读取快照对应的检查点 id；作为完成凭据与最新检查点比对。"""
+    """Read snapshot checkpoint IDs and compare them with latest checkpoints as completion
+    credentials.
+    """
     checkpoint_id = (snapshot.config or {}).get("configurable", {}).get("checkpoint_id")
     if not isinstance(checkpoint_id, str) or not checkpoint_id:
         raise RecoveryInconsistentError(
@@ -328,7 +330,9 @@ def _current_run(space: Workspace, execution: ExecutionHandle) -> RunRecord:
 def _apply_pending_decisions(
     space: Workspace, ctx: RuntimeContext, review: ReviewService
 ) -> list[AppliedDecisionInfo]:
-    """应用阶段：重查适用性，受控组装新结果，一次事务提交修订与回执。"""
+    """Application rechecks applicability, builds controlled results, and atomically
+    commits revisions/receipts.
+    """
     applied: list[AppliedDecisionInfo] = []
     snapshot = ctx.execution.input_snapshot
     allowed_existing = {
@@ -356,7 +360,7 @@ def _apply_pending_decisions(
                 )
                 continue
             if record.data.outcome == "unresolved":
-                continue  # 仍未决：不应用补丁，不自动排除对象
+                continue  # Unresolved answers apply no patches and never automatically exclude objects.
             decision_binding = (record.record_id, record.revision)
             if (
                 record.execution_id != ctx.execution.execution_id
@@ -384,7 +388,9 @@ def _apply_one_decision(
     question: QuestionRecord,
     snapshot: Any,
 ) -> AppliedDecisionInfo:
-    """应用单个决定；受阻时写入 blocked 回执并保留决定与诊断。"""
+    """Apply one decision; blocked applications save blocked receipts with
+    decisions/diagnostics retained.
+    """
     flow = ctx.flow
     run = _current_run(space, ctx.execution)
 
@@ -492,7 +498,7 @@ def _mark_waiting(
         step_id=step_id,
         state="waiting_review",
         input_refs=[],
-        # 等待裁决不丢弃已归档的请求/响应尝试
+        # Review waits retain archived request/response attempts.
         attempts=list(previous.attempts) if previous is not None else [],
         result_refs=list(previous.result_refs) if previous else [],
         error_refs=[],
@@ -530,7 +536,9 @@ def _question_from_payload(review: ReviewService, payload: dict) -> Any | None:
 def _runtime_state_problems(
     space: Workspace, execution: ExecutionHandle, state: dict
 ) -> list[str]:
-    """通用检查：状态中的记录引用必须存在于本空间的业务库。"""
+    """General check: state record references must exist in this workspace's business
+    database.
+    """
     problems: list[str] = []
     for value in walk_state_refs(state):
         record = space.store().read_record(value)
@@ -570,7 +578,7 @@ def _execution_record_problems(
 
 
 def _verify_business_results(space: Workspace, execution: ExecutionHandle) -> list[str]:
-    """完成核对：步骤全部完成且声明的结果引用都能读回。"""
+    """Completion check: every step completed and every declared output can be read back."""
     problems: list[str] = []
     run = _current_run(space, execution)
     for step in run.data.steps:

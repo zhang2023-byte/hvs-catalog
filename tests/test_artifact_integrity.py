@@ -1,9 +1,11 @@
-"""归档文件与检查点内容完整性回归。
+"""Regression tests for archive and checkpoint integrity.
 
-提交核验本批引用闭包，执行恢复核验本执行历史（含请求/响应）及依赖；
-整体备份与空间恢复仍核验全部历史。按记录原哈希统一核验，检查点核对执行绑定与状态引
-用，完成状态不绕过检查。线程编号一致但内容错配时整体拒绝；恢复先
-完整核对检查点再应用决定，完成报告须同时证明业务与框架完成。
+Commits verify the current batch's reference closure. Execution recovery verifies its
+history, including requests/responses, and dependencies; full backup and restore verify
+all history. Check original hashes and checkpoint execution/state bindings even for
+completed runs. Reject matching thread identifiers with mismatched contents. Validate
+the complete checkpoint before applying decisions; completion requires both business and
+framework completion.
 """
 
 from __future__ import annotations
@@ -48,7 +50,7 @@ def _finished(space, service, *, paper="B", request_key="b"):
 
 
 def _add_attempt_with_response(space, execution, response_path, response_bytes):
-    """给运行的名单步骤追加引用 response 文件的尝试记录并提交。"""
+    """Append and commit a roster-step attempt referencing the response file."""
     from hvs_catalog.workspace import CommitRequest
 
     ref = space.publish_run_file(execution.execution_id, response_path, response_bytes)
@@ -88,14 +90,14 @@ def _add_attempt_with_response(space, execution, response_path, response_bytes):
 
 
 def test_commit_rejects_corrupt_response_reference(tmp_path, service):
-    """提交引用已损坏响应文件的运行修订被拒。"""
+    """Reject a run revision referencing a corrupted response file."""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
         ref = space.publish_run_file(
             execution.execution_id, "responses/roster.json", b'{"ok": true}'
         )
-        # 先改坏文件，再尝试提交引用它的记录
+        # Corrupt the file before committing a record referencing it.
         (space.root / ref.path).write_bytes(b'{"evidence": "corrupt"}')
         from hvs_catalog.workspace import CommitRequest
 
@@ -137,18 +139,20 @@ def test_commit_rejects_corrupt_response_reference(tmp_path, service):
 
 
 def test_post_commit_corruption_blocks_backup_and_finished_resume(tmp_path, service):
-    """提交后损坏响应文件——备份拒绝，完成恢复不跳过检查。"""
+    """Reject backup after post-commit response corruption; completed recovery still
+    verifies integrity.
+    """
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
         ref = _add_attempt_with_response(
             space, execution, "responses/roster.json", b'{"evidence": "original"}'
         )
-        # 提交成功后改坏文件内容，保持记录中的原哈希
+        # Corrupt committed file contents while retaining the record's original hash.
         (space.root / ref.path).write_bytes(b'{"evidence": "corrupt"}')
         with pytest.raises(WorkspaceIntegrityError, match="哈希与记录不符"):
             backup_workspace(space, tmp_path / "backup")
-        # 完成状态的恢复同样核验归档，不能只报告 already-finished
+        # Completed recovery also verifies archives instead of only reporting already-finished.
         with pytest.raises(RecoveryInconsistentError, match="哈希与记录不符"):
             resume_execution(
                 space, execution.execution_id, direct_flow(), service=service
@@ -158,7 +162,7 @@ def test_post_commit_corruption_blocks_backup_and_finished_resume(tmp_path, serv
 
 
 def test_missing_response_file_blocks_backup_and_resume(tmp_path, service):
-    """响应文件缺失同样拒绝备份与恢复。"""
+    """Reject backup and recovery when the response file is missing."""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
@@ -177,7 +181,7 @@ def test_missing_response_file_blocks_backup_and_resume(tmp_path, service):
 
 
 def test_symlinked_intermediate_directory_rejected(tmp_path, service):
-    """归档路径中间目录换成符号链接时拒绝。"""
+    """Reject an archive whose intermediate directory was replaced by a symlink."""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
@@ -222,7 +226,7 @@ def _tamper_checkpoint_binding(space, execution_id, new_binding):
 
 
 def test_checkpoint_content_mismatch_blocks_backup(tmp_path, service):
-    """线程编号相同但检查点绑定错配——备份拒绝。"""
+    """Reject backup when the thread identifier matches but checkpoint bindings do not."""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, flow, _ = start_execution(space, paper="A", request_key="a")
@@ -231,7 +235,7 @@ def test_checkpoint_content_mismatch_blocks_backup(tmp_path, service):
         _tamper_checkpoint_binding(space, execution.execution_id, "foreign-execution")
         with pytest.raises(WorkspaceIntegrityError, match="绑定执行 foreign-execution"):
             backup_workspace(space, tmp_path / "backup")
-        # 恢复推进也在加载检查点时发现错配并停止
+        # Recovery also detects the mismatch during checkpoint loading and stops.
         with pytest.raises(RecoveryInconsistentError, match="foreign-execution"):
             resume_execution(
                 space, execution.execution_id, direct_flow(), service=service
@@ -241,7 +245,7 @@ def test_checkpoint_content_mismatch_blocks_backup(tmp_path, service):
 
 
 def test_finished_execution_validates_checkpoint_content(tmp_path, service):
-    """完成状态不绕过检查点内容核对。"""
+    """Completed state does not bypass checkpoint content checks."""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
@@ -255,7 +259,7 @@ def test_finished_execution_validates_checkpoint_content(tmp_path, service):
 
 
 def test_finished_execution_with_missing_result_record_stops(tmp_path, service):
-    """完成记录但业务结果缺失——完成检查拒绝。"""
+    """Reject completion when the record is complete but business results are missing."""
     import sqlite3
 
     space = initialize_workspace(tmp_path / "space")
@@ -279,11 +283,13 @@ def test_finished_execution_with_missing_result_record_stops(tmp_path, service):
         space.close()
 
 
-# ---- 核对先于应用 ----
+# ---- Validate before applying ----
 
 
 def test_pending_decision_not_applied_when_checkpoint_corrupt(tmp_path, service):
-    """有待应用决定 + 坏检查点——先核对再应用，结果零变化。"""
+    """Validate before applying pending decisions; a bad checkpoint leaves results
+    unchanged.
+    """
     space = initialize_workspace(tmp_path / "space")
     try:
         execution, flow, _ = start_execution(space, paper="A", request_key="a")
@@ -302,7 +308,7 @@ def test_pending_decision_not_applied_when_checkpoint_corrupt(tmp_path, service)
             resume_execution(
                 space, execution.execution_id, direct_flow(), service=service
             )
-        # 已保存的决定保留，但目标修订与应用回执零变化
+        # Retain the saved decision while leaving target revisions and application receipts unchanged.
         review = ReviewService(space)
         view = review.get_question(question.question_ref)
         assert view.status == "answered"
@@ -313,13 +319,13 @@ def test_pending_decision_not_applied_when_checkpoint_corrupt(tmp_path, service)
         space.close()
 
 
-# ---- 完成须同时证明业务与框架完成 ----
+# ---- Completion requires both business and framework completion ----
 
 
 def _force_pending_framework_nodes(
     space, execution_id, *, paper, as_node="direct_roster"
 ):
-    """伪造绑定与引用完好、但框架仍有待执行节点的检查点。"""
+    """Forge a checkpoint with valid bindings/references but pending framework nodes."""
     from langgraph.checkpoint.sqlite import SqliteSaver
 
     from hvs_catalog.runtime import RuntimeContext
@@ -344,7 +350,7 @@ def _force_pending_framework_nodes(
 
 
 def test_pending_framework_nodes_reject_backup_and_finished_resume(tmp_path, service):
-    """框架仍有待执行节点——备份与完成报告都拒绝。"""
+    """Reject backup and completion reports while framework nodes remain pending."""
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
@@ -360,12 +366,14 @@ def test_pending_framework_nodes_reject_backup_and_finished_resume(tmp_path, ser
 
 
 def test_restore_rejects_semantically_inconsistent_backup(tmp_path, service):
-    """恢复的语义核对覆盖"完成 + 待执行节点"矛盾。"""
+    """Recovery semantic validation rejects the contradiction between completion and
+    pending nodes.
+    """
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)
         backup_workspace(space, tmp_path / "backup")
-        # 制造哈希自洽但语义矛盾的备份：换入带待执行节点的检查点并改写清单
+        # Build a hash-consistent but semantically contradictory backup by replacing the checkpoint and manifest.
         _force_pending_framework_nodes(space, execution.execution_id, paper="B")
         backup = tmp_path / "backup"
         shutil.copyfile(space.root / "checkpoint.db", backup / "checkpoint.db")
@@ -387,7 +395,9 @@ def test_restore_rejects_semantically_inconsistent_backup(tmp_path, service):
 
 
 def test_intact_space_still_backs_up_and_restores(tmp_path, service):
-    """完好空间（含归档响应与暂停检查点）仍可备份恢复。"""
+    """A valid workspace with archived responses and a paused checkpoint remains
+    recoverable through backup/restore.
+    """
     space = initialize_workspace(tmp_path / "space")
     try:
         execution = _finished(space, service)

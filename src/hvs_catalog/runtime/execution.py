@@ -1,8 +1,8 @@
-"""运行绑定：创建执行、固定输入快照、步骤结果复用与运行记录维护。
+"""Bind executions, freeze inputs, reuse step results, and maintain runs.
 
-运行输入和复用键来自完整快照及步骤实际输入；创建运行时归档规则
-原文，尚未发送的请求不伪造归档。首版步骤缓存限定在本执行内，相同
-配置的另一次执行不自动复用另一执行的中间结果。
+Reuse keys derive from full snapshots/actual step inputs. Archive rules at creation but
+never fabricate unsent request archives. Initial caches are execution-local; identical
+configurations elsewhere do not automatically reuse intermediate results.
 """
 
 from __future__ import annotations
@@ -44,9 +44,10 @@ RULES_ARCHIVE_REL = "inputs/rules.toml"
 
 
 class FlowAdapter(Protocol):
-    """调用方提供的可信流程适配器；用合成实现验证接口。
+    """Trusted caller flow adapter, verified through synthetic implementations.
 
-    只允许调用者传入的程序对象，不从记录字符串动态导入或执行代码。
+    Accept supplied program objects only; never dynamically import/execute record
+    strings.
     """
 
     flow_id: str
@@ -60,7 +61,9 @@ class FlowAdapter(Protocol):
 
 @dataclass
 class ApplicationPlan:
-    """受控的决定应用计划：新记录、预期修订与声明的输出引用。"""
+    """Controlled decision-application plan: new records, expected revisions, and output
+    references.
+    """
 
     records: list[AnyRecord]
     expected_revisions: dict[str, int]
@@ -69,11 +72,11 @@ class ApplicationPlan:
 
 
 class DefaultFlowAdapter:
-    """适配器基类：合成流程继承并按需覆盖。
+    """Base adapter for synthetic flows to extend.
 
-    ``apply_decision`` 返回 None 表示该步骤无法据此构造结果，运行层
-    记录应用受阻；``verify_state`` 返回检查点状态与业务事实的不一致
-    说明；``hook`` 是合成入口的故障注入点，不进入正常用户流程。
+    apply_decision=None means no derivable result and blocked application. verify_state
+    reports checkpoint/business inconsistencies. hook injects synthetic failures outside
+    ordinary user workflows.
     """
 
     flow_id: str = "unnamed-flow"
@@ -122,7 +125,7 @@ class ExecutionHandle:
 
 @dataclass
 class RuntimeContext:
-    """流程节点与运行层共享的执行上下文；空间锁由恢复层持有。"""
+    """Context shared by flow nodes/runtime; recovery holds workspace locks."""
 
     space: Workspace
     execution: ExecutionHandle
@@ -139,7 +142,7 @@ class RuntimeContext:
         return datetime.now(UTC)
 
     def reuse_step(self, step_id: str, input_digest: str):
-        """查找本执行已保存的步骤结果；命中时同步运行清单的步骤状态。"""
+        """Find saved execution step results and synchronize run step state on hits."""
         from .execution import find_step_result
 
         return find_step_result(self, step_id, input_digest)
@@ -165,7 +168,7 @@ class RuntimeContext:
 
 
 def current_environment() -> dict[str, Any]:
-    """读取当前安装包的代码与依赖版本；版本只在包定义中维护。"""
+    """Read installed code/dependency versions from sole package definitions."""
     code_version = metadata.version(PACKAGE_NAME)
     dependency_versions: dict[str, str] = {}
     for requirement in metadata.requires(PACKAGE_NAME) or []:
@@ -195,7 +198,7 @@ def build_input_snapshot(
     rules: RulesRef | None = None,
     options: dict[str, str] | None = None,
 ) -> InputSnapshot:
-    """按当前环境组装输入快照；规则引用默认取当前规则来源。"""
+    """Assemble current-environment snapshots, defaulting rules to the current source."""
     from ..records.rules import load_rules
 
     environment = current_environment()
@@ -239,10 +242,11 @@ def create_execution(
     input_snapshot: InputSnapshot,
     flow: FlowAdapter | DefaultFlowAdapter,
 ) -> tuple[ExecutionHandle, bool]:
-    """创建或复用执行；同请求同输入重试复用，同请求异输入拒绝。
+    """Create/reuse executions: identical request/input reuses; changed same-key input
+    rejects.
 
-    规则原文按内容归档到 ``runs/<执行>/inputs/rules.toml``；当前规则
-    与快照声明的规则不一致时拒绝创建。
+    Archive rules under runs/<execution>/inputs/rules.toml; reject mismatches between
+    current rules and snapshot declarations.
     """
     digest = snapshot_input_digest(
         input_snapshot, flow_id=flow.flow_id, flow_version=flow.flow_version
@@ -260,7 +264,7 @@ def create_execution(
             )
         with store.transaction() as tx:
             execution_id = tx.next_id("exec")
-        # 归档规则原文（发布在最终事务之前；中断至多留下未被引用的文件）
+        # Publish rule archives before the final transaction; interruption leaves at most unreferenced files.
         archive = space.publish_run_file(execution_id, RULES_ARCHIVE_REL, rules_bytes())
         if archive.sha256 != input_snapshot.rules.sha256:
             raise WorkspaceIntegrityError(
@@ -274,9 +278,11 @@ def create_execution(
             created_at=datetime.now(UTC),
         )
         with store.transaction() as tx:
-            # 最终事务内复查请求键，防止并发窗口内重复创建
+            # Recheck request keys inside final transactions to prevent duplicate concurrent creation.
             raced = tx.find_execution_by_request(request_key)
-            if raced is not None:  # pragma: no cover - 单进程锁内不会发生
+            if (
+                raced is not None
+            ):  # pragma: no cover - impossible within single-process locking
                 raise OperationKeyConflictError(f"请求键 {request_key!r} 已被并发使用")
             tx.insert_execution(
                 _execution_row(
@@ -315,7 +321,7 @@ def get_execution(space: Workspace, execution_id: str) -> ExecutionHandle:
 
 def _handle_from_row(space: Workspace, row) -> ExecutionHandle:
     run = space.store().read_record_current(row.run_record_id)
-    if not isinstance(run, RunRecord):  # pragma: no cover - 数据应一致
+    if not isinstance(run, RunRecord):  # pragma: no cover - data should be consistent
         raise WorkspaceIntegrityError(f"执行 {row.execution_id} 的运行清单缺失")
     return ExecutionHandle(
         execution_id=row.execution_id,
@@ -388,23 +394,23 @@ def commit_step_result(
     records: list[AnyRecord],
     result_refs: list[RecordRef],
 ) -> Receipt:
-    """提交步骤结果：记录、运行清单新修订、步骤缓存与回执一并提交。
+    """Commit records, new run revisions, step caches, and receipts together.
 
-    输入相同的重入直接复用已保存结果（限本执行内），不产生第二个
-    修订；步骤的操作键由执行、步骤与输入摘要派生。
+    Same-input reentry reuses saved execution-local results without second revisions.
+    Derive operation keys from execution/step/input digests.
     """
     store = space.store()
     existing = store.find_step_result(execution.execution_id, step_id, input_digest)
     if existing is not None:
         row = store.find_receipt(existing.operation_key)
-        if row is None:  # pragma: no cover - 数据应一致
+        if row is None:  # pragma: no cover - data should be consistent
             raise WorkspaceIntegrityError(
                 f"步骤结果 {step_id} 缺少保存回执：{existing.operation_key}"
             )
         _ensure_step_finished(space, execution, step_id, list(existing.result_refs))
         return row.to_receipt(replayed=True)
     run = store.read_record_current(execution.run_ref.record_id)
-    if not isinstance(run, RunRecord):  # pragma: no cover - 防御
+    if not isinstance(run, RunRecord):  # pragma: no cover - defensive check
         raise WorkspaceIntegrityError(f"执行 {execution.execution_id} 的运行清单缺失")
     updated_steps = {step.step_id: step for step in run.data.steps}
     previous = updated_steps.get(step_id)
@@ -412,7 +418,7 @@ def commit_step_result(
         step_id=step_id,
         state="finished",
         input_refs=[],
-        # 保留中断恢复期间归档的请求/响应尝试，完成状态不丢弃响应引用
+        # Retain archived interruption/recovery attempts; completed states keep response references.
         attempts=list(previous.attempts) if previous is not None else [],
         result_refs=list(result_refs),
         error_refs=[],
@@ -452,7 +458,7 @@ def commit_step_result(
 
 
 def find_step_result(ctx: RuntimeContext, step_id: str, input_digest: str):
-    """查找本执行已保存的步骤结果；命中时同步运行清单的步骤状态。"""
+    """Find saved execution step results and synchronize run step state on hits."""
     existing = ctx.store.find_step_result(
         ctx.execution.execution_id, step_id, input_digest
     )
@@ -469,10 +475,10 @@ def _ensure_step_finished(
     step_id: str,
     result_refs: list[RecordRef],
 ) -> None:
-    """重入复用已保存结果时，把运行清单中的步骤状态恢复为完成。"""
+    """Restore run step state to completed when reentry reuses saved results."""
     store = space.store()
     run = store.read_record_current(execution.run_ref.record_id)
-    if not isinstance(run, RunRecord):  # pragma: no cover - 防御
+    if not isinstance(run, RunRecord):  # pragma: no cover - defensive check
         raise WorkspaceIntegrityError(f"执行 {execution.execution_id} 的运行清单缺失")
     step = next((s for s in run.data.steps if s.step_id == step_id), None)
     if step is not None and step.state == "finished":
@@ -507,14 +513,14 @@ def append_run_revision(
     meta_updates: dict[str, str] | None = None,
     usage: Usage | None = None,
 ) -> RunRecord:
-    """为运行清单追加一个新修订；用于暂停、完成、失败与模型判断。
+    """Append run revisions for pauses/completion/failure/model judgments.
 
-    ``meta_updates`` 与修订同事务写入业务库 meta 表（完成时写入框架
-    完成凭据，避免修订与凭据分离的窗口）。
+    Write meta_updates in the same business transaction; completion credentials and
+    revisions cannot be separated by a failure window.
     """
     store = space.store()
     run = store.read_record_current(execution.run_ref.record_id)
-    if not isinstance(run, RunRecord):  # pragma: no cover - 防御
+    if not isinstance(run, RunRecord):  # pragma: no cover - defensive check
         raise WorkspaceIntegrityError(f"执行 {execution.execution_id} 的运行清单缺失")
     steps = {item.step_id: item for item in run.data.steps}
     if step is not None:
@@ -589,12 +595,14 @@ def append_run_revision(
 
 
 def _resolved_input_file(space: Workspace, rel: str) -> Path:
-    """固定输入文件按空间根逐段解析；越界或符号链接拒绝。"""
+    """Resolve fixed-input files componentwise within workspace roots, rejecting
+    escapes/symlinks.
+    """
     return resolve_within(space.root, rel)
 
 
 def verify_execution_inputs(space: Workspace, execution: ExecutionHandle) -> list[str]:
-    """核对固定输入：来源材料、规则归档与运行文件的存在与哈希。"""
+    """Verify fixed source/rule/run file existence and hashes."""
     problems: list[str] = []
     store = space.store()
     snapshot = execution.input_snapshot
@@ -672,7 +680,7 @@ def verify_execution_inputs(space: Workspace, execution: ExecutionHandle) -> lis
 def verify_flow_compatibility(
     space: Workspace, execution: ExecutionHandle, flow: Any
 ) -> list[str]:
-    """当前流程适配器与代码、依赖版本与固定输入精确核对。"""
+    """Match adapters, code, and dependency versions exactly against frozen input."""
     problems: list[str] = []
     if flow.flow_id != execution.flow_id or flow.flow_version != execution.flow_version:
         problems.append(

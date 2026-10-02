@@ -1,19 +1,16 @@
-"""arXiv 源码包的工程级有界检查与清单（Lane B，C06 的本机部分）。
+"""Bounded engineering inspection/manifests for arXiv source packages (Lane B, local C06).
 
-只做工程安全检查：识别 arXiv 源码包的官方形态——gzip 压缩 tar、
-plain tar、gzip 压缩单 TeX 文件与纯单 TeX 文件——并在**任何危险分
-配之前**施加输出上限：gzip 解压走流式有界解压（上限先于展开，超限
-即停并拒绝多成员/尾随数据），tar 处理先做**仅头部**的第一遍检查
-（成员数、路径、类型、声明尺寸与别名冲突），通过后第二遍才有界读
-取成员内容。拒绝 PDF-only/HTML 形态、越界路径（绝对路径、``..``、
-反斜杠/盘符等平台变体）、符号/硬链接与设备文件、重名或大小写别名
-冲突成员、超大成员数与解压总量（声明预检 + 实际读取双保险）。
+Recognize gzip tar, plain tar, gzip single TeX, and plain single TeX. Bound output
+before dangerous allocation: stream gzip with remaining allowances and reject
+excess/multiple members/trailing bytes. Preflight all tar headers for member
+count/path/type/declared size/alias collisions before a second bounded content-read
+pass. Reject PDF-only/HTML, escaping/platform-variant paths, symbolic/hard links,
+devices, duplicate/case-alias members, excessive counts, and declared/actual expanded
+totals.
 
-本模块不执行 TeX、不获取包外链接、不做任何正文或表格解析；
-清单中所有成员的 ``read_state`` 都是 ``unparsed``。原始字节由调用方
-（lifecycle 层）按内容寻址保留；"形态不支持"与"获取失败"是不同的
-结果，分别用 :class:`UnsupportedPackageError` 与
-:class:`PackageIntegrityError` 表达。
+Never execute TeX, fetch external links, or parse body/tables; every manifest member is
+unparsed. Callers retain original bytes content-addressably. UnsupportedPackageError
+means unsupported format, distinct from PackageIntegrityError acquisition failure.
 """
 
 from __future__ import annotations
@@ -36,13 +33,13 @@ __all__ = [
     "sniff_package_format",
 ]
 
-#: 单个源码包原始字节上限（与 Lane A 下载响应上限一致的工程护栏）。
+#: Original source-package byte limit, aligned with Lane A download-response bounds.
 MAX_PACKAGE_BYTES = 256 * 1024 * 1024
 
-#: 归档成员数量上限（工程护栏，防成员数滥用）。
+#: Archive member-count limit preventing member-count abuse.
 MAX_ARCHIVE_MEMBERS = 2000
 
-#: 全部成员解压后总字节上限（工程护栏，防解压炸弹）。
+#: Total expanded member-byte limit preventing decompression bombs.
 MAX_TOTAL_DECOMPRESSED_BYTES = 1024 * 1024 * 1024
 
 _READ_CHUNK = 1024 * 1024
@@ -51,28 +48,29 @@ _GUNZIP_CHUNK = 512 * 1024
 _GZIP_MAGIC = b"\x1f\x8b"
 _PDF_MAGIC = b"%PDF-"
 
-#: 物理头部类型：PAX 扩展（x/g）与 GNU 长名/长链（L/K）。
+#: Physical extension types: PAX x/g and GNU long-name/long-link L/K.
 _EXT_TYPEFLAGS = frozenset({b"x", b"g", b"L", b"K"})
 
 
 class UnsupportedPackageError(Exception):
-    """材料不是可识别的 LaTeX 源码包形态（如 PDF-only 或 HTML 页面）。
+    """Material is not a recognized LaTeX source package, such as PDF-only or HTML.
 
-    这是"形态不支持/材料不可用"，不是获取失败：原始字节仍可由调用
-    方保留，但不会产生可用的来源清单。
+    This is unsupported/unavailable material, not acquisition failure. Callers may
+    retain raw bytes, but no usable source manifest is produced.
     """
 
 
 class PackageIntegrityError(Exception):
-    """包内容不安全或超出工程护栏（路径越界、链接/设备、重名、超限）。
+    """Unsafe package or exceeded engineering limits: escaping paths, links/devices,
+    duplicates, or excessive size.
 
-    这是工程失败：不能把该包当作可用来源材料。
+    An engineering failure; the package cannot serve as usable source material.
     """
 
 
 @dataclass(frozen=True)
 class PackageMember:
-    """清单中一个成员的工程描述（未解析）。"""
+    """Engineering description of one unparsed manifest member."""
 
     name: str
     size: int
@@ -82,7 +80,7 @@ class PackageMember:
 
 @dataclass(frozen=True)
 class PackageInspection:
-    """一次有界检查的结果：包形态、成员清单与解压总量。"""
+    """Bounded-inspection result: format, manifest, and total expanded bytes."""
 
     format: str  # "tar_gzip" | "tar_plain" | "single_tex_gzip" | "single_tex"
     members: tuple[PackageMember, ...]
@@ -119,7 +117,7 @@ def _media_type_for(name: str) -> str:
 
 
 def _reject_single_file_form(content: bytes) -> None:
-    """对"单文件形态"的内容做形态拒绝（PDF/HTML/二进制 NUL）。"""
+    """Reject PDF/HTML/NUL binary contents presented as a single-file format."""
     head = content[:8192].lstrip(b"\xef\xbb\xbf\r\n\t ")
     lowered = head.lower()
     if lowered.startswith((b"<!doctype html", b"<html")):
@@ -133,20 +131,15 @@ def _reject_single_file_form(content: bytes) -> None:
 
 
 def bounded_gunzip(payload: bytes, output_cap: int) -> bytes:
-    """流式有界 gzip 解压：解压前就限定每次调用的最大输出额度。
+    """Stream gzip with output allowance bounded before each decompression call.
 
-    与先解压再检查不同，这里把剩余额度（``output_cap - 已产出``）作为
-    ``max_length`` 传给 :meth:`zlib.Decompress.decompress`（额度为 0 时
-    一律用 1 字节探测——zlib 的 0 表示不限量，绝不传 0），zlib 在产出
-    达到额度时立即停止并保留 ``unconsumed_tail``，因此**分配不会超
-    过上限**。边界语义：
-
-    - 输出恰等于额度而 CRC/结束标记在后续输入块时，继续以 1 字节额
-      度消费尾块输入（尾块本身不产出数据），仅在探测到**实际额外输
-      出**时才判超限——恰好等于上限的合法材料被接受；
-    - EOF 后要求输入被完整消费（``unused_data``/``unconsumed_tail``
-      为空且输入喂到尾部）：多成员与任何尾随数据一律拒绝；
-    - 输入耗尽仍未到 EOF 判截断。
+    Pass remaining output_cap to zlib.Decompress.decompress max_length. At zero
+    allowance, use a one-byte probe because zlib zero means unlimited. zlib stops at the
+    allowance and retains unconsumed_tail, bounding allocation. At an exact output
+    limit, continue one-byte probes through later CRC/end-marker chunks; reject only
+    actual extra output, allowing exact-limit materials. After EOF require fully
+    consumed input with no unused_data/unconsumed_tail or unsubmitted bytes; reject
+    multiple members/trailing data. Input exhaustion before EOF is truncation.
     """
     view = memoryview(payload)
     total = len(view)
@@ -162,7 +155,7 @@ def bounded_gunzip(payload: bytes, output_cap: int) -> bytes:
             chunk = bytes(view[pos : pos + _GUNZIP_CHUNK])
             pos += len(chunk)
         else:
-            break  # 输入耗尽仍未到 EOF：循环后按截断拒绝
+            break  # Exhausted input before EOF is rejected as truncation after the loop.
         while chunk and not decompressor.eof and budget > 0:
             piece = decompressor.decompress(chunk, max_length=budget)
             if piece:
@@ -172,9 +165,9 @@ def bounded_gunzip(payload: bytes, output_cap: int) -> bytes:
         if decompressor.eof:
             break
         if budget <= 0:
-            # 额度用尽：剩余输入里可能还有不产出数据的尾块（CRC/长
-            # 度标记）。以 1 字节额度继续消费，只有真的多解出数据才
-            # 算超限；消费完输入到达 EOF 则输出恰等于上限，接受。
+            # Exhausted allowance may leave CRC/length trailers producing no output. Continue
+            # with a one-byte probe and reject only actual extra decompressed bytes;
+            # consuming all input through EOF with exact-limit output remains valid.
             while not decompressor.eof:
                 nxt = chunk
                 if not nxt and decompressor.unconsumed_tail:
@@ -205,7 +198,9 @@ def bounded_gunzip(payload: bytes, output_cap: int) -> bytes:
 
 
 def _tar_octal_size(block: bytes) -> int:
-    """从 512 字节头部块解析八进制尺寸字段；非法抛完整性错误。"""
+    """Parse an octal size field from a 512-byte header; invalid fields raise integrity
+    errors.
+    """
     field = block[124:136].split(b"\0")[0].strip()
     if not field:
         return 0
@@ -240,21 +235,20 @@ _SUPPORTED_PAX_KEYS = frozenset(
 
 
 class TarMemberMetadataError(PackageIntegrityError):
-    """支持字段上的成员元数据无法解析（库数值/格式错误的分类表达）。
+    """Unsupported numeric/format interpretation of metadata on supported fields.
 
-    与"内容不像 tar"的结构性失败区分：这类错误如实向上传播为可观察
-    的完整性错误，绝不退化为普通文本形态（无静默回退）。
+    Unlike structural non-tar input, this propagates as an observable integrity error;
+    never silently fall back to plain text.
     """
 
 
 def _scan_pax_records_supported(payload: bytes) -> None:
-    """有界校验 PAX 扩展负载属于**明确允许的记录子集**（允许清单）。
+    """Boundedly validate PAX payloads against an explicit record allowlist.
 
-    只接受能按 ``长度 名字=值\n`` 完整切分、且每个记录名都在允许
-    清单内的记录集；任何不在清单内的字段（``size``、``GNU.sparse.*``
-    及一切未承诺字段）都会改变或触发 tarfile 的布局/稀疏解释，在进
-    入 tarfile 之前明确报告不支持。无法完整切分的负载同样报不支持
-    （不猜测 tarfile 会如何容错解释）。
+    Require complete splitting by declared length/name=value/newline records and
+    allowlisted names only. size, GNU.sparse.*, and every unsupported key may affect
+    tarfile layout/sparse interpretation, so reject as unsupported before tarfile.
+    Unsplittable payloads are likewise unsupported without guessing parser tolerance.
     """
     pos = 0
     while pos < len(payload):
@@ -288,27 +282,18 @@ def _scan_pax_records_supported(payload: bytes) -> None:
 
 
 def _tar_physical_preflight(content: bytes) -> None:
-    """物理层预检：在 tarfile 解析任何头部之前限定物理布局。
+    """Preflight physical layout before tarfile parses any header.
 
-    只按 512 字节块步行头部并读尺寸/类型字段，采用**明确支持的扩
-    展子集**策略（不仿真 tarfile 的覆盖语义）：
-
-    - 物理头部总数（含扩展头与真实成员）不得超过成员上限；
-    - 每个成员**至多一个**扩展头：连续扩展头链（多级覆盖）明确报
-      不支持，先于 tarfile 的递归处理拒绝；
-    - 局部 PAX（``x``）与 GNU 长名（``L``）支持，负载声明尺寸与
-      累计字节先受解压总量上限检查，通过后才有界读取负载；``x``
-      的记录集必须完整切分且不含 ``size`` 记录（见
-      :func:`_scan_pax_records_supported`）；
-    - 全局 PAX（``g``，覆盖跨成员继承）与 GNU 长链接（``K``）明
-      确报不支持；
-    - 由于一切尺寸覆盖变体都在预检层拒绝，成员数据块按头部声明尺
-      寸推进，与 tarfile 的实际偏移语义一致，不存在需要仿真的分
-      歧窗口。
-
-    越限抛 :class:`PackageIntegrityError`（完整性边界）；不支持的
-    特殊变体抛 :class:`UnsupportedPackageError`（能力边界，调用方
-    保留原始字节并给出可观察的“不支持”结果）。
+    Walk 512-byte blocks and inspect declared sizes/types using a supported extension
+    subset, without emulating tarfile override semantics. Bound physical headers,
+    including extensions, by the member limit. Permit at most one extension per member;
+    reject chains before recursive tarfile handling. Support local PAX x and GNU
+    long-name L only after declared/cumulative payload-size checks, with bounded reads;
+    x records require complete allowlisted parsing and no size overrides. Exclude global
+    PAX g and GNU long-link K. Rejecting every size override lets declared-size block
+    advancement match tarfile offsets without divergent emulation. Limits raise
+    PackageIntegrityError; unsupported variants raise UnsupportedPackageError, allowing
+    callers to retain bytes and report capability boundaries.
     """
     total = len(content)
     offset = 0
@@ -319,7 +304,7 @@ def _tar_physical_preflight(content: bytes) -> None:
     while offset + 512 <= total:
         block = content[offset : offset + 512]
         if block.count(0) == 512:
-            break  # 结束零块：物理扫描到此为止
+            break  # Stop physical scanning at terminal zero blocks.
         physical += 1
         saw_entry = True
         if physical > MAX_ARCHIVE_MEMBERS:
@@ -358,24 +343,23 @@ def _tar_physical_preflight(content: bytes) -> None:
                 if len(payload) < size:
                     raise PackageIntegrityError("PAX 扩展负载被截断")
                 _scan_pax_records_supported(payload)
-            # GNU ``L`` 负载是长文件名字符串，不影响后续成员的数据
-            # 布局；上限检查已在上方完成。
+            # GNU L payloads hold long filenames without changing subsequent member layout;
+            # size limits were already checked above.
             offset += 512 + ((size + 511) // 512) * 512
             continue
         chain = 0
         offset += 512 + ((size + 511) // 512) * 512
     if not saw_entry and total > 0:
-        # 没有任何非零头部块：不是可识别的 tar；由调用方按形态拒绝。
+        # No nonzero headers means no recognized tar; the caller rejects its format.
         return
 
 
 def _iter_tar_headers(archive: tarfile.TarFile, *, member_cap: int) -> int:
-    """逐项迭代 tar 头部并计数，达到上限立即停止。
+    """Iterate/count tar headers individually and stop immediately above the limit.
 
-    不用会预先收集全部成员的 ``getmembers()``：恶意归档可在被拒前
-    迫使它构造任意多 TarInfo（含扩展头读取）。这里每读到一个头部就
-    计数并在超限时立即抛错，解析工作量与上限成正比。返回成员总数
-    （含目录条目）。
+    Avoid getmembers(), which could allocate unlimited TarInfo objects and extension
+    reads before rejection. Count each parsed header and reject promptly so work scales
+    with the bound. Include directory entries in the total.
     """
     count = 0
     while True:
@@ -384,8 +368,8 @@ def _iter_tar_headers(archive: tarfile.TarFile, *, member_cap: int) -> int:
         except (tarfile.TarError, EOFError) as exc:
             raise PackageIntegrityError(f"归档头部无法解析：{exc}") from exc
         except ValueError as exc:
-            # 支持字段上的数值/格式错误（如 mtime 非法）分类为成员元数
-            # 据错误：可观察、可审计，绝不静默退化为普通文本形态。
+            # Classify malformed supported metadata, such as invalid mtime, as observable/auditable
+            # member metadata errors, never silent plain-text fallback.
             raise TarMemberMetadataError(
                 f"成员元数据字段无法解析（支持字段上的数值/格式错误）：{exc}"
             ) from exc
@@ -400,11 +384,11 @@ def _iter_tar_headers(archive: tarfile.TarFile, *, member_cap: int) -> int:
 
 
 def _looks_like_tar(content: bytes) -> bool:
-    """判断内容是否为可解析的 tar（含旧式头部变体）。
+    """Recognize parseable tar, including legacy header variants.
 
-    依赖 tarfile 的头部校验和验证：随机文本几乎不可能通过校验和。
-    逐项有界迭代头部（不预收集全部成员）；成员数超限按否处理，由后
-    续完整检查给出准确错误。
+    Rely on tarfile checksums, which random text rarely satisfies. Iterate headers
+    within bounds without collecting all members. Excess count returns false here;
+    subsequent full inspection supplies precise errors.
     """
     if len(content) >= 262 and content[257:262] == b"ustar":
         _tar_physical_preflight(content)
@@ -414,8 +398,8 @@ def _looks_like_tar(content: bytes) -> bool:
         with tarfile.open(fileobj=io.BytesIO(content), mode="r:") as archive:
             count = _iter_tar_headers(archive, member_cap=MAX_ARCHIVE_MEMBERS)
     except TarMemberMetadataError:
-        # 支持字段上的元数据错误：这是"像 tar 的内容解析失败"，必须
-        # 以分类错误向上传播（可观察），不能退化为普通文本形态。
+        # Supported-field metadata errors mean tar-like parsing failed and must propagate
+        # as classified observable errors, never plain-text fallback.
         raise
     except PackageIntegrityError:
         return False
@@ -425,12 +409,12 @@ def _looks_like_tar(content: bytes) -> bool:
 
 
 def sniff_package_format(payload: bytes) -> str:
-    """按魔数与结构识别包形态；不安全形态抛 :class:`UnsupportedPackageError`。
+    """Recognize package formats by magic/structure; unsupported unsafe formats raise
+    UnsupportedPackageError.
 
-    返回 ``"tar_gzip"``、``"tar_plain"``、``"single_tex_gzip"`` 或
-    ``"single_tex"``。gzip 先做**有界**解压（上限为全部解压总量护栏），
-    再判断内容是 tar 还是单 TeX——arXiv 对单文件源会返回 gzip 压缩的
-    单 TeX；gzip 之后的尾随数据/多成员由有界解压一并拒绝。
+    Return tar_gzip, tar_plain, single_tex_gzip, or single_tex. Bound gzip by total
+    expanded bytes before distinguishing tar from arXiv single-file TeX. Bounded
+    decompression also rejects trailing data/multiple members.
     """
     if payload.startswith(_PDF_MAGIC):
         raise UnsupportedPackageError("材料是 PDF（PDF-only 没有 LaTeX 源码包）")
@@ -447,7 +431,9 @@ def sniff_package_format(payload: bytes) -> str:
 
 
 def _check_member_name(name: str) -> None:
-    """拒绝越界与平台变体路径：绝对路径、``..``、反斜杠、盘符、空段。"""
+    """Reject escaping/platform-variant paths: absolute paths, parent components,
+    backslashes, drive letters, and empty segments.
+    """
     if not name or "\x00" in name:
         raise PackageIntegrityError(f"成员名为空或含 NUL：{name!r}")
     if name.startswith(("/", "~", "\\")):
@@ -465,7 +451,7 @@ def _check_member_name(name: str) -> None:
 
 
 def _read_member_hash(fileobj, declared_size: int) -> tuple[str, int]:
-    """有界读取一个成员：按声明尺寸分块读并累计实际读取量。"""
+    """Read members in declared-size chunks, accumulating actual bytes within bounds."""
     digest = hashlib.sha256()
     remaining = declared_size
     while remaining > 0:
@@ -478,16 +464,16 @@ def _read_member_hash(fileobj, declared_size: int) -> tuple[str, int]:
 
 
 def _inspect_tar(content: bytes, fmt: str) -> PackageInspection:
-    """逐项有界的 tar 检查：头部逐个解析并立即校验，再有界读内容。
+    """Inspect tar incrementally: parse/count/check headers immediately, then read content
+    boundedly.
 
-    不使用会预先收集全部成员的 ``getmembers()``：恶意归档可在被拒
-    前迫使它构造任意多 TarInfo（含 PAX/GNU 扩展头读取）。这里每读
-    到一个头部就先计数（超过上限立即停止），再校验路径/类型/声明
-    尺寸/别名；目录条目计入总数但不进清单；GNU sparse 成员显式拒
-    绝。全部头部通过后第二遍才有界读取成员字节。
+    Never precollect getmembers/TarInfo. Stop above the count limit, then check
+    paths/types/sizes/aliases; directories count but are omitted from manifests, and GNU
+    sparse is explicitly rejected. Only after every header passes does a second pass
+    read member bytes.
     """
     raw = io.BytesIO(content)
-    _tar_physical_preflight(content)  # 物理预检先于 tarfile 任何解析
+    _tar_physical_preflight(content)  # Physical preflight precedes any tarfile parsing.
     try:
         with tarfile.open(fileobj=raw, mode="r:") as archive:
             regular: list[tarfile.TarInfo] = []
@@ -523,7 +509,7 @@ def _inspect_tar(content: bytes, fmt: str) -> PackageInspection:
                 if info.isdev() or info.isfifo():
                     raise PackageIntegrityError(f"成员是设备或管道，拒绝：{name!r}")
                 if info.isdir():
-                    continue  # 目录条目计入总数但不进入清单
+                    continue  # Directory entries count toward limits but not manifests.
                 if not info.isfile():
                     raise PackageIntegrityError(
                         f"成员不是常规文件：{name!r}（type={info.type!r}）"
@@ -551,12 +537,14 @@ def _inspect_tar(content: bytes, fmt: str) -> PackageInspection:
                 raise PackageIntegrityError("归档中没有任何条目")
             if not regular:
                 raise PackageIntegrityError("归档中没有任何常规文件成员")
-            # 第二遍：全部头部约束通过后才有界读取成员内容。
+            # Second pass reads contents boundedly only after every header constraint passes.
             members: list[PackageMember] = []
             total_read = 0
             for info in regular:
                 fileobj = archive.extractfile(info)
-                if fileobj is None:  # pragma: no cover - isfile 已排除此情况
+                if (
+                    fileobj is None
+                ):  # pragma: no cover - isfile already excluded this case
                     raise PackageIntegrityError(f"成员无法读取：{info.name!r}")
                 digest, actual = _read_member_hash(fileobj, int(info.size))
                 total_read += actual
@@ -585,13 +573,13 @@ def _inspect_tar(content: bytes, fmt: str) -> PackageInspection:
 
 
 def inspect_package(payload: bytes) -> PackageInspection:
-    """有界检查一个源码包并构建清单；不向磁盘解压任何成员。
+    """Inspect bounded source packages and build manifests without disk extraction.
 
-    安全顺序：先护栏原始字节；gzip 解压把剩余额度作为 ``max_length``
-    传给 zlib，**分配不会超过上限**（含 EOF 后排空，截断/多成员/尾
-    随数据拒绝）；tar 头部逐项解析并立即计数校验（超过上限立即停，
-    不预收集全部成员），全部通过后第二遍才有界读取成员字节。清单
-    成员全部标记为未解析的工程字节；不做任何 TeX 语义解释。
+    Bound original bytes first. Pass remaining allowances to zlib to limit allocation,
+    handling EOF trailers and rejecting truncation/multiple members/trailing data.
+    Parse/count/check tar headers individually without precollection, stopping on
+    limits. Read contents boundedly only on a second pass after all headers pass.
+    Members remain unparsed engineering bytes with no TeX semantics.
     """
     size = len(payload)
     if size == 0:

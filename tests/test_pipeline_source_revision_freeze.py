@@ -1,10 +1,10 @@
-"""共享提取入口：来源固定修订与模拟材料身份（C05）。
+"""Shared extraction entry point: frozen source revisions and mock-material identity (C05).
 
-执行固定的是 ``InputSnapshot.source_refs`` 的完整 ``RecordRef``（准确
-修订）。来源编号后续升版（甚至内容换成另一论文）不影响已固定执行：
-初次运行、暂停恢复与新进程恢复都读取快照固定的修订并产出该论文的
-名单与数值。缺失准确修订或与登记模拟材料身份不一致时，在任何服务
-调用前拒绝；不降级读 current，不改写旧快照。
+Freeze complete RecordRef values in InputSnapshot.source_refs. Later revisions, even
+replacing a source with another paper, cannot change initial execution, paused recovery,
+or fresh-process recovery: read the exact frozen revision for roster/value outputs.
+Reject missing revisions or mismatched mock identities before service calls; never read
+current as fallback or rewrite old snapshots.
 """
 
 from __future__ import annotations
@@ -64,10 +64,11 @@ class SpyService(PipelineMockService):
 
 
 def _upgrade_source_to_other_paper(space, paper_key_from: str) -> RecordRef:
-    """给同一来源编号提交新修订：内容换成另一论文（模拟升版错配）。
+    """Commit a new revision under the same source identifier with another paper's contents
+    to simulate mismatched upgrades.
 
-    与审核复现一致：新修订的 paper_key 换成 A 并指向新发布的文件，
-    旧修订 v1 及其文件保持不变。
+    Match the review reproducer: change paper_key to A and reference newly published
+    files while keeping v1 and its files unchanged.
     """
     source_id = material_spec(paper_key_from)["source_id"]
     spec = material_spec(PAPER_A)
@@ -132,11 +133,11 @@ def _record(space, record_id):
     return record
 
 
-# ---- 审核复现：冻结来源 v1 后同 ID 升为另一论文 ----
+# ---- Review reproducer: frozen v1 source later becomes another paper under the same ID ----
 
 
 def test_frozen_b_v1_used_after_same_id_upgraded_to_a(space):
-    """初次运行也必须用快照固定的 B v1，而不是同 ID 的 A v2。"""
+    """Initial execution must use frozen B v1, not A v2 under the same identifier."""
     source = import_mock_source(space, PAPER_B)
     handle = _start(space, source, request_key="freeze-b")
     upgraded = _upgrade_source_to_other_paper(space, PAPER_B)
@@ -146,14 +147,14 @@ def test_frozen_b_v1_used_after_same_id_upgraded_to_a(space):
     service = SpyService()
     report = resume_extraction(space, handle.execution_id, service=service)
     assert report.outcome == "finished", report.errors
-    # 名单与论文都来自冻结的 FIC-R05-B，不是 A
+    # Roster and paper both come from frozen FIC-R05-B, never A.
     roster = _record(space, f"roster-fic-r05-b-{handle.execution_id}")
     assert isinstance(roster, RosterRecord)
     assert roster.data.paper_key == "FIC-R05-B"
     paper = _record(space, f"paper-fic-r05-b-{handle.execution_id}")
     assert isinstance(paper, PaperRecord)
     value = paper.data.object_contributions[0].quantities[0].values[0]
-    assert value.value == "480"  # B 的固定值，A 是 520
+    assert value.value == "480"  # B's fixed value; A has 520.
     assert (
         space.store().current_revision(f"roster-fic-r05-a-{handle.execution_id}")
         is None
@@ -162,14 +163,14 @@ def test_frozen_b_v1_used_after_same_id_upgraded_to_a(space):
         space.store().current_revision(f"paper-fic-r05-a-{handle.execution_id}") is None
     )
     assert all(item["request"]["paper_key"] == "FIC-R05-B" for item in service.requests)
-    # 执行输入摘要不变
+    # The execution input digest stays unchanged.
     assert get_extraction(space, handle.execution_id)["config"]["input_digest"] == (
         handle.input_digest
     )
 
 
 def test_frozen_c_v1_pause_resume_after_same_id_upgraded_to_a(space):
-    """暂停后恢复仍用冻结的 C v1：candidate_review 代表路径。"""
+    """Paused candidate_review recovery still uses frozen C v1."""
     source = import_mock_source(space, PAPER_C)
     handle = _start(
         space, source, request_key="freeze-c", method="candidate_review", expert=True
@@ -293,7 +294,9 @@ def _run_driver(tmp_path, *args, timeout=90.0):
 
 @pytest.mark.integration
 def test_new_process_recovery_uses_frozen_source_revision(tmp_path):
-    """新进程恢复：来源升版后仍用冻结的 C v1 完成，摘要不变。"""
+    """Fresh-process recovery completes with frozen C v1 despite source upgrades, retaining
+    the digest.
+    """
     from hvs_catalog.workspace import initialize_workspace
 
     space = initialize_workspace(tmp_path / "space")
@@ -304,7 +307,7 @@ def test_new_process_recovery_uses_frozen_source_revision(tmp_path):
     assert first["outcome"] == "paused"
     execution_id = first["execution_id"]
 
-    # 子进程退出后，同空间把来源升为另一论文的 v2
+    # After the subprocess exits, upgrade the source to another paper's v2 in the same workspace.
     space = __import__(
         "hvs_catalog.workspace", fromlist=["open_workspace"]
     ).open_workspace(tmp_path / "space")
@@ -329,7 +332,7 @@ def test_new_process_recovery_uses_frozen_source_revision(tmp_path):
         space.close()
 
 
-# ---- 错配与缺失准确修订：服务调用前拒绝 ----
+# ---- Reject mismatches and missing exact revisions before service calls ----
 
 
 def _bypass_execution(space, source_ref, *, method_spec=DIRECT_METHOD, request_key):
@@ -351,7 +354,7 @@ def _bypass_execution(space, source_ref, *, method_spec=DIRECT_METHOD, request_k
 
 
 def test_missing_exact_source_revision_rejected_before_service(space):
-    """快照指向的准确修订缺失：恢复受阻且不降级读 current，0 服务调用。"""
+    """Missing frozen revisions block recovery with zero calls and no fallback to current."""
     from hvs_catalog.workspace import RecoveryInconsistentError
 
     source = import_mock_source(space, PAPER_B)
@@ -367,16 +370,18 @@ def test_missing_exact_source_revision_rejected_before_service(space):
             service=service,
         )
     assert service.requests == []
-    # 未产出任何科学记录
+    # Produce no scientific records.
     status = get_extraction(space, handle.execution_id)
     assert status["result_refs"] == []
-    # 入口恢复同样拒绝
+    # Entry-point recovery likewise rejects.
     with pytest.raises(RecoveryInconsistentError):
         resume_extraction(space, handle.execution_id, service=SpyService())
 
 
 def test_identity_mismatch_with_registered_mock_rejected(space):
-    """准确修订存在但论文不在登记模拟材料内：服务调用前拒绝。"""
+    """An existing exact revision outside registered mock papers rejects before any service
+    call.
+    """
 
     source_id = "src-unsupported-freeze"
     file_ref = space.publish_source_file("candidate/unsupported/x.tex", b"fictional\n")
@@ -426,10 +431,12 @@ def test_identity_mismatch_with_registered_mock_rejected(space):
 
 
 def test_stale_revision_pointer_rejected_even_though_current_valid(space):
-    """快照指向旧修订号而该修订被后续修订覆盖时，不得取 current 替代。"""
+    """Never substitute current when a snapshot references an older revision superseded by
+    a later one.
+    """
     source = import_mock_source(space, PAPER_B)  # v1
     _upgrade_source_to_other_paper(space, PAPER_B)  # v2=A
-    # 构造指向 v1 的执行；修复后仍读 v1（B），与 current(v2=A) 不同
+    # Build execution referencing v1; read B v1 even when current is A v2.
     handle = _bypass_execution(space, source, request_key="stale-v1")
     service = SpyService()
     report = resume_execution(
@@ -444,11 +451,13 @@ def test_stale_revision_pointer_rejected_even_though_current_valid(space):
     assert all(item["request"]["paper_key"] == "FIC-R05-B" for item in service.requests)
 
 
-# ---- 合法不升版路径不退化 ----
+# ---- Valid sources without upgrades remain supported ----
 
 
 def test_non_source_record_at_frozen_revision_rejected(space):
-    """快照指向的准确修订不足来源包（如证据记录）：恢复受阻，0 服务调用。"""
+    """An exact revision that is not a source package, such as evidence, blocks recovery
+    without service calls.
+    """
     from hvs_catalog.workspace import RecoveryInconsistentError
 
     import_mock_source(space, PAPER_B)
@@ -467,7 +476,7 @@ def test_non_source_record_at_frozen_revision_rejected(space):
 
 
 def test_unupgraded_source_resume_unchanged(space):
-    """来源未升版：冻结执行的正常完成与复用不受影响。"""
+    """Unchanged sources retain normal frozen-execution completion and reuse."""
     source = import_mock_source(space, PAPER_B)
     handle = _start(space, source, request_key="no-upgrade")
     service = SpyService()

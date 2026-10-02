@@ -1,4 +1,4 @@
-"""共同数据记录格式：定义、转换、校验与生成说明的来源。"""
+"""Shared record definitions, conversion, validation, and generated-documentation sources."""
 
 from .common import (
     ArtifactRef,

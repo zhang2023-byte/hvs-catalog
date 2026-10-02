@@ -27,12 +27,12 @@ def test_usage_omits_unfilled_money_and_keeps_values():
     payload = fresh.model_dump(mode="json")
     assert payload == {"tokens": 5}
     assert "cost" not in payload and "currency" not in payload
-    # 显式 null（旧数据的写法）也能解析，序列化同样不输出
+    # Parse explicit null from legacy data, but omit it when serializing.
     explicit_null = Usage.model_validate(
         {"tokens": None, "cost": None, "currency": None}
     )
     assert explicit_null.model_dump(mode="json") == {"tokens": None}
-    # 历史有值字段保留并可再输出
+    # Preserve populated historical fields for serialization.
     valued = Usage.model_validate({"tokens": 3, "cost": 1.5, "currency": "USD"})
     assert valued.model_dump(mode="json") == {
         "tokens": 3,
@@ -116,7 +116,7 @@ def test_old_run_record_with_costs_still_parses():
     }
     record = parse_record(payload)
     text = record_to_json(record)
-    # 历史有值费用照常读取与输出
+    # Read and serialize populated historical costs normally.
     assert '"cost": 0.5' in text and '"currency": "USD"' in text
     assert record.data.usage.cost == 0.5
     assert record.data.steps[0].attempts[0].usage.cost == 0.5
@@ -147,6 +147,6 @@ def test_new_extraction_run_records_contain_no_money(tmp_path):
         run = space.store().read_record(runtime_handle.run_ref)
         payload = json.dumps(run.model_dump(mode="json"), ensure_ascii=False)
         assert '"cost"' not in payload and '"currency"' not in payload
-        assert '"tokens"' in payload  # 用量照常保存
+        assert '"tokens"' in payload  # Save usage normally.
     finally:
         space.close()

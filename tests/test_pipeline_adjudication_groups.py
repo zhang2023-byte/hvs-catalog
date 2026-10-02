@@ -1,9 +1,11 @@
-"""共享提取入口：裁决开关两组执行（C04，S11/E20 合成正反例）。
+"""Shared extraction entry point: expert-review enabled/disabled groups (C04, synthetic
+S11/E20 cases).
 
-同一材料/方法/模型只改开关：开启组暂停等待专家并经原 ReviewService
-恢复；关闭组不请求也不等待专家——日常保留未决，评测/合成纯 AI 组可
-保存 model_judgments 而不写 Decision。两组执行与决定互相隔离，关闭组
-不能消费开启组本轮新增决定。
+Keep material/method/model identical and vary only the switch. Enabled runs pause for
+experts and resume through ReviewService. Disabled runs never request/wait for experts:
+ordinary runs retain unresolved issues, while evaluation/synthetic AI-only runs may save
+model_judgments without Decisions. Isolate execution and decisions; disabled runs cannot
+consume newly added enabled-group decisions.
 """
 
 from __future__ import annotations
@@ -49,7 +51,7 @@ def _request(source, *, mode="daily", expert=True):
 
 
 def test_s11_two_groups_same_inputs_only_switch_differs(space, service):
-    """S11：同论文同材料/方法/模型的开关两组执行。"""
+    """S11: run both expert-review groups on identical paper, material, method, and model."""
     source = import_mock_source(space, PAPER_A)
     on = start_extraction(space, request=_request(source), request_key="s11-on")
     off = start_extraction(
@@ -62,7 +64,7 @@ def test_s11_two_groups_same_inputs_only_switch_differs(space, service):
     assert on.models == off.models
     assert on.input_digest != off.input_digest
 
-    # 开启组：暂停等待专家；模拟人类决定后恢复完成
+    # Enabled group pauses for an expert, then resumes after a simulated human decision.
     first = resume_extraction(space, on.execution_id, service=service)
     assert first.outcome == "paused"
     assert first.pending_question["status"] == "open"
@@ -79,7 +81,7 @@ def test_s11_two_groups_same_inputs_only_switch_differs(space, service):
     second = resume_extraction(space, on.execution_id, service=service)
     assert second.outcome == "finished"
     assert second.errors == []
-    # 决定是人类专家决定，应用到论文修订
+    # A human expert decision is applied to the paper revision.
     decisions = [
         record
         for record in space.store().list_records()
@@ -96,21 +98,23 @@ def test_s11_two_groups_same_inputs_only_switch_differs(space, service):
         for ref in on_status["result_refs"]
     )
 
-    # 关闭组（评测纯 AI）：不请求不等待专家，完成并保存模型判断
+    # Evaluation AI-only disabled group completes without expert requests/waits and saves model judgments.
     off_report = resume_extraction(space, off.execution_id, service=service)
     assert off_report.outcome == "finished"
     assert off_report.pending_question is None
     off_status = get_extraction(space, off.execution_id)
     assert off_report.model_judgments == 1
     assert off_status["questions"][0]["status"] == "open"
-    # 关闭组论文不被开启组决定修订，输出按执行隔离
+    # Enabled-group decisions never revise the disabled-group paper; isolate outputs by execution.
     off_paper = f"paper-fic-r05-a-{off.execution_id}"
     assert space.store().current_revision(off_paper) == 1
     assert off_paper != paper_id
 
 
 def test_off_group_cannot_consume_on_group_decisions(space, service):
-    """关闭组拒绝本轮专家决定；不把开启组决定带进关闭组运行。"""
+    """Disabled groups reject current-round expert decisions and never inherit
+    enabled-group decisions.
+    """
     source = import_mock_source(space, PAPER_A)
     on = start_extraction(space, request=_request(source), request_key="iso-on")
     resume_extraction(space, on.execution_id, service=service)
@@ -140,15 +144,17 @@ def test_off_group_cannot_consume_on_group_decisions(space, service):
             request_key="iso-off-decision",
             choice="no_overall_conclusion",
         )
-    # 关闭组固定输入不含开启组本轮新增决定
+    # Disabled fixed input excludes new enabled-group decisions from this round.
     off_status = get_extraction(space, off.execution_id)
     assert off_status["config"]["existing_decision_refs"] == []
-    # 关闭组论文保持未修订
+    # The disabled-group paper remains unrevised.
     assert space.store().current_revision(f"paper-fic-r05-a-{off.execution_id}") == 1
 
 
 def test_existing_decision_allowlist_is_frozen_and_part_of_digest(space, service):
-    """固定允许的决定集合进入快照并参与执行摘要；结构上可核对。"""
+    """Snapshot the fixed allowed-decision set and include it in the execution digest, with
+    verifiable structure.
+    """
     source = import_mock_source(space, PAPER_A)
     on = start_extraction(space, request=_request(source), request_key="allow-on")
     resume_extraction(space, on.execution_id, service=service)
@@ -188,7 +194,7 @@ def test_existing_decision_allowlist_is_frozen_and_part_of_digest(space, service
     assert status["config"]["existing_decision_refs"] == [
         receipt.decision_ref.model_dump(mode="json")
     ]
-    # 同请求同输入重试复用，不建立第二个执行
+    # Identical request/input retries reuse the execution rather than creating another.
     again = start_extraction(
         space,
         request=ExtractionRequest(
@@ -206,7 +212,9 @@ def test_existing_decision_allowlist_is_frozen_and_part_of_digest(space, service
 
 
 def test_e20_pure_ai_group_records_model_judgment_not_decision(space, service):
-    """E20：纯 AI 组尝试解释歧义，仍未决保存为模型结果。"""
+    """E20: the AI-only group attempts ambiguity explanation and saves unresolved model
+    results.
+    """
     source = import_mock_source(space, PAPER_A)
     pure_ai = start_extraction(
         space,
@@ -221,7 +229,7 @@ def test_e20_pure_ai_group_records_model_judgment_not_decision(space, service):
     assert len(judgments) == 1
     assert judgments[0]["step_id"] == "quantities"
     assert "remains unresolved" in judgments[0]["judgment"]
-    # 问题保持未决，不是专家决定
+    # The issue remains unresolved; no expert decision is created.
     assert status["questions"][0]["status"] == "open"
     decisions = [
         record
@@ -229,7 +237,7 @@ def test_e20_pure_ai_group_records_model_judgment_not_decision(space, service):
         if isinstance(record, DecisionRecord)
     ]
     assert decisions == []
-    # 作者判断保持未决（不伪造结论）
+    # Author assessment remains unresolved without fabricated conclusions.
     from hvs_catalog.records.common import RecordRef
     from hvs_catalog.records.paper import PaperRecord
 
@@ -246,7 +254,9 @@ def test_e20_pure_ai_group_records_model_judgment_not_decision(space, service):
 
 
 def test_daily_off_group_cannot_use_pure_ai_exception(space, service):
-    """日常关闭组不启用纯 AI 例外：无解释调用、无模型判断，保留未决。"""
+    """Ordinary disabled runs do not enable the AI-only exception: no explanation calls or
+    model judgments; retain unresolved issues.
+    """
     source = import_mock_source(space, PAPER_A)
     daily_off = start_extraction(
         space,
@@ -264,7 +274,7 @@ def test_daily_off_group_cannot_use_pure_ai_exception(space, service):
 
 
 def test_expert_on_group_does_not_use_pure_ai_attempt(space, service):
-    """开启组走专家等待，不做纯 AI 解释调用。"""
+    """Enabled runs wait for experts without AI-only explanation calls."""
     source = import_mock_source(space, PAPER_A)
     on = start_extraction(
         space, request=_request(source, mode="evaluation"), request_key="eval-on"

@@ -1,12 +1,13 @@
-"""评分固定样例与回归测试共用的加载与构造帮助。
+"""Shared loading and construction helpers for frozen scoring examples and regression
+tests.
 
-- 冻结样例：``tests/fixtures/scoring/inputs/`` 下按职责命名的 JSON 输入
-  与 ``expected/expected.json`` 的人工手算预期；本模块按文件内
-  ``sample_id`` 建立索引，测试不依赖文件名解析样例编号。
-- 回归构造：单对象单物理量的最小整批输入、证据片段与评分入口，
-  供评分回归测试复用，避免测试模块之间互相导入。
+Frozen inputs under ``tests/fixtures/scoring/inputs/`` use descriptive filenames, with
+manually calculated expectations in ``expected/expected.json``. Index by each file's
+``sample_id``, without inferring identifiers from filenames.
 
-全部材料虚构；预期结果不得由评分程序反算生成。
+Regression helpers provide minimal batch inputs for one object and quantity, evidence
+fragments, and scoring entry points, avoiding imports between test modules. All
+materials are fictional; never derive expectations by running the scorer.
 """
 
 from __future__ import annotations
@@ -39,7 +40,7 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures" / "scoring"
 INPUTS = FIXTURES / "inputs"
 EXPECTED = json.loads((FIXTURES / "expected" / "expected.json").read_text("utf-8"))
 
-# 输入文件按职责命名；样例编号以文件内 sample_id 为准。
+# Filenames describe input roles; sample identifiers come from sample_id inside each file.
 _BUNDLE_FILES = {
     json.loads(path.read_text("utf-8"))["sample_id"]: path
     for path in sorted(INPUTS.glob("*.json"))
@@ -66,11 +67,11 @@ def score_sample(sample_id: str):
     return score_batch(plan, gold, predictions, auxiliary=auxiliary)
 
 
-# ---- 预期结果（分数串）与报告行的比较工具 ----
+# ---- Compare expected score strings with report rows ----
 
 
 def parse_rate(value):
-    """把预期分数串（"1/3"、"0"、"1"、"NA"、null）解析为可比形式。"""
+    """Parse expected score strings (1/3, 0, 1, NA, and null) into comparable values."""
     if value is None or value == "NA":
         return None
     if "/" in value:
@@ -123,7 +124,7 @@ def check_metric(actual, expected, count_keys):
         assert getattr(actual, rate) == parse_rate(expected[rate]), rate
 
 
-# ---- 回归测试共用的合成构造（单对象单物理量） ----
+# ---- Shared synthetic regression builders: one object and quantity ----
 
 DIST = "observed_phase_space.distance"
 RV = "observed_phase_space.radial_velocity"
@@ -135,7 +136,7 @@ M1_REWRITE = "under Galactic potential M1 (same adopted model)"
 MATERIALS_NAME = "synthetic-materials"
 MATERIALS_FP = hashlib.sha256(b"synthetic-materials").hexdigest()
 
-#: 回归构造共用的虚构论文键（与固定样例的论文键互不冲突）。
+#: Fictional paper key shared by regression builders, distinct from frozen example keys.
 REGRESSION_PAPER_KEY = "synthetic-regression"
 
 
@@ -157,8 +158,9 @@ def make_fragment(fragment_id, text, supports):
 
 
 def build_single_quantity_bundle(gold_values, pred_values):
-    """单对象单物理量的最小整批输入；gold_values/pred_values 是
-    (record_id, 条件, MeasuredValue 参数, 片段列表) 元组。"""
+    """Minimal batch input for one object and quantity. gold_values/pred_values contain
+    (record_id, condition, MeasuredValue parameters, fragment list) tuples.
+    """
 
     def gold_entries():
         return [

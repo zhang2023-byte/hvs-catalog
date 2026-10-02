@@ -1,4 +1,4 @@
-"""记录读写往返、版本拒绝与专家裁决配置保存。"""
+"""Record round trips, version rejection, and saved expert-review configuration."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""虚构 A/B 输入材料与来源证据；不包含提取或恢复实现。"""
+"""Fictional A/B inputs and source evidence, without extraction/recovery implementations."""
 
 from __future__ import annotations
 

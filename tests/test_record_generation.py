@@ -1,4 +1,6 @@
-"""生成说明与共同定义一致：产物同步、内容完整、管理字段不泄露。"""
+"""Generated documentation matches shared definitions: synchronized, complete, and free of
+administrative fields.
+"""
 
 from __future__ import annotations
 
@@ -67,7 +69,7 @@ def test_submission_schemas_do_not_leak_management_fields():
     for key in ("submission.roster", "submission.candidate", "submission.quantity"):
         text = outputs[f"schemas/{key}.json"]
         schema = json.loads(text)
-        # 管理字段不出现在任何层级
+        # Administrative fields appear at no nesting level.
         for forbidden in (
             "record_id",
             "revision",
@@ -86,7 +88,7 @@ def test_format_document_covers_quantities_states_and_rules():
         assert f"`{path}`" in doc
     for state in load_rules().state_ids:
         assert f"`{state}`" in doc
-    assert doc.count("#### ") >= 40  # 各模型字段表齐全
+    assert doc.count("#### ") >= 40  # Every model's field table is complete.
     assert "Cross-record rules" in doc
 
 

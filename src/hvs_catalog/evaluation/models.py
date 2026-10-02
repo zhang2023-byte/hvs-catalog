@@ -1,11 +1,11 @@
-"""新 Gold 标注格式的有类型定义：独立标注外层加 PDF 证据结构。
+"""Typed Gold annotations with independent annotation metadata and PDF evidence.
 
-科学词表与数值表达规则复用共同规则来源和旧格式的语义（逐字保留、不
-换算、不补默认值），证据按专家审 PDF 的分工保存：固定 PDF 文件引用、
-逐字保留的位置说明、可选的文件页序号与引文。草稿（``draft``）允许缺
-少正式答案的必填信息并用 ``pending`` 条目显式记录；正式答案
-（``answer``）由检查与批准环节把关，本模型只维护结构约束。运行字段
-（执行编号、框架进度、自动提取方法）不属于本格式。
+Reuse shared scientific vocabularies and legacy numeric semantics: preserve verbatim,
+without conversions/default completion. Expert PDF evidence retains fixed file
+references, original location descriptions, and optional file page ordinals/quotes.
+draft permits missing official-answer fields with explicit pending items;
+checking/approval gates answer. Models enforce structure only. Execution IDs, framework
+progress, and automatic extraction methods do not belong here.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ GOLD_SCHEMA_NAME = "evaluation.hvs_contribution_gold"
 GOLD_SCHEMA_VERSION = 1
 
 GOLD_LIMIT_KINDS = ("none", "lower_limit", "upper_limit", "range")
-# 与共同记录 IntervalKind 词表一致（含 unspecified：原文未说明区间解释时使用）
+# Match shared IntervalKind vocabulary, including unspecified for absent interval interpretation.
 GOLD_INTERVAL_KINDS = (
     "ordinary_range",
     "prior_support",
@@ -72,7 +72,7 @@ class GoldSchemaTag(Config):
 
 
 class GoldRulesRef(Config):
-    """标注所依据的科学规则版本；旧规则版本不能替代。"""
+    """Scientific rule version used for annotation; legacy versions cannot substitute."""
 
     version: str = Field(min_length=1)
     sha256: str = Field(pattern=_SHA256_RE)
@@ -187,7 +187,7 @@ class GoldMaterialCorrespondence(Config):
 
 
 class GoldPdfFile(Config):
-    """一份固定 PDF 材料；哈希未核定时保持待补，不虚构。"""
+    """One fixed PDF material; an unverified hash stays pending rather than fabricated."""
 
     file_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
@@ -204,11 +204,12 @@ class GoldPdfFile(Config):
 
 
 class GoldEvidence(Config):
-    """专家在固定 PDF 中看到该内容的位置。
+    """Location where an expert saw the content in the fixed PDF.
 
-    ``location`` 逐字保留原位置说明（页、表、节或对象行）；``page`` 是
-    PDF 文件页序号（从 1 起），与书页上印刷的页码不同，只在明确知道时
-    填写，不从位置文本猜测；``quote`` 是可选引文，空字符串表示未提供。
+    Preserve location descriptions (page/table/section/object row) verbatim. page is the
+    one-based file page ordinal, distinct from printed page numbers; fill only when
+    explicitly known, never inferred from text. quote is optional; an empty string means
+    absent.
     """
 
     file_id: str | None = None
@@ -224,7 +225,9 @@ class GoldEvidence(Config):
 
 
 class GoldProbability(Config):
-    """显式印出的覆盖概率或分位点；换算由消费方负责，不写回记录。"""
+    """Explicitly printed coverage probability or quantile; consumers perform conversions
+    without writing them back.
+    """
 
     value: str = Field(min_length=1)
     unit: Literal["fraction", "%"]
@@ -241,10 +244,10 @@ class GoldProbability(Config):
 
 
 class GoldErrorComponent(Config):
-    """一个具名的原始误差分量；不推算总误差。
+    """One named original error component, without inferred total errors.
 
-    误差形式与共同记录 ``ErrorComponent`` 一致：单侧非对称误差允许，
-    对称与非对称不能混用，至少提供一个误差数值。
+    Follow shared ErrorComponent rules: one-sided asymmetric errors are allowed,
+    symmetric/asymmetric forms cannot mix, and at least one error value is required.
     """
 
     name: str = Field(min_length=1)
@@ -278,11 +281,12 @@ class GoldErrorComponent(Config):
 
 
 class GoldValue(Config):
-    """一组科学数值的 Gold 保存形式；未提供的内容为 null，草稿允许空证据。
+    """Gold representation of scientific values; absent contents are null and drafts permit
+    empty evidence.
 
-    误差形式复用共同记录 ``MeasuredValue`` 的当前规则：单侧非对称误差
-    允许，总误差可与具名分量并存（各有独立依据），仅对称与非对称不能
-    混用；空字符串一律用 null 表示未提供。
+    Follow shared MeasuredValue rules: allow one-sided asymmetric errors and
+    independently evidenced total/named components together, but never mix
+    symmetric/asymmetric forms. Represent empty strings as absent null values.
     """
 
     value: str | None
@@ -361,7 +365,7 @@ class GoldValue(Config):
 
             def fraction(item: GoldProbability) -> float:
                 number = parse_plain_number(item.value)
-                assert number is not None  # 已通过自身校验
+                assert number is not None  # Already passed its own validation.
                 return number / (100.0 if item.unit == "%" else 1.0)
 
             if fraction(self.lower_quantile) >= fraction(self.upper_quantile):
@@ -383,7 +387,9 @@ class GoldValue(Config):
         return sources
 
     def canonical_key(self) -> str:
-        """证据集合排序后的确定性表达键，用于重复值与冲突判断。"""
+        """Deterministic expression key with sorted evidence sets for duplicate/conflict
+        checks.
+        """
         data = self.model_dump(mode="json")
         data["evidence"] = sorted(data.get("evidence", []), key=canonical_json)
         data["context_evidence"] = sorted(
@@ -478,7 +484,9 @@ class GoldQuantityGroup(Config):
 
 
 class GoldConflict(Config):
-    """未决的竞争证据；双方完整数值结构可选，缺失时由检查报告待补。"""
+    """Unresolved competing evidence; complete alternative value structures are optional,
+    with missing contents reported for completion.
+    """
 
     conflict_id: str = Field(min_length=1)
     quantity: str = Field(min_length=1)
@@ -512,7 +520,9 @@ class GoldConflict(Config):
 
 
 class GoldExclusion(Config):
-    """论文层面的排除记录；旧结构没有独立对象标识，作为待对应项目保留。"""
+    """Paper-level exclusions; missing independent object IDs in legacy structures remain
+    pending correspondence items.
+    """
 
     exclusion_id: str = Field(min_length=1)
     reason: str = Field(min_length=1)
@@ -531,7 +541,9 @@ class GoldIdentifier(Config):
 
 
 class GoldBoundness(Config):
-    """作者总体状态：新词表状态待定时为 null，旧状态原样保留供核查。"""
+    """Overall author state: unresolved new vocabulary state is null; preserve legacy state
+    verbatim for checking.
+    """
 
     status: str | None = None
     legacy_status: str | None = None
@@ -592,7 +604,9 @@ class GoldContribution(Config):
 
 
 class GoldLegacySource(Config):
-    """迁移来源：旧输入的原始标注信息，逐字保留，不构成新批准。"""
+    """Migration provenance preserves original legacy annotation metadata verbatim without
+    constituting new approval.
+    """
 
     schema_name: str = Field(min_length=1)
     schema_version: int = Field(ge=1)
@@ -631,7 +645,7 @@ class GoldProvenance(Config):
 
 
 class GoldPendingItem(Config):
-    """草稿显式记录的未解决事项；正式答案不得携带。"""
+    """Explicit unresolved draft items, forbidden in official answers."""
 
     item_id: str = Field(min_length=1)
     category: Literal["missing_info", "science_review", "structural_gap"]
@@ -707,7 +721,7 @@ class GoldAnnotation(Config):
 
 
 def parse_gold_annotation(payload: str | dict | Path) -> GoldAnnotation:
-    """解析一份 Gold 标注文档；未知版本或未知字段明确报错。"""
+    """Parse Gold annotations, explicitly rejecting unknown versions or fields."""
     if isinstance(payload, Path):
         payload = payload.read_text(encoding="utf-8")
     if isinstance(payload, str):
@@ -740,7 +754,9 @@ def read_gold_annotation(path: str | Path) -> GoldAnnotation:
 
 
 def gold_annotation_to_json(annotation: GoldAnnotation) -> str:
-    """确定性序列化；准备与保存阶段用同一形式固定内容。"""
+    """Serialize deterministically using the same representation to freeze contents during
+    preparation and save.
+    """
     return (
         json.dumps(
             annotation.model_dump(mode="json", by_alias=True),
@@ -755,7 +771,9 @@ def gold_annotation_to_json(annotation: GoldAnnotation) -> str:
 def iter_gold_evidence(
     value: object, path: str = ""
 ) -> Iterator[tuple[str, GoldEvidence]]:
-    """遍历所有有类型的 PDF 证据；引用校验与材料检查共用此入口。"""
+    """Iterate all typed PDF evidence through the shared reference/material-check entry
+    point.
+    """
     if isinstance(value, GoldEvidence):
         yield path, value
     elif isinstance(value, Config):

@@ -1,7 +1,8 @@
-"""集成 CLI：方法查询、合成共享提取 demo 与独立评分 demo（C08）。
+"""Integrated CLI tests: method queries, shared synthetic extraction demo, and independent
+scoring demo (C08).
 
-覆盖入口帮助、成功路径、非法输入拒绝、输出保存、新进程重评与输入
-指纹变更检测；不把真实 direct/candidate_review 冒充可运行。
+Cover help, success, invalid-input rejection, saved outputs, new-process rescoring, and
+fingerprint changes. Do not claim real direct/candidate_review extraction is runnable.
 """
 
 from __future__ import annotations
@@ -36,7 +37,7 @@ def test_methods_list_shows_only_registered_implementation(capsys):
     out = capsys.readouterr().out
     assert "synthetic-mock" in out
     assert "candidate_review" in out and "direct" in out
-    # 不冒称真实提取可运行
+    # Do not claim real extraction is runnable.
     assert "仅合成模拟" in out
     assert "真实" in out
     assert main(["methods", "list", "--json"]) == 0
@@ -77,7 +78,7 @@ def test_extract_demo_runs_pauses_decides_and_saves_outputs(tmp_path, capsys):
     assert bundle_path.is_file()
     bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
     assert bundle["schema"]["name"] == "hvs.evaluation.scoring-bundle"
-    # 提取请求与评分输入分开保存：报告里没有 Gold 内容
+    # Save extraction requests separately from scoring inputs; reports contain no Gold content.
     assert "gold" not in json.dumps(report)
 
 
@@ -133,7 +134,7 @@ def _run_extract(tmp_path) -> Path:
 
 @pytest.mark.integration
 def test_score_demo_new_process_rescore_is_stable(tmp_path):
-    """新进程重评：同一输入集给出相同摘要与结果。"""
+    """A fresh process rescoring identical inputs produces identical summaries and results."""
     bundle_path = _run_extract(tmp_path)
     first = _cli(
         ["score", "demo", "--inputs", bundle_path, "--output", tmp_path / "r1.json"],
@@ -152,7 +153,9 @@ def test_score_demo_new_process_rescore_is_stable(tmp_path):
 
 
 def test_bundle_rejects_full_plan_tamper(tmp_path):
-    """输入集绑定完整计划摘要；改计划任一字段拒绝重评。"""
+    """Bind the complete plan digest to inputs; reject rescoring after any plan field
+    changes.
+    """
     from hvs_catalog.evaluation.bundle import (
         ScoringBundleError,
         load_scoring_bundle,
@@ -167,21 +170,21 @@ def test_bundle_rejects_full_plan_tamper(tmp_path):
             encoding="utf-8",
         )
 
-    # 篡改程序版本
+    # Tamper with the program version.
     tampered = json.loads(json.dumps(bundle))
     tampered["plan"]["program_ref"]["version"] = "TAMPERED"
     _rewrite(tampered)
     with pytest.raises(ScoringBundleError, match="plan"):
         load_scoring_bundle(bundle_path)
 
-    # 篡改评价范围（scope）
+    # Tamper with evaluation scope.
     tampered = json.loads(json.dumps(bundle))
     tampered["plan"]["scopes"][0]["quantity_paths"] = ["observed_phase_space.distance"]
     _rewrite(tampered)
     with pytest.raises(ScoringBundleError, match="plan"):
         load_scoring_bundle(bundle_path)
 
-    # 未篡改的原内容仍可加载（幂等往返）
+    # Untampered content still loads through an idempotent round trip.
     _rewrite(bundle)
     plan, _gold, _predictions, _auxiliary = load_scoring_bundle(bundle_path)
     assert plan.paper_keys == ["FIC-CANDIDATE-C"]
@@ -189,7 +192,9 @@ def test_bundle_rejects_full_plan_tamper(tmp_path):
 
 @pytest.mark.integration
 def test_score_demo_new_process_rejects_plan_tamper(tmp_path):
-    """新进程重评对计划篡改拒绝，不只核对 Gold/预测/辅助。"""
+    """A fresh process rejects plan tampering too, not just Gold/prediction/auxiliary
+    changes.
+    """
     bundle_path = _run_extract(tmp_path)
     bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
     bundle["plan"]["program_ref"]["version"] = "TAMPERED"
@@ -208,7 +213,9 @@ def test_score_demo_rejects_tampered_inputs(tmp_path):
     bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
     value = bundle["gold"][0]["objects"][0]["quantities"][0]["values"][0]["value"]
     value["value"] = "999"
-    value["direct_evidence"][0]["raw_fragment"] = "999"  # 保持结构自洽
+    value["direct_evidence"][0]["raw_fragment"] = (
+        "999"  # Keep the structure self-consistent.
+    )
     bundle_path.write_text(
         json.dumps(bundle, ensure_ascii=False, indent=2, sort_keys=True),
         encoding="utf-8",
@@ -219,7 +226,7 @@ def test_score_demo_rejects_tampered_inputs(tmp_path):
 
 
 def test_extract_demo_rejects_invalid_inputs(tmp_path, capsys):
-    # 未知论文：argparse 拒绝
+    # argparse rejects unknown papers.
 
     with pytest.raises(SystemExit) as caught:
         main(
@@ -236,7 +243,7 @@ def test_extract_demo_rejects_invalid_inputs(tmp_path, capsys):
         )
     assert caught.value.code == 2
     capsys.readouterr()
-    # 关闭专家组不接受 --decision
+    # The expert-disabled group rejects --decision.
     code = main(
         [
             "extract",
@@ -255,7 +262,7 @@ def test_extract_demo_rejects_invalid_inputs(tmp_path, capsys):
     )
     assert code == 2
     assert "不接受 --decision" in capsys.readouterr().err
-    # 未登记方法：argparse 限定 choices
+    # argparse choices exclude unregistered methods.
     with pytest.raises(SystemExit) as caught:
         main(
             [
@@ -275,7 +282,9 @@ def test_extract_demo_rejects_invalid_inputs(tmp_path, capsys):
 
 
 def test_extract_demo_off_group_daily_keeps_question_open(tmp_path, capsys):
-    """日常关闭组：不请求专家、不做纯 AI 解释尝试，问题保持未决。"""
+    """Ordinary expert-disabled runs request no expert and make no AI-only explanation
+    attempt; questions remain unresolved.
+    """
     code = main(
         [
             "extract",

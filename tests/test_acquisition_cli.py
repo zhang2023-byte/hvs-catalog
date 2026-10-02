@@ -1,8 +1,8 @@
-"""acquisition CLI 子命令的合成测试（C 部分）。
+"""Synthetic acquisition CLI tests (part C).
 
-全部离线：在进程内调用 ``main(argv)``，把 CLI 内的服务工厂替换为注入
-假协议服务的替身（测试侧替换，产品不提供绕过限流/离线的后门）。
-工作空间在系统临时目录；不触真实 arXiv。
+Call main(argv) in process and replace the CLI service factory with a fake protocol
+service. This injection exists only in tests; the product has no rate-limit bypass or
+offline backdoor. Workspaces use temporary directories; no real arXiv access occurs.
 """
 
 from __future__ import annotations
@@ -150,7 +150,7 @@ def workspace(tmp_path):
 
 @pytest.fixture()
 def patched_service(monkeypatch, workspace):
-    """把 CLI 的服务工厂替换为注入假 API 的服务；CLI 其余路径不变。"""
+    """Replace the CLI service factory with a fake API service, preserving other CLI paths."""
 
     def install(api):
         from hvs_catalog.pipeline.acquisition.lifecycle import AcquisitionService
@@ -216,7 +216,7 @@ def test_cli_discover_page_bound_exit3(capsys, workspace, patched_service):
         submitted_to=date(2024, 1, 2),
         terms="dark matter",
     )
-    # total_results 超过单页条目数 → has_more=True 的分页继续信号。
+    # total_results above the page length signals continuation with has_more=True.
     more_page = ArxivSearchPage(
         request=request,
         response_url="synthetic",
@@ -385,12 +385,12 @@ def test_cli_status_on_uninitialized_space_fails_clean(tmp_path, capsys):
 
 def test_cli_revisions_reports_pending(capsys, workspace, patched_service):
     api = FakeApi(clock=FakeClock())
-    api.metadata["2401.01234"] = make_meta("2401.01234", 1)  # 先只有 v1
+    api.metadata["2401.01234"] = make_meta("2401.01234", 1)  # Initially only v1 exists.
     api.downloads["2401.01234v1"] = GOOD_PACKAGE
     patched_service(api)
     main(["acquisition", "fetch", "--space", str(workspace.root), "--id", "2401.01234"])
     capsys.readouterr()
-    # 随后出现 v2：修订检查应报 pending，不动既有冻结。
+    # When v2 appears, revision checking reports pending without changing the existing freeze.
     api.metadata["2401.01234"] = make_meta("2401.01234", 2)
     code = main(
         [
@@ -410,7 +410,9 @@ def test_cli_revisions_reports_pending(capsys, workspace, patched_service):
 
 
 def test_cli_revisions_unknown_exit7(capsys, workspace, patched_service):
-    """元数据未返回的论文标 unknown，CLI 退出码 7 并说明未核实。"""
+    """Mark papers missing from metadata as unknown; return CLI code 7 and explain that
+    verification is incomplete.
+    """
     api = FakeApi(clock=FakeClock())
     api.downloads["2401.01234v1"] = GOOD_PACKAGE
     patched_service(api)
@@ -418,7 +420,7 @@ def test_cli_revisions_unknown_exit7(capsys, workspace, patched_service):
         ["acquisition", "fetch", "--space", str(workspace.root), "--id", "2401.01234v1"]
     )
     capsys.readouterr()
-    # api.metadata 未脚本该论文：修订检查无法核实。
+    # The fake metadata API has no response for this paper, so revision checking cannot verify it.
     code = main(
         [
             "acquisition",
@@ -438,11 +440,11 @@ def test_cli_revisions_unknown_exit7(capsys, workspace, patched_service):
 
 
 def test_cli_import_requires_provenance(tmp_path, workspace, patched_service):
-    """--provenance 必填（argparse 层缺失即拒绝，退出码 2）。"""
+    """Require --provenance; argparse rejects its absence with exit code 2."""
     patched_service(FakeApi(clock=FakeClock()))
     package = tmp_path / "p.tar.gz"
     package.write_bytes(GOOD_PACKAGE)
-    code = 2  # argparse 缺必填参数：进程内以 SystemExit(2) 退出
+    code = 2  # Missing required arguments cause in-process SystemExit(2).
     with pytest.raises(SystemExit) as exit_info:
         main(
             [
@@ -477,7 +479,9 @@ def test_cli_import_requires_provenance(tmp_path, workspace, patched_service):
 def test_import_unsupported_local_file_message_and_no_side_effects(
     workspace, tmp_path, capsys
 ):
-    """本地不支持形态：退出码 1，消息明确“未导入工作空间/原文件未改动”。"""
+    """Unsupported local formats return code 1 and explain that no import occurred and the
+    original file is unchanged.
+    """
     import test_acquisition_archive as arch
 
     records = arch._pax_record("GNU.sparse.map", "garbage")
@@ -508,7 +512,7 @@ def test_import_unsupported_local_file_message_and_no_side_effects(
     err = capsys.readouterr().err
     assert "未导入工作空间" in err
     assert "原文件未改动" in err
-    # 无副作用：工作空间没有任何选择或记录；调用方文件未变。
+    # No side effects: no selections or records in the workspace; the caller's file is unchanged.
     code = main(["acquisition", "status", "--space", str(workspace.root), "--json"])
     assert code == 0
     payload = json.loads(capsys.readouterr().out)
@@ -516,7 +520,7 @@ def test_import_unsupported_local_file_message_and_no_side_effects(
     assert package.read_bytes() == sparse_pkg
 
 
-# ------------------------------------------------ R live-fix：传输错误的 CLI 边界
+# ------------------------------------------------ R live-fix: CLI transport-error boundary
 
 
 def _http_error(status: int, message: str):
@@ -533,11 +537,12 @@ def _http_error(status: int, message: str):
 def test_cli_fetch_http406_concise_error_state_preserved(
     capsys, workspace, patched_service
 ):
-    """实况反例（2026-09-29，HTTP 406）：简明传输错误而非堆栈。
+    """Live counterexample (2026-09-29, HTTP 406): concise transport diagnostics instead of
+    a stack trace.
 
-    旧行为（缺陷检测器）：ArxivTransportError 逃出 _run_fetch，以完整
-    traceback 崩溃。现在：退出码 1、stderr 单行诊断、无 Traceback；
-    工作空间如实保留 failed 状态（版本正确、无原始字节）。
+    Previously ArxivTransportError escaped _run_fetch and crashed with a traceback. Now
+    return code 1 and one stderr diagnostic without a Traceback, retaining accurate
+    failed state with the correct version and no raw bytes.
     """
     api = FakeApi(clock=FakeClock())
     api.downloads["2601.19866v2"] = _http_error(
@@ -559,7 +564,7 @@ def test_cli_fetch_http406_concise_error_state_preserved(
     assert "Traceback" not in err
     assert "[传输错误]" in err
     assert "406" in err
-    # 状态如实持久化：固定 v2、failed、错误信息含 406、无原始字节。
+    # Persist accurate state: fixed v2, failed, an error containing 406, and no raw bytes.
     code = main(["acquisition", "status", "--space", str(workspace.root), "--json"])
     assert code == 0
     payload = json.loads(capsys.readouterr().out)
@@ -572,7 +577,9 @@ def test_cli_fetch_http406_concise_error_state_preserved(
 
 
 def test_cli_fetch_rate_limited_concise_error(capsys, workspace, patched_service):
-    """429：限流诊断（进度保留、提示冷却重试），不崩溃。"""
+    """Report 429 throttling with retained progress and cooldown/retry advice, without
+    crashing.
+    """
     from hvs_catalog.pipeline.acquisition.transport import ArxivRateLimitedError
 
     api = FakeApi(clock=FakeClock())
@@ -601,7 +608,7 @@ def test_cli_fetch_rate_limited_concise_error(capsys, workspace, patched_service
 
 
 def test_cli_discover_transport_error_concise(capsys, workspace, patched_service):
-    """发现命令的传输失败同样简明报告（轮次失败态由服务层持久化）。"""
+    """Report discovery transport failures concisely; the service persists failed rounds."""
     from hvs_catalog.pipeline.acquisition.transport import ArxivTimeoutError
 
     api = FakeApi(clock=FakeClock())
@@ -619,7 +626,7 @@ def test_cli_discover_transport_error_concise(capsys, workspace, patched_service
     err = capsys.readouterr().err
     assert "Traceback" not in err
     assert "[传输错误]" in err
-    # 服务层把失败轮次如实持久化（可恢复语义见既有套件）。
+    # The service persists failed-round state; existing tests cover resumability.
     code = main(["acquisition", "status", "--space", str(workspace.root), "--json"])
     assert code == 0
     payload = json.loads(capsys.readouterr().out)
@@ -627,7 +634,7 @@ def test_cli_discover_transport_error_concise(capsys, workspace, patched_service
 
 
 def test_cli_revisions_transport_error_concise(capsys, workspace, patched_service):
-    """修订检查的传输失败同样简明报告，不崩溃。"""
+    """Report revision-check transport failures concisely without crashing."""
     from hvs_catalog.pipeline.acquisition.transport import ArxivConnectionError
 
     api = FakeApi(clock=FakeClock())
@@ -659,10 +666,11 @@ def test_cli_revisions_transport_error_concise(capsys, workspace, patched_servic
 def test_cli_remote_provenance_in_status_and_material(
     capsys, workspace, patched_service
 ):
-    """远程获取成功的来源出现在 CLI status --json 与 material 输出。
+    """Expose successful remote retrieval provenance through CLI status --json and material
+    output.
 
-    旧缺陷检测器：投影修复前 SelectionStatus.retrieval 为 None、
-    material 的「[溯源]」为空行。
+    Before the projection fix, SelectionStatus.retrieval was None and the material
+    provenance line was empty.
     """
     api = FakeApi(clock=FakeClock())
     api.downloads["2401.00001v1"] = GOOD_PACKAGE
@@ -679,7 +687,7 @@ def test_cli_remote_provenance_in_status_and_material(
     )
     assert code == 0
     capsys.readouterr()
-    # status --json：来源字段非空且含下载 URL。
+    # status --json includes nonempty provenance and the download URL.
     code = main(["acquisition", "status", "--space", str(workspace.root), "--json"])
     assert code == 0
     payload = json.loads(capsys.readouterr().out)
@@ -689,7 +697,7 @@ def test_cli_remote_provenance_in_status_and_material(
         "downloaded from https://arxiv.org/e-print/2401.00001v1"
         in (selection["retrieval"])
     )
-    # material：[溯源] 行非空。
+    # material includes a nonempty provenance line.
     code = main(
         [
             "acquisition",

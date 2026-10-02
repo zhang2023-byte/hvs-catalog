@@ -203,6 +203,13 @@ Latest local correction; earlier revisions are retained by Git.
 
 #### `GoldEvidence`
 
+Location where an expert saw the content in the fixed PDF.
+
+Preserve location descriptions (page/table/section/object row) verbatim. page is the
+one-based file page ordinal, distinct from printed page numbers; fill only when
+explicitly known, never inferred from text. quote is optional; an empty string means
+absent.
+
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `file_id` | null \| string | optional | null | |
@@ -212,6 +219,9 @@ Latest local correction; earlier revisions are retained by Git.
 
 #### `GoldProbability`
 
+Explicitly printed coverage probability or quantile; consumers perform conversions
+without writing them back.
+
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `value` | string | required | — |min length 1 |
@@ -220,12 +230,16 @@ Latest local correction; earlier revisions are retained by Git.
 
 #### `GoldRulesRef`
 
+Scientific rule version used for annotation; legacy versions cannot substitute.
+
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `version` | string | required | — |min length 1 |
 | `sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
 
 #### `GoldPdfFile`
+
+One fixed PDF material; an unverified hash stays pending rather than fabricated.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|

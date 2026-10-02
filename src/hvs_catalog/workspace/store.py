@@ -1,9 +1,10 @@
-"""业务数据库：记录原文、当前修订索引、执行/步骤/待办绑定与操作回执。
+"""Business database stores original records, current indexes, execution/step/question
+bindings, and receipts.
 
-记录 JSON 是科学内容来源；索引可以重建。一次修改组装完整候选记录
-集合，按集合校验后在单次事务里追加新修订、更新索引并写入操作回执。
-操作回执（操作键、内容摘要、执行/步骤、前后引用与阶段）用于防止
-重复生效并支撑恢复核对，必须随数据库一起备份，不能当作可丢弃缓存。
+Record JSON is authoritative science; indexes can rebuild. Validate complete candidate
+collections, then append revisions/update indexes/save receipts in one transaction.
+Operation keys/digests/execution-step/pre-post references/stages prevent repeated
+effects and support recovery; back up receipts, never treat them as disposable caches.
 """
 
 from __future__ import annotations
@@ -56,14 +57,13 @@ class Receipt:
 
 @dataclass
 class CommitRequest:
-    """一次业务修改的完整请求。
+    """Complete business change request.
 
-    ``content`` 提供时以它计算重放比较摘要（排除程序生成的编号、时间
-    与回执字段）；否则按新记录内容计算。``expected_revisions`` 声明本
-    次修改预期的当前修订，事务内核对，不符即回滚。``question_steps``
-    把问题的执行/步骤绑定放进同一事务：问题记录必须随绑定一起提交，
-    不存在没有绑定的问题。``meta_updates`` 把运行层凭据（如框架完成
-    凭据）随同一事务写入业务库 meta 表，避免修订与凭据分离的窗口。
+    content supplies replay digests excluding generated IDs/times/receipts, otherwise
+    use new record contents. Check expected_revisions inside transactions and roll back
+    mismatches. question_steps saves bindings together with questions; unbound questions
+    never exist. meta_updates saves runtime/completion credentials atomically,
+    preventing revision/credential separation.
     """
 
     operation_key: str
@@ -226,12 +226,12 @@ CREATE TABLE IF NOT EXISTS counters (
 
 
 class StoreTransaction:
-    """BEGIN IMMEDIATE 之后的事务操作集合；上层用 ``transaction()`` 获取。"""
+    """Transaction operations after BEGIN IMMEDIATE, obtained through transaction()."""
 
     def __init__(self, conn: sqlite3.Connection) -> None:
         self.conn = conn
 
-    # ---- 原始读写 ----
+    # ---- Raw reads and writes ----
 
     def current_revision(self, record_id: str) -> int | None:
         row = self.conn.execute(
@@ -455,7 +455,9 @@ class StoreTransaction:
         return f"{prefix}-{value:06d}"
 
     def _flush_commit(self) -> None:
-        """提交当前事务；测试故障注入可替换此方法模拟提交前退出。"""
+        """Commit the transaction; tests may replace this method to simulate pre-commit
+        exit.
+        """
         self.conn.commit()
 
     def _rollback(self) -> None:
@@ -493,7 +495,7 @@ def _execution_from_row(row: sqlite3.Row | tuple) -> ExecutionRow:
 
 
 class RecordStore:
-    """工作空间业务数据库句柄。"""
+    """Workspace business database handle."""
 
     def __init__(
         self,
@@ -531,7 +533,7 @@ class RecordStore:
 
     @contextmanager
     def transaction(self) -> Iterator[StoreTransaction]:
-        """单次业务事务：成功提交，异常回滚。"""
+        """One business transaction: commit on success, roll back on exceptions."""
         self._conn.execute("BEGIN IMMEDIATE")
         tx = StoreTransaction(self._conn)
         try:
@@ -541,7 +543,7 @@ class RecordStore:
             tx._rollback()
             raise
 
-    # ---- 读取（已提交事实；只读事务，不与写事务互斥） ----
+    # ---- Read committed facts with read-only transactions, without write exclusion ----
 
     def read_record(self, ref: RecordRef) -> AnyRecord | None:
         def fn(tx: StoreTransaction) -> AnyRecord | None:
@@ -608,7 +610,7 @@ class RecordStore:
             return _list_questions(tx, execution_id)
 
     def transaction_read(self, fn):
-        """在只读事务中执行查询函数。"""
+        """Run queries inside read-only transactions."""
         self._conn.execute("BEGIN DEFERRED")
         tx = StoreTransaction(self._conn)
         try:
@@ -619,14 +621,16 @@ class RecordStore:
             self._conn.rollback()
             raise
 
-    # ---- 运行层凭据（meta 表；随业务库整体备份恢复） ----
+    # ---- Runtime credentials in meta, included in full business backup/restore ----
 
     def set_meta(self, key: str, value: str) -> None:
-        """单独写入一条运行层凭据；与修订同事务的写入走 CommitRequest。"""
+        """Write one credential separately; use CommitRequest for atomic revision-bound
+        writes.
+        """
         self.set_meta_many({key: value})
 
     def set_meta_many(self, entries: dict[str, str]) -> None:
-        """一次事务写入多条元数据。"""
+        """Write multiple metadata values in one transaction."""
         if not entries:
             return
         with self.transaction() as tx:
@@ -646,10 +650,12 @@ class RecordStore:
 
         return self.transaction_read(fn)
 
-    # ---- 提交协议 ----
+    # ---- Commit protocol ----
 
     def commit(self, request: CommitRequest) -> Receipt:
-        """按操作键提交一批记录：重放核对、预期修订核对、集合校验与回执。"""
+        """Commit record batches by operation key with replay, expected-revision,
+        collection, and receipt checks.
+        """
         digest = commit_request_digest(request)
         with self.transaction() as tx:
             existing = tx.find_receipt(request.operation_key)
@@ -745,7 +751,9 @@ class RecordStore:
 
 
 def record_closure(seeds: list[AnyRecord], read_record) -> list[AnyRecord]:
-    """准确修订递归闭包；缺引用留给同一个共同集合校验器报告。"""
+    """Build recursive exact-revision closures; shared collection validation reports
+    missing references.
+    """
     records = {(record.record_id, record.revision): record for record in seeds}
     queue = list(records.values())
     for record in queue:
@@ -761,7 +769,7 @@ def record_closure(seeds: list[AnyRecord], read_record) -> list[AnyRecord]:
 
 
 def walk_artifact_refs(value: object) -> list[dict]:
-    """收集载荷中全部文件引用形状（含 path 与 sha256）的字典。"""
+    """Collect payload dictionaries shaped as file references with path/sha256."""
     found: list[dict] = []
     if isinstance(value, dict):
         if set(value) >= {"path", "sha256"} and isinstance(value.get("path"), str):
@@ -776,11 +784,11 @@ def walk_artifact_refs(value: object) -> list[dict]:
 
 
 def verify_artifact_refs(records: list[AnyRecord], root: Path) -> list[str]:
-    """核对记录集合引用的全部归档文件：存在、路径在根内且哈希一致。
+    """Verify all referenced archive existence, root-contained paths, and hashes.
 
-    覆盖每次请求/响应、提示/示例/判例归档与来源文件等一切含
-    ``{path, sha256}`` 形状的引用，包括历史运行修订；提交、备份、恢复
-    与完成检查共用本函数。
+    Cover every request/response/prompt/example/precedent/source {path, sha256}
+    reference, including historical runs. Commits, backups, recovery, and completion
+    share this function.
     """
     import hashlib
 
@@ -808,9 +816,10 @@ def verify_artifact_refs(records: list[AnyRecord], root: Path) -> list[str]:
 def _check_question_bindings(
     tx: StoreTransaction, pending: list[AnyRecord], question_steps: dict[str, str]
 ) -> None:
-    """问题首次保存必须与执行/步骤绑定在同一事务，不存在无绑定问题。
+    """Initial question saves require atomic execution/step bindings; unbound questions
+    cannot exist.
 
-    已绑定问题的后续修订沿用原绑定（步骤不变），不要求重新声明。
+    Later revisions reuse unchanged original bindings without redeclaration.
     """
     for record in pending:
         if record.RECORD_NAME != "question":
@@ -831,7 +840,9 @@ def _check_question_bindings(
 
 
 def _check_run_artifacts(pending: list[AnyRecord], root: Path | None) -> None:
-    """提交前核验新记录引用的全部归档文件；共同记录的材料校验不覆盖运行归档。"""
+    """Verify all new-record archives before commit; shared material checks do not cover
+    run archives.
+    """
     if root is None:
         return
     problems = verify_artifact_refs(pending, root)
@@ -868,17 +879,18 @@ def _list_questions(
 
 
 def _check_current_outputs(tx: StoreTransaction, pending: list[AnyRecord]) -> None:
-    """本步声明的当前输出必须相互对应：当前论文引用的名单必须是当前修订。
+    """Current step outputs must correspond: current papers reference current roster
+    revisions.
 
-    新名单进入当前状态后，仍指向旧名单修订的当前论文构成不一致输出，
-    必须同批更新；不能借历史论文仍指向旧名单让错误的新名单通过。
+    New current rosters require same-batch updates of papers still referencing old
+    rosters. Historical paper references cannot let incorrect new rosters pass.
     """
     rosters = {r.record_id: r.revision for r in pending if isinstance(r, RosterRecord)}
     if not rosters:
         return
     papers = {r.record_id: r for r in pending if isinstance(r, PaperRecord)}
     for roster_id, revision in rosters.items():
-        # 只读取引用受影响名单的当前论文，不解析全部历史记录。
+        # Read only current papers referencing affected rosters, not all history.
         rows = tx.conn.execute(
             "SELECT r.payload FROM records r JOIN current_revisions c"
             " ON r.record_id = c.record_id AND r.revision = c.revision"

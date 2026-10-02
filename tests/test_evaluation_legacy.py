@@ -1,6 +1,7 @@
-"""旧 contribution Gold v4 读取适配器：结构拒绝、canary 与科学校验复刻。
+"""Legacy contribution Gold v4 read adapter: structural rejection, canaries, and reproduced
+science validation.
 
-全部使用合成材料（SYN-* 编号），不读取真实答案或论文。
+Use only synthetic SYN-* materials, without real answers or papers.
 """
 
 from __future__ import annotations
@@ -88,7 +89,9 @@ def test_missing_canary_is_not_an_error():
     document = build_legacy_v4_doc()
     document["canary"] = ""
     annotation = parse_legacy_annotation(document)
-    assert verify_legacy_canary(annotation, document=document)  # 无从核对，不判错
+    assert verify_legacy_canary(
+        annotation, document=document
+    )  # No verification basis exists; do not mark an error.
 
 
 def test_mixed_uncertainties_rejected():
@@ -108,7 +111,7 @@ def test_not_assessed_allows_missing_evidence_but_unbound_requires_it():
             )
         ]
     )
-    parse_legacy_annotation(document)  # not_assessed 无证据可接受
+    parse_legacy_annotation(document)  # not_assessed is acceptable without evidence.
     document["contributions"][0]["paper_boundness"]["status"] = "unbound"
     with pytest.raises(LegacyFormatError, match="evidence is required"):
         parse_legacy_annotation(document)

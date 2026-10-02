@@ -1,4 +1,4 @@
-"""测试用的合成记录构造与夹具装载；全部材料为虚构，不涉及 Gold 或真实服务。"""
+"""Synthetic record builders and fixture loading; no Gold or real services are involved."""
 
 from __future__ import annotations
 
@@ -32,7 +32,9 @@ def load_fixture(name: str) -> list:
 
 
 def refresh_release_manifest(payload: dict) -> dict:
-    """按当前内容重算 release 夹具的清单哈希，用于构造内容被改但格式合法的场景。"""
+    """Recompute the release manifest hash to construct changed content with a valid
+    format.
+    """
     from hvs_catalog.records.common import sha256_of
 
     data = payload["data"]
@@ -86,7 +88,7 @@ def point_value(value_id: str = "val-1", **overrides) -> MeasuredValue:
     }
     fields.update(overrides)
     if "direct_evidence" not in overrides:
-        # 证据组件与实际填写的数值组件保持一致
+        # Keep evidence components consistent with the supplied value components.
         ev = EV_VALUE.model_dump(mode="json")
         fields["direct_evidence"] = [
             {"part": name, "evidence_ref": ev, "raw_fragment": fields[name]}

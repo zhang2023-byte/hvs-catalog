@@ -1,15 +1,14 @@
-"""独立评分组件：严格纯输入的 L0/L1/L2 评分、受限排版比较与辅助评分协议。
+"""Independent scoring: strict pure-input L0/L1/L2 scores, restricted formatting
+comparisons, and auxiliary scoring protocols.
 
-公开入口（详见各模块文档字符串）：
+Public entry points are documented in each module. score_batch(plan, gold, predictions,
+auxiliary=..., agent_adapter=None) returns a JSON-serializable ScoringReport from pure
+data without files or real services, except an explicitly configured frozen directory.
+compare_printed/compare_condition cover restricted formatting and condition phrases
+(A1-A5, B cases, C1, U1/U2). The agent module defines protocols, synchronous mocks,
+frozen storage, and enablement gates.
 
-- ``score_batch(plan, gold, predictions, auxiliary=..., agent_adapter=None)``
-  整批评分，返回可 JSON 序列化的 :class:`ScoringReport`；输入是纯数据，
-  不读文件、不调用真实服务（辅助配置显式给出冻结目录时除外）。
-- :func:`compare_printed` / :func:`compare_condition`
-  受限排版与条件短语比较（A1–A5、B 系列、C1、U1/U2 边界）。
-- Agent 协议、同步 mock、冻结判定存储与启用门禁见 ``agent`` 模块。
-
-数据构造示例（合成材料）::
+Synthetic construction example::
 
     from hvs_catalog.evaluation.scoring import (
         AuxiliaryScoringConfig, GoldObjectEntry, GoldPaperEntry,
@@ -95,7 +94,8 @@
     ]
     report = score_batch(plan, gold, predictions, auxiliary=auxiliary)
 
-全部样例均为虚构合成材料；本组件不代表真实模型能力或正式 Gold。
+All examples are fictional synthetic materials, establishing neither real model
+capabilities nor official Gold.
 """
 
 from __future__ import annotations

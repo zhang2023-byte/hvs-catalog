@@ -1,13 +1,11 @@
-"""共享提取流程适配器：按登记方法的步骤推进名单、数值与收尾。
+"""Shared extraction adapter advances registered roster/value/finalization steps.
 
-复用 ``runtime.create_execution``/``resume_execution`` 的固定输入快照、
-锁、事务、裁决与恢复机制（``DefaultFlowAdapter`` 基类），不自建状态
-机。裁决开关独立于方法与模型：开启时按原 ``ReviewService`` 提交歧义
-并等待专家；关闭时不请求也不等待专家——日常模式保留未决，评测/合成
-纯 AI 组允许模型尝试并把结果记为 ``model_judgments``（不写成专家决
-定）。名单到数值的传递按名单实际内容校验：数值不接受被排除或未决
-的对象，后续步骤失败不抹去已保存名单。每次调用的请求、响应与用量
-先归档再提交步骤结果，恢复时先复用已归档响应再考虑重新调用。
+Reuse runtime frozen inputs, locks, transactions, review, and recovery through
+DefaultFlowAdapter. Enabled review submits ambiguity and waits; disabled ordinary runs
+retain pending science, while evaluation/synthetic AI-only runs may save
+model_judgments, never expert decisions. Values accept actual included roster entries
+only. Later failures retain rosters. Archive calls/responses/usage before committing
+steps and prefer saved response reuse during recovery.
 """
 
 from __future__ import annotations
@@ -80,11 +78,10 @@ def _canonical_bytes(payload: dict) -> bytes:
 
 
 class ExtractionFlow(DefaultFlowAdapter):
-    """按登记方法规格执行的提取流程；``fault_hooks`` 仅供测试注入。
+    """Registered-method flow; fault_hooks are test-only.
 
-    运行模式（daily/evaluation/synthetic）参与流程标识：同一请求键下
-    换模式会得到不同的执行摘要，不会静默复用另一模式的执行；恢复
-    时当前适配器与固定模式不符会被拒绝。
+    Freeze daily/evaluation/synthetic mode into identity/digests; same-key changed modes
+    cannot silently reuse executions. Reject recovery adapters with mismatched modes.
     """
 
     flow_id = FLOW_ID
@@ -111,7 +108,7 @@ class ExtractionFlow(DefaultFlowAdapter):
         if callback is not None:
             callback()
 
-    # ---- 流程定义 ----
+    # ---- Flow definition ----
 
     def initial_state(self, ctx: RuntimeContext) -> dict:
         material = self._resolve_material(ctx)
@@ -134,13 +131,12 @@ class ExtractionFlow(DefaultFlowAdapter):
         }
 
     def _resolve_material(self, ctx: RuntimeContext) -> dict:
-        """按快照固定的完整 RecordRef 读取并核对登记模拟材料。
+        """Read full frozen RecordRefs and validate registered mock materials.
 
-        来源编号后续升版（甚至内容换成另一论文）不影响已固定执行；
-        准确修订缺失、或修订与可信登记的来源身份/受支持修订/文件指纹
-        不一致时在此拒绝（与入口运行前检查共用 ``resolve_registered_``
-        ``material``），不降级读 current，不改写旧快照，也不发出任何
-        服务请求。
+        Later revisions/different papers cannot affect fixed executions. Reject missing
+        exact revisions or mismatched identity/supported revision/fingerprints through
+        shared resolve_registered_material before calls. Never substitute current,
+        rewrite snapshots, or send requests.
         """
         refs = ctx.execution.input_snapshot.source_refs
         if len(refs) != 1:
@@ -157,9 +153,9 @@ class ExtractionFlow(DefaultFlowAdapter):
         return mock.resolve_registered_material(record)
 
     def build_graph(self, ctx: RuntimeContext):
-        # 流程层防御：无论经哪个入口进入，固定快照中的模型参数都先按
-        # 同一受限策略核对；未声明策略与入口一样按空策略处理，任何
-        # 非空参数都会在任何服务调用前被拒绝
+        # Flow defense validates frozen parameters through the same policy on every entry;
+        # undeclared policies are empty, matching entry validation, so every nonempty set
+        # rejects before any service call.
         policy = effective_policy(
             self.parameter_policy
             if self.parameter_policy is not None
@@ -199,10 +195,12 @@ class ExtractionFlow(DefaultFlowAdapter):
         }
         try:
             return nodes[step_id]
-        except KeyError:  # pragma: no cover - 登记规格已限定步骤边界
+        except (
+            KeyError
+        ):  # pragma: no cover - registered specifications constrain step boundaries
             raise ValueError(f"未知步骤：{step_id}") from None
 
-    # ---- 共用输入与服务调用 ----
+    # ---- Shared input and service calls ----
 
     def _model_spec(self, ctx: RuntimeContext, step_id: str) -> dict:
         chosen = None
@@ -213,7 +211,9 @@ class ExtractionFlow(DefaultFlowAdapter):
             elif item.step_id == step_id:
                 chosen = item
         picked = chosen or default
-        if picked is None:  # pragma: no cover - 入口已校验唯一默认模型
+        if (
+            picked is None
+        ):  # pragma: no cover - entry validation established one default model
             raise ValueError(f"步骤 {step_id} 没有可用模型")
         return {
             "model": picked.model,
@@ -240,11 +240,10 @@ class ExtractionFlow(DefaultFlowAdapter):
         state: dict,
         call_key: str,
     ) -> dict:
-        """调用模拟服务并把请求/响应与用量归档到运行清单。
+        """Call mock services and archive requests/responses/usage in run manifests.
 
-        服务步骤取自 ``request["step"]``；归档归属的 ``step_id`` 是方法
-        步骤（解释尝试等服务子调用归档在所属方法步骤下，不产生额外的
-        未完成步骤）。
+        request['step'] selects service steps; archival step_id identifies the owning
+        method step. Explanation subcalls create no extra unfinished steps.
         """
         started = ctx.now()
         service_step = str(request.get("step", step_id))
@@ -293,7 +292,7 @@ class ExtractionFlow(DefaultFlowAdapter):
         return response
 
     def _step_attempts(self, ctx: RuntimeContext, step_id: str) -> list:
-        """读取步骤已归档的尝试，避免多次调用覆盖早先归档。"""
+        """Read archived attempts so later calls never overwrite earlier archives."""
         run = ctx.space.store().read_record_current(ctx.execution.run_ref.record_id)
         step = (
             next((s for s in run.data.steps if s.step_id == step_id), None)
@@ -314,7 +313,9 @@ class ExtractionFlow(DefaultFlowAdapter):
     def _stored_response(
         self, ctx: RuntimeContext, step_id: str, request: dict
     ) -> dict | None:
-        """查找本步骤已归档的相同请求响应；命中则不再调用服务。"""
+        """Find archived responses for identical step requests; reuse without service
+        calls.
+        """
         run = ctx.space.store().read_record_current(ctx.execution.run_ref.record_id)
         step = (
             next((s for s in run.data.steps if s.step_id == step_id), None)
@@ -328,7 +329,10 @@ class ExtractionFlow(DefaultFlowAdapter):
                 continue
             try:
                 archived = json.loads(ctx.space.read_file(attempt.request))
-            except (ValueError, OSError):  # pragma: no cover - 归档损坏按缺失处理
+            except (
+                ValueError,
+                OSError,
+            ):  # pragma: no cover - corrupted archives are treated as missing
                 continue
             if archived == request:
                 return json.loads(ctx.space.read_file(attempt.response))
@@ -353,7 +357,9 @@ class ExtractionFlow(DefaultFlowAdapter):
     def _await_decisions(
         self, ctx: RuntimeContext, question_refs: list[dict], step_id: str
     ) -> None:
-        """开启专家裁决时等待已保存问题被应用；未决保持暂停。"""
+        """With review enabled, wait for saved question application; unresolved answers
+        remain paused.
+        """
         review = ReviewService(ctx.space)
         for ref_dict in question_refs:
             while True:
@@ -369,7 +375,7 @@ class ExtractionFlow(DefaultFlowAdapter):
                 )
 
     def _pure_ai_allowed(self) -> bool:
-        """纯 AI 解释例外仅限评测/合成的关闭专家组。"""
+        """AI-only explanations apply only to expert-disabled evaluation/synthetic runs."""
         return self.mode in ("evaluation", "synthetic")
 
     def _attempt_interpretation(
@@ -380,10 +386,10 @@ class ExtractionFlow(DefaultFlowAdapter):
         step_id: str,
         question_ref: RecordRef,
     ) -> None:
-        """纯 AI 组的解释尝试：结果记为模型判断，不写成专家决定。
+        """AI-only explanations save model judgments, never expert decisions.
 
-        模拟材料固定返回 unresolved：问题保持未决、条目保持未决，模
-        型尝试保存在运行清单的 model_judgments 中。
+        Fixed mock unresolved replies leave questions/entries pending and retain
+        attempts in model_judgments.
         """
         request = {
             "step": STEP_INTERPRET,
@@ -413,7 +419,7 @@ class ExtractionFlow(DefaultFlowAdapter):
             ),
         )
 
-    # ---- 名单步骤 ----
+    # ---- Roster steps ----
 
     def _direct_roster(self, ctx: RuntimeContext, state: dict) -> dict:
         op_input = self._op_input(ctx, "direct_roster", state)
@@ -449,7 +455,9 @@ class ExtractionFlow(DefaultFlowAdapter):
                 "discover_candidates",
                 {"step": "discover_candidates", **op_input},
             )
-            if response is None:  # pragma: no cover - 已提交步骤必有归档
+            if (
+                response is None
+            ):  # pragma: no cover - committed steps always have archives
                 response = {"candidates": state["material"]["candidates"]}
         else:
             response = self._call_or_reuse(
@@ -524,7 +532,7 @@ class ExtractionFlow(DefaultFlowAdapter):
         step_id: str,
         digest: str,
     ) -> list[dict]:
-        """按服务响应构建名单记录；未决条目与问题在同一事务保存。"""
+        """Build rosters from responses, saving unresolved entries/questions atomically."""
         from ..records.roster import RosterData, RosterEntry, RosterIdentifier
 
         execution_id = ctx.execution.execution_id
@@ -626,7 +634,7 @@ class ExtractionFlow(DefaultFlowAdapter):
         )
         return [_ref_dict(ref) for ref in result_refs]
 
-    # ---- 数值与收尾 ----
+    # ---- Values and finalization ----
 
     def _quantities(self, ctx: RuntimeContext, state: dict) -> dict:
         execution_id = ctx.execution.execution_id
@@ -684,7 +692,7 @@ class ExtractionFlow(DefaultFlowAdapter):
         response: dict,
         digest: str,
     ) -> list[dict]:
-        """按名单实际内容校验数值响应并保存论文贡献记录。"""
+        """Validate responses against actual rosters and save paper contributions."""
         execution_id = ctx.execution.execution_id
         spec = state["material"]
         paper_key = spec["paper_key"]
@@ -812,7 +820,7 @@ class ExtractionFlow(DefaultFlowAdapter):
             }
         }
 
-    # ---- 决定应用与状态核对 ----
+    # ---- Decision application and state validation ----
 
     def apply_decision(
         self, ctx: RuntimeContext, decision: DecisionRecord, question: QuestionRecord
@@ -855,7 +863,7 @@ class ExtractionFlow(DefaultFlowAdapter):
         return str(step_id) if step_id else None
 
 
-# ---- 记录构建（固定合成内容） ----
+# ---- Record builders with fixed synthetic contents ----
 
 
 def _ev(spec: dict, line: int) -> dict:
@@ -1032,7 +1040,7 @@ def build_object_records(
     created_at,
     execution_id: str,
 ) -> list:
-    """按论文记录的实际贡献构建对象记录；证据引用取自贡献本身。"""
+    """Build objects from actual paper contributions using their own evidence references."""
     from ..records.objects import ContributionLink, ObjectData, ObjectRecord
 
     assert paper is not None

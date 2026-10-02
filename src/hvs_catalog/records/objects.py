@@ -1,4 +1,4 @@
-"""跨论文对象记录与外部资料记录。"""
+"""Cross-paper object and external-data records."""
 
 from __future__ import annotations
 

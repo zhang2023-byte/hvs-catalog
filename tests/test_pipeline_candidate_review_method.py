@@ -1,8 +1,9 @@
-"""共享提取入口：candidate_review 模拟方法（C02/C03）。
+"""Shared extraction entry point: synthetic candidate_review method (C02/C03).
 
-候选发现→逐个判定→共用数值/收尾；纳入/排除/未决三种处置都保留：
-被排除对象没有贡献，未决对象不自动排除，专家决定可把未决条目改为
-收录后进入数值步骤。
+Discover candidates, judge each, then share value/finalization steps. Retain
+included/excluded/unresolved dispositions. Excluded objects have no contributions;
+unresolved objects are not automatically excluded. Expert inclusion decisions let them
+proceed to values.
 """
 
 from __future__ import annotations
@@ -72,7 +73,7 @@ def _record(space, record_id):
 
 
 def test_discovery_and_per_candidate_review_calls(space, service):
-    """发现一次调用，逐候选各一次调用；固定处置与夹具一致。"""
+    """One discovery call and one call per candidate; fixed dispositions match fixtures."""
     source = import_mock_source(space, PAPER_C)
     handle = _start(space, source, request_key="c-calls", expert=False)
     report = resume_extraction(space, handle.execution_id, service=service)
@@ -80,7 +81,7 @@ def test_discovery_and_per_candidate_review_calls(space, service):
     assert service.calls_for_step("discover_candidates") == 1
     assert service.calls_for_step("review_candidates") == 3
     status = get_extraction(space, handle.execution_id)
-    # 每次调用的请求/响应与用量都归档，不互相覆盖
+    # Archive each request, response, and usage separately without overwriting others.
     attempts = {step["step_id"]: step["attempts"] for step in status["steps"]}
     assert attempts["discover_candidates"] == 1
     assert attempts["review_candidates"] == 3
@@ -92,7 +93,7 @@ def test_discovery_and_per_candidate_review_calls(space, service):
 
 
 def test_pending_not_auto_excluded_without_expert(space, service):
-    """关闭裁决的日常运行：未决条目保留未决，问题保持待处理。"""
+    """Ordinary runs with review disabled retain unresolved entries and pending questions."""
     source = import_mock_source(space, PAPER_C)
     handle = _start(space, source, request_key="c-off-daily", expert=False)
     report = resume_extraction(space, handle.execution_id, service=service)
@@ -100,25 +101,27 @@ def test_pending_not_auto_excluded_without_expert(space, service):
     roster = _record(space, f"roster-fic-candidate-c-{handle.execution_id}")
     entry = next(e for e in roster.data.entries if e.item_id == "cand-c-3")
     assert entry.disposition == "pending"
-    assert entry.issue_refs  # 未决条目关联未决问题
+    assert entry.issue_refs  # Unresolved entries reference unresolved questions.
     questions = pending_questions(space, handle.execution_id)
     assert len(questions) == 1
     assert questions[0].status == "open"
-    # 没有任何专家决定被写入
+    # No expert decisions are written.
     decisions = [
         record
         for record in space.store().list_records()
         if isinstance(record, DecisionRecord)
     ]
     assert decisions == []
-    # 被排除对象没有贡献与对象记录
+    # Excluded objects have neither contributions nor object records.
     paper = _record(space, f"paper-fic-candidate-c-{handle.execution_id}")
     assert isinstance(paper, PaperRecord)
     assert [c.roster_item_id for c in paper.data.object_contributions] == ["cand-c-1"]
 
 
 def test_expert_group_pauses_and_include_decision_adds_quantities(space, service):
-    """开启组暂停在候选判定；收录决定后未决条目进入数值步骤。"""
+    """Enabled runs pause during candidate judgment; inclusion decisions admit unresolved
+    entries to the value step.
+    """
     source = import_mock_source(space, PAPER_C)
     handle = _start(space, source, request_key="c-on")
     first = resume_extraction(space, handle.execution_id, service=service)
@@ -163,7 +166,9 @@ def test_expert_group_pauses_and_include_decision_adds_quantities(space, service
 
 
 def test_unresolved_decision_keeps_run_waiting(space, service):
-    """专家答复仍未决：决定保存，步骤保留等待，不自动排除。"""
+    """An unresolved expert answer is saved while the step keeps waiting, without automatic
+    exclusion.
+    """
     source = import_mock_source(space, PAPER_C)
     handle = _start(space, source, request_key="c-unresolved")
     first = resume_extraction(space, handle.execution_id, service=service)
@@ -186,7 +191,9 @@ def test_unresolved_decision_keeps_run_waiting(space, service):
 
 
 def test_review_step_model_selection(space, service):
-    """逐候选判定使用逐步指定的模型，发现步骤用默认 fallback。"""
+    """Use step-specific models for candidate judgments and the default fallback for
+    discovery.
+    """
     source = import_mock_source(space, PAPER_C)
     models = [
         StepModel(model="mock-default"),
@@ -200,7 +207,7 @@ def test_review_step_model_selection(space, service):
 
 
 def test_candidate_failure_preserves_discovery(space, service):
-    """逐候选判定失败：整篇失败，发现步骤结果保留并可复用。"""
+    """A candidate-judgment failure fails the paper but retains reusable discovery results."""
 
     def fail_review():
         raise RuntimeError("simulated review failure")

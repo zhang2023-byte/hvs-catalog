@@ -1,9 +1,9 @@
-"""评分报告模型：逐论文与微汇总的 L0/L1/L2、配对与诊断。
+"""Scoring reports: per-paper and micro L0/L1/L2, pairings, and diagnostics.
 
-分母为 0 的比率是 ``None``（NA），绝不补 1；影响 L2 计分的未决项或
-辅助技术失败令整批 provisional，已确定计数保留、最终 L2 比率置空。
-correct_empty 单独报告完整正确空名单，失败与未交付不可置该标志。
-贡献类型与作者判断只入诊断，不混入质量分。
+Zero-denominator rates are None/NA, never one. Score-affecting L2 unknowns/technical
+failures make batches provisional, retaining definite counts with null final L2 rates.
+correct_empty separately marks complete correct empty rosters, never failed/undelivered
+output. Contribution types and author assessments enter diagnostics only, not quality.
 """
 
 from __future__ import annotations
@@ -74,7 +74,9 @@ class QuantityBreakdown(Config):
 
 
 class PairingDetail(Config):
-    """一次配对尝试的诊断定位；内部 ID 只用于定位，不代表科学身份。"""
+    """Diagnostic locator for one pairing attempt; internal IDs locate records, not
+    scientific identities.
+    """
 
     layer: Literal["l1", "l2"]
     status: str
@@ -109,8 +111,9 @@ class PaperResult(Config):
 
 
 class BatchMicro(Config):
-    """微汇总；``coverage=partial`` 表示含 readiness 缺口论文，计数覆盖
-    不全、比率不可作为整批最终率（置空）。"""
+    """Micro aggregation; partial coverage means readiness gaps and incomplete counts, so
+    rates cannot be final whole-batch rates and remain null.
+    """
 
     coverage: Literal["full", "partial"] = "full"
     l0: L0Metrics

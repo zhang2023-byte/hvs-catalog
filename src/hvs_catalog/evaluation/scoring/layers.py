@@ -1,24 +1,25 @@
-"""分层匹配引擎：L1 对象一一对应与 L2 科学归属/数值配对。
+"""Layered matching engine: L1 one-to-one objects and L2 attribution/value pairs.
 
-L1 只用本篇标识/明确别名做受限整理后的一一对应；同一标识的重复预测
-消耗一次 TP、其余 FP；两个 Gold 共用别名的真实身份歧义保留未决关系
-（``pending``），与确定的 FP/FN 分开，不凭数值消除，也不默认为错误。
+L1 uses restricted normalization of paper-local identifiers/explicit aliases. Duplicate
+definite predictions consume one TP, with remaining FP. Shared-alias identity ambiguity
+remains pending separately from definite FP/FN, without value-based disambiguation or
+default errors.
 
-L2 在每个（对象, 物理量）集合内构建完整关系图：先对每个 (Gold,
-预测) 对确认科学归属（quantity_path、condition、source/source_note、
-frame、epoch、coordinate_format、representation、purpose、
-author_usage）——明确 ``different`` 是禁止边，明确 ``equivalent``
-才允许比较内容，未知归属（含 Agent 材料不足/技术失败）保留为可能
-边，绝不因数值相同跨条件认定正确。归属等价的边再按域（数值/单位）
-比较内容；内容键仅用于确认安全的等价，键不同仍走按域三态，未支持
-的表达是未知而不是证明不同。确定边（归属等价+内容等价）的最大一
-对一匹配为 C；含未知边的上界判断 C 是否不确定；归属未知边若可能
-改变对应关系同样保持未决。排序或重命名内部 ID 不改变 C/P/G，不把
-null 单位当通配，具名误差分量按名称对应且不能消掉缺失分量。
+L2 builds the full relation graph per object/quantity. First compare quantity_path,
+condition, source/source_note, frame, epoch, coordinate_format, representation, purpose,
+and author_usage. different forbids edges; equivalent permits domain-specific content
+comparisons; unknown attribution, including insufficient evidence/technical failure,
+stays possible. Equal values never establish cross-condition correctness. Content keys
+certify safe equivalence only; different keys still use three-state domain checks.
+Unsupported expressions are unknown, not proven different. Maximum one-to-one matching
+of definite edges gives C; possible edges bound uncertainty, and attribution-unknown
+edges that may change correspondence remain unresolved. Reordering/renaming internal IDs
+cannot change C/P/G. Null units are not wildcards; named components match by name
+without removing missing components.
 
-只有程序 ``undecidable`` 的排版或条件关系才交给注入的辅助解析器，
-且双方必须提供绑定材料、声明支持当前待判字段的原文片段；程序或
-Agent 已确定的不同不能被推翻，转为确定的不匹配诊断。
+Only undecidable formatting/condition relations use injected resolvers, with both sides
+providing material-bound fragments declared for the field. Established program/Agent
+differences cannot be overturned and become definite mismatch diagnostics.
 """
 
 from __future__ import annotations
@@ -64,7 +65,9 @@ COMPONENT_FIELDS = ("error", "lower_error", "upper_error")
 
 
 def normalize_identifier(text: str) -> str:
-    """标识的受限整理：NFC、Unicode 负号、空白折叠；不做其他归并。"""
+    """Restricted identifier normalization: NFC, Unicode minus, and collapsed whitespace
+    only.
+    """
     return " ".join(unicodedata.normalize("NFC", text).replace("−", "-").split())
 
 
@@ -82,7 +85,9 @@ def _attribution_summary(value: MeasuredValue) -> str:
 def compare_attribution(
     gold: MeasuredValue, prediction: MeasuredValue
 ) -> tuple[Verdict, list[str]]:
-    """归属比较：非条件字段精确一致，条件走受限短语比较。"""
+    """Compare attribution: exact non-condition fields and restricted condition-phrase
+    comparison.
+    """
     mismatches = [
         name
         for name in ATTRIBUTION_FIELDS
@@ -95,11 +100,12 @@ def compare_attribution(
 
 
 def content_key(value: MeasuredValue) -> tuple | None:
-    """内容键：受限排版整理且语法完整的完整科学字段；否则为 None。
+    """Content key for complete scientific fields with restricted normalized, valid syntax;
+    otherwise None.
 
-    键相等蕴涵安全等价（同打印且语法完整）；任何数值字段含未知宏或
-    未支持/畸形语法时返回 None——不得用键捷径把畸形语法确认为安全
-    等价；键不同也不证明不同，由 ``compare_content`` 按域判定。
+    Equal keys imply safe equivalence. Unknown macros or unsupported/malformed numeric
+    syntax prevent keys; never certify malformed expressions through shortcuts.
+    Different keys do not prove difference; compare_content judges domains.
     """
 
     def _normalized_number(raw: str) -> str | None:
@@ -241,7 +247,9 @@ def _compare_reports(
 def compare_content(
     gold: MeasuredValue, prediction: MeasuredValue
 ) -> tuple[Verdict, list[str], list[str]]:
-    """内容比较：按域判定，返回判定、确定不同字段与无法判定字段。"""
+    """Compare content by domain; return verdict, definite differing fields, and
+    undecidable fields.
+    """
     diff: list[str] = []
     undecided: list[str] = []
     for name in NUMBER_CONTENT_FIELDS:
@@ -306,7 +314,9 @@ class QuantityPairing:
 def _max_matching(
     edges: set[tuple[int, int]], gold_count: int, pred_count: int
 ) -> list[tuple[int, int]]:
-    """确定性最大一对一匹配（Kuhn 增广路径；结果大小与输入顺序无关）。"""
+    """Deterministic maximum one-to-one matching using Kuhn augmenting paths; cardinality
+    is input-order independent.
+    """
 
     adjacency = [[] for _ in range(gold_count)]
     for gold_index, pred_index in edges:
@@ -339,13 +349,12 @@ def _max_matching(
 def _field_pair(
     gold_side: ValueSide, pred_side: ValueSide, field_name: str
 ) -> tuple[str | None, str | None]:
-    """按未决字段路径提取真正待判的两侧原报字符串。
+    """Extract actual printed strings for unresolved field paths.
 
-    - 普通字段（value/error/unit/...）直接取字段；
-    - 报告字段（coverage/lower_quantile/upper_quantile）的 ``.value``
-      取报告值、``.unit`` 取报告单位，不以覆盖值替代待判单位；
-    - 具名误差分量（``error_components.<名称>.<子字段>``）按名称在
-      各自侧取该分量的真正待判子字段。
+    Ordinary fields read directly. coverage/lower_quantile/upper_quantile .value reads
+    the reported value and .unit reads its unit, never substituting values for units.
+    error_components.<name>.<subfield> selects the named component and actual subfield
+    on each side.
     """
     parts = field_name.split(".")
     base = parts[0]
@@ -383,11 +392,14 @@ def _resolve_candidate(
     resolver: ScoringAgentResolver | None,
     reasons: list[str],
 ) -> tuple[Verdict, list[str]]:
-    """多字段未决的合并判定：任一必要组件明确 different 优先。
+    """Merge unresolved field verdicts; any necessary component explicitly different takes
+    precedence.
 
-    逐字段收集确定不同/未知/技术失败，不因首个缺证据或失败提前返回；
-    出现明确 different 即确定整条不匹配并停止无必要的后续调用。技术
-    失败事实保留在冻结库与辅助摘要，仅在无确定不同时才注入未决原因。
+    Collect definite differences/unknowns/technical failures without returning at the
+    first insufficient evidence or failure. A definite difference establishes
+    whole-value mismatch and stops unnecessary calls. Retain failures in frozen
+    storage/auxiliary summaries, injecting unresolved reasons only without definite
+    differences.
     """
     if resolver is None:
         return "undecidable", []
@@ -413,7 +425,7 @@ def _resolve_candidate(
             continue
         if resolution.verdict == "different":
             determined_diff.append(field_name)
-            break  # 已可确定整条不匹配，停止无必要调用
+            break  # The whole value is definitely mismatched; stop unnecessary calls.
         if resolution.verdict is None:
             technical_failures.append(resolution.entry_key)
             equivalent = False
@@ -443,20 +455,16 @@ def pair_quantity_values(
     *,
     resolver: ScoringAgentResolver | None,
 ) -> QuantityPairing:
-    """一个（对象, 物理量）集合内的完整关系图与确定性最大一对一匹配。
+    """Build the full graph per object/quantity and find deterministic maximum one-to-one
+    matching.
 
-    根因式流程（不逐预测先选桶）：
-
-    1. 先确认科学归属：对每个 (gold, 预测) 对做归属比较——明确
-       ``different`` 是禁止边；明确 ``equivalent`` 才允许比较内容；
-       未知归属（含 Agent 材料不足/技术失败）保留为可能边，绝不因
-       数值相同跨条件认定正确（数值相同不是条件等价证据）。
-    2. 只对归属已确认等价的边比较内容；内容键仅用于确认安全的等价
-       （键相等蕴涵等价），键不同仍走按域三态判定——未支持的数值或
-       单位表达是未知，不是证明不同。
-    3. 确定边（归属等价+内容等价）的最大匹配为 C；含未知边的最大
-       匹配上界判断 C 是否不确定；归属未知边若可能改变对应关系
-       （存在于某个最大匹配中）同样保持未决。
+    Compare attribution for every Gold/prediction pair first: different forbids edges,
+    equivalent permits content checks, and unknowns remain possible edges, never
+    resolved by numeric equality. Compare contents only on equivalent-attribution edges;
+    equal safe keys certify equivalence, while differing keys require domain-specific
+    three-state checks. Unsupported numbers/units stay unknown. Definite-edge maximum
+    matching gives C; including possible edges bounds C uncertainty. Attribution-unknown
+    edges present in any maximum matching keep correspondence unresolved too.
     """
     result = QuantityPairing(predicted=len(pred_sides), gold=len(gold_sides))
     if not gold_sides and not pred_sides:
@@ -464,8 +472,8 @@ def pair_quantity_values(
     golds = sorted(gold_sides, key=lambda side: side.ref)
     preds = sorted(pred_sides, key=lambda side: side.ref)
     gold_count, pred_count = len(golds), len(preds)
-    # 技术失败事实延迟到未决判定后再决定是否注入原因：不影响最终匹配
-    # 的失败保留在冻结库与辅助摘要，不据此把整批 provisional
+    # Decide whether technical failures become unresolved reasons only after matching analysis.
+    # Irrelevant failures remain in frozen storage/summaries without making the batch provisional.
     deferred_failures: list[str] = []
 
     attr_equivalent: set[tuple[int, int]] = set()
@@ -509,7 +517,7 @@ def pair_quantity_values(
         gold_key = content_key(gold_side.measured)
         pred_key = content_key(pred_side.measured)
         if gold_key is not None and pred_key is not None and gold_key == pred_key:
-            # 键相等只能确认安全等价，不用于证明不同
+            # Equal keys establish safe equivalence only, never difference.
             determined.add((gold_index, pred_index))
             continue
         verdict, diff, undecided = compare_content(
@@ -535,7 +543,7 @@ def pair_quantity_values(
         elif resolved_verdict == "different":
             content_mismatch[(gold_index, pred_index)] = resolved_diff
         else:
-            # 材料不足/技术失败/拒答：未知关系保留，不因存在适配器而变确定
+            # Insufficient evidence, technical failures, and refusals stay unknown despite an injected adapter.
             content_unknown[(gold_index, pred_index)] = undecided
 
     matched_pairs = _max_matching(determined, gold_count, pred_count)
@@ -558,8 +566,8 @@ def pair_quantity_values(
     score_uncertain = len(upper_pairs) > len(matched_pairs)
     correspondence_uncertain = False
     if not score_uncertain:
-        # 归属未知边若能出现在某个最大匹配中，就可能改变"哪个 Gold 与
-        # 哪个预测对应"的对应关系（即使 C 不变），保持未决
+        # Attribution-unknown edges in any maximum matching may change which Gold matches
+        # which prediction, even with unchanged C; retain unresolved correspondence.
         for gold_index, pred_index in sorted(attr_unknown):
             reduced = {
                 edge
@@ -572,7 +580,7 @@ def pair_quantity_values(
                 break
     unresolved = score_uncertain or correspondence_uncertain
     if unresolved:
-        # 只有确实影响得分/对应时，技术失败才作为未决原因注入
+        # Inject technical failures as unresolved reasons only when they affect scores/correspondence.
         result.reasons.extend(deferred_failures)
 
     if unresolved:
@@ -649,8 +657,8 @@ def pair_quantity_values(
                 )
             if unknown_content_keys or unknown_attr_keys:
                 continue
-            # 一对一约束：已与其他预测配对的 Gold 不能再作为错配对象；
-            # 候选全部已被占用时，该预测按多报（extra_value）诊断
+            # One-to-one constraint: Gold already paired elsewhere cannot diagnose another mismatch;
+            # when all candidates are consumed, diagnose this prediction as extra_value.
             mismatch_keys = sorted(
                 key
                 for key in content_mismatch
@@ -740,12 +748,12 @@ def match_objects(
     gold_objects: list[GoldObjectEntry],
     pred_objects: list[PredictionObjectEntry],
 ) -> L1Match:
-    """L1：标识/别名受限整理后的一一对应。
+    """L1 one-to-one matching after restricted identifier/alias normalization.
 
-    同一标识的重复预测消耗一次 TP、其余 FP（确定），并记录到
-    ``duplicate_pairs`` 供 L2 以同一确认身份的记录池做一对一配对；
-    两个及以上 Gold 共用别名的真实身份歧义保留未决（pending），不计
-    FP/FN，不凭数值消除，也不纳入重复池。
+    Definite duplicates consume one TP and remaining FP; duplicate_pairs supplies
+    confirmed-identity record pools for L2 matching. Real alias ambiguity across
+    multiple Gold objects remains pending without FP/FN, value-based disambiguation, or
+    duplicate-pool membership.
     """
     match = L1Match()
     taken: set[str] = set()
@@ -773,8 +781,8 @@ def match_objects(
             continue
         gold = candidates[0]
         if gold.label in taken:
-            # 重复预测：身份已唯一确认指向同一 Gold，L1 记 FP，
-            # L2 由 score.py 汇入同一身份的记录池参与数值一对一
+            # Duplicate predictions uniquely refer to the same confirmed Gold identity: L1 counts FP;
+            # score.py merges their records into one identity pool for L2 one-to-one value matching.
             match.fp += 1
             match.duplicate_pairs.append((gold, pred))
             match.pairings.append(

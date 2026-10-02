@@ -1,7 +1,8 @@
-"""验收反例回归：引用、数值一致性、缺口、冲突、指纹、补丁、发布与定位。
+"""Acceptance counterexample regressions for references, values, gaps, conflicts,
+fingerprints, patches, releases, and locators.
 
-每个场景都基于共同记录的合成夹具构造，同时覆盖填写转换与保存记录直接加载
-两条入口。全部材料为虚构。
+Build every case from fictional shared-record fixtures and cover both submission
+conversion and direct saved-record loading.
 """
 
 from __future__ import annotations
@@ -57,7 +58,7 @@ def check_rejected(rows: list[dict], *fragments: str) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# 修复 1：科学证据引用的类型、论文归属与准确修订
+# Fix 1: scientific evidence reference types, paper ownership, and exact revisions.
 # ---------------------------------------------------------------------------
 
 
@@ -89,7 +90,7 @@ def test_numeric_evidence_must_belong_to_same_paper():
     for part in value["direct_evidence"]:
         part["evidence_ref"] = foreign_ref
     value["context_evidence_refs"] = [foreign_ref]
-    # 外部证据自身的来源、原文和定位全部合法，仅论文归属错误
+    # External evidence has valid source, excerpt, and locator; only paper ownership is wrong.
     check_rejected(rows, "另一篇论文的证据")
 
 
@@ -101,14 +102,14 @@ def test_fragment_checked_against_exact_evidence_revision():
     value = find(rows, "numeric-forms-paper")["data"]["object_contributions"][0][
         "quantities"
     ][0]["values"][0]
-    # 数值与片段保持一致，仅片段不在 v1 原文中；新增 v2 不能掩盖 v1 的问题
+    # Value and fragment match, but the fragment is absent from v1; new v2 cannot hide the v1 defect.
     value["value"] = "9999"
     value["direct_evidence"][0]["raw_fragment"] = "9999"
     check_rejected(rows, "不在证据")
 
 
 # ---------------------------------------------------------------------------
-# 修复 2：数值与原报片段一致
+# Fix 2: match values to printed fragments.
 # ---------------------------------------------------------------------------
 
 
@@ -117,7 +118,7 @@ def test_saved_number_must_equal_printed_fragment():
     value = find(rows, "numeric-forms-paper")["data"]["object_contributions"][0][
         "quantities"
     ][0]["values"][0]
-    value["value"] = "999999"  # 原文和数字证据仍是 520
+    value["value"] = "999999"  # Original text and numeric evidence still say 520.
     with pytest.raises(ValidationError, match="与原报片段"):
         parse_record(find(rows, "numeric-forms-paper"))
 
@@ -133,7 +134,7 @@ def test_coverage_value_must_equal_printed_fragment():
 
 
 # ---------------------------------------------------------------------------
-# 修复 3：缺口影响范围与两条入口
+# Fix 3: gap scope and both entry points.
 # ---------------------------------------------------------------------------
 
 
@@ -204,7 +205,9 @@ def test_roster_unrelated_gap_reference_rejected():
             "coverage": {
                 "state": "partial",
                 "checked_file_ids": ["main"],
-                "gap_ids": ["gap-velocity"],  # 已知范围缺口只影响数值提取
+                "gap_ids": [
+                    "gap-velocity"
+                ],  # The known-scope gap affects value extraction only.
             },
             "entries": [],
             "unresolved_groups": [],
@@ -312,7 +315,7 @@ def test_judgment_gap_does_not_block_quantity_completeness():
     result = convert_quantity_submission(
         make_context(source), QuantitySubmission.model_validate(submission)
     )
-    # 收录判断缺口不波及物理量完成情况：18 行全部 complete，不挂判断缺口
+    # Inclusion gaps do not affect quantity completion: all 18 rows are complete without judgment gaps.
     rows = result.objects[0].quantity_coverage
     assert len(rows) == 18 and all(row.state == "complete" for row in rows)
     assert not any(
@@ -337,7 +340,7 @@ def test_saved_roster_complete_rejected_with_judgment_gap():
 
 
 # ---------------------------------------------------------------------------
-# 修复 4：冲突待决测量不能换编号进入已确认数值
+# Fix 4: renaming a pending conflicting measurement cannot turn it into a confirmed value.
 # ---------------------------------------------------------------------------
 
 
@@ -361,7 +364,7 @@ def test_conflict_evidence_order_cannot_bypass_exclusivity():
         value = copy.deepcopy(contribution["quantity_conflicts"][0]["alternatives"][0])
         assert len(value["direct_evidence"]) > 1
         value["value_id"] = "same-measurement-reordered-evidence"
-        value["direct_evidence"].reverse()  # 仅证据排列顺序不同
+        value["direct_evidence"].reverse()  # Only evidence order differs.
         contribution["quantities"][0]["values"].append(value)
     with pytest.raises(ValidationError, match="不能同时作为"):
         parse_record(paper)
@@ -373,7 +376,7 @@ def test_conversion_conflict_evidence_order_cannot_bypass_exclusivity():
     submission = gap_conflict_submission()
     obj = submission["objects"][0]
     value = copy.deepcopy(obj["quantity_conflicts"][0]["alternatives"][0])
-    value["evidence"][0]["parts"].reverse()  # 仅填写顺序不同
+    value["evidence"][0]["parts"].reverse()  # Only submission order differs.
     obj["quantities"][0]["values"].append(value)
     with pytest.raises(ValueError, match="不能同时作为"):
         convert_quantity_submission(
@@ -398,7 +401,7 @@ def test_independent_equal_measurement_not_confused_with_conflict():
             "source": "prior_work",
         }
     )
-    # 数值与冲突文本方相同，但条件与来源不同：独立测量，不应被误判为重复
+    # Same value as a conflict alternative but different conditions/source: an independent measurement, not a duplicate.
     contribution_with_both = contribution(
         quantities=[
             {
@@ -413,14 +416,14 @@ def test_independent_equal_measurement_not_confused_with_conflict():
 
 
 # ---------------------------------------------------------------------------
-# 修复 5：问题指纹按实际内容重算
+# Fix 5: recompute question fingerprints from actual contents.
 # ---------------------------------------------------------------------------
 
 
 def test_stale_decision_after_question_content_change():
     rows = payloads("gap-conflict")
     for question in (row for row in rows if row["schema"]["name"] == "question"):
-        # 内容改变但保留旧指纹与旧决定
+        # Change contents while retaining the old fingerprint and decision.
         question["data"]["category"] = "identity"
         question["data"]["evidence_refs"] = [
             {"record_id": "gap-conflict-ev-identity", "revision": 1}
@@ -430,7 +433,7 @@ def test_stale_decision_after_question_content_change():
 
 
 # ---------------------------------------------------------------------------
-# 修复 6：裁决补丁的目标、条目与字段类型
+# Fix 6: decision patch targets, items, and field types.
 # ---------------------------------------------------------------------------
 
 
@@ -455,7 +458,7 @@ def test_patch_undeclared_item_and_field_rejected():
     decision["data"]["outcome"] = "resolved"
     decision["data"]["result_patch"] = {
         "target": {
-            "record_id": "gap-conflict-paper",  # 在问题目标范围内
+            "record_id": "gap-conflict-paper",  # Within the question's target scope.
             "revision": 1,
             "item_id": "made-up-entry",
         },
@@ -475,7 +478,7 @@ def test_patch_field_value_type_checked():
             "item_id": "contribution-A",
         },
         "changes": [
-            # 条目级字段，但值既不符合模型也违反非空约束
+            # An item field whose value violates both the model and nonempty constraint.
             {"field": "contribution_summary", "value": {"arbitrary": "data"}},
             {
                 "field": "contribution_summary",
@@ -496,7 +499,7 @@ def test_patch_record_level_field_rejected_via_item_target():
             "revision": 1,
             "item_id": "contribution-A",
         },
-        # 记录级字段：清空整篇贡献列表 / 空 paper_key 都不能借条目目标通过
+        # Record-level fields cannot clear contributions or paper_key through an item target.
         "changes": [
             {"field": "object_contributions", "value": []},
             {"field": "paper_key", "value": ""},
@@ -521,11 +524,11 @@ def test_patch_valid_contribution_field_accepted():
         },
         "changes": [{"field": "contribution_summary", "value": valid_summary}],
     }
-    check(rows)  # 合法条目字段与取值：整集校验通过
+    check(rows)  # Valid item fields and values pass collection validation.
 
 
 # ---------------------------------------------------------------------------
-# 修复 7：发布清单哈希与批准绑定实际内容
+# Fix 7: release manifest hashes and approvals bind actual contents.
 # ---------------------------------------------------------------------------
 
 
@@ -541,11 +544,11 @@ def test_release_approval_binds_actual_manifest_content():
         "manifest_sha256": digest,
         "target": release["data"]["channels"][0]["target"],
     }
-    check(rows)  # 真实哈希 + 真实批准：通过
+    check(rows)  # Actual hash and approval pass.
     release["data"]["content_refs"] = []
     with pytest.raises(ValidationError, match="清单哈希与实际待发布内容不一致"):
         parse_record(release)
-    # 只重算清单哈希、保留旧批准：批准不再绑定当前内容，必须拒绝
+    # Recomputed manifest with old approval no longer binds current contents and must reject.
     refresh_release_manifest(release)
     with pytest.raises(ValidationError, match="批准必须绑定当前清单哈希"):
         parse_record(release)
@@ -575,7 +578,7 @@ def test_release_approval_target_must_be_declared_channel():
 
 
 # ---------------------------------------------------------------------------
-# 修复 8：未支持的材料定位不能视为已验证
+# Fix 8: unsupported material locators cannot count as verified.
 # ---------------------------------------------------------------------------
 
 
@@ -590,7 +593,7 @@ def test_unsupported_locator_rejected_as_unverified():
 
 
 # ---------------------------------------------------------------------------
-# 修复 9：同一物理量的冲突问题与额外问题合并保留
+# Fix 9: retain both conflict questions and additional quantity questions.
 # ---------------------------------------------------------------------------
 
 
@@ -625,7 +628,7 @@ def test_inline_question_does_not_overwrite_conflict_coverage_link():
 
 
 def test_deduplicated_conflict_and_inline_question_reference():
-    """同一条引用不应因来源不同而重复出现。"""
+    """Do not duplicate the same reference merely because its origins differ."""
     source = load_fixture("gap-conflict")
     source = next(r for r in source if r.RECORD_NAME == "source_package")
     submission = gap_conflict_submission()
@@ -651,12 +654,12 @@ def test_deduplicated_conflict_and_inline_question_reference():
 
 
 # ---------------------------------------------------------------------------
-# 组合补丁、误差分量内部证据顺序、补丁引用核对
+# Combined patches, component-evidence order, and patch reference checks.
 # ---------------------------------------------------------------------------
 
 
 def _rebind_decision_to_roster_entry(rows: list[dict]) -> dict:
-    """把夹具问题与决定改绑到名单条目 roster-A，返回补丁目标。"""
+    """Rebind fixture questions/decisions to roster-A and return the patch target."""
     from hvs_catalog.records.questions import compute_question_fingerprint
 
     roster = find(rows, "gap-conflict-roster")
@@ -666,7 +669,7 @@ def _rebind_decision_to_roster_entry(rows: list[dict]) -> dict:
         "revision": roster["revision"],
         "item_id": entry["item_id"],
     }
-    question = find(rows, "gap-conflict-question")  # 第一处即 r1
+    question = find(rows, "gap-conflict-question")  # The first location is r1.
     question["data"]["category"] = "inclusion"
     question["data"]["target_refs"] = [target]
     question["data"]["prompt"] = "Should this fictional entry be excluded?"
@@ -687,10 +690,12 @@ def _rebind_decision_to_roster_entry(rows: list[dict]) -> dict:
 
 @pytest.mark.parametrize("reverse_changes", [False, True])
 def test_joint_roster_patch_accepted_in_both_orders(reverse_changes):
-    """收录改排除并清空贡献编号：合法组合修改不因中间状态被拒。"""
+    """Changing included to excluded and clearing contribution IDs is a valid combined
+    update despite invalid intermediate states.
+    """
     rows = payloads("gap-conflict")
     target = _rebind_decision_to_roster_entry(rows)
-    check(rows)  # 改绑后、加补丁前集合本身合法
+    check(rows)  # The rebound collection is valid before adding patches.
     changes = [
         {"field": "disposition", "value": "excluded"},
         {"field": "contribution_id", "value": None},
@@ -701,7 +706,7 @@ def test_joint_roster_patch_accepted_in_both_orders(reverse_changes):
         "target": target,
         "changes": changes,
     }
-    check(rows)  # 最终条目 excluded 且无贡献编号：通过
+    check(rows)  # The final excluded entry without contribution IDs is valid.
 
 
 def test_joint_patch_with_invalid_final_state_rejected():
@@ -709,14 +714,16 @@ def test_joint_patch_with_invalid_final_state_rejected():
     target = _rebind_decision_to_roster_entry(rows)
     find(rows, "gap-conflict-decision")["data"]["result_patch"] = {
         "target": target,
-        # 排除但保留贡献编号：任一顺序都无法得到合法终态
+        # Exclusion retaining contribution IDs cannot produce a valid final state in either order.
         "changes": [{"field": "disposition", "value": "excluded"}],
     }
     check_rejected(rows, "不满足字段或跨字段约束")
 
 
 def _component_bearing_alternative(value: dict) -> dict:
-    """给冲突方添加合法的具名误差分量（两条分量证据来自同一原文）。"""
+    """Add valid named error components to conflict alternatives, with both evidence
+    fragments from the same source text.
+    """
     evidence = next(
         part for part in value["direct_evidence"] if part["part"] == "error"
     )
@@ -743,14 +750,16 @@ def test_nested_component_evidence_order_saved_entry():
             "alternatives"
         ][0]
         _component_bearing_alternative(alternative)
-    check(rows)  # 带分量的冲突本身合法
+    check(rows)  # The conflict with components is valid.
     paper = find(rows, "gap-conflict-paper")
     for contribution in paper["data"]["object_contributions"]:
         duplicate = copy.deepcopy(
             contribution["quantity_conflicts"][0]["alternatives"][0]
         )
         duplicate["value_id"] = "duplicate-nested-order"
-        duplicate["error_components"][0]["direct_evidence"].reverse()  # 仅分量内顺序
+        duplicate["error_components"][0][
+            "direct_evidence"
+        ].reverse()  # Only order inside components differs.
         contribution["quantities"][0]["values"].append(duplicate)
     with pytest.raises(ValidationError, match="不能同时作为"):
         parse_record(paper)
@@ -777,9 +786,11 @@ def test_nested_component_evidence_order_conversion():
     ]
     convert_quantity_submission(
         make_context(source), QuantitySubmission.model_validate(submission)
-    )  # 带分量的冲突填写本身合法
+    )  # Conflict submission with components is valid.
     duplicate = copy.deepcopy(value)
-    duplicate["error_components"][0]["evidence"][0]["parts"].reverse()  # 仅分量内顺序
+    duplicate["error_components"][0]["evidence"][0][
+        "parts"
+    ].reverse()  # Only order inside components differs.
     obj["quantities"][0]["values"].append(duplicate)
     with pytest.raises(ValueError, match="不能同时作为"):
         convert_quantity_submission(
@@ -859,7 +870,9 @@ def test_patch_numeric_value_reuses_fragment_containment_check():
     item = paper["data"]["object_contributions"][0]
     value = copy.deepcopy(item["quantities"][0]["values"][0])
     value["value_id"] = "patched-value"
-    value["value"] = "9999"  # 数值与片段一致，但原文里没有该片段
+    value["value"] = (
+        "9999"  # Value and fragment match, but the fragment is absent from source text.
+    )
     for part in value["direct_evidence"]:
         if part["part"] == "value":
             part["raw_fragment"] = "9999"

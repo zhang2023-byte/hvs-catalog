@@ -152,6 +152,9 @@ A fixed source file or archive under the explicitly supplied material root.
 
 #### `GoldLegacySource`
 
+Migration provenance preserves original legacy annotation metadata verbatim without
+constituting new approval.
+
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `schema_name` | string | required | — |min length 1 |
@@ -168,6 +171,8 @@ A fixed source file or archive under the explicitly supplied material root.
 ### Pending item
 
 #### `GoldPendingItem`
+
+Explicit unresolved draft items, forbidden in official answers.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
@@ -190,6 +195,8 @@ A fixed source file or archive under the explicitly supplied material root.
 
 #### `GoldRulesRef`
 
+Scientific rule version used for annotation; legacy versions cannot substitute.
+
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `version` | string | required | — |min length 1 |
@@ -198,6 +205,8 @@ A fixed source file or archive under the explicitly supplied material root.
 ### PDF file
 
 #### `GoldPdfFile`
+
+One fixed PDF material; an unverified hash stays pending rather than fabricated.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
@@ -208,6 +217,13 @@ A fixed source file or archive under the explicitly supplied material root.
 ### Evidence
 
 #### `GoldEvidence`
+
+Location where an expert saw the content in the fixed PDF.
+
+Preserve location descriptions (page/table/section/object row) verbatim. page is the
+one-based file page ordinal, distinct from printed page numbers; fill only when
+explicitly known, never inferred from text. quote is optional; an empty string means
+absent.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
@@ -245,6 +261,9 @@ A fixed source file or archive under the explicitly supplied material root.
 
 #### `GoldBoundness`
 
+Overall author state: unresolved new vocabulary state is null; preserve legacy state
+verbatim for checking.
+
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `status` | null \| string | optional | null | |
@@ -263,6 +282,13 @@ A fixed source file or archive under the explicitly supplied material root.
 ### Value
 
 #### `GoldValue`
+
+Gold representation of scientific values; absent contents are null and drafts permit
+empty evidence.
+
+Follow shared MeasuredValue rules: allow one-sided asymmetric errors and
+independently evidenced total/named components together, but never mix
+symmetric/asymmetric forms. Represent empty strings as absent null values.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
@@ -291,6 +317,9 @@ A fixed source file or archive under the explicitly supplied material root.
 
 #### `GoldProbability`
 
+Explicitly printed coverage probability or quantile; consumers perform conversions
+without writing them back.
+
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `value` | string | required | — |min length 1 |
@@ -300,6 +329,11 @@ A fixed source file or archive under the explicitly supplied material root.
 ### Error component
 
 #### `GoldErrorComponent`
+
+One named original error component, without inferred total errors.
+
+Follow shared ErrorComponent rules: one-sided asymmetric errors are allowed,
+symmetric/asymmetric forms cannot mix, and at least one error value is required.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
@@ -313,6 +347,9 @@ A fixed source file or archive under the explicitly supplied material root.
 
 #### `GoldConflict`
 
+Unresolved competing evidence; complete alternative value structures are optional,
+with missing contents reported for completion.
+
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `conflict_id` | string | required | — |min length 1 |
@@ -324,6 +361,9 @@ A fixed source file or archive under the explicitly supplied material root.
 ### Exclusion
 
 #### `GoldExclusion`
+
+Paper-level exclusions; missing independent object IDs in legacy structures remain
+pending correspondence items.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|

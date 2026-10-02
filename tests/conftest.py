@@ -1,4 +1,4 @@
-"""让测试可以导入 tools 目录下的开发检查工具。"""
+"""Allow tests to import development check tools from the tools directory."""
 
 import os
 import sys

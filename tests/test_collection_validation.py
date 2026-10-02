@@ -1,4 +1,6 @@
-"""集合校验：引用损坏、论文错配、材料哈希与定位核对必须报错。"""
+"""Collection validation must reject broken references, paper mismatches, material hashes,
+and locators.
+"""
 
 from __future__ import annotations
 
@@ -32,7 +34,7 @@ def replace(records, record_id, transform):
             payload = as_payload(record)
             transform(payload)
             if payload["schema"]["name"] == "release":
-                # 清单哈希按当前内容重算，避免篡改被哈希检查先行拦截
+                # Recompute the manifest hash so hash validation does not reject the intended tampering first.
                 refresh_release_manifest(payload)
             changed.append(parse_record(payload))
         else:
@@ -222,7 +224,7 @@ def test_fragment_outside_excerpt_rejected():
     paper = fixture_by_name(records, "paper")
     payload = as_payload(paper)
     value = payload["data"]["object_contributions"][0]["quantities"][0]["values"][0]
-    # 数值与片段保持一致，模型检查通过；片段不在任何原文里，集合检查必须报错
+    # Value and fragment match and pass model validation, but absent source text must fail collection validation.
     value["value"] = "9999"
     value["direct_evidence"][0]["raw_fragment"] = "9999"
     tampered = [

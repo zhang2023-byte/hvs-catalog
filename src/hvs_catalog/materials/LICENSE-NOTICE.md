@@ -1,27 +1,30 @@
-# 迁入代码的许可与来源说明
+# License and Provenance of Imported Code
 
-本包（`hvs_catalog.materials` 及 `hvs_catalog.records.tabular`）中部分基
-础算法迁自旧仓 `stella_hvs`（参考提交 `8421c98`）。按 MIT 许可的要求，
-迁入内容适用的完整版权与许可声明随本仓源码及发行包（wheel／sdist）
-一并携带如下；它只覆盖迁入改造的内容，不为无关新代码另定许可或扩大
-发布授权。
+Some foundational algorithms in `hvs_catalog.materials` and
+`hvs_catalog.records.tabular` were adapted from `stella_hvs` at reference commit
+`8421c98`. The full applicable copyright and MIT license below accompany this
+repository and its wheel/sdist distributions. They cover the imported and adapted
+content only, without assigning a license to unrelated new code or expanding
+publication authorization.
 
-迁入并按本仓设计改造的模块（模块 docstring 另有标注）：
+Imported modules, also identified in their module docstrings:
 
-- `materials/cleaning.py`：TeX 注释清理（保持行位置、保护 verbatim），
-  迁自 `src/stella/lit/extraction/cleaning.py`；
-- `materials/texgraph.py`：主稿与包含关系解析，基础算法迁自
-  `src/stella/lit/extraction/tex_graph.py`；
-- `materials/ranges.py`：编号范围确定性展开，迁自
-  `src/stella/lit/extraction/range_expand.py`；
-- `materials/convert.py`：LaTeX 行／单元解析、HTML 表解析与 pgfplotstable
-  关联的基础工具，迁自 `src/stella/lit/catalog_extraction.py`；
-- `records/tabular.py`：ECSV 表头读取的基础工具，参考
-  `src/stella/lit/extraction/ecsv.py`；当前入口按规范严格核验元数据，
-  不再用宽容回退认证未知字段或不支持类型。
+- `materials/cleaning.py`: TeX comment cleanup preserving lines and verbatim text,
+  from `src/stella/lit/extraction/cleaning.py`.
+- `materials/texgraph.py`: main-document and include-graph algorithms, from
+  `src/stella/lit/extraction/tex_graph.py`.
+- `materials/ranges.py`: deterministic identifier-range expansion, from
+  `src/stella/lit/extraction/range_expand.py`.
+- `materials/convert.py`: basic LaTeX row/cell parsing, HTML table parsing, and
+  pgfplotstable association tools, from `src/stella/lit/catalog_extraction.py`.
+- `records/tabular.py`: foundational ECSV header tools based on
+  `src/stella/lit/extraction/ecsv.py`. Current entry points strictly validate
+  metadata rather than certifying unknown fields or unsupported types through
+  tolerant fallbacks.
 
-旧仓不随本仓或 wheel 分发；新程序不依赖旧仓或本机专用路径。未迁入旧
-仓的目录结构、全局状态、任务引擎或真实数据。
+The legacy repository is not distributed here or with the wheel. The new program
+has no dependency on it or machine-specific paths. Legacy directory structures,
+global state, task engines, and real data were not imported.
 
 ---
 

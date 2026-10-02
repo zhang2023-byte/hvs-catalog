@@ -1,9 +1,10 @@
-"""辅助评分 Agent 协议、冻结判定存储与启用门禁的离线测试（全部合成）。
+"""Offline synthetic auxiliary-scoring Agent protocol, frozen judgments, and enablement
+gates.
 
-覆盖：原文片段证据与引用校验（含空白/重复/越界/占位引用）、材料
-不足不调用、Agent 明确 different 转确定不匹配、冻结条目完整性（顶层
-字段篡改）与并发写冲突、production fail closed、protocol_only 仅允许
-项目 mock。
+Cover evidence/reference validation (blank, duplicate, out-of-range, placeholder), no
+calls for insufficient material, explicit different verdicts as definite mismatches,
+frozen top-level integrity, concurrent write conflicts, production fail-closed behavior,
+and project-mock-only protocol_only mode.
 """
 
 from __future__ import annotations
@@ -147,7 +148,9 @@ def test_request_requires_material_bound_fragments():
     ],
 )
 def test_invalid_responses_are_technical_failure(handler):
-    """空白/重复/越界/占位引用与结构错误都记 technical_failure。"""
+    """Blank/duplicate/out-of-range/placeholder references and structural errors all yield
+    technical_failure.
+    """
     adapter = MockAgentAdapter(handler)
     adjudicator = AuxiliaryAdjudicator(config=protocol_only_config(), adapter=adapter)
     entry = adjudicator.adjudicate(make_request())
@@ -233,7 +236,9 @@ def test_store_rejects_conflicting_content_for_same_context(tmp_path: Path):
 
 
 def test_store_detects_top_level_field_tampering(tmp_path: Path):
-    """顶层 verdict/依据/引用篡改必须被读取校验拒绝，不只是 raw 摘要。"""
+    """Reject tampered top-level verdict/rationale/references on read, beyond checking the
+    raw digest.
+    """
     store = FrozenDecisionStore(tmp_path / "frozen")
     request = make_request()
     entry = build_judgment(
@@ -263,7 +268,9 @@ def test_store_detects_top_level_field_tampering(tmp_path: Path):
         with pytest.raises(FrozenStoreError):
             store.lookup(entry.entry_key)
         payload = json.loads(path.read_text("utf-8"))
-        payload[field] = json.loads(path.read_text("utf-8"))[field]  # 保持篡改
+        payload[field] = json.loads(path.read_text("utf-8"))[
+            field
+        ]  # Retain the tampering.
     payload = json.loads(path.read_text("utf-8"))
     payload["verdict"] = "equivalent"
     payload["rationale"] = "a"
@@ -299,7 +306,9 @@ def test_store_detects_raw_response_tampering(tmp_path: Path):
 
 
 def test_concurrent_record_conflict_has_single_winner(tmp_path: Path):
-    """真正并发写同键不同判定：只有一个发布成功，另一个被拒绝且不覆盖。"""
+    """Concurrent distinct judgments for one key permit one publication only; reject the
+    other without overwriting.
+    """
     store = FrozenDecisionStore(tmp_path / "frozen")
     request = make_request()
     entry_a = build_judgment(
@@ -500,7 +509,9 @@ def test_protocol_only_rejects_non_mock_adapter():
 
 
 def test_score_batch_resolves_u1e_with_mock_and_freezes_judgment(tmp_path: Path):
-    """证据充足变体：mock 引用实际片段时判定成立并被冻结复用。"""
+    """With sufficient evidence and actual mock fragment references, establish, freeze, and
+    reuse judgments.
+    """
     plan, gold, predictions, _ = load_bundle("synthetic-s07u1e")
     auxiliary = protocol_only_config(store_directory=str(tmp_path / "frozen"))
     adapter = MockAgentAdapter(lambda request: ok_response("equivalent"))
@@ -524,7 +535,9 @@ def test_score_batch_resolves_u1e_with_mock_and_freezes_judgment(tmp_path: Path)
 
 
 def test_score_batch_does_not_call_agent_for_material_insufficient_sample(tmp_path):
-    """U1 固定样例材料不足：不调用 mock，保持 undecidable/provisional。"""
+    """Insufficient U1 frozen materials cause no mock call and remain
+    undecidable/provisional.
+    """
     plan, gold, predictions, _ = load_bundle("synthetic-s07u1")
     auxiliary = protocol_only_config(store_directory=str(tmp_path / "frozen"))
     adapter = MockAgentAdapter(lambda request: ok_response("equivalent"))
@@ -538,7 +551,9 @@ def test_score_batch_does_not_call_agent_for_material_insufficient_sample(tmp_pa
 
 
 def test_agent_explicit_different_is_determined_mismatch(tmp_path: Path):
-    """Agent 明确 different：确定为不匹配，给出最终 0 率而非 unresolved。"""
+    """An explicit different verdict establishes mismatch and final zero rates rather than
+    unresolved state.
+    """
     plan, gold, predictions, _ = load_bundle("synthetic-s07u1e")
     auxiliary = protocol_only_config(store_directory=str(tmp_path / "frozen"))
     adapter = MockAgentAdapter(
@@ -600,7 +615,7 @@ def test_input_change_invalidates_frozen_decisions(tmp_path: Path):
     report = score_batch(
         changed_plan, gold, predictions, auxiliary=auxiliary, agent_adapter=adapter2
     )
-    # 材料指纹变化 → 片段绑定不再匹配 → 材料不足，不调用也不复用旧判定
+    # Changed material fingerprints invalidate fragment bindings: insufficient material, no call, and no old-judgment reuse.
     assert adapter2.calls == []
     assert report.batch_provisional is True
 

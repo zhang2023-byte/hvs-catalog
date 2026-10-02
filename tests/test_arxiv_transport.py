@@ -1,8 +1,9 @@
-"""arXiv 传输层合成测试：逐跳预检、节流租约、重试/冷却、响应上限（lane A）。
+"""Synthetic arXiv transport tests: per-hop preflight, leases, retries/cooldown, and
+response bounds (lane A).
 
-全部离线：注入假传输与假时钟，不访问网络；节流状态文件写在测试临
-时目录。生产默认值（3 秒下限、HTTPS 预检、跳数上限、超时、响应上
-限、有界重试）通过断言固定，测试不得削弱它们。
+Use fake transport/clocks offline and temporary throttle state. Assertions fix
+production defaults: three-second minimum, HTTPS validation, hop limit, timeouts,
+response bounds, and bounded retries. Tests must not weaken them.
 """
 
 from __future__ import annotations
@@ -78,7 +79,7 @@ class FakeTransport:
 
 
 class CountingGate:
-    """包装真实节流门，统计连接租约次数。"""
+    """Wrap the real throttle gate and count connection leases."""
 
     def __init__(self, inner: RateLimitGate) -> None:
         self.inner = inner
@@ -146,14 +147,14 @@ def make_client(
     return client, gate
 
 
-# ---------------------------------------------------------------- 出站预检
+# ---------------------------------------------------------------- Outbound preflight
 
 
 @pytest.mark.parametrize(
     "url",
     [
-        "http://export.arxiv.org/api/query",  # 非 HTTPS
-        "https://export.arxiv.org:8080/api/query",  # 非标准端口
+        "http://export.arxiv.org/api/query",  # Non-HTTPS URL.
+        "https://export.arxiv.org:8080/api/query",  # Nonstandard port.
         "https://evil.example/download",
         "https://user:pass@export.arxiv.org/api/query",
         "https://export.arxiv.org/api/query#frag",
@@ -177,13 +178,13 @@ def test_https_default_port_and_subdomains_allowed(tmp_path):
     client, _ = make_client(transport, clock, tmp_path)
     response = client.get("https://arxiv.org/e-print/x")
     assert response.status_code == 200
-    # 显式 443 端口是标准端口。
+    # Explicit port 443 is standard.
     transport2 = FakeTransport([ok_response(url="https://arxiv.org:443/y")])
     client2, _ = make_client(transport2, clock, tmp_path)
     assert client2.get("https://arxiv.org:443/y").status_code == 200
 
 
-# ---------------------------------------------------------------- 重定向
+# ---------------------------------------------------------------- Redirects
 
 
 def test_redirects_are_paced_and_validated_hop_by_hop(tmp_path):
@@ -194,7 +195,7 @@ def test_redirects_are_paced_and_validated_hop_by_hop(tmp_path):
     response = client.get(API_URL)
     assert response.status_code == 200
     assert [call["url"] for call in transport.calls] == [API_URL, target]
-    # 每一跳独立过节流门；跳间距 ≥3 秒（锁外小步等待合计 3 秒）。
+    # Every hop independently uses the throttle gate; unlocked wait steps total at least three seconds between hops.
     assert gate.transfer_count == 2
     assert sum(clock.sleeps) == pytest.approx(3.0)
     assert clock.sleeps and all(step <= WAIT_RECHECK_SECONDS for step in clock.sleeps)
@@ -212,10 +213,10 @@ def test_all_redirect_statuses_followed(tmp_path, status):
 
 
 def test_redirect_with_retry_after_persists_cooldown_and_paces_next_hop(tmp_path):
-    """审核复现场景：302 响应携带 Retry-After 必须在释放租约前持久化。
+    """Review reproducer: persist Retry-After on a 302 response before releasing the lease.
 
-    第一跳 t=1000 收到 302+Retry-After:120 → 冷却落盘；下一跳的实
-    际发送等到 t≥1120（而非旧缺陷的 1003）。
+    A first hop at t=1000 with Retry-After:120 persists cooldown, so the next send
+    starts at t>=1120 rather than the old defective 1003.
     """
     clock = FakeClock(start=1000.0)
     target = "https://export.arxiv.org/api/query?x=2"
@@ -229,8 +230,10 @@ def test_redirect_with_retry_after_persists_cooldown_and_paces_next_hop(tmp_path
     assert client.get(API_URL).status_code == 200
     assert len(transport.calls) == 2
     fresh = RateLimitGate(tmp_path / "gate.json", clock=FakeClock(1000.0))
-    assert fresh.snapshot().cooldown_until == 1120.0  # 其他进程/重启可见
-    assert clock.now() == pytest.approx(1120.0)  # 第二跳实际发送时刻
+    assert (
+        fresh.snapshot().cooldown_until == 1120.0
+    )  # Visible to other processes and after restart.
+    assert clock.now() == pytest.approx(1120.0)  # Actual second-hop send time.
     assert gate.transfer_count == 2
 
 
@@ -264,12 +267,14 @@ def test_redirect_with_malformed_retry_after_uses_normal_pacing(tmp_path, header
     client, _ = make_client(transport, clock, tmp_path)
     assert client.get(API_URL).status_code == 200
     fresh = RateLimitGate(tmp_path / "gate.json", clock=FakeClock(1000.0))
-    assert fresh.snapshot().cooldown_until is None  # 畸形值不落盘
-    assert clock.now() == pytest.approx(1003.0)  # 常规 3 秒跳间距离
+    assert fresh.snapshot().cooldown_until is None  # Do not persist malformed values.
+    assert clock.now() == pytest.approx(1003.0)  # Ordinary three-second hop spacing.
 
 
 def test_redirect_with_huge_retry_after_fails_bounded(tmp_path):
-    """重定向冷却超过单次等待上限：抛出且冷却已持久化，只有一跳连接。"""
+    """A redirect cooldown above the per-attempt wait limit raises after persisting
+    cooldown and opening only one connection.
+    """
     clock = FakeClock(start=1000.0)
     target = "https://export.arxiv.org/api/query?x=2"
     transport = FakeTransport(
@@ -284,23 +289,26 @@ def test_redirect_with_huge_retry_after_fails_bounded(tmp_path):
 
 
 def test_persisted_huge_cooldown_blocks_new_call_before_connection(tmp_path):
-    """上一次调用持久化的超长冷却使新调用在连接前即被有界拒绝。"""
+    """Previously persisted excessive cooldown rejects a new call within bounds before any
+    connection.
+    """
     clock = FakeClock(start=1000.0)
     first = FakeTransport([http_error(429, headers={"retry-after": "4000"})])
     client, _ = make_client(first, clock, tmp_path)
     with pytest.raises(ArxivRateLimitedError):
-        client.get(API_URL)  # 冷却 5000 已落盘
+        client.get(API_URL)  # Cooldown 5000 is persisted.
     second = FakeTransport([ok_response()])
     client2, _ = make_client(second, clock, tmp_path)
     with pytest.raises(RateLimitError):
         client2.get(API_URL)
-    assert second.calls == []  # 未建立任何连接
+    assert second.calls == []  # No connection was opened.
 
 
 def test_client_admission_total_budget_bounded_under_repeated_extensions(tmp_path):
-    """客户端级审核场景：共享冷却被反复延长时，单次尝试的总准入等待
-    受 RetryPolicy.max_retry_wait 约束——拒绝前不建立任何连接，冷却
-    持久化保留。"""
+    """Client review scenario: repeated shared-cooldown extensions remain bounded by
+    RetryPolicy.max_retry_wait as the attempt's total admission budget. Reject before
+    connecting and retain persisted cooldown.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     seed_gate = RateLimitGate(state, clock=clock)
@@ -318,87 +326,100 @@ def test_client_admission_total_budget_bounded_under_repeated_extensions(tmp_pat
         client, gate = make_client(transport, clock, tmp_path)
         with pytest.raises(RateLimitError, match="总等待预算"):
             client.get(API_URL)
-        assert transport.calls == []  # 无网络：未建立任何连接
-        assert gate.max_waits == [300.0]  # 客户端把策略上限作为总预算传入
+        assert transport.calls == []  # No network activity: no connections opened.
+        assert gate.max_waits == [
+            300.0
+        ]  # The client passes the policy limit as the total budget.
         total_slept = sum(clock.sleeps)
     finally:
         clock.sleep = original_sleep
-    assert total_slept <= 300.0  # 只消耗固定预算内的等待
+    assert total_slept <= 300.0  # Waiting consumes only the fixed budget.
     fresh = RateLimitGate(state, clock=FakeClock(1000.0))
-    assert fresh.snapshot().next_allowed_at is None  # 未占用许可
-    assert fresh.snapshot().cooldown_until > 1299.0  # 冷却仍持久化（被延长）
+    assert fresh.snapshot().next_allowed_at is None  # No permit is granted.
+    assert (
+        fresh.snapshot().cooldown_until > 1299.0
+    )  # Extended cooldown remains persisted.
 
 
 def test_client_late_admission_rejects_before_any_fetch(tmp_path):
-    """客户端级迟到准入：状态读取延迟超出策略总预算时，拒绝发生在建
-    立任何连接之前（transport.calls 为空），冷却保留、未占用许可。"""
+    """Client late-admission check: state-reading delay above the policy budget rejects
+    before any connection; transport.calls stays empty, cooldown survives, and no permit
+    is granted.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     seed = RateLimitGate(state, clock=clock)
     seed.record_cooldown(1001.0)
-    transport = FakeTransport([])  # 任何 fetch 都会断言失败
+    transport = FakeTransport([])  # Any fetch would fail an assertion.
     client, gate = make_client(
         transport, clock, tmp_path, policy=RetryPolicy(max_retry_wait=1.0)
     )
     original_read = gate.inner._read_state_file
 
     def slow_read():
-        clock.sleep(0.2)  # 模拟状态 I/O 延迟，每轮计入总预算
+        clock.sleep(
+            0.2
+        )  # Simulate state I/O delay and count each read toward the total budget.
         return original_read()
 
     gate.inner._read_state_file = slow_read  # type: ignore[method-assign]
     try:
         with pytest.raises(RateLimitError, match="签发许可前已超出"):
             client.get(API_URL)
-        assert transport.calls == []  # 未建立任何连接
-        assert gate.max_waits == [1.0]  # 策略上限作为总预算传入，且未重试
+        assert transport.calls == []  # No connection was opened.
+        assert gate.max_waits == [
+            1.0
+        ]  # Pass the policy ceiling as total budget without retrying.
     finally:
         gate.inner._read_state_file = original_read  # type: ignore[method-assign]
     fresh = RateLimitGate(state, clock=FakeClock(1000.0))
     assert fresh.snapshot().next_allowed_at is None
-    assert fresh.snapshot().cooldown_until == 1001.0  # 冷却逐字保留
+    assert fresh.snapshot().cooldown_until == 1001.0  # Preserve cooldown verbatim.
 
 
 def test_client_slow_write_beyond_budget_rejects_before_fetch(tmp_path):
-    """客户端级（审核者同构）：0.12 秒写入延迟 × 0.02 秒预算 → 拒绝
-    发生在任何 fetch 之前，保守预登记保留。"""
+    """Client review reproducer: 0.12-second writes under a 0.02-second budget reject
+    before any fetch and retain conservative preregistration.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
-    transport = FakeTransport([])  # 任何 fetch 都会断言失败
+    transport = FakeTransport([])  # Any fetch would fail an assertion.
     client, gate = make_client(
         transport, clock, tmp_path, policy=RetryPolicy(max_retry_wait=0.02)
     )
     original_write = gate.inner._write_state_file
 
     def slow_write(payload: dict) -> None:
-        clock.sleep(0.12)  # 模拟阻塞写入/fsync 延迟
+        clock.sleep(0.12)  # Simulate blocking write/fsync delay.
         original_write(payload)
 
     gate.inner._write_state_file = slow_write  # type: ignore[method-assign]
     try:
         with pytest.raises(RateLimitError, match="许可预登记写入后已超出"):
             client.get(API_URL)
-        assert transport.calls == []  # 未建立任何连接
-        assert gate.max_waits == [0.02]  # 准入失败不重试
+        assert transport.calls == []  # No connection was opened.
+        assert gate.max_waits == [0.02]  # Admission failures are not retried.
     finally:
         gate.inner._write_state_file = original_write  # type: ignore[method-assign]
     fresh = RateLimitGate(state, clock=FakeClock(1000.0))
     snapshot = fresh.snapshot()
-    assert snapshot.next_allowed_at == 1003.0  # 保守预登记保留
+    assert snapshot.next_allowed_at == 1003.0  # Retain conservative preregistration.
     assert snapshot.cooldown_until is None
-    assert snapshot.in_flight_since == 1000.0  # 在途标记同样保留
+    assert snapshot.in_flight_since == 1000.0  # Retain the in-flight marker too.
 
 
 def test_two_clients_actual_fetch_spacing_survives_slow_writes(tmp_path):
-    """两个共享门状态的客户端 + 每次写入延迟 4 秒：两次实际 fetch 起
-    始时刻间距 ≥3 秒（间距基准跟随写入后的实际发送时刻，而非写前）。"""
+    """Two clients share gate state with four-second writes; actual fetch starts stay at
+    least three seconds apart, using post-write send time rather than pre-write time as
+    the reference.
+    """
     state = tmp_path / "gate.json"
     clock = FakeClock(start=1000.0)
     fetch_times: list[float] = []
 
     class RecordingTransport(FakeTransport):
         def fetch(self, url, *, headers=None, timeout=None, max_bytes=None):
-            fetch_times.append(clock.now())  # 实际发送起始时刻
+            fetch_times.append(clock.now())  # Actual send start times.
             return super().fetch(
                 url, headers=headers, timeout=timeout, max_bytes=max_bytes
             )
@@ -407,7 +428,7 @@ def test_two_clients_actual_fetch_spacing_survives_slow_writes(tmp_path):
     transport_b = RecordingTransport([ok_response()])
     client_a, gate_a = make_client(transport_a, clock, tmp_path)
     client_b, _gate_b = make_client(transport_b, clock, tmp_path)
-    # 混合速度（审核者场景）：首客户端每次写入延迟 4 秒，接管者快。
+    # Mixed-speed review scenario: the first client has four-second writes; its successor is fast.
     original_write = gate_a.inner._write_state_file
 
     def slow_write(payload: dict) -> None:
@@ -419,17 +440,23 @@ def test_two_clients_actual_fetch_spacing_survives_slow_writes(tmp_path):
         client_a.get(API_URL)
         client_b.get(API_URL)
     finally:
-        del gate_a.inner.__dict__["_write_state_file"]  # 恢复原型方法
+        del gate_a.inner.__dict__[
+            "_write_state_file"
+        ]  # Restore the original class method.
     assert len(fetch_times) == 2
-    assert fetch_times[1] - fetch_times[0] >= MIN_REQUEST_INTERVAL  # ≥3 秒
+    assert (
+        fetch_times[1] - fetch_times[0] >= MIN_REQUEST_INTERVAL
+    )  # At least three seconds.
     fresh = RateLimitGate(state, clock=FakeClock(1000.0))
     snapshot = fresh.snapshot()
     assert snapshot.next_allowed_at >= fetch_times[1] + MIN_REQUEST_INTERVAL
-    assert snapshot.in_flight_since is None  # 正常完成后无在途标记
+    assert (
+        snapshot.in_flight_since is None
+    )  # No in-flight marker remains after normal completion.
 
 
 def test_redirect_limit_error_still_persists_retry_after(tmp_path):
-    """跳数超限抛出时，该重定向响应携带的冷却已持久化。"""
+    """Persist redirect-response cooldown even when rejecting an excessive hop count."""
     clock = FakeClock(start=1000.0)
     chain = [
         redirect_response(
@@ -443,12 +470,12 @@ def test_redirect_limit_error_still_persists_retry_after(tmp_path):
     with pytest.raises(ArxivTransportError, match="重定向跳数"):
         client.get(API_URL)
     fresh = RateLimitGate(tmp_path / "gate.json", clock=FakeClock(1000.0))
-    # 第 6 跳（t=1015）携带 Retry-After:50 → 冷却 1065 已落盘。
+    # Hop six at t=1015 with Retry-After:50 persists cooldown 1065.
     assert fresh.snapshot().cooldown_until == 1065.0
 
 
 def test_final_response_retry_after_persisted(tmp_path):
-    """正常返回的最终响应携带 Retry-After 同样持久化。"""
+    """Persist Retry-After from a successful final response too."""
     clock = FakeClock(start=1000.0)
     transport = FakeTransport([ok_response(headers={"retry-after": "30"})])
     client, _ = make_client(transport, clock, tmp_path)
@@ -473,7 +500,7 @@ def test_relative_redirect_location_resolved(tmp_path):
 @pytest.mark.parametrize(
     "location",
     [
-        "http://export.arxiv.org/api/query",  # 降级 HTTP
+        "http://export.arxiv.org/api/query",  # Downgrade to HTTP.
         "https://evil.example/steal",
         "https://export.arxiv.org:8080/api/query",
         "https://user:pass@export.arxiv.org/api/query",
@@ -485,7 +512,7 @@ def test_unsafe_redirect_target_rejected_before_second_connection(tmp_path, loca
     client, _ = make_client(transport, clock, tmp_path)
     with pytest.raises(ArxivTransportError, match="拒绝"):
         client.get(API_URL)
-    # 只有第一跳发生；外部目标在连接前被拒绝。
+    # Only the first hop occurs; reject the external target before connecting.
     assert len(transport.calls) == 1
 
 
@@ -507,7 +534,7 @@ def test_redirect_hops_are_bounded(tmp_path):
     client, _ = make_client(transport, clock, tmp_path)
     with pytest.raises(ArxivTransportError, match="重定向跳数超过上限"):
         client.get(API_URL)
-    # 上限 5 跳 + 首跳 = 6 次连接后拒绝。
+    # Reject after six connections: five allowed redirects plus the initial hop.
     assert len(transport.calls) == MAX_REDIRECT_HOPS + 1
 
 
@@ -520,7 +547,7 @@ def test_redirect_loop_within_limit_still_bounded_by_hops(tmp_path):
     assert len(transport.calls) == MAX_REDIRECT_HOPS + 1
 
 
-# ---------------------------------------------------------------- 重试与冷却
+# ---------------------------------------------------------------- Retries and cooldown
 
 
 def test_success_uses_one_lease_and_returns_response(tmp_path):
@@ -554,7 +581,7 @@ def test_429_retry_after_seconds_records_cooldown_and_waits(tmp_path):
     client, _ = make_client(transport, clock, tmp_path)
     assert client.get(API_URL).status_code == 200
     assert clock.sleeps == [7.0]
-    # 冷却写入共享状态文件：新进程（新门实例）读得到，重启不会突发。
+    # Shared persistent cooldown is visible to a new gate/process, preventing restart bursts.
     fresh = RateLimitGate(tmp_path / "gate.json", clock=FakeClock(1000.0))
     assert fresh.snapshot().cooldown_until == 1007.0
 
@@ -571,7 +598,7 @@ def test_429_retry_after_http_date_is_respected(tmp_path):
 
 
 def test_cooldown_persisted_before_retry_exhausted_single_attempt(tmp_path):
-    """最后一次（或唯一一次）失败的 Retry-After 必须先持久化再抛出。"""
+    """Persist Retry-After before raising from the last or only failed attempt."""
     clock = FakeClock()
     transport = FakeTransport([http_error(429, headers={"retry-after": "120"})])
     client, _ = make_client(
@@ -586,11 +613,13 @@ def test_cooldown_persisted_before_retry_exhausted_single_attempt(tmp_path):
 def test_cooldown_persisted_on_last_attempt_of_bounded_retries(tmp_path):
     clock = FakeClock()
     transport = FakeTransport([http_error(503, headers={"retry-after": "50"})] * 3)
-    client, _ = make_client(transport, clock, tmp_path)  # 默认 max_attempts=3
+    client, _ = make_client(
+        transport, clock, tmp_path
+    )  # Default max_attempts is three.
     with pytest.raises(ArxivServerError):
         client.get(API_URL)
-    # 每次失败都先登记冷却再决定重试：最后一次（t=1100）也留下
-    # cooldown_until=1150，其他进程/重启立即可见。
+    # Register cooldown before deciding whether to retry every failure; the last at t=1100 also leaves
+    # cooldown_until=1150 immediately visible to other processes and after restart.
     fresh = RateLimitGate(tmp_path / "gate.json", clock=FakeClock(1000.0))
     assert fresh.snapshot().cooldown_until == 1150.0
     assert clock.sleeps == [50.0, 50.0]
@@ -606,7 +635,7 @@ def test_malformed_retry_after_ignored_safely(tmp_path, header):
     assert client.get(API_URL).status_code == 200
     fresh = RateLimitGate(tmp_path / "gate.json", clock=FakeClock(1000.0))
     assert fresh.snapshot().cooldown_until is None
-    assert clock.sleeps == [3.0]  # 常规退避不受影响
+    assert clock.sleeps == [3.0]  # Ordinary backoff is unaffected.
 
 
 def test_huge_retry_after_fails_fast_but_persists_cooldown(tmp_path):
@@ -665,7 +694,7 @@ def test_response_size_error_is_not_retried(tmp_path):
 
 
 def test_short_transfer_retried_as_connection_error_then_succeeds(tmp_path):
-    """传输层报短读错误时，客户端按可重试传输错误处理并重试。"""
+    """Handle transport short reads as retryable transport errors."""
     clock = FakeClock()
     transport = FakeTransport(
         [
@@ -681,7 +710,7 @@ def test_short_transfer_retried_as_connection_error_then_succeeds(tmp_path):
     assert clock.sleeps == [3.0]
 
 
-# ---------------------------------------------------------------- 重试策略与解析
+# ---------------------------------------------------------------- Retry policy and parsing
 
 
 def test_retry_policy_validation():
@@ -716,7 +745,9 @@ def test_parse_retry_after_forms():
     assert parse_retry_after("nan", now=now) is None
     assert parse_retry_after("0", now=now) == 0.0
     assert parse_retry_after("120", now=now) == 120.0
-    assert parse_retry_after("-5", now=now) == 0.0  # 负数视为过期，不放大
+    assert (
+        parse_retry_after("-5", now=now) == 0.0
+    )  # Negative values are expired and must not extend cooldown.
     future = email.utils.formatdate(now + 30.0, usegmt=True)
     assert parse_retry_after(future, now=now) == pytest.approx(30.0)
     past = email.utils.formatdate(now - 3600.0, usegmt=True)
@@ -732,7 +763,7 @@ def test_http_error_class_mapping():
     assert _error_class_for_status(404) is ArxivHttpError
 
 
-# ---------------------------------------------------------------- 响应完整性
+# ---------------------------------------------------------------- Response integrity
 
 
 def test_read_bounded_returns_exact_body():
@@ -754,15 +785,15 @@ def test_read_bounded_rejects_declared_length_without_reading():
     stream = BytesIO(b"x" * 4096)
     with pytest.raises(ArxivResponseSizeError):
         read_bounded(stream, url=API_URL, max_bytes=10, content_length=4096)
-    assert stream.tell() == 0  # 未读取任何字节即失败
+    assert stream.tell() == 0  # Fail before reading any bytes.
 
 
 @pytest.mark.parametrize(
     "body,declared",
     [
-        (b"abc", 20),  # 短读：声明 20 实际 3
-        (b"abcd", 3),  # 超读：声明 3 实际 4
-        (b"", 20),  # 空流但声明非零
+        (b"abc", 20),  # Short read: 20 declared, three received.
+        (b"abcd", 3),  # Excess read: three declared, four received.
+        (b"", 20),  # Empty stream with a nonzero declared length.
     ],
 )
 def test_read_bounded_rejects_length_mismatch(body, declared):
@@ -775,11 +806,11 @@ def test_read_bounded_requires_positive_limit():
         read_bounded(BytesIO(b""), url=API_URL, max_bytes=0)
 
 
-# ------------------------------------------- 真实传输边界（离线注入 opener）
+# ------------------------------------------- Real transport boundary with an offline injected opener
 
 
 class _FakeHTTPResponse:
-    """模拟 http.client 响应：供 UrllibTransport 在离线注入时使用。"""
+    """Fake http.client response for offline UrllibTransport injection."""
 
     def __init__(
         self, body: bytes, headers: dict, *, status: int = 200, url: str = API_URL
@@ -827,7 +858,9 @@ class _RaisingOpener:
 
 
 def test_urllib_transport_enforces_declared_length_at_boundary():
-    """短读（声明 20 字节、实际 3 字节）在真实传输边界被拒绝。"""
+    """Reject short reads of three bytes when 20 are declared at the real transport
+    boundary.
+    """
     transport = UrllibTransport()
     transport._opener = _FakeOpener(
         _FakeHTTPResponse(
@@ -853,7 +886,9 @@ def test_urllib_transport_accepts_consistent_declared_length():
 
 
 def test_urllib_transport_returns_redirect_without_following():
-    """3xx 不自动跟随：原样交回（含 Location），响应体关闭。"""
+    """Return 3xx responses unchanged, including Location, without following redirects;
+    close the body.
+    """
     import urllib.error
 
     target = "https://export.arxiv.org/api/query?x=2"
@@ -865,7 +900,7 @@ def test_urllib_transport_returns_redirect_without_following():
     assert response.status_code == 302
     assert response.headers["location"] == target
     assert response.body == b""
-    assert body.closed  # 错误/重定向体在返回前可靠关闭
+    assert body.closed  # Close error/redirect bodies reliably before returning.
 
 
 def test_urllib_transport_closes_http_error_body():
@@ -881,10 +916,10 @@ def test_urllib_transport_closes_http_error_body():
         transport.fetch(API_URL)
     assert excinfo.value.status_code == 403
     assert excinfo.value.headers["retry-after"] == "5"
-    assert body.closed  # 错误体在抛出前可靠关闭
+    assert body.closed  # Close error bodies reliably before raising.
 
 
-# ---------------------------------------------------------------- 生产默认值
+# ---------------------------------------------------------------- Production defaults
 
 
 def test_production_defaults_are_safe(tmp_path):
@@ -928,7 +963,7 @@ def test_default_client_constructs_without_touching_disk(tmp_path, monkeypatch):
 
 
 class _CapturingOpener:
-    """捕获请求对象的 opener：验证传输层构造的头部。"""
+    """Opener that captures request objects to verify constructed headers."""
 
     def __init__(self, response) -> None:
         self._response = response
@@ -940,7 +975,9 @@ class _CapturingOpener:
 
 
 def test_urllib_transport_builds_user_agent_with_caller_headers():
-    """传输层构造：默认 UA 之上合并调用方头部（含 Accept/编码声明）。"""
+    """Merge caller headers, including Accept/encoding declarations, over the transport's
+    default User-Agent.
+    """
     transport = UrllibTransport()
     opener = _CapturingOpener(
         _FakeHTTPResponse(b"x", {"Content-Type": "application/gzip"})

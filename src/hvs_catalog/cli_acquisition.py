@@ -1,22 +1,20 @@
-"""``hvs-catalog acquisition`` 子命令组：arXiv 源码包获取生命周期。
+"""hvs-catalog acquisition commands manage the arXiv source-package lifecycle.
 
-设计与边界：
+Status/material queries neither access the network nor initialize implicitly; the
+workspace must exist. Initialize first through the public Python
+initialize_workspace(PATH) interface. Explicit discovery/fetch/revision checks make
+network requests. Lane A global local-machine state shares throttling/in-flight
+coordination across workspaces; CLI exposes no bypass/reset.
 
-- 状态/材料查询**不触网、不隐式初始化**：工作空间必须已经存在
-  （首次使用先用 Python 公共接口初始化：
-  ``python -c "from hvs_catalog.workspace import initialize_workspace; initialize_workspace(PATH)"``）。
-- 显式执行（发现/获取/修订检查）才会发起网络请求；限流与在途状态
-  由 Lane A 全局状态管理（本机范围、跨工作空间共享），CLI 不提供
-  任何绕过或重置入口。
-- 退出码区分结果类别：0 成功；1 工程错误；2 参数错误（argparse）；
-  3 发现轮次未完（可恢复）；4 形态不支持（字节已保留）；5 源码不可
-  用（待处理）；6 无可用材料/未就绪；7 修订检查未能全部核实
-  （unknown，不能当成无新版）。
-- 获取与导入不会把"不可用"冒充成"科学上无关"：不可用就是不可用。
-  两种"保留"语义不同：**远程获取**已收到的字节在工作空间内保留
-  （挂版本事实与获取记录，随整体备份恢复）；**本地导入**被明确拒绝
-  （如不支持的归档形态）时不发布文件、不创建选择状态——原文件不
-  变、未导入工作空间，也不在工作空间备份范围内。
+Exit codes: 0 success; 1 engineering error; 2 argparse error; 3 incomplete resumable
+discovery; 4 unsupported format with bytes retained; 5 source unavailable/pending; 6 no
+usable/ready material; 7 incomplete revision verification (unknown, never
+no-new-version).
+
+Unavailable material is not scientifically irrelevant. Remote retrieval retains received
+bytes in the workspace, attached to version facts/acquisition records and included in
+backup/restore. Explicitly rejected local imports, such as unsupported archives, publish
+no files or selection state: original files stay unchanged outside workspace backup.
 """
 
 from __future__ import annotations
@@ -56,7 +54,7 @@ EXIT_REVISION_UNKNOWN = 7
 
 
 def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
-    """注册 acquisition 子命令组。"""
+    """Register acquisition subcommands."""
     group = commands.add_parser(
         "acquisition",
         help="arXiv 获取：发现/获取/修订检查/本地导入与状态查询",
@@ -200,7 +198,9 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
 
 
 def _build_acquisition_service(space) -> AcquisitionService:
-    """构造服务；测试以注入替身替换本工厂，产品不提供离线后门。"""
+    """Build the service; tests replace this factory with injected fakes, without a product
+    offline backdoor.
+    """
     return AcquisitionService(space)
 
 

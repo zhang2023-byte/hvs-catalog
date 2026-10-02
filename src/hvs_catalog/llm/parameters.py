@@ -1,11 +1,11 @@
-"""受限模型参数：由可信登记声明的字段、类型与值域。
+"""Restricted model parameters: fields, types, and ranges declared by trusted registration.
 
-模型参数是配置，不是随意内容容器。支持集、精确类型和数值范围只来
-自代码内登记的可信 ``ParameterSpec`` 声明（模拟与真实模型分别登记
-各自的支持集，不强制所有模型同一
-采样参数）。校验按允许清单进行：未声明的一律拒绝，参数值不能是嵌
-套对象、列表或其他自由内容，不从任何记录或输入字符串动态导入代
-码。校验通过时返回内容副本，作为固定快照与实际发送内容。
+Parameters are configuration, not arbitrary content containers. Trusted code
+ParameterSpec declarations define support, exact types, and ranges separately for
+mock/real models without forcing identical sampling fields. Allowlist validation rejects
+undeclared fields, nested objects, lists, and free contents; never dynamically import
+code from records/input strings. Return validated content copies for both fixed
+snapshots and sent requests.
 """
 
 from __future__ import annotations
@@ -14,17 +14,17 @@ import math
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
-#: 参数值允许出现的精确 Python 类型；容器类型一律不允许。
+#: Exact allowed Python parameter-value types; containers are forbidden.
 _SCALAR_TYPES = (bool, int, float, str)
 
 
 class ParameterPolicyError(ValueError):
-    """模型参数不在受限支持集内，或类型/值不满足声明约束。"""
+    """Model parameter is unsupported or violates declared types/value constraints."""
 
 
 @dataclass(frozen=True)
 class ParameterSpec:
-    """一个受支持模型参数的声明：类型与数值范围由可信代码给出。"""
+    """One supported parameter declaration with trusted-code type/range constraints."""
 
     name: str
     types: tuple[type, ...]
@@ -62,7 +62,9 @@ class ParameterSpec:
 
 @dataclass(frozen=True)
 class ParameterPolicy:
-    """一个方法实现接受的全部模型参数；默认（空）策略不接受任何参数。"""
+    """Complete parameter policy for a method implementation; the default empty policy
+    accepts none.
+    """
 
     specs: tuple[ParameterSpec, ...] = field(default=())
 
@@ -78,11 +80,13 @@ class ParameterPolicy:
         return [spec.describe() for spec in self.specs]
 
     def validate(self, parameters: object, *, context: str = "") -> dict:
-        """按允许清单校验参数并返回内容副本；任何未声明内容拒绝。
+        """Validate parameters against the allowlist and return a content copy, rejecting
+        undeclared contents.
 
-        校验不做关键词拉黑：不在声明支持集内的字段、嵌套对象、列表、
-        布尔冒充数值、非有限浮点与越界值都按结构性规则拒绝。返回的新
-        字典进入固定快照，保证校验后的内容就是实际发送内容。
+        Use structural rules, not keyword blacklists: reject unsupported fields,
+        containers, boolean numeric disguises, nonfinite floats, and out-of-range
+        values. The new dictionary enters snapshots and ensures validated contents are
+        the actual sent contents.
         """
         prefix = f"{context}：" if context else ""
         if not isinstance(parameters, Mapping):
@@ -149,9 +153,9 @@ EMPTY_PARAMETER_POLICY = ParameterPolicy()
 
 
 def effective_policy(policy: ParameterPolicy | None) -> ParameterPolicy:
-    """把可选策略统一解析为具体策略：``None`` 等同空策略。
+    """Resolve optional policies; None means the empty policy.
 
-    入口与流程层共用本函数，保证未声明支持集的方法在所有路径上都按
-    “不接受任何模型参数”校验，语义不分叉。
+    Entry and flow layers share this function so methods without declared support accept
+    no model parameters on every path, without divergent semantics.
     """
     return policy if policy is not None else EMPTY_PARAMETER_POLICY

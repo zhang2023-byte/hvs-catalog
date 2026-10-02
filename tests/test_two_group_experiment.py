@@ -1,10 +1,11 @@
-"""集成：裁决开关两组对照实验与逐论文报告（C09/C10）。
+"""Integrated two-group expert-review comparison and per-paper reports (C09/C10).
 
-S11：同论文同材料/方法/模型只改开关——开启组暂停→固定模拟人类决定→
-恢复，关闭组隔离执行；质量差异由评分器实际计算，不硬编码分数。
-E20：纯 AI 组保存 model_judgments 而不写专家决定，问题保持未决。
-Gold 与评分不回灌提取：用 spy 服务核对服务请求不含任何 Gold 内容。
-报告的专家用时未知为 null，不把墙钟等待当作专家操作时间。
+S11 varies only the switch for identical paper/material/method/model: enabled runs pause
+for fixed simulated human decisions and resume; disabled runs stay isolated. Compute
+quality through the scorer, never hardcode scores. E20 AI-only runs save model_judgments
+without expert decisions and retain unresolved questions. Spy requests verify no
+Gold/scoring feedback into extraction. Unknown expert time is null; wall-clock waits are
+not expert work time.
 """
 
 from __future__ import annotations
@@ -46,7 +47,7 @@ def space(tmp_path):
 
 
 class _SpyService(PipelineMockService):
-    """记录全部服务调用的 spy：核对 Gold 不回灌提取服务。"""
+    """Spy recording every service call to check that Gold never feeds extraction requests."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -66,24 +67,26 @@ def _decisions_of(space, execution_id: str) -> list[DecisionRecord]:
 
 
 def test_s11_paper_c_two_groups_computed_by_scorer(space):
-    """S11 完整对照：开关是唯一差异，质量差异来自实际评分。"""
+    """Complete S11 comparison: only the review switch differs; actual scoring determines
+    quality differences.
+    """
     report = run_two_group_experiment(space, PAPER_C, method="candidate_review")
     assert report["paper_key"] == PAPER_C
     on = report["groups"]["expert_on"]
     off = report["groups"]["expert_off"]
-    # 同材料/方法/模型，只有开关不同；两组是不同执行
+    # Identical material/method/model, different switch; groups have separate executions.
     assert on["method"] == off["method"] == "candidate_review"
     assert on["models"] == off["models"]
     assert on["input_digest"] != off["input_digest"]
     assert on["execution_id"] != off["execution_id"]
-    # 开启组：候选处置暂停→include→恢复，两个对象都被提取
+    # Enabled group pauses, receives include, resumes, and extracts both objects.
     assert on["questions"] == {"created": 1, "answered": 1, "open": 0}
     assert on["decisions"]["human"] == 1
     assert on["decisions"]["simulated_choices"] == ["include"]
     assert on["roster"] == {"included": 2, "excluded": 1, "pending": 0}
     assert on["quality"]["l1"]["tp"] == 2
     assert on["quality"]["l2"]["correct"] == 2
-    # 关闭组：未决条目保持未决、不被自动排除，也不消费开启组决定
+    # Disabled unresolved entries remain unresolved without automatic exclusion or enabled-group decisions.
     assert off["questions"] == {"created": 1, "answered": 0, "open": 1}
     assert off["decisions"]["human"] == 0
     assert off["roster"] == {"included": 1, "excluded": 1, "pending": 1}
@@ -91,7 +94,7 @@ def test_s11_paper_c_two_groups_computed_by_scorer(space):
     assert off["quality"]["l1"]["fn"] == 1
     assert off["quality"]["l2"]["gold"] == 2
     assert off["quality"]["l2"]["correct"] == 1
-    # 两组输出按执行隔离：论文记录不同、关闭组固定输入无本轮决定
+    # Isolate paper outputs by execution; disabled fixed input contains no current-round decisions.
     assert report["isolation"]["expert_off_existing_decision_refs"] == []
     assert (
         report["isolation"]["paper_record_ids"]["expert_on"]
@@ -101,7 +104,9 @@ def test_s11_paper_c_two_groups_computed_by_scorer(space):
 
 
 def test_e20_paper_a_pure_ai_group_keeps_model_judgment(space):
-    """E20：纯 AI 组记录模型判断，问题未决、无专家决定。"""
+    """E20 AI-only group records model judgments, unresolved questions, and no expert
+    decisions.
+    """
     report = run_two_group_experiment(space, PAPER_A, method="direct")
     on = report["groups"]["expert_on"]
     off = report["groups"]["expert_off"]
@@ -112,10 +117,10 @@ def test_e20_paper_a_pure_ai_group_keeps_model_judgment(space):
     assert off["questions"]["open"] == 1
     assert off["decisions"]["human"] == 0
     assert _decisions_of(space, off["execution_id"]) == []
-    # 作者判断不进入质量分：两组数值质量相同（评分器实际计算）
+    # Author assessments do not affect quality scores; the scorer computes equal value quality in both groups.
     assert on["quality"]["l1"] == off["quality"]["l1"]
     assert on["quality"]["l2"] == off["quality"]["l2"]
-    # 纯 AI 组的作者判断保持未决（boundness 为 null，不伪造结论）
+    # AI-only author assessment remains unresolved with boundness=null, without fabricated conclusions.
     off_paper = next(
         record
         for record in space.store().list_records()
@@ -127,12 +132,14 @@ def test_e20_paper_a_pure_ai_group_keeps_model_judgment(space):
 
 
 def test_report_layers_and_nulls(space):
-    """报告只分层报告质量；专家用时恒为 null，用量未知不伪造 0。"""
+    """Reports separate quality layers; expert time stays null and unknown usage never
+    becomes zero.
+    """
     report = run_two_group_experiment(space, PAPER_A, method="direct")
     for group in report["groups"].values():
-        # 模拟服务知道自己的 token 用量：报告为整数
+        # The mock knows its token usage, so reports use integers.
         assert isinstance(group["usage"]["tokens"], int)
-        # 专家用时没有可信计时证据：恒为 null
+        # No trustworthy expert timing evidence exists; report null consistently.
         assert group["expert_time_seconds"] is None
         quality = group["quality"]
         assert set(quality) >= {"l0", "l1", "l2"}
@@ -142,7 +149,7 @@ def test_report_layers_and_nulls(space):
 
 
 def test_group_summary_preserves_null_tokens(space):
-    """用量未知（tokens=null）时报告原样写 null。"""
+    """Unknown tokens=null usage is reported unchanged as null."""
     source = import_mock_source(space, PAPER_A)
     handle = start_extraction(
         space,
@@ -157,7 +164,7 @@ def test_group_summary_preserves_null_tokens(space):
     )
     prediction = prediction_from_execution(space, handle.execution_id)
     status = get_extraction(space, handle.execution_id)
-    status["usage"] = {"attempts": 0, "tokens": None}  # 模拟未知用量
+    status["usage"] = {"attempts": 0, "tokens": None}  # Simulate unknown usage.
     group = GroupOutcome(
         switch="expert_off",
         request_key="null-usage-probe",
@@ -184,7 +191,7 @@ def test_group_summary_preserves_null_tokens(space):
 
 
 def test_gold_never_fed_back_to_extraction(space):
-    """Gold 与评分不回灌提取：spy 服务请求不含任何 Gold 内容。"""
+    """Spy requests verify Gold and scoring never feed extraction."""
     gold = synthetic_gold_for_paper(PAPER_C)
     gold_digest = gold_input_digest([gold])
     gold_ids = [
@@ -210,12 +217,12 @@ def test_gold_never_fed_back_to_extraction(space):
     assert report.outcome == "finished"
     assert service.seen, "spy 服务应记录到实际调用"
     blob = repr(service.seen)
-    # Gold 摘要与 Gold 内部定位标识绝不出现在提取服务请求里
+    # Gold digests and internal locator identifiers never appear in extraction service requests.
     assert gold_digest not in blob
     for record_id in gold_ids:
         assert record_id not in blob
         assert record_id.split("-")[0] + "-rv" not in blob
-    # 提取请求本身没有 Gold/答案路径通道（严格请求已拒绝未知字段）
+    # Strict extraction requests expose no Gold/answer-path channel and reject unknown fields.
     request_payload = handle.to_dict()
     assert "gold" not in repr(request_payload).lower()
 

@@ -1,12 +1,12 @@
-"""旧 contribution Gold v4 到新草稿的迁移：只读输入，输出草稿与逐项报告。
+"""Read-only legacy contribution Gold v4 migration to drafts and item reports.
 
-迁移是机械对应，不做科学判断：原样保留对象、贡献类型、摘要、全部数值
-字符串与证据位置；空字段转为新格式的 null；不能由格式转换完成的部
-分（旧状态含义、冲突数值结构、排除对象标识、材料清单完整性）保留旧
-内容并列为待核查项。缺少新格式必填信息时保留待办，不伪造有效记录。
-技术编号（``c``/``k``/``x``）按旧条目顺序分配，可复现。写入前核对输
-出与全部输入（旧文档、已知 PDF）的路径与文件身份重合，输出目录已有
-不同内容的草稿或报告时拒绝覆盖，旧输入逐字节保持不变。
+Mechanically preserve objects, contribution types, summaries, numeric strings, and
+evidence locations. Map empty fields to null. Retain old contents and pending checks for
+legacy state meanings, conflict structure, excluded-object IDs, and incomplete
+materials. Missing required fields remain pending rather than fabricated. Assign
+reproducible c/k/x identifiers in legacy order. Before writing, check path/file identity
+overlap with every legacy/PDF input and refuse different existing drafts/reports;
+preserve original bytes.
 """
 
 from __future__ import annotations
@@ -83,7 +83,7 @@ class MigrationReport(Config):
 
     @property
     def open_items(self) -> list[MigrationReportItem]:
-        """尚待补资料或科学核查的项目。"""
+        """Item awaiting additional material or scientific review."""
         return [
             item
             for item in self.items
@@ -126,7 +126,9 @@ class _ReportBuilder:
 
 
 def _map_evidence(evidence: LegacyEvidence, *, file_id: str | None) -> GoldEvidence:
-    """旧证据逐字保留；页序号不从位置文本猜测，引文缺失不虚构。"""
+    """Preserve old evidence verbatim; never infer page ordinals from location text or
+    invent missing quotes.
+    """
     return GoldEvidence(
         file_id=file_id,
         location=evidence.location,
@@ -393,7 +395,9 @@ def _legacy_source(
 
 
 def _paths_coincide(left: Path, right: Path) -> bool:
-    """两个路径是否指同一文件：路径相等、符号链接或硬链接别名都算重合。"""
+    """Determine whether paths identify one file, including equal paths, symlinks, and
+    hard-link aliases.
+    """
     if left == right:
         return True
     try:
@@ -415,11 +419,12 @@ def _paths_coincide(left: Path, right: Path) -> bool:
 def _write_output_protected(
     path: Path, data: bytes, *, label: str, inputs: list[Path]
 ) -> None:
-    """写入迁移输出前核对与全部只读输入及已有结果的重合。
+    """Check overlap with all read-only inputs and existing outputs before migration
+    writes.
 
-    输出与旧文档或已知 PDF 指同一文件（含符号链接、硬链接别名）时拒绝
-    写入；已有同名草稿或报告内容不同时不静默覆盖，内容一致视为重试，
-    保持原文件不动。
+    Reject output aliasing legacy/PDF inputs through paths, symlinks, or hard links.
+    Never silently overwrite different same-name drafts/reports; identical contents
+    count as retries and leave files unchanged.
     """
     for source in inputs:
         if _paths_coincide(path, source):
@@ -437,7 +442,7 @@ def _write_output_protected(
                     "拒绝覆盖，换用新的输出目录"
                 ) from exc
             if existing == data:
-                return  # 同一输出的重试：内容一致，不重写
+                return  # Identical output retry: do not rewrite matching contents.
             raise GoldOutputConflictError(
                 f"{label}输出 {path} 已存在且内容不同；不会静默截断或覆盖，"
                 "换用新的输出目录，或人工确认后移走旧文件"
@@ -457,11 +462,11 @@ def migrate_legacy_annotation(
     known_pdfs: list[str | Path] | None = None,
     material_root: str | Path | None = None,
 ) -> MigrationResult:
-    """读取旧 v4 文档并生成迁移草稿与逐项报告；旧输入只读。
+    """Read legacy v4 and produce migration drafts/item reports without modifying input.
 
-    ``known_pdfs`` 提供论文的固定 PDF 材料（第一个作为旧证据绑定的论文
-    PDF，哈希取自实际文件，不虚构）；未提供时证据保持未绑定并报告待补。
-    ``material_root`` 提供时同步运行检查并随结果返回。
+    known_pdfs supplies fixed paper PDFs; bind old evidence to the first, hashing actual
+    files. Without them, evidence remains unbound with pending material requests. When
+    material_root is supplied, run checks and return their results too.
     """
     legacy_path = Path(legacy_path)
     raw_text = legacy_path.read_text(encoding="utf-8")

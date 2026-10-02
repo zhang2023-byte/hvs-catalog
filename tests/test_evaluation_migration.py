@@ -1,4 +1,6 @@
-"""迁移行为：合成场景一到五，草稿逐字保留、待核查项与旧输入只读。"""
+"""Synthetic migration scenarios 1-5: verbatim drafts, pending checks, and read-only legacy
+input.
+"""
 
 from __future__ import annotations
 
@@ -28,7 +30,7 @@ def _write_legacy(tmp_path, document, name="legacy.json"):
 
 
 def test_scenario_1_value_strings_preserved_verbatim(tmp_path):
-    """对象 SYN-A 的旧值为 612.0、误差 8.0、单位 km/s：逐字保留。"""
+    """Preserve SYN-A's legacy value 612.0, error 8.0, and unit km/s verbatim."""
     legacy = _write_legacy(tmp_path, build_legacy_v4_doc())
     result = migrate_legacy_annotation(
         legacy_path=legacy, draft_dir=tmp_path / "draft", material_root=tmp_path
@@ -37,8 +39,8 @@ def test_scenario_1_value_strings_preserved_verbatim(tmp_path):
     (group,) = contribution.quantities
     (value,) = group.values
     assert (value.value, value.error, value.unit) == ("612.0", "8.0", "km/s")
-    assert value.value != 612  # 不改成数字
-    # 未提供已知材料时证据缺口继续报告
+    assert value.value != 612  # Do not convert to a number.
+    # Continue reporting evidence gaps when known materials were not supplied.
     check = result.check
     assert check is not None
     assert check.problems_of("material")
@@ -60,7 +62,9 @@ def test_scenario_2_not_assessed_preserved_with_review_note(tmp_path):
         legacy_path=legacy, draft_dir=tmp_path / "draft", material_root=tmp_path
     )
     (contribution,) = result.draft.contributions
-    assert contribution.paper_boundness.status is None  # 不自动审定新状态
+    assert (
+        contribution.paper_boundness.status is None
+    )  # Do not automatically approve a new status.
     assert contribution.paper_boundness.legacy_status == "not_assessed"
     pending_ids = [item.item_id for item in result.draft.pending]
     assert any("bound" in item for item in pending_ids)
@@ -72,7 +76,7 @@ def test_scenario_2_not_assessed_preserved_with_review_note(tmp_path):
         item for item in result.report.items if item.category == "science_review"
     ]
     assert any("not_assessed" in item.description for item in review_items)
-    # 程序不推导新增状态
+    # The program does not infer new statuses.
     assert "possibly_bound" not in contribution.paper_boundness.model_dump_json()
 
 
@@ -85,9 +89,11 @@ def test_scenario_3_location_preserved_quote_not_fabricated(tmp_path):
     (value,) = contribution.quantities[0].values
     (evidence,) = value.evidence
     assert evidence.location == "Table 2, row SYN-A"
-    assert evidence.quote == ""  # 引文为空，不虚构
-    assert evidence.page is None  # 不通过正则猜页序号
-    assert evidence.file_id is None  # 未提供已知材料时不绑定
+    assert (
+        evidence.quote == ""
+    )  # Leave missing quotes empty rather than inventing them.
+    assert evidence.page is None  # Do not guess page ordinals with regular expressions.
+    assert evidence.file_id is None  # Do not bind materials that were not supplied.
 
 
 def test_scenario_4_no_contributions_conclusion_kept(tmp_path):
@@ -103,7 +109,7 @@ def test_scenario_4_no_contributions_conclusion_kept(tmp_path):
         item.code == "no_contributions_conclusion"
         for item in result.check.problems_of("science_pending")
     )
-    # 不能生成“新名单完整且为空”一类声明
+    # Do not fabricate claims such as a complete empty new roster.
     serialized = result.draft.model_dump_json()
     assert "complete" not in serialized or "名单完整" not in serialized
 
@@ -132,7 +138,7 @@ def test_scenario_5_conflict_kept_without_fabricated_values(tmp_path):
     assert kept.quantity == "observed_phase_space.distance"
     assert kept.reason == conflict["reason"]
     assert [e.location for e in kept.evidence] == ["Table 3", "Section 4.2"]
-    assert kept.alternatives == []  # 不猜测两组数值
+    assert kept.alternatives == []  # Do not guess two sets of values.
     assert any(
         item.code == "conflict_structure_pending"
         for item in result.check.problems_of("science_pending")
@@ -277,7 +283,9 @@ def test_interval_metadata_preserved(tmp_path):
     assert value.interval_kind == "confidence"
     assert value.coverage.value == "90"
     assert value.coverage.unit == "%"
-    assert value.value is None  # 旧空字符串转为新格式空值
+    assert (
+        value.value is None
+    )  # Convert legacy empty strings to the new null representation.
 
 
 def test_migration_binds_known_pdf_and_is_reproducible(tmp_path):
@@ -296,13 +304,13 @@ def test_migration_binds_known_pdf_and_is_reproducible(tmp_path):
         known_pdfs=[material / "paper.pdf"],
         material_root=material,
     )
-    assert first.draft.files[0].sha256 == digest  # 哈希取自实际文件
+    assert first.draft.files[0].sha256 == digest  # Hash the actual file.
     (value,) = first.draft.contributions[0].quantities[0].values
     assert value.evidence[0].file_id == "pdf-1"
-    # 技术编号与草稿内容可复现
+    # Technical identifiers and draft contents are reproducible.
     assert first.draft.model_dump(mode="json") == second.draft.model_dump(mode="json")
     assert first.report.model_dump(mode="json") == second.report.model_dump(mode="json")
-    # 绑定已知材料后不再有未绑定证据问题
+    # Binding known materials resolves unbound-evidence issues.
     assert not any(item.code == "evidence_unbound" for item in first.check.problems)
     assert first.report.canary_verified
 
@@ -363,8 +371,10 @@ def test_migration_with_corrupt_canary_still_reads_and_reports(tmp_path):
     result = migrate_legacy_annotation(
         legacy_path=legacy, draft_dir=tmp_path / "draft", material_root=tmp_path
     )
-    assert not result.report.canary_verified  # 如实报告核对失败
-    read_legacy_annotation(legacy)  # 读取本身不因 canary 不符而拒绝
+    assert not result.report.canary_verified  # Report verification failure accurately.
+    read_legacy_annotation(
+        legacy
+    )  # A canary mismatch does not by itself prevent reading.
 
 
 def test_draft_written_as_parsable_gold_document(tmp_path):

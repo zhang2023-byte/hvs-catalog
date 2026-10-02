@@ -1,4 +1,4 @@
-"""运行清单与发布清单记录。"""
+"""Run/release manifest records."""
 
 from __future__ import annotations
 
@@ -23,11 +23,10 @@ ChannelState = Literal["not_started", "succeeded", "failed"]
 
 
 def _omit_unfilled_money(data: dict) -> dict:
-    """序列化时省略未填的货币费用字段；有值字段照常输出。
+    """Omit absent currency-cost fields while preserving populated historical values.
 
-    运行不再计算、填报或比较货币费用。历史记录中的有值
-    ``cost``/``currency`` 仍可读取并随再输出保留；未填（null）字段
-    不在新运行的 JSON 中主动输出，也不把缺失伪装成 0。
+    Runs no longer calculate/report/compare monetary fees. Historical cost/currency
+    values remain readable/reserializable; omit new null fields, never fabricate zero.
     """
     if data.get("cost") is None:
         data.pop("cost", None)
@@ -75,8 +74,8 @@ class InputSnapshot(Config):
     example_refs: list[ArtifactRef] = Field(min_length=0)
     precedent_refs: list[PrecedentSnapshotRef] = Field(min_length=0)
     existing_decision_refs: list[RecordRef] = Field(min_length=0)
-    # 工程执行（如材料准备）的固定选项：整体参与输入摘要；提取执行
-    # 保持空。值为字符串；结构化选项由调用方规范序列化后写入。
+    # Fixed engineering options, such as preparation, enter complete digests; extraction leaves them
+    # empty. Values are strings; callers canonically serialize structured options.
     options: dict[str, str] = Field(default_factory=dict)
 
 
@@ -212,7 +211,9 @@ class Channel(Config):
 
 
 def compute_release_manifest_sha256(data: ReleaseData) -> str:
-    """清单哈希只覆盖待批准内容与目标，不含批准回执和渠道执行状态。"""
+    """Manifest hashes cover approvable content/targets, excluding approval
+    receipts/channel execution.
+    """
     from .common import sha256_of
 
     return sha256_of(

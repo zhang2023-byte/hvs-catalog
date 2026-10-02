@@ -1,8 +1,7 @@
-"""登记的提取方法与共用步骤：仅 synthetic-mock 实现。
+"""Registered extraction methods/common steps, synthetic-mock only.
 
-步骤边界固定：``direct`` 一步产生名单；``candidate_review`` 先发现候
-选、再逐个判定产生名单；两者之后共用 ``quantities``（数值与论文贡献）与
-``finalize``。实际的真实提取实现留待后续任务接入。
+direct produces a roster; candidate_review discovers then judges candidates. Both share
+quantities for values/contributions and finalize. Real implementations await later work.
 """
 
 from __future__ import annotations
@@ -71,9 +70,9 @@ CANDIDATE_REVIEW_STEPS = (
 
 MOCK_IMPLEMENTATION = "synthetic-mock"
 
-#: 已注册 mock 明确声明的模型参数支持集：仅接受受限的确定性采样配置，
-#: 不提供随意内容容器。确定性模拟服务把参数记入请求但不改变固定应答；
-#: 真实模型接入时由各自的可信登记另行声明支持集。
+#: Mock registration declares restricted deterministic sampling support only,
+#: without arbitrary contents. Services record parameters without changing fixed responses;
+#: real models declare independent trusted supported sets when integrated.
 MOCK_PARAMETER_POLICY = ParameterPolicy(
     specs=(
         ParameterSpec(
@@ -118,7 +117,7 @@ CANDIDATE_REVIEW_METHOD = MethodSpec(
 
 
 def build_default_registry() -> PipelineRegistry:
-    """构造登记了两种 mock 方法的新登记表（可信代码内绑定）。"""
+    """Build a fresh trusted registry for both mock methods."""
     registry = PipelineRegistry()
     for spec in (DIRECT_METHOD, CANDIDATE_REVIEW_METHOD):
         registry.register(
@@ -133,5 +132,5 @@ def build_default_registry() -> PipelineRegistry:
     return registry
 
 
-#: 进程内默认登记表；需要隔离或扩展时调用方传入自建登记表。
+#: Process-default registry; callers supply separate registries for isolation/extensions.
 DEFAULT_REGISTRY = build_default_registry()

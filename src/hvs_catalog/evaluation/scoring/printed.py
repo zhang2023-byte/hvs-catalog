@@ -1,20 +1,17 @@
-"""受限排版与条件短语比较（评价设计 A1–A5、B 系列、C1、U1/U2 边界）。
+"""Restricted formatting/condition comparison (A1-A5, B cases, C1, U1/U2).
 
-比较按域区分：数值/单位/条件各自适用不同规则，不把任意英文差异套
-用到数值比较，也不把数值规则套到条件短语。
-
-- 数值域（``compare_number``）：只做无尺度转换的排版整理（Unicode
-  负号、上下标、``\\mathrm{}``/``\\,`` 包裹、``\\times``、时分秒标记、
-  受限空白）；保留原报精度、系数尾零、指数符号和单位尺度（C1、B1、
-  B2 由此保持不同）。未知宏或不可确定语义的表达一律 ``undecidable``
-  （U1），绝不删除宏后比较，也不因包含合法数字而放行。
-- 单位域（``compare_unit``）：符号不等即不同（不做尺度换算）；含未
-  支持语法的单位表达无法确定语义时 ``undecidable``。
-- 条件域（``compare_condition``）：精确匹配、A5 白名单、明确 M1/M2
-  模型差异、字面否定为确定判定；白名单未命中不能证明不同，其余未支
-  持差异一律 ``undecidable``（U2 缺失模型限定同样未决）。
-
-不使用 Embedding，不做 eval/sympy/单位换算。
+Numeric/unit/condition domains use separate rules; never apply arbitrary English
+differences to numeric comparison or numeric rules to conditions. compare_number
+performs scale-preserving formatting normalization of Unicode signs, scripts, supported
+LaTeX wrappers/spacing/times, sexagesimal markers, and limited whitespace. Preserve
+precision, coefficient trailing zeros, exponent signs, and unit scales, retaining
+C1/B1/B2 differences. Unknown macros or uninterpretable syntax stay undecidable; never
+strip macros or admit expressions merely containing valid digits. compare_unit performs
+no scale conversion; distinct supported symbols differ and unsupported syntax is
+undecidable. compare_condition uses exact matches, A5 allowlist, explicit M1/M2
+differences, and literal negation. Allowlist misses prove no difference; unsupported
+changes, including U2 missing model qualifiers, stay undecidable. No embeddings, eval,
+sympy, or unit conversion.
 """
 
 from __future__ import annotations
@@ -24,7 +21,7 @@ from typing import Literal
 
 Verdict = Literal["equivalent", "different", "undecidable"]
 
-# 已审 LaTeX 宏；出现其他宏（如 \mystery）即 undecidable。
+# Approved LaTeX macros only; any other macro such as \\mystery is undecidable.
 _KNOWN_MACROS = frozenset({"times", "mathrm", ",", ";", "!", " ", "quad", "qquad"})
 
 _SUPERSCRIPTS = {
@@ -47,18 +44,18 @@ _SUP_RUN_RE = re.compile("[" + "".join(_SUPERSCRIPTS) + "]+")
 _TIMES_SPACE_RE = re.compile(r"\s*\*\s*")
 _WS_RE = re.compile(r"\s+")
 
-# 时分秒上下标标记（A4）：仅折叠这三个单字母标记，不转换成角度。
+# A4 sexagesimal script markers: collapse only these three single-letter markers without degree conversion.
 _SEXAGESIMAL_MARKS = ("h", "m", "s")
 
-# 单位域的已支持字符集：字母、上下标记号与连字符/点。
+# Supported unit characters: letters, script notation, hyphens, and dots.
 _UNIT_ALLOWED = frozenset(
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789^{}-. "
 )
 
-# 完整受限数值语法（对整理后的串全匹配）：带符号小数、可选 e/E 指数
-# 或已审 ``*10^{±d}`` 乘幂、以及按时→分→秒顺序的时分秒链。字符在白
-# 名单内不代表语法有效：未完成指数（``8.2e+``）、断裂乘幂、非配对括
-# 号等一律不判确定差异。
+# Full restricted numeric grammar after normalization: signed decimals with optional e/E exponents,
+# approved *10^{signed integer} powers, or ordered hour-minute-second chains. Allowed characters
+# alone do not prove valid syntax: incomplete exponents (8.2e+), broken powers, and unmatched
+# parentheses never establish definite differences.
 _NUM_ATOM = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)"
 _NUM_EXP = r"(?:[eE][+-]?\d+)"
 _NUM_POW = r"(?:\*10\^\{[+-]?\d+\})"
@@ -74,7 +71,7 @@ _NUMERIC_FORM = re.compile(
     rf"(?:{_NUM_ATOM}(?:{_NUM_EXP}|{_NUM_POW})?|{_NUM_SEXAGESIMAL})"
 )
 
-# A5 精确白名单：模型条件短语的排版变体；U2：缺失模型限定的模糊短语。
+# A5 exact allowlist for model-condition formatting variants; U2 lacks a model qualifier.
 _MODEL_PHRASE_MODEL = {
     "under Galactic potential M1": "M1",
     "assuming potential M1": "M1",
@@ -94,10 +91,12 @@ def _normalize_whitespace(text: str) -> str:
 
 
 def normalize_printed(text: str) -> str | None:
-    """受限排版整理；含未知宏或不可整理表达时返回 ``None``（undecidable）。
+    """Restricted formatting normalization, returning None/undecidable for unknown macros
+    or unsupported expressions.
 
-    整理只产生比较用的临时解释，不改写任何记录；原报精度、系数尾零、
-    指数符号和单位尺度全部保留（C1、B1、B2 由此保持不同）。
+    Produce temporary comparison interpretations only; never rewrite records. Preserve
+    precision, coefficient trailing zeros, exponent signs, and unit scales so C1/B1/B2
+    remain distinct.
     """
     for match in _MACRO_RE.finditer(text):
         if match.group(1) not in _KNOWN_MACROS:
@@ -138,7 +137,9 @@ def _unwrap_mathrm(text: str) -> str:
 
 
 def is_supported_number_syntax(normalized: str) -> bool:
-    """整理后的串是否为完整受限数值语法（全匹配，非字符白名单）。"""
+    """Whether normalized text fully matches restricted numeric grammar, beyond a character
+    allowlist.
+    """
     return _NUMERIC_FORM.fullmatch(normalized) is not None
 
 
@@ -163,11 +164,12 @@ def _compare_domain(
 
 
 def compare_number(gold: str, prediction: str) -> Verdict:
-    """数值域比较：受限语法内排版等价或明确不同，其余不可确定。
+    """Numeric-domain comparison: supported formatting equivalence or definite difference;
+    otherwise undecidable.
 
-    两串完全相同且为完整受限语法才判等价；任一侧语法未支持（未完成
-    指数、断裂乘幂、非配对括号、数值域外文本等）时不从字符合法推导
-    科学差异，一律 ``undecidable``。
+    Even identical strings require complete supported syntax for equivalence. Incomplete
+    exponents, broken powers, unmatched parentheses, or out-of-domain text never imply
+    scientific differences merely through allowed characters.
     """
     left = normalize_printed(gold)
     right = normalize_printed(prediction)
@@ -183,7 +185,9 @@ def compare_number(gold: str, prediction: str) -> Verdict:
 
 
 def compare_unit(gold: str, prediction: str) -> Verdict:
-    """单位域比较：不做尺度换算，符号不等即不同；未支持语法未决。"""
+    """Unit-domain comparison without scale conversion: distinct supported symbols differ;
+    unsupported syntax is undecidable.
+    """
     left, right, determined = _compare_domain(gold, prediction, _is_supported_unit)
     if left is None or right is None:
         return "undecidable"
@@ -193,15 +197,17 @@ def compare_unit(gold: str, prediction: str) -> Verdict:
 
 
 def compare_printed(gold: str, prediction: str) -> Verdict:
-    """两段原报打印串的比较（数值域语义；单位请用 ``compare_unit``）。"""
+    """Compare printed strings with numeric-domain semantics; use compare_unit for units."""
     return compare_number(gold, prediction)
 
 
 def compare_condition(gold: str, prediction: str) -> Verdict:
-    """条件域比较：精确匹配、A5 白名单、M1/M2 差异、字面否定为确定判定。
+    """Condition-domain comparison using exact matches, A5 allowlist, M1/M2 differences,
+    and literal negation.
 
-    白名单未命中不能证明不同：未支持的条件差异一律 ``undecidable``，
-    交由既定未知出口或合规 Agent 判定，不得默认对/错。
+    Allowlist misses cannot prove difference. Unsupported conditions stay undecidable
+    for the established unknown path or compliant Agent; never default them
+    correct/incorrect.
     """
     left = _normalize_whitespace(gold)
     right = _normalize_whitespace(prediction)
@@ -217,7 +223,7 @@ def compare_condition(gold: str, prediction: str) -> Verdict:
     right_model = _MODEL_PHRASE_MODEL.get(right_base)
     if left_model is not None and right_model is not None:
         if left_negated or right_negated:
-            # 同一模型被字面否定是确定差异；否定 M1 不等于选定 M2
+            # Literal negation of the same model is a definite difference; negating M1 does not select M2.
             return "different" if left_model == right_model else "undecidable"
         return "equivalent" if left_model == right_model else "different"
     if (left_model is not None and right_base in _VAGUE_MODEL_PHRASES) or (

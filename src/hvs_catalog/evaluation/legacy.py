@@ -1,10 +1,10 @@
-"""旧 contribution Gold（``benchmark.hvs_contribution_annotation``）v4 读取适配器。
+"""Read-only adapter for legacy contribution Gold benchmark.hvs_contribution_annotation v4.
 
-只读：解析与校验旧文档，不修改输入，也不把旧内容交给新格式模型后静默
-丢弃字段。结构按旧仓 ``StrictModel`` 语义复刻（未知字段拒绝），科学校验
-复刻 v4 的数值形状、状态、坐标与冲突规则；跨对象名称规范化等旧仓内部
-实现细节以精确值重复检查代替，足以发现读取阶段的损坏输入。更早版本
-（v1–v3）涉及物理量词表与字段差异，明确拒绝且不静默升级。
+Parse/validate without modifying input or silently discarding fields through new models.
+Reproduce legacy StrictModel rejection of unknown fields and v4
+value/state/coordinate/conflict rules. Exact-value duplicate checks replace internal
+cross-object normalization and catch damaged inputs at read time. Explicitly reject
+v1-v3 vocabulary/field differences without silent upgrades.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from .numbers import (
 LEGACY_SCHEMA_NAME = "benchmark.hvs_contribution_annotation"
 LEGACY_SCHEMA_VERSION = 4
 
-#: 旧格式的作者总体状态词表；``not_assessed`` 在当前规则中已移除。
+#: Legacy overall-author vocabulary; current rules removed not_assessed.
 LEGACY_AUTHOR_STATUSES = (
     "unbound",
     "possibly_unbound",
@@ -292,7 +292,7 @@ class LegacyReportedValue(LegacyModel):
 
             def fraction(item: LegacyIntervalProbability) -> float:
                 number = parse_plain_number(item.value)
-                assert number is not None  # 已通过自身校验
+                assert number is not None  # Already passed its own validation.
                 return number / (100.0 if item.unit == "%" else 1.0)
 
             if fraction(self.lower_quantile) >= fraction(self.upper_quantile):
@@ -300,7 +300,9 @@ class LegacyReportedValue(LegacyModel):
         return self
 
     def numeric_evidence_sources(self) -> list[LegacyEvidence]:
-        """直接数值证据来源，包括嵌套的覆盖概率、分位点与误差分量。"""
+        """Direct numeric evidence, including nested coverage probabilities, quantiles, and
+        error components.
+        """
         sources: list[LegacyEvidence] = []
         for node in (
             self,
@@ -535,7 +537,7 @@ class LegacyAnnotation(LegacyModel):
 
 
 def parse_legacy_annotation(payload: str | dict | Path) -> LegacyAnnotation:
-    """解析并校验一份旧 contribution Gold 文档；输入不被修改。"""
+    """Parse and validate legacy contribution Gold without modifying input."""
     if isinstance(payload, Path):
         payload = payload.read_text(encoding="utf-8")
     if isinstance(payload, str):
@@ -569,12 +571,12 @@ def parse_legacy_annotation(payload: str | dict | Path) -> LegacyAnnotation:
 
 
 def read_legacy_annotation(path: str | Path) -> LegacyAnnotation:
-    """从文件只读解析旧文档；文件内容与时间戳不被修改。"""
+    """Read-only legacy file parsing leaves contents and timestamps unchanged."""
     return parse_legacy_annotation(Path(path).read_text(encoding="utf-8"))
 
 
 def legacy_document_sha256(payload: str | dict) -> str:
-    """文档字节的 SHA-256（字符串按原样编码）。"""
+    """SHA-256 of document bytes, encoding strings unchanged."""
     data = (
         payload.encode("utf-8")
         if isinstance(payload, str)
@@ -586,7 +588,7 @@ def legacy_document_sha256(payload: str | dict) -> str:
 
 
 def legacy_canary(document: dict) -> str:
-    """复刻旧仓 canary：按去除 canary 字段后的规范化内容计算。"""
+    """Reproduce the legacy canary from canonical contents excluding the canary field."""
     payload = dict(document)
     payload.pop("canary", None)
     canonical = json.dumps(
@@ -597,10 +599,11 @@ def legacy_canary(document: dict) -> str:
 
 
 def verify_legacy_canary(annotation: LegacyAnnotation, *, document: dict) -> bool:
-    """旧输入完整性核对：文档自带的 canary 与内容是否一致。
+    """Check whether the legacy document canary matches its contents.
 
-    旧文档未携带 canary 时返回 True（无从核对，不视为错误）；canary 是
-    泄漏审计标记，核对结果不代表科学审定。
+    Return true when no canary exists because verification is unavailable, not
+    erroneous. Canaries mark leakage audits; matching never constitutes scientific
+    approval.
     """
     recorded = str(document.get("canary") or "")
     if not recorded:
@@ -609,6 +612,6 @@ def verify_legacy_canary(annotation: LegacyAnnotation, *, document: dict) -> boo
 
 
 def legacy_plain_number_normalized(text: str) -> str | None:
-    """暴露规范化数字文本供报告使用；原文不改写。"""
+    """Expose normalized numeric text for reports without rewriting source text."""
     normalized = normalize_number_text(text)
     return normalized or None

@@ -1,7 +1,8 @@
-"""工作空间身份、整目录初始化与不可变材料发布。
+"""Workspace identity, whole-directory initialization, and immutable publication.
 
-只接受新目录或空目录；同级暂存空间完成并关闭数据库后整体发布。
-不扫描或接管崩溃残留，只清理本调用创建的未发布临时目录。
+Accept fresh/empty directories only; complete sibling staging and close databases before
+publishing atomically. Never scan/take over crash remnants; clean only this call's
+unpublished staging.
 """
 
 from __future__ import annotations
@@ -61,7 +62,7 @@ def _fsync_dir(path: Path) -> None:
 
 
 def _write_file_published(path: Path, data: bytes) -> None:
-    """同目录临时文件、fsync、原子改名，再同步目录。"""
+    """Write/fsync a sibling temporary file, rename atomically, then sync the directory."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.parent / f".{path.name}.tmp-{os.getpid()}-{uuid.uuid4().hex[:8]}"
     try:
@@ -126,7 +127,7 @@ def _require_empty_target(root: Path) -> None:
 
 
 def _publish_initialization(staging: Path, root: Path) -> None:
-    """整目录原子发布；POSIX rename 不覆盖非空目标目录。"""
+    """Publish directories atomically; POSIX rename cannot overwrite nonempty targets."""
     _require_empty_target(root)
     try:
         os.rename(staging, root)
@@ -138,7 +139,9 @@ def _publish_initialization(staging: Path, root: Path) -> None:
 
 
 def initialize_workspace(root: Path, *, config: dict | None = None) -> Workspace:
-    """新建完整空间；兼容空间重复初始化只读取原配置。"""
+    """Create complete workspaces; compatible reinitialization only reads original
+    configuration.
+    """
     from .store import RecordStore
 
     root = Path(root).resolve()
@@ -173,14 +176,14 @@ def initialize_workspace(root: Path, *, config: dict | None = None) -> Workspace
         )
         _publish_initialization(staging, root)
     finally:
-        # 仅清理本调用创建的未发布目录；不处理其他调用或历史残留。
+        # Clean this call's unpublished directories only, leaving other calls/historical remnants untouched.
         if staging.exists():
             shutil.rmtree(staging)
     return open_workspace(root)
 
 
 def open_workspace(root: Path) -> Workspace:
-    """显式打开空间；不隐式初始化、修复或迁移。"""
+    """Open explicitly without implicit initialization, repair, or migration."""
     root = Path(root).resolve()
     identity = _read_marker(root)
     for name in (BUSINESS_DB, CHECKPOINT_DB):
@@ -227,7 +230,7 @@ def _validate_config(config: dict) -> None:
 
 
 def resolve_within(root: Path, relative: str | Path) -> Path:
-    """解析根内相对路径；越界或符号链接拒绝。"""
+    """Resolve root-relative paths, rejecting escapes/symlinks."""
     rel = Path(relative)
     if rel.is_absolute() or rel.as_posix().startswith(("~", "/")):
         raise WorkspaceIntegrityError(f"文件路径必须是相对路径：{relative}")
@@ -247,7 +250,7 @@ def resolve_within(root: Path, relative: str | Path) -> Path:
 
 
 class Workspace:
-    """已打开的空间；写操作由调用方在锁内进行。"""
+    """Opened workspace; callers perform writes under its lock."""
 
     def __init__(self, root: Path, identity: SpaceIdentity) -> None:
         self.root = root

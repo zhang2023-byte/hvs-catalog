@@ -1,15 +1,15 @@
-"""来源包展开：安全提取成员、文本解码与派生文件登记。
+"""Expand source packages safely, decode text, and register derived files.
 
-输入是获取阶段（R10）保存的来源包记录修订与原包字节哈希；复用
-``inspect_package`` 的有界包检查与安全成员规则，不重新下载或混用版本。
-本模块把通过检查的普通成员按内容寻址写入工作空间 ``sources/``，并登
-记每个成员的字节哈希、媒体类型与读取状态；不为缺失文件造哈希或行号。
+Use acquisition's saved source revision and original byte hash with bounded
+inspect_package/member safety checks, without redownload/version mixing. Publish checked
+regular members content-addressably under sources/ with hashes, media types, and read
+states; never invent hashes/line numbers for missing files.
 
-文本解码只按明确依据进行：UTF-8 直接解码；成员声明（``% !TeX
-encoding``）或操作者固定选择（请求 ``member_encoding``）为 latin-1
-时，按每字节一一映射生成保留行数的 UTF-8 派生文本并记录原字节、编
-码与映射。未声明且 UTF-8 解码失败的成员保持未处理（不猜编码）；
-带 BOM 的 UTF-16 等其他明确编码当前不支持，同样保持未处理。
+Decode only from explicit grounds: UTF-8 directly, or declared % !TeX encoding / fixed
+member_encoding latin-1 through one-character-per-byte mapping to line-preserving
+derived UTF-8 with original bytes/encoding/mapping retained. Undeclared UTF-8 failures
+remain unprocessed without guessing. Unsupported explicit encodings such as BOM-marked
+UTF-16 also remain unprocessed.
 """
 
 from __future__ import annotations
@@ -38,29 +38,31 @@ __all__ = [
     "expand_source_package",
 ]
 
-#: 单个成员作为正文/表格输入处理的字节上限（工程护栏）。
+#: Byte limit for one member processed as body/table input.
 MAX_MEMBER_TEXT_BYTES = 32 * 1024 * 1024
 
 
 class MaterialExpansionError(Exception):
-    """来源包展开的工程失败；原包与已提交事实保留。"""
+    """Engineering package-expansion failure; retain original packages and committed facts."""
 
 
 @dataclass(frozen=True)
 class ExpandedMember:
-    """一个已展开成员的工程描述（原字节＋可选文本视图）。"""
+    """Engineering description of an expanded member: original bytes and optional text
+    view.
+    """
 
     name: str
     sha256: str
     size: int
     media_type: str
-    # 可用的正文文本（UTF-8 或 latin-1 原文；后者同时提供派生 UTF-8）。
+    # Usable UTF-8 or latin-1 body text; latin-1 also supplies derived UTF-8.
     text: str | None = None
     encoding: str | None = None
-    # 非 UTF-8 解码时的派生 UTF-8 文本（行数与原字节一一对应）及其哈希。
+    # Derived UTF-8 text/hash for non-UTF-8 decoding, with lines corresponding to original bytes.
     derived_text: str | None = None
     derived_sha256: str | None = None
-    # 解码不支持的明确说明；None 表示成功或按二进制保留。
+    # Explicit unsupported-decoding reason; None means success or binary retention.
     decode_note: str | None = None
 
     @property
@@ -70,7 +72,7 @@ class ExpandedMember:
 
 @dataclass
 class ExpandedPackage:
-    """一次展开的结果：原包哈希、包形态与成员清单。"""
+    """Expansion result: original package hash, format, and member manifest."""
 
     raw_sha256: str
     package_format: str
@@ -96,7 +98,7 @@ _TEXT_SUFFIXES = (
 )
 
 
-#: 受支持的文本编码（latin-1 每字节映射一个字符，行数与字节一一对应）。
+#: Supported encodings; latin-1 maps each byte to a character while preserving line correspondence.
 SUPPORTED_TEXT_ENCODINGS = ("utf-8", "latin-1")
 
 _DECLARED_ENCODING_RE = re.compile(
@@ -105,25 +107,25 @@ _DECLARED_ENCODING_RE = re.compile(
 
 
 def _declared_encoding(payload: bytes) -> str | None:
-    """读取成员自身的显式编码声明（``% !TeX encoding = X``）。"""
+    """Read the member's explicit % !TeX encoding = X declaration."""
     head = payload[:4096]
     match = _DECLARED_ENCODING_RE.search(head)
     if match is None:
         return None
     try:
         return match.group(1).decode("ascii").strip().lower()
-    except UnicodeDecodeError:  # pragma: no cover - 声明区不可为非 ASCII
+    except UnicodeDecodeError:  # pragma: no cover - the declaration area must be ASCII
         return None
 
 
 def _decode_member(
     name: str, payload: bytes, *, fixed_encoding: str | None = None
 ) -> ExpandedMember:
-    """按受支持方式解码一个成员；不使用 errors=replace 静默修补。
+    """Decode members using supported methods without silent errors=replace repair.
 
-    只接受显式确认或操作者固定选择的受支持编码（utf-8／latin-1）；
-    未声明且未固定、声明未支持或解码失败时保持未处理，不以 latin-1
-    作为万能成功回退。
+    Accept explicitly declared or operator-fixed utf-8/latin-1 only. Missing
+    declarations/choices, unsupported declarations, or failed decoding remain
+    unprocessed; latin-1 is never a universal success fallback.
     """
     lowered = name.lower()
     digest = hashlib.sha256(payload).hexdigest()
@@ -187,10 +189,12 @@ def _decode_member(
 def expand_source_package(
     space: Workspace, payload: bytes, *, fixed_encoding: str | None = None
 ) -> ExpandedPackage:
-    """有界展开一个来源包；成员按内容寻址发布到工作空间 ``sources/``。
+    """Expand a bounded source package and publish content-addressed members under
+    sources/.
 
-    包形态与成员安全检查完全复用获取阶段的 ``inspect_package``：越界
-    路径、链接、设备、重名与超限在检查阶段已被拒绝，这里不再自行解包。
+    Reuse acquisition inspect_package format/safety checks completely: escaping paths,
+    links, devices, duplicates, and limits are already rejected. Do not implement
+    separate unchecked extraction.
     """
     try:
         inspection: PackageInspection = inspect_package(payload)
@@ -205,7 +209,9 @@ def expand_source_package(
         published = space.publish_source_file(
             f"materials/members/{member.sha256}.bin", member_payload
         )
-        if published.sha256 != member.sha256:  # pragma: no cover - 内容寻址自洽
+        if (
+            published.sha256 != member.sha256
+        ):  # pragma: no cover - content addressing is self-consistent
             raise MaterialExpansionError(f"成员内容寻址发布失败：{entry.name}")
         members.append(member)
     return ExpandedPackage(
@@ -217,7 +223,7 @@ def expand_source_package(
 
 
 def _extract_member(payload: bytes, inspection: PackageInspection, name: str) -> bytes:
-    """从原包字节提取一个已通过检查的成员；不做任何磁盘解包。"""
+    """Extract one checked member from original package bytes without disk unpacking."""
     if inspection.format == "single_tex":
         return payload
     if inspection.format == "single_tex_gzip":
@@ -238,14 +244,18 @@ def _extract_member(payload: bytes, inspection: PackageInspection, name: str) ->
                 if candidate.isfile() and candidate.name == name:
                     info = candidate
                     break
-            if info is None:  # pragma: no cover - 清单来自同一检查
+            if (
+                info is None
+            ):  # pragma: no cover - the manifest comes from the same inspection
                 raise MaterialExpansionError(f"成员不在原包内：{name}")
             fileobj = archive.extractfile(info)
-            if fileobj is None:  # pragma: no cover - isfile 已排除
+            if fileobj is None:  # pragma: no cover - isfile already excluded this case
                 raise MaterialExpansionError(f"成员无法读取：{name}")
             data = fileobj.read(int(info.size))
-    except tarfile.TarError as exc:  # pragma: no cover - 检查已通过
+    except tarfile.TarError as exc:  # pragma: no cover - inspection already passed
         raise MaterialExpansionError(f"成员提取失败：{name}：{exc}") from exc
-    if len(data) != int(info.size):  # pragma: no cover - 检查已核对尺寸
+    if len(data) != int(
+        info.size
+    ):  # pragma: no cover - inspection already verified size
         raise MaterialExpansionError(f"成员字节数与声明不符：{name}")
     return data

@@ -1,1 +1,3 @@
-"""共享 pipeline 的离线演示薄封装；独立旧图与三库布局不再支持。"""
+"""Thin offline-demo wrapper around shared pipeline; standalone legacy graphs and
+three-database layouts are unsupported.
+"""

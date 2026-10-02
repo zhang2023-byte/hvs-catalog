@@ -1,4 +1,6 @@
-"""跨记录集合校验：引用、版本、论文归属、名单对应与材料定位核对。"""
+"""Cross-record checks for references, versions, paper ownership, roster correspondence,
+and material locations.
+"""
 
 from __future__ import annotations
 
@@ -42,7 +44,7 @@ from .source import (
     gaps_affecting_quantity,
     gaps_affecting_roster,
 )
-from .submission import SubmissionError  # noqa: F401  公开异常类型
+from .submission import SubmissionError  # noqa: F401  public exception type
 
 
 @dataclass(frozen=True)
@@ -55,7 +57,7 @@ class ValidationIssue:
 
 
 class CollectionValidationError(ValueError):
-    """记录集合未通过校验；issues 汇总全部问题。"""
+    """Record collection failed validation; issues aggregates all problems."""
 
     def __init__(self, issues: list[ValidationIssue]) -> None:
         self.issues = issues
@@ -76,7 +78,7 @@ class _Index:
 
 
 def _iter_refs(value: Any):
-    """深度遍历模型中的引用，产出 (路径, 引用) 。"""
+    """Recursively traverse references, yielding (path, reference)."""
     if isinstance(value, (RecordRef, ItemRef, GapRef, ArtifactRef)):
         yield "", value
     elif isinstance(value, BaseModel):
@@ -91,7 +93,9 @@ def _iter_refs(value: Any):
 
 
 def iter_record_refs(value: Any):
-    """复用共同引用遍历，产出准确记录引用（含条目与缺口引用）。"""
+    """Reuse shared traversal to yield exact record references, including item/gap
+    references.
+    """
     for _, ref in _iter_refs(value):
         if isinstance(ref, (RecordRef, ItemRef)):
             yield RecordRef(record_id=ref.record_id, revision=ref.revision)
@@ -108,9 +112,10 @@ def _check_evidence_ref(
     field: str,
     paper_keys: set[str] | None,
 ) -> EvidenceRecord | None:
-    """核对单条证据引用：准确修订、记录类型与论文归属。
+    """Verify one evidence reference's exact revision, type, and paper ownership.
 
-    返回解析到的证据记录；引用缺失时返回 None（缺失已由通用解析报告）。
+    Return resolved evidence or None when absent; general resolution already reports
+    missing targets.
     """
     target = index.resolve(ref)
     if target is None:
@@ -165,7 +170,7 @@ def _fragment_checks(
     field: str,
     paper_keys: set[str] | None,
 ) -> None:
-    """数字片段必须出现在其引用的准确修订的原文片段中。"""
+    """Numeric fragments must occur in source excerpts at the exact referenced revision."""
     for part in parts:
         evidence = _check_evidence_ref(
             part.evidence_ref,
@@ -176,7 +181,7 @@ def _fragment_checks(
             paper_keys=paper_keys,
         )
         if evidence is None:
-            continue  # 引用缺失或类型/归属错误已在上面报告
+            continue  # Missing/type/ownership errors were reported above.
         if part.raw_fragment not in evidence.data.excerpt:
             issues.append(
                 ValidationIssue(
@@ -252,7 +257,9 @@ def _item_ids(record: AnyRecord) -> set[str] | None:
 def _source_paper_keys(
     source_refs: Iterable[RecordRef], index: _Index
 ) -> set[str] | None:
-    """从来源包引用提取论文键；全部未解析时返回 None（缺失已在别处报告）。"""
+    """Derive paper keys from source references; None means all unresolved and already
+    reported elsewhere.
+    """
     keys: set[str] = set()
     resolved_any = False
     for ref in source_refs:
@@ -272,7 +279,9 @@ def _check_coverage_against_source(
     source: SourcePackageRecord,
     affecting: list[str],
 ) -> list[ValidationIssue]:
-    """完成声明与来源包约束的一致核对；转换与直接加载共用同一规则。"""
+    """Check completion against source-package constraints through shared
+    conversion/direct-load rules.
+    """
     issues: list[ValidationIssue] = []
     known_files = {file.file_id for file in source.data.files}
     unknown_files = [
@@ -325,7 +334,9 @@ def _check_contribution(
     keys: set[str],
     source: SourcePackageRecord | None,
 ) -> None:
-    """单个对象贡献的科学证据、数值片段与完成声明核对；转换与补丁共用。"""
+    """Check contribution evidence, numeric fragments, and completion for
+    conversion/patches.
+    """
     for identifier in contribution.identifiers:
         _check_evidence_refs(
             identifier.evidence_refs,
@@ -420,7 +431,7 @@ def _check_roster_entry(
     where: str,
     keys: set[str],
 ) -> None:
-    """单个名单条目的证据与问题引用核对；记录与补丁共用。"""
+    """Check roster evidence/question references for records/patches."""
     for identifier in entry.identifiers:
         _check_evidence_refs(
             identifier.evidence_refs,
@@ -453,12 +464,12 @@ def _check_roster_entry(
 def _check_typed_refs(
     record: AnyRecord, index: _Index, issues: list[ValidationIssue]
 ) -> None:
-    """按字段职责核对引用目标的记录类型与内容对应。"""
+    """Verify target record types/content correspondence by field responsibilities."""
 
     def expect(ref: RecordRef, types: tuple[type[AnyRecord], ...], field: str) -> None:
         target = index.resolve(ref)
         if target is None:
-            return  # 引用缺失已由通用解析报告
+            return  # General resolution already reported missing references.
         if not isinstance(target, types):
             names = "/".join(t.RECORD_NAME for t in types)
             issues.append(
@@ -711,7 +722,7 @@ def _check_object_change(
 def _check_ref_targets(
     where: str, value: Any, index: _Index, issues: list[ValidationIssue]
 ) -> None:
-    """核对数据中全部引用的目标存在性；记录数据与补丁条目共用。"""
+    """Verify every data reference target exists, sharing record/patch checks."""
     for _, ref in _iter_refs(value):
         if isinstance(ref, (RecordRef, ItemRef)):
             if index.resolve(ref) is None:
@@ -747,10 +758,11 @@ def _check_patch(
     index: _Index,
     issues: list[ValidationIssue],
 ) -> None:
-    """补丁目标必须属于该问题的目标范围，按目标条目整体校验最终状态与引用。
+    """Patch targets must lie within question scope; validate final item states/references
+    together.
 
-    目标定位与字段应用复用 ``records.patches`` 的纯函数，与实际应用
-    共用同一解释；这里只验证补丁声明，不落盘、不产生新修订。
+    Reuse records.patches pure target/field interpretation with actual application.
+    Validate declarations only, without persistence/new revisions.
     """
     where = decision.record_id
     allowed = {
@@ -768,7 +780,7 @@ def _check_patch(
         return
     target_record = index.resolve(patch.target)
     if target_record is None:
-        return  # 目标缺失已由通用解析报告
+        return  # General resolution already reported missing targets.
     item = locate_patch_item(target_record, patch.target.item_id)
     if item is UNSUPPORTED_ITEM_TARGET:
         issues.append(
@@ -793,7 +805,7 @@ def _check_patch(
     except PatchApplicationError as exc:
         issues.extend(ValidationIssue(where, reason) for reason in exc.reasons)
         return
-    # 补丁携带的科学引用与记录路径执行同一套核对
+    # Apply identical science-reference checks to patches and ordinary record paths.
     _check_ref_targets(f"{where} 补丁", patched, index, issues)
     keys = {target_record.data.paper_key}
     if isinstance(patched, ObjectContribution) and isinstance(
@@ -867,8 +879,8 @@ def _check_materials(
 ) -> None:
     for record in records:
         if isinstance(record, ExternalRecord):
-            # 外部响应属于论文材料；运行清单中的请求/响应归档属于运行目录，
-            # 不按本材料根核对，由工作空间保存与运行恢复核验。
+            # External responses are paper materials; archived run requests/responses belong to runs
+            # and are verified by workspace saves/recovery, not this material root.
             for _, ref in _iter_refs(record.data):
                 if isinstance(ref, ArtifactRef):
                     _check_artifact(record.record_id, ref, materials_root, issues)
@@ -953,10 +965,10 @@ def _check_locator(
         if actual != record.data.excerpt:
             issues.append(ValidationIssue(where, "引文与指定版本的原文行不一致"))
     elif locator.kind == "table_cell":
-        # 与材料准备共用同一 CSV／ECSV 逻辑记录接口（保存、备份与消费
-        # 一致）；零命中失败，唯一命中可不填序号，多命中必须补键或明确
-        # 序号，不默取第一行。row_number 是命中 row_key 后的 1 基序号，
-        # 不是源文件物理行号。
+        # Share preparation's CSV/ECSV logical readers consistently across saving/backup/consumption.
+        # Zero matches fail; unique matches need no ordinal; multiple matches require additional keys
+        # or explicit ordinals, never silent first-row selection. row_number is one-based among row_key matches,
+        # not a physical source line number.
         from .tabular import TabularReadError, read_table_records
 
         try:
@@ -1069,7 +1081,9 @@ def _resolve_json_pointer(document: Any, pointer: str) -> Any:
 def validate_collection(
     records: list[AnyRecord], materials_root: Path | str | None = None
 ) -> list[ValidationIssue]:
-    """校验记录集合；发现问题时抛出 CollectionValidationError，否则返回问题列表（空）。"""
+    """Validate collections; raise CollectionValidationError on issues, otherwise return an
+    empty list.
+    """
     issues: list[ValidationIssue] = []
 
     index = _Index(records)

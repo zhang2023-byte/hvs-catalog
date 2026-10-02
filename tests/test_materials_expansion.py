@@ -1,4 +1,4 @@
-"""来源包展开与文本解码的合成测试。"""
+"""Synthetic source-package expansion and text-decoding tests."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def test_expand_members_publishes_content_addressed_files(tmp_path):
     by_name = {m.name: m for m in expanded.members}
     csv_member = by_name["backing.csv"]
     assert csv_member.sha256 == __import__("hashlib").sha256(BACKING_CSV).hexdigest()
-    # 成员按内容寻址发布到 sources/，可读回
+    # Publish content-addressed members under sources/ and read them back.
     from hvs_catalog.records.common import ArtifactRef
 
     data = space.read_file(
@@ -39,10 +39,10 @@ def test_expand_members_publishes_content_addressed_files(tmp_path):
         )
     )
     assert data == BACKING_CSV
-    # 文本成员可解码并保留原表达
+    # Decode text members while preserving their original expression.
     assert by_name["backing.csv"].text is not None
     assert by_name["backing.csv"].encoding == "utf-8"
-    # 非文本成员按二进制保留
+    # Retain nontext members as binary.
     fits = by_name["payloads/data.fits"]
     assert fits.text is None
     assert fits.decode_note is None
@@ -57,23 +57,23 @@ def test_latin1_member_derives_utf8_mapping(tmp_path):
         }
     )
     space, _ = prepared_space(tmp_path, package)
-    # 未声明且未固定选择时不猜 latin-1，保持未处理。
+    # Without a declaration or fixed choice, do not guess latin-1; leave the member unprocessed.
     strict = expand_source_package(space, package)
     strict_member = next(m for m in strict.members if m.name == "notes_l1.tex")
     assert strict_member.text is None
     assert strict_member.decode_note and "保持未处理" in strict_member.decode_note
-    # 操作者固定选择 latin-1（进入固定输入）才按映射派生。
+    # Derive mapped text only after the operator fixes latin-1 in the input snapshot.
     expanded = expand_source_package(space, package, fixed_encoding="latin-1")
     member = next(m for m in expanded.members if m.name == "notes_l1.tex")
     assert member.encoding == "latin-1"
     assert member.text is not None
-    # 派生 UTF-8 文本行数与原字节一一对应
+    # Derived UTF-8 lines correspond one-to-one with original bytes.
     derived_bytes = member.derived_text.encode("utf-8")
     assert derived_bytes == raw.decode("latin-1").encode("utf-8")
     assert (
         member.derived_sha256 == __import__("hashlib").sha256(derived_bytes).hexdigest()
     )
-    # 原字节哈希仍是原字节
+    # The original byte hash remains unchanged.
     assert member.sha256 == __import__("hashlib").sha256(raw).hexdigest()
 
 
@@ -96,7 +96,7 @@ def test_single_tex_package_member_named_main(tmp_path):
 
 
 def test_unsafe_package_rejected_without_expansion(tmp_path):
-    # 构造带绝对路径成员的 tar：inspect_package 拒绝，expand 报工程错误。
+    # Build a tar with an absolute-path member: inspect_package rejects it and expand reports an engineering error.
     raw = io.BytesIO()
     with tarfile.open(fileobj=raw, mode="w") as archive:
         info = tarfile.TarInfo("/etc/evil.tex")
@@ -105,13 +105,15 @@ def test_unsafe_package_rejected_without_expansion(tmp_path):
     space, _ = prepared_space(tmp_path)
     with pytest.raises(MaterialExpansionError, match="安全检查"):
         expand_source_package(space, raw.getvalue())
-    # 不写入任何成员文件
+    # Write no member files.
     members_dir = space.root / "sources" / "materials" / "members"
     assert not members_dir.exists() or not any(members_dir.iterdir())
 
 
 def test_declared_unsupported_encoding_stays_unparsed(tmp_path):
-    """成员自身声明的编码不在受支持集时保持未处理，不猜 latin-1。"""
+    """Leave members unprocessed when their declared encoding is unsupported; do not guess
+    latin-1.
+    """
     raw = b"% !TeX encoding = windows-1252\nFIC-A\x96FIC-B\n"
     package = make_tar_gz(
         {
@@ -128,7 +130,7 @@ def test_declared_unsupported_encoding_stays_unparsed(tmp_path):
 
 
 def test_declared_latin1_encoding_derives_mapping(tmp_path):
-    """成员自身声明 latin-1 时按声明派生 UTF-8 映射。"""
+    """A member explicitly declaring latin-1 derives mapped UTF-8 text."""
     raw = b"% !TeX encoding = latin-1\nGravi%t f\xfcr \xf6laf\n"
     package = make_tar_gz(
         {

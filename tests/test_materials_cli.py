@@ -1,4 +1,4 @@
-"""materials CLI 的合成测试：prepare/status/resume/consume 与退出码。"""
+"""Synthetic materials CLI tests for prepare/status/resume/consume and exit codes."""
 
 from __future__ import annotations
 
@@ -16,7 +16,9 @@ from hvs_catalog.materials.service import MaterialsService
 
 
 def _run_cli(space, service_runner, *args):
-    """以注入的假转换器运行 CLI（通过环境替换默认运行器）。"""
+    """Run the CLI with an injected fake converter by replacing the default runner in the
+    test environment.
+    """
     from hvs_catalog import cli_materials
     from hvs_catalog.materials import service as service_mod
 
@@ -72,7 +74,7 @@ def test_cli_prepare_status_resume_consume_flow(tmp_path, capsys):
     assert status["config"]["request"]["paper_key"] == imported.canonical_id
 
     code = _run_cli(space, runner, "resume", "--execution", execution_id, "--json")
-    assert code == 5  # 已完成执行的幂等重入
+    assert code == 5  # Idempotent reentry after execution completes.
     resumed = json.loads(capsys.readouterr().out)
     assert resumed["mode"] == "already-finished"
 
@@ -108,7 +110,7 @@ def test_cli_prepare_pauses_with_exit_three_and_resumes_after_decision(
     assert payload["report"]["outcome"] == "paused"
     execution_id = payload["handle"]["execution_id"]
 
-    # 专家经 R05 接口提交决定（答复精确给出候选代码 A）
+    # An expert submits a decision through the R05 interface, explicitly giving candidate code A.
     from hvs_catalog.records.common import RecordRef
     from hvs_catalog.records.questions import Actor
     from hvs_catalog.review import ReviewService

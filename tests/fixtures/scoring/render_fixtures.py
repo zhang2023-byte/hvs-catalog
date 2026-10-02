@@ -1,8 +1,8 @@
-"""从 samples.py 确定性重生成 inputs/ 下的冻结 JSON 输入。
+"""Deterministically regenerate frozen JSON inputs from samples.py.
 
-用法：``uv run --offline python tests/fixtures/scoring/render_fixtures.py``
-文件名按样例职责取自 ``samples.SAMPLE_FILES``。预期结果不在此生成：
-``expected/expected.json`` 由人工按开工规格维护。
+Usage: ``uv run --offline python tests/fixtures/scoring/render_fixtures.py``. Filenames
+follow ``samples.SAMPLE_FILES``. Expected results are maintained manually in
+``expected/expected.json`` from the initial specification, not generated here.
 """
 
 from __future__ import annotations

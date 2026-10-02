@@ -1,4 +1,4 @@
-"""从科学规则来源读取物理量编码与作者状态；记录格式不另行维护词表。"""
+"""Load quantities/author states from science sources without separate vocabularies."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ EXPECTED_STATE_COUNT = 5
 
 
 class RulesFormatError(ValueError):
-    """规则来源不符合记录格式所依赖的结构。"""
+    """Science source lacks structure required by record formats."""
 
 
 @dataclass(frozen=True)
@@ -99,7 +99,7 @@ def author_state_ids() -> tuple[str, ...]:
     return load_rules().state_ids
 
 
-# 作者状态的允许值直接取自规则来源；展示表、保存模型与填写模型共用这一处定义。
+# One rule-source author vocabulary serves displays, saved models, and submission models.
 AuthorStatus = Literal[author_state_ids()]
 
 

@@ -1,17 +1,15 @@
-"""包内表格环境扫描：行范围、身份、标题／标签与 backing CSV 关联。
+"""Scan package table environments, source lines, identity, captions/labels, and backing
+CSV links.
 
-在主稿可达文件的**去注释文本**（行数与原文件一致）上扫描首轮支持的
-表环境：``tabular``／``tabular*``、``longtable``、``deluxetable``／
-``deluxetable*``，含外层 ``table``／``table*`` 浮动体；每个表块得到程
-序生成的稳定身份与原文行范围。verbatim 区域不参与扫描。
+Scan comment-cleaned reachable main-document text with original line counts for
+tabular/tabular*, longtable, deluxetable/deluxetable*, and outer table/table* floats.
+Give each block stable generated identity/source lines; exclude verbatim.
 
-同时识别 ``pgfplotstabletypeset`` 命令及其 ``\\pgfplotstableread`` 读入
-关联：backing CSV 的字面路径、分隔符、选列与显示表头可确定时直读，
-不能解释的过滤／变换保留缺口，不把完整 backing 文件当成实际呈现表。
-
-LaTeX 行／单元解析的基础工具迁自旧仓
-``stella_hvs/src/stella/lit/catalog_extraction.py``（参考提交 8421c98，
-MIT 许可），按新仓设计改造为行范围准确、按表隔离的结构扫描。
+Parse pgfplotstabletypeset and pgfplotstableread associations. Direct-read only explicit
+backing paths/delimiters/columns/display headers; unsupported filtering/transforms leave
+gaps, never equating full backing files with displayed tables. Base row/cell algorithms
+derive from stella_hvs/src/stella/lit/catalog_extraction.py at 8421c98 under MIT,
+adapted for exact line ranges and per-table isolation.
 """
 
 from __future__ import annotations
@@ -47,25 +45,27 @@ _RULE_COMMAND_RE = re.compile(
 
 @dataclass(frozen=True)
 class TableBlock:
-    """一个表块的登记：身份、环境、文件与行范围。"""
+    """Table registration: identity, environment, file, and line range."""
 
     table_id: str
     file: str
-    environment: str  # 内容环境（tabular/longtable/deluxetable…/pgfplotstable）
-    start_line: int  # 块起始（外层浮动体或环境本身的 \begin 行）
-    end_line: int  # 块结束（含 \end 行）
-    content_start_line: int  # 内容环境 \begin 行
+    environment: (
+        str  # Content environment: tabular, longtable, deluxetable, or pgfplotstable.
+    )
+    start_line: int  # Block start: outer float or environment begin line.
+    end_line: int  # Block end, including the end line.
+    content_start_line: int  # Content-environment begin line.
     start_offset: int = 0
     end_offset: int = 0
     content_start_offset: int = 0
     content_end_offset: int = 0
     label: str = ""
     caption: str = ""
-    # 脚注（\tablenotetext{a}{…} 等）：标记与原文按出现顺序保留。
+    # Footnotes such as tablenotetext preserve markers/text in occurrence order.
     footnotes: list[tuple[str, str]] = dataclass_field(default_factory=list)
-    # pgfplotstable 关联（仅 pgfplotstable 块填写）。
+    # pgfplotstable associations, populated only for those blocks.
     pgf_typeset: PgfTypeset | None = None
-    # 扫描层说明（如标题关联不确定），随表块公开。
+    # Public scan notes, such as uncertain caption correspondence.
     notes: list[str] = dataclass_field(default_factory=list)
 
     def source_span(self) -> dict:
@@ -78,7 +78,7 @@ class TableBlock:
 
 @dataclass(frozen=True)
 class PgfTypeset:
-    """一个 ``\\pgfplotstabletypeset`` 调用的解析结果。"""
+    """Parsed pgfplotstabletypeset call."""
 
     file: str
     line: int
@@ -90,7 +90,7 @@ class PgfTypeset:
 
 @dataclass(frozen=True)
 class PgfRead:
-    """一个 ``\\pgfplotstableread`` 读入的解析结果。"""
+    """Parsed pgfplotstableread call."""
 
     file: str
     line: int
@@ -101,13 +101,14 @@ class PgfRead:
 
 
 def _verbatim_spans(text: str) -> list[tuple[int, int]]:
-    """标出 verbatim 环境与行内 ``\\verb`` 覆盖的字符区间（含起止指令）。
+    """Locate verbatim and inline verb character spans, including opening/closing
+    directives.
 
-    行内 ``\\verb|...|`` 中的字面表环境／pgf 命令是展示文本，不是实
-    际结构（二次审核发现 23）；掩蔽视图统一处理正文、表与 PGF 读入。
-    以掩蔽视图与原文的逐字符差异推导区间；被掩蔽内容中的空白与掩蔽
-    占位相同，区间可能在空白处断开——结构指令位置（非空白）始终落在
-    区间内，成员判定不受影响。
+    Literal table/PGF commands in inline verb are display text, not structure
+    (second-review finding 23). Share masked views for body/table/PGF scans. Derive
+    spans from character differences; unchanged whitespace may split spans, but
+    nonwhitespace structural command positions remain covered, preserving membership
+    checks.
     """
     from .cleaning import mask_verbatim
 
@@ -135,7 +136,9 @@ def _line_of(text: str, position: int) -> int:
 
 
 def _find_environment(text: str, environment: str, *, start: int = 0):
-    """按同名环境嵌套计数查找一个完整环境；返回 (begin_start, end_end)。"""
+    """Find a complete environment using same-name nesting counts; return (begin_start,
+    end_end).
+    """
     begin_re = re.compile(rf"\\begin\{{{re.escape(environment)}\}}")
     end_re = re.compile(rf"\\end\{{{re.escape(environment)}\}}")
     from .cleaning import mask_verbatim
@@ -171,7 +174,9 @@ def _find_environment(text: str, environment: str, *, start: int = 0):
 
 
 def _balanced_group(text: str, open_index: int) -> int | None:
-    """返回 ``{`` 对应 ``}`` 的结束位置（不含）；考虑转义与一层嵌套计数。"""
+    """Find the exclusive end of matching braces, respecting escapes and nested brace
+    counts.
+    """
     if open_index >= len(text) or text[open_index] != "{":
         return None
     depth = 0
@@ -194,7 +199,9 @@ def _balanced_group(text: str, open_index: int) -> int | None:
 def _first_argument(
     text: str, command: str, *, start: int = 0
 ) -> tuple[str, int, int] | None:
-    """取首参数、命令起点和参数末尾（左闭右开）；兼容短标题。"""
+    """Return first argument, command start, and exclusive argument end, including
+    short-caption syntax.
+    """
     match = re.compile(rf"\\{re.escape(command)}\s*(?:\[[^\]]*\]\s*)?\{{").search(
         text, start
     )
@@ -207,7 +214,7 @@ def _first_argument(
 
 
 def scan_tables(graph: ManuscriptGraph) -> list[TableBlock]:
-    """扫描主稿图中的表块；按文件顺序与位置排序。"""
+    """Scan main-document graph tables in file/position order."""
     blocks: list[TableBlock] = []
     for entry in graph.files:
         from .cleaning import scan_view
@@ -236,8 +243,8 @@ def _scan_floats_and_standalone(
             if _in_spans(verbatim, begin_start) or _in_spans(covered, begin_start):
                 continue
             region = text[begin_start:end_end]
-            # 浮动体内的每个内容环境各自登记为一个表块：同一浮动体
-            # 放两张表时不能只取首张、静默丢第二张。
+            # Register every content environment inside a float independently;
+            # never keep only the first of two tables and silently discard the second.
             for env_name, rel_begin, rel_end in _all_content_environments(region):
                 absolute_begin = begin_start + rel_begin
                 blocks.append(
@@ -270,7 +277,9 @@ def _scan_floats_and_standalone(
 
 
 def _all_content_environments(region: str) -> list[tuple[str, int, int]]:
-    """列出浮动体内全部表内容环境（按出现顺序；不取首张丢其余）。"""
+    """List every table content environment inside a float in occurrence order without
+    dropping later ones.
+    """
     found: list[tuple[str, int, int]] = []
     for env in LATEX_TABLE_ENVIRONMENTS:
         search_from = 0
@@ -303,8 +312,8 @@ def _make_block(
     if caption_found is not None:
         caption = caption_found[0]
     if not caption:
-        # deluxetable 的标准标题命令是 \tablecaption（二次审核发现 19：
-        # 此前未读取，公开 caption 为空）。
+        # deluxetable uses tablecaption (second-review finding 19: previously omitted,
+        # leaving public captions empty).
         tablecaption_found = _first_argument(region, "tablecaption")
         if tablecaption_found is not None:
             caption = tablecaption_found[0]
@@ -331,14 +340,14 @@ def _make_block(
 
 
 def _table_footnotes(region: str) -> list[tuple[str, str]]:
-    """提取 ``\\tablenotetext{a}{…}`` 脚注标记与原文（按出现顺序）。
+    """Extract literal tablenotetext footnote markers/text in occurrence order.
 
-    只处理字面命令；复杂宏或被注释的形式不伪造，交给缺口机制如实呈现。
+    Do not fabricate complex macro/commented forms; expose them accurately through gaps.
     """
     notes: list[tuple[str, str]] = []
     pattern = re.compile(r"\\tablenotetext\s*\{([^{}]*)\}\s*\{")
     for match in pattern.finditer(region):
-        # 第二个花括号参数支持一层嵌套，不猜测更复杂的展开。
+        # Support nested braces in the second argument without guessing more complex expansion.
         depth = 1
         scan = match.end()
         text = ""
@@ -367,13 +376,13 @@ def _skip_ws(text: str, index: int) -> int:
 
 
 def _parse_pgf_command(text: str, command: str, start: int):
-    """在精确位置解析 ``\\command[opts]{arg}``；返回 (opts, arg, end)。"""
+    """Parse command[opts]{arg} at an exact position; return (opts, arg, end)."""
     token = f"\\{command}"
     if not text.startswith(token, start):
         return None
     after = start + len(token)
     if after < len(text) and (text[after].isalnum() or text[after] == "@"):
-        return None  # 更长命令名的前缀，不是本命令
+        return None  # A prefix of a longer command is not this command.
     cursor = _skip_ws(text, after)
     options = ""
     if cursor < len(text) and text[cursor] == "[":
@@ -383,7 +392,7 @@ def _parse_pgf_command(text: str, command: str, start: int):
         options = text[cursor + 1 : close]
         cursor = _skip_ws(text, close + 1)
     if cursor < len(text) and text[cursor] == "\\":
-        # 裸宏形式（如 ``\\pgfplotstabletypeset\\\\btable``）：宏名作参数
+        # Bare-macro forms such as pgfplotstabletypeset followed by a macro use the macro name as the argument.
         macro_match = re.compile(r"\\([A-Za-z@]+)").match(text, cursor)
         if macro_match is not None:
             return options, macro_match.group(0), macro_match.end()
@@ -415,9 +424,9 @@ def _scan_pgfplotstable(
         source_arg = source_arg.strip()
         macro = source_arg.removeprefix("\\")
         digest = hashlib.sha256(f"{file}:{match.start()}".encode()).hexdigest()[:12]
-        # PGF 调用位于外层 table 浮动体内时关联其标题／标签／脚注；不能
-        # 证明关联时保持为空并在 notes 标注不确定，不猜表号（二次审核
-        # 发现 19）。
+        # Associate PGF calls inside table floats with captions/labels/footnotes; when correspondence
+        # cannot be established, leave fields empty and record uncertainty rather than guessing table numbers
+        # (second-review finding 19).
         label = ""
         caption = ""
         footnotes: list[tuple[str, str]] = []
@@ -477,7 +486,7 @@ def _scan_pgfplotstable(
 
 
 def parse_pgf_reads(text: str, *, before_line: int | None = None) -> list[PgfRead]:
-    """解析 ``\\pgfplotstableread[opts]{path}\\macro`` 读入指令。"""
+    """Parse pgfplotstableread[opts]{path} followed by its macro binding."""
     reads: list[PgfRead] = []
     search_from = 0
     while True:
@@ -508,7 +517,7 @@ def parse_pgf_reads(text: str, *, before_line: int | None = None) -> list[PgfRea
 
 
 def pgf_delimiter(options: str) -> str | None:
-    """pgfplotstable 的声明分隔符；未声明返回 None（不静默猜逗号）。"""
+    """Declared pgfplotstable delimiter, or None if absent; never silently assume commas."""
     value = _latex_option_value(options, "col sep").strip().lower()
     if not value:
         return None
@@ -540,7 +549,7 @@ def _latex_option_value(options: str, key: str) -> str:
 
 
 def pgf_selected_columns(options: str, fieldnames: list[str]) -> list[str]:
-    """pgfplotstable 声明的选列；未声明时为全部列。"""
+    """Declared selected columns, or all columns when absent."""
     value = _latex_option_value(options, "columns")
     if not value:
         return list(fieldnames)
@@ -548,7 +557,7 @@ def pgf_selected_columns(options: str, fieldnames: list[str]) -> list[str]:
 
 
 def pgf_column_headers(options: str) -> dict[str, str]:
-    """从 ``columns/<name>/.style`` 中提取 ``column name`` 显示表头。"""
+    """Extract column name display headers from columns/<name>/.style."""
     headers: dict[str, str] = {}
     for match in re.compile(r"columns/([^/\s{}]+)/\.style\s*=").finditer(options):
         cursor = _skip_ws(options, match.end())
@@ -564,16 +573,16 @@ def pgf_column_headers(options: str) -> dict[str, str]:
     return headers
 
 
-#: pgfplotstable 已解释的顶层选项（白名单）：其余选项一律登记未解释，
-#: 不再维护会漏掉新变换的黑名单（二次审核发现 9：sort／create on use／
-#: string replace 等曾被静默忽略）。
+#: Allowlisted interpreted pgfplotstable top-level options; register all others as uninterpreted.
+#: Avoid incomplete transform blacklists (second-review finding 9: sort/create on use/
+#: string replace were previously ignored silently).
 _PGF_KNOWN_TOP_OPTIONS = {"columns", "col sep"}
-#: columns/<name>/.style 内已解释的样式键（显示表头与列类型）。
+#: Interpreted column style keys for display headers and column types.
 _PGF_KNOWN_STYLE_KEYS = {"column name", "column type", "string type", "numeric type"}
 
 
 def _split_pgf_options(options: str) -> list[str]:
-    """按花括号深度拆分顶层选项（忽略括号内的逗号）。"""
+    """Split top-level options by brace depth, ignoring enclosed commas."""
     items: list[str] = []
     depth = 0
     current: list[str] = []
@@ -592,11 +601,12 @@ def _split_pgf_options(options: str) -> list[str]:
 
 
 def pgf_unexplained_transforms(options: str) -> list[str]:
-    """列出未解释的 pgfplotstable 选项（白名单之外的过滤／变换）。
+    """List unparsed pgfplotstable filters/transforms outside the allowlist.
 
-    只接受已经解释的选项（选列、分隔符、显示表头与列类型）；排序、
-    生成列、行过滤、字符串替换等未解释变换一律登记，调用方保留缺口，
-    不把未解释的 backing 文件当成实际呈现表。
+    Accept interpreted column selection, delimiters, display headers, and column types
+    only. Register sorting/generated columns/row filtering/string replacement and other
+    unknown transforms so callers retain gaps and never treat uninterpreted backing
+    files as displayed tables.
     """
     unexplained: list[str] = []
     for item in _split_pgf_options(options):

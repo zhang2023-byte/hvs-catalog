@@ -1,4 +1,6 @@
-"""整目录初始化：精确中断窗口、竞争与非空拒绝，不接管旧暂存。"""
+"""Whole-directory initialization: precise failure windows, contention, and nonempty
+rejection without taking over old staging.
+"""
 
 from __future__ import annotations
 
@@ -70,7 +72,7 @@ def test_hard_exit_at_whole_directory_publish(tmp_path, window, existing):
         staged.close()
         with pytest.raises(UnknownWorkspaceError):
             open_workspace(root)
-        # 新调用不恢复或删除旧暂存；目标仍为空，可重新创建独立空间。
+        # A new call neither resumes nor deletes old staging; the empty target permits fresh independent creation.
         fresh = initialize_workspace(root)
         assert fresh.identity.space_id != staged_id
         fresh.close()
@@ -117,7 +119,7 @@ def test_nonempty_unknown_target_preserved(tmp_path):
 @pytest.mark.parametrize("window", ["prepared", "rename"])
 def test_publish_race_does_not_overwrite_winner(tmp_path, winner, window):
     root = tmp_path / "space"
-    # 管道握手精确停在暂存完成、改名之前，不用睡眠猜窗口。
+    # Pipe handshakes stop exactly after staging completes and before rename, without guessed sleeps.
     child = subprocess.Popen(
         [
             sys.executable,

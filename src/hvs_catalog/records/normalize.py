@@ -1,4 +1,6 @@
-"""填写结果到保存记录的确定性转换：展开完成声明、生成证据与引用、编号。"""
+"""Deterministically convert submissions: completion expansion, evidence/references, and
+identifiers.
+"""
 
 from __future__ import annotations
 
@@ -58,7 +60,7 @@ from .submission import (
 
 @dataclass
 class StepContext:
-    """程序在步骤开始时固定的输入与编号来源。"""
+    """Inputs and identifier sources fixed at step start."""
 
     source: SourcePackageRecord
     paper_ref: RecordRef
@@ -116,7 +118,7 @@ class _Numbering:
 
 
 class _EvidencePool:
-    """固定来源版本下内容完全相同的证据只建一条记录。"""
+    """Create one record for identical evidence under a fixed source version."""
 
     def __init__(self, context: StepContext, numbering: _Numbering) -> None:
         self._context = context
@@ -257,7 +259,7 @@ def _unique_refs(refs: list[RecordRef]) -> list[RecordRef]:
 def _merge_issue_refs(
     *sources: dict[str, list[RecordRef]],
 ) -> dict[str, list[RecordRef]]:
-    """逐物理量合并问题引用并保持先后顺序；同一引用只保留一次。"""
+    """Merge quantity issue references in occurrence order, keeping each once."""
     merged: dict[str, list[RecordRef]] = {}
     for source in sources:
         for quantity, refs in source.items():
@@ -294,7 +296,7 @@ def normalize_value(
     value_id: str,
     where: str,
 ) -> MeasuredValue:
-    """把简化数值补齐为保存形式；形式约束由 MeasuredValue 校验拒绝。"""
+    """Complete simplified values; MeasuredValue rejects invalid saved forms."""
     direct: list[DirectEvidencePart] = []
     for item in submission.evidence:
         ref = pool.ref_for(item)
@@ -402,9 +404,11 @@ def expand_coverage(
     item_id: str,
     extra_issue_refs: dict[str, list[RecordRef]],
 ) -> list[QuantityCoverageEntry]:
-    """把共同声明加例外展开为全部请求物理量的完成记录。
+    """Expand shared declarations/exceptions into completion records for every requested
+    quantity.
 
-    共同声明必须完整；例外逐量完整替换；与已知缺口矛盾的完成声明被拒绝。
+    Require complete shared declarations; exceptions replace quantities completely.
+    Reject claims contradicting known gaps.
     """
     from .submission import CoverageDeclarationBody
 
@@ -504,13 +508,15 @@ def _inline_question(
 
 
 # ---------------------------------------------------------------------------
-# 名单提取（direct 方法）
+# Roster extraction with direct.
 # ---------------------------------------------------------------------------
 
 
 @dataclass
 class ContributionDraft:
-    """名单或候选步骤产出的贡献内容；标识符由名单条目提供后组装成完整贡献。"""
+    """Roster/candidate contribution contents assembled with identifiers from roster
+    entries.
+    """
 
     contribution_id: str
     summary: ContributionSummary
@@ -757,7 +763,7 @@ def _assemble_contribution(
 
 
 # ---------------------------------------------------------------------------
-# 候选判断（candidate_review 的逐项判定）
+# Per-candidate judgment with candidate_review.
 # ---------------------------------------------------------------------------
 
 
@@ -783,7 +789,7 @@ def convert_candidate_submission(
     candidate_ids: list[str],
     submission: CandidateSubmission,
 ) -> CandidateConversionResult:
-    """把逐项判定转换为条目判定结果；不得增删给定候选。"""
+    """Convert individual judgments without adding/removing supplied candidates."""
     if len(candidate_ids) != len(set(candidate_ids)):
         raise SubmissionError("给定候选编号重复")
     judged = [judgment.item_id for judgment in submission.judgments]
@@ -847,7 +853,7 @@ def convert_candidate_submission(
 
 
 # ---------------------------------------------------------------------------
-# 数值提取
+# Quantity extraction.
 # ---------------------------------------------------------------------------
 
 

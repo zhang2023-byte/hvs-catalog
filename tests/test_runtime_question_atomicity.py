@@ -1,9 +1,10 @@
-"""问题创建原子性与贡献响应复用回归。
+"""Atomic question creation and contribution-response reuse regressions.
 
-问题、执行/步骤绑定与回执在同一业务事务保存：事务中途中止不留半份
-问题；问题创建后、步骤回执前的中断由新进程恢复——已归档的贡献响应
-被复用，不再调用模拟服务，也不与新时间戳比较已保存的论文修订。缺
-失绑定不视为通配，错误步骤提交被拒绝。
+Save questions, execution/step bindings, and receipts in one business transaction;
+aborts leave no partial questions. After question creation but before step receipt,
+fresh-process recovery reuses archived contribution responses without new calls or
+comparing saved paper revisions against new timestamps. Missing bindings are not
+wildcards; reject wrong-step submissions.
 """
 
 from __future__ import annotations
@@ -47,7 +48,9 @@ def _run_child(tmp_path: Path, code: str, *args) -> int:
 
 @pytest.mark.integration
 def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, service):
-    """问题提交后、步骤回执前真实退出——新进程零新增调用地接续。"""
+    """Exit after question commit but before step receipt; a fresh process resumes without
+    new calls.
+    """
     space_root = tmp_path / "space"
     space = initialize_workspace(space_root)
     try:
@@ -79,8 +82,8 @@ def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, servi
         )
         assert code == 74
         calls_before = service.summary()["calls"]
-        assert calls_before == 2  # 名单 + 贡献各一次
-        # 问题已保存且绑定正确；论文已随问题事务保存
+        assert calls_before == 2  # One roster call and one contribution call.
+        # The question is saved with correct bindings; its transaction also saved the paper.
         question = pending_questions(space, execution_id=execution.execution_id)[0]
         assert question.status == "open"
         assert question.step_id == "quantities"
@@ -89,14 +92,14 @@ def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, servi
         paper_id = m.paper_record_id("A", execution.execution_id)
         assert space.store().current_revision(paper_id) == 1
 
-        # 新进程恢复：复用已归档响应，不重复调用服务，停回等待裁决
+        # Fresh-process recovery reuses archived responses without calls and returns to review wait.
         report = resume_execution(
             space, execution.execution_id, direct_flow(), service=service
         )
         assert report.outcome == "paused"
         assert service.summary()["calls"] == calls_before
 
-        # 错误步骤提交被拒绝：绑定不是通配
+        # Reject wrong-step submissions; bindings are not wildcards.
         with pytest.raises(WorkspaceIntegrityError, match="跨步骤"):
             ReviewService(space).submit_decision(
                 execution_id=execution.execution_id,
@@ -105,7 +108,7 @@ def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, servi
                 request_key="wrong-step",
             )
 
-        # 正常决定后完成，仍无新增调用
+        # Finish after a valid decision, still without new calls.
         submit_expert_decision(
             space,
             execution_id=execution.execution_id,
@@ -124,7 +127,7 @@ def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, servi
 
 @pytest.mark.integration
 def test_crash_inside_question_transaction_leaves_no_half_state(tmp_path, service):
-    """问题事务中途真实退出——无半份问题、无残留绑定。"""
+    """Exit during the question transaction; leave no partial question or residual binding."""
     space_root = tmp_path / "space"
     space = initialize_workspace(space_root)
     try:
@@ -164,13 +167,13 @@ def test_crash_inside_question_transaction_leaves_no_half_state(tmp_path, servic
         )
         assert code == 74
         calls_before = service.summary()["calls"]
-        # 事务未提交：没有问题、没有问题事务保存的论文
+        # The uncommitted transaction leaves no question or associated paper.
         assert pending_questions(space, execution_id=execution.execution_id) == []
         from shared_scenarios import material as m
 
         paper_id = m.paper_record_id("A", execution.execution_id)
         assert space.store().read_record_current(paper_id) is None
-        # 新进程恢复：响应已归档，不重复调用服务；问题完整创建并带绑定
+        # Fresh-process recovery reuses archived responses and creates a complete bound question without new calls.
         report = resume_execution(
             space, execution.execution_id, direct_flow(), service=service
         )

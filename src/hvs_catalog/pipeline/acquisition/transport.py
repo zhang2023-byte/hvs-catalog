@@ -1,22 +1,19 @@
-"""arXiv HTTP 传输：连接租约、逐跳预检与有限重试。
+"""arXiv HTTP transport: connection leases, per-hop preflight, and bounded retries.
 
-所有对 arXiv 的请求（API 查询、元数据读取、源码包下载、重定向与重
-试）都经过 :class:`ArxivHttpClient`：每一跳先做**出站预检**（仅
-HTTPS、arXiv 允许主机、标准端口、无凭据、无 fragment），再通过共享
-节流门的连接租约发送。自动重定向被禁用：每个重定向目标在连接之前
-逐跳预检并单独过节流门，跳数有界；任意时刻本机同用户至多一个连接。
+Every API/metadata/source/redirect/retry request passes ArxivHttpClient. Preflight
+HTTPS, approved hosts, standard ports, absent credentials/fragments, then acquire shared
+throttle leases. Disable automatic redirects; validate each bounded hop independently
+before connecting. At most one local same-user connection exists.
 
-失败语义（C07）：429/5xx 等可重试失败在决定是否重试**之前**先把有
-效 ``Retry-After``（秒数或 HTTP 日期；非法或非有限值忽略）写入共享
-冷却，最后一次尝试也不例外；**正常返回的响应**（尤其是重定向响
-应）携带的有效 ``Retry-After`` 同样在释放当次租约前持久化，下一跳
-或后续任何调用（含其他进程/重启）都会遵守。持有连接时不睡眠：等
-待全部由下一个租约重读状态后分段执行，且单次等待超过重试策略上
-限时抛出（``RateLimitError``），冷却已持久化。401/403 立即失败、
-绝不重试。响应体按字节上限读取并核对声明长度，短读或不一致立即
-失败，部分传输绝不当作成功；错误响应可靠关闭后才释放许可。传输
-默认值（超时、响应上限、重试次数、跳数上限）即生产行为；测试注入
-假传输与假时钟，不削弱生产默认值。
+For retryable 429/5xx failures, persist valid Retry-After seconds/HTTP dates before
+deciding retries, including final attempts; ignore malformed/nonfinite values. Persist
+valid headers on successful responses/redirects before releasing leases too, so future
+hops/calls/processes/restarts respect cooldown. Never sleep while holding connections;
+next leases reread/wait in steps and reject waits above policy limits after persisting
+cooldown. 401/403 fail immediately without retries. Bound body reads and check declared
+lengths; short/inconsistent transfers cannot succeed. Close errors before releasing
+permits. Defaults establish production timeout/size/retry/hop behavior; fake
+transports/clocks never weaken them.
 """
 
 from __future__ import annotations
@@ -38,17 +35,17 @@ from urllib3.exceptions import ReadTimeoutError as RawReadTimeoutError
 
 from .rate_limit import Clock, RateLimitGate, SystemClock, default_rate_gate_state_path
 
-#: 请求头中的 User-Agent；调用方可显式覆盖。
+#: Default User-Agent; callers may explicitly override it.
 USER_AGENT = "hvs-catalog/0.1"
 
-#: 传输默认超时（秒）与默认响应体上限（字节）。
+#: Default transport timeout in seconds and response byte bound.
 DEFAULT_TIMEOUT = 60.0
 DEFAULT_MAX_RESPONSE_BYTES = 64 * 1024 * 1024
 
-#: 请求与每个重定向目标允许的主机（含子域）。
+#: Approved request/redirect hosts, including subdomains.
 ARXIV_ALLOWED_HOSTS = ("arxiv.org", "export.arxiv.org")
 
-#: 视为重定向的状态码与单次请求允许的最大重定向跳数。
+#: Redirect status codes and maximum per-request redirect hops.
 REDIRECT_STATUSES = (301, 302, 303, 307, 308)
 MAX_REDIRECT_HOPS = 5
 
@@ -57,7 +54,7 @@ _PREVIEW_LIMIT = 4096
 
 
 class ArxivTransportError(Exception):
-    """传输层失败的基类；携带出错的请求 URL。"""
+    """Base transport failure carrying the failing URL."""
 
     def __init__(self, message: str, *, url: str) -> None:
         super().__init__(message)
@@ -65,19 +62,21 @@ class ArxivTransportError(Exception):
 
 
 class ArxivConnectionError(ArxivTransportError):
-    """连接失败、传输中断或声明长度与实际不符（可重试）。"""
+    """Retryable connection failure, interrupted transfer, or declared/actual length
+    mismatch.
+    """
 
 
 class ArxivTimeoutError(ArxivTransportError):
-    """请求超时（可重试）。"""
+    """Retryable request timeout."""
 
 
 class ArxivResponseSizeError(ArxivTransportError):
-    """响应体超过字节上限（不重试；绝不返回截断内容）。"""
+    """Response exceeds byte limits; never retry or return truncated contents."""
 
 
 class ArxivHttpError(ArxivTransportError):
-    """HTTP 状态码错误基类。"""
+    """Base HTTP-status error."""
 
     def __init__(
         self,
@@ -95,23 +94,23 @@ class ArxivHttpError(ArxivTransportError):
 
 
 class ArxivAuthError(ArxivHttpError):
-    """401/403：访问被拒绝，立即停止，绝不重试。"""
+    """401/403 access denial: stop immediately without retries."""
 
 
 class ArxivRateLimitedError(ArxivHttpError):
-    """429：被限流；冷却已登记，按有界等待重试或向上抛出。"""
+    """429 throttling: cooldown is registered; retry within bounded waits or propagate."""
 
 
 class ArxivServerError(ArxivHttpError):
-    """5xx：服务端瞬时故障（可重试）。"""
+    """Retryable transient 5xx server failure."""
 
 
 @dataclass(frozen=True)
 class TransportResponse:
-    """一次成功 HTTP 请求的完整响应。
+    """Complete successful single-hop HTTP response.
 
-    重定向响应（3xx + ``Location``）原样返回，由客户端决定是否逐跳
-    跟随；因此本类型的 ``final_url`` 是该跳自身的 URL。
+    Return 3xx+Location unchanged for client per-hop decisions; final_url identifies
+    this hop itself.
     """
 
     status_code: int
@@ -122,7 +121,7 @@ class TransportResponse:
 
 
 class Transport(Protocol):
-    """可注入的底层传输；实现方负责单跳请求的连接与读取上限。"""
+    """Injectable transport responsible for single-hop connections and bounded reads."""
 
     def fetch(
         self,
@@ -135,17 +134,17 @@ class Transport(Protocol):
 
 
 class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
-    """禁用 urllib 自动重定向：3xx 原样交回客户端逐跳处理。"""
+    """Disable urllib automatic redirects; return 3xx for client per-hop handling."""
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
 
 
 def parse_retry_after(value: str | None, *, now: float) -> float | None:
-    """解析 ``Retry-After``：接受秒数或 HTTP 日期，返回距 ``now`` 的秒数。
+    """Parse Retry-After seconds or HTTP dates into seconds from now.
 
-    为空、非法或非有限（``inf``/``nan``）时返回 ``None``（视为无有效
-    冷却，不影响常规退避）；日期已过期时返回 ``0.0``。
+    Empty/malformed/nonfinite values return None without affecting ordinary backoff;
+    expired dates return 0.0.
     """
     if value is None:
         return None
@@ -178,10 +177,10 @@ def read_bounded(
     max_bytes: int,
     content_length: int | None = None,
 ) -> bytes:
-    """按上限读取完整响应体，并核对声明长度；不一致即失败。
+    """Read complete bodies within bounds and verify declared lengths.
 
-    声明 ``Content-Length`` 大于实际读到 EOF 的字节数（短读）或与其
-    不一致时抛 :class:`ArxivConnectionError`：短传输绝不能当作成功。
+    Content-Length mismatches, including short EOF reads, raise ArxivConnectionError;
+    partial transfers never succeed.
     """
     if max_bytes <= 0:
         raise ValueError(f"响应上限必须是正整数：{max_bytes!r}")
@@ -217,12 +216,11 @@ def _host_matches(host: str, allowed_hosts: tuple[str, ...]) -> bool:
 
 
 def _require_safe_outgoing_url(url: str, allowed_hosts: tuple[str, ...]) -> str:
-    """出站预检：仅 HTTPS、允许主机、标准端口、无凭据、无 fragment。
+    """Preflight HTTPS, approved hosts, standard ports, absent credentials/fragments before
+    every connection/redirect.
 
-    在任何连接建立之前调用，包括每个重定向目标。拒绝模糊或非标准
-    URL，不做猜测。注意：Atom 条目中的 ``http://arxiv.org/abs/...``
-    是历史标识符形式，不是出站请求，由协议层单独校验，不受本函数
-    的 HTTPS 约束。
+    Reject ambiguous/nonstandard URLs. Historical Atom HTTP identifiers are not outbound
+    requests and are separately validated by protocol without this HTTPS requirement.
     """
     if not url or any(character.isspace() for character in url):
         raise ArxivTransportError(f"拒绝空白或含空白的出站 URL：{url!r}", url=url)
@@ -267,11 +265,10 @@ def _error_class_for_status(status: int) -> type[ArxivHttpError]:
 
 
 class UrllibTransport:
-    """保留的标准库传输：单跳一个连接，不自动跟随重定向。
+    """Retained standard-library single-hop transport without automatic redirects.
 
-    3xx 重定向响应原样返回（含 ``Location``），由
-    :class:`ArxivHttpClient` 逐跳预检、过节流门后再连接。所有响应与
-    错误体在返回或抛出前可靠关闭。
+    Return 3xx/Location unchanged for client validation/throttling. Close all
+    response/error bodies before return or raise.
     """
 
     def __init__(
@@ -316,7 +313,7 @@ class UrllibTransport:
                 status = int(getattr(response, "status", None) or response.getcode())
                 headers_map = {k.lower(): v for k, v in response.headers.items()}
                 if status in REDIRECT_STATUSES:
-                    # 重定向体不需要；先关闭再交回客户端逐跳决定。
+                    # Close unused redirect bodies before returning for client hop decisions.
                     return TransportResponse(
                         status_code=status,
                         headers=headers_map,
@@ -357,7 +354,9 @@ class UrllibTransport:
     def _handle_http_error(
         self, exc: urllib.error.HTTPError, url: str, *, max_bytes: int
     ) -> TransportResponse:
-        """把 HTTPError 转换为重定向响应或异常；错误体可靠关闭。"""
+        """Convert HTTPError into redirect responses or exceptions, reliably closing
+        bodies.
+        """
         try:
             headers = {k.lower(): v for k, v in (exc.headers or {}).items()}
             status = int(exc.code)
@@ -371,7 +370,7 @@ class UrllibTransport:
                 )
             try:
                 preview = exc.read(_PREVIEW_LIMIT)
-            except Exception:  # noqa: BLE001 - 预览读取失败不掩盖原状态
+            except Exception:  # noqa: BLE001 - failed preview reads must not hide the original status
                 preview = b""
             snippet = preview.decode("utf-8", errors="replace").strip()
             message = f"HTTP {status}：{url}"
@@ -387,11 +386,11 @@ class UrllibTransport:
 
 
 class RequestsTransport:
-    """requests 单跳传输；不自动重定向、不解码传输体。
+    """Single-hop requests transport without automatic redirects or transfer decoding.
 
-    直接使用公开 HTTPAdapter.send，而非 Session.get：后者即使禁用
-    自动跳转也可能为构造 next 请求读取整个重定向体。此处只读取有界
-    成功体/错误预览，重定向体不读取；每个连接在离开共享租约前关闭。
+    Use public HTTPAdapter.send instead of Session.get, which may read whole redirect
+    bodies even with redirects disabled. Read bounded success bodies/error previews, no
+    redirect bodies; close connections before leaving shared leases.
     """
 
     def __init__(
@@ -481,13 +480,12 @@ class RequestsTransport:
 
 @dataclass(frozen=True)
 class RetryPolicy:
-    """有界重试策略：总尝试次数、指数退避与单次等待上限。
+    """Bounded retry policy: total attempts, exponential backoff, and per-attempt wait
+    limit.
 
-    ``backoff_seconds(attempt)`` 以已失败的尝试序号（从 1 开始）计算
-    下一次尝试前的退避等待；服务端 ``Retry-After`` 比退避更久时以其
-    为准。冷却在决定是否重试之前先写入共享节流状态（最后一次尝试
-    也不例外）；只是当前请求内的等待不超过 ``max_retry_wait``，超过
-    即向上抛出，由上层安排稍后重试。
+    backoff_seconds uses one-based failed-attempt numbers. Longer Retry-After wins and
+    persists before retry decisions, including final attempts. max_retry_wait bounds
+    current waits; propagate excess for callers to arrange later retries.
     """
 
     max_attempts: int = 3
@@ -529,20 +527,12 @@ def _is_retryable(exc: ArxivTransportError) -> bool:
 
 
 class ArxivHttpClient:
-    """经共享节流门发送 arXiv 请求的客户端（逐跳预检、有界重试）。
+    """Shared-gate arXiv client with per-hop preflight and bounded retries.
 
-    参数：
-        transport: 底层传输，默认 :class:`RequestsTransport`（生产）。
-        gate: 共享节流门，默认使用用户缓存目录下的共享状态文件。
-        retry_policy: 重试策略，默认 :class:`RetryPolicy` 的生产值。
-        clock: 用于冷却计算与等待的时钟，默认 :class:`SystemClock`。
-        allowed_hosts: 每一跳允许的主机白名单。
-        max_redirect_hops: 重定向上限（不含首跳），默认
-            :data:`MAX_REDIRECT_HOPS`。
-
-    每一跳（含重定向）独立执行出站预检、取得连接租约、按策略重试；
-    总连接数受跳数上限 × 尝试次数约束。构造本身没有任何磁盘写入或
-    网络访问；状态文件在第一次取得租约时才创建。
+    Defaults use RequestsTransport, shared user-cache gate, production RetryPolicy, and
+    SystemClock. allowed_hosts allowlists hops; max_redirect_hops excludes the initial
+    hop. Bound connections by hops times attempts. Construction has no writes/network
+    effects; first leases create state.
     """
 
     def __init__(
@@ -582,7 +572,7 @@ class ArxivHttpClient:
         timeout: float | None = None,
         max_bytes: int | None = None,
     ) -> TransportResponse:
-        """对 ``url`` 执行 GET：逐跳预检 + 连接租约 + 有界重试。"""
+        """GET a URL with per-hop preflight, leases, and bounded retries."""
         current = _require_safe_outgoing_url(url, self.allowed_hosts)
         hops = 0
         while True:
@@ -615,13 +605,12 @@ class ArxivHttpClient:
         timeout: float | None,
         max_bytes: int | None,
     ) -> TransportResponse:
-        """单跳请求：每次尝试持有一个连接租约；退避在租约外等待。
+        """Request one hop with one lease per attempt and backoff outside leases.
 
-        有效 ``Retry-After`` 无论来自异常还是**正常返回的响应**（尤其
-        是重定向响应），都在释放当前租约之前解析并持久化；之后的等
-        待（下一跳或重试的间距/冷却）由下一个租约重读后执行，不在
-        持有连接时睡眠。单次等待超过 ``max_retry_wait`` 时抛出，冷却
-        已持久化供后续/其他进程遵守。
+        Persist valid exception/response Retry-After before release, including
+        redirects. Future hops/retries reread waits through next leases without sleeping
+        on connections. Excess max_retry_wait raises after cooldown persists for later
+        processes/calls.
         """
         policy = self.retry_policy
         for attempt in range(1, policy.max_attempts + 1):
@@ -638,8 +627,8 @@ class ArxivHttpClient:
                             exc.headers.get("retry-after"), now=self._clock.now()
                         )
                     if retry_after is not None and retry_after > 0:
-                        # 先持久化有效冷却（含最后一次尝试），再决定是否
-                        # 重试；已过期的零长度冷却不携带约束，无需落盘。
+                        # Persist valid cooldown, including final attempts, before deciding retries;
+                        # expired zero-duration cooldown adds no constraint and needs no persistence.
                         lease.record_cooldown(self._clock.now() + retry_after)
                     if not _is_retryable(exc) or attempt >= policy.max_attempts:
                         raise
@@ -650,14 +639,14 @@ class ArxivHttpClient:
                     self._persist_response_cooldown(lease, response)
                     return response
             if wait is not None:
-                # 退避/冷却等待在租约外进行；下一次租约会重读最新状态。
+                # Backoff/cooldown waits happen outside leases; next leases reread latest state.
                 self._clock.sleep(wait)
                 continue
             raise AssertionError("不可达：成功响应已在租约内返回")
         raise AssertionError("不可达：重试循环必须返回或抛出")
 
     def _persist_response_cooldown(self, lease, response: TransportResponse) -> None:
-        """在租约内持久化正常返回响应携带的有效 Retry-After。"""
+        """Persist successful-response Retry-After inside the lease."""
         retry_after = parse_retry_after(
             response.headers.get("retry-after"), now=self._clock.now()
         )
@@ -666,7 +655,7 @@ class ArxivHttpClient:
 
 
 def default_arxiv_client() -> ArxivHttpClient:
-    """生产默认客户端：requests 传输 + 用户级共享节流门 + 系统时钟。"""
+    """Production client: requests transport, user-shared throttle gate, and system clock."""
     return ArxivHttpClient()
 
 

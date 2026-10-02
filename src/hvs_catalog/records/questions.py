@@ -1,4 +1,4 @@
-"""科学疑问、专家决定与问题指纹。"""
+"""Scientific questions, expert decisions, and fingerprints."""
 
 from __future__ import annotations
 
@@ -66,7 +66,7 @@ def compute_question_fingerprint(
     source_refs: list[RecordRef],
     rules_ref: RulesRef,
 ) -> str:
-    """由实际目标、证据、材料和规则计算指纹，不依赖显示文字。"""
+    """Fingerprint actual targets/evidence/materials/rules independently of display text."""
     return sha256_of(
         {
             "category": category,

@@ -1,6 +1,8 @@
-"""材料准备合成测试辅助：合成源码包、假转换器与空间准备。
+"""Synthetic material-preparation helpers: source packages, fake converters, and workspace
+setup.
 
-全部材料为虚构合成内容，不读取真实论文、Gold 或最终评价预留资料。
+All materials are fictional; no real papers, Gold, or reserved final-evaluation
+materials are accessed.
 """
 
 from __future__ import annotations
@@ -142,7 +144,9 @@ def synthetic_package(extra: dict[str, bytes] | None = None) -> bytes:
 
 
 def prepared_space(tmp_path: Path, payload: bytes | None = None, *, paper: str = PAPER):
-    """初始化空间并导入合成包；返回 (space, ImportResult)。"""
+    """Initialize a workspace, import a synthetic package, and return (space,
+    ImportResult).
+    """
     space_dir = tmp_path / "space"
     initialize_workspace(space_dir)
     from hvs_catalog.workspace import open_workspace
@@ -158,7 +162,9 @@ def prepared_space(tmp_path: Path, payload: bytes | None = None, *, paper: str =
 
 
 class FakeConverterRunner(ConverterRunner):
-    """确定性假转换器：按脚本返回可用性并在 workdir 写出输出。"""
+    """Deterministic fake converter: return scripted availability and write outputs to
+    workdir.
+    """
 
     def __init__(
         self,

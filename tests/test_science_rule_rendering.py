@@ -1,4 +1,4 @@
-"""检查英文规则生成、过期检测及来源保护。"""
+"""Check English rule generation, stale-output detection, and source protection."""
 
 import re
 from pathlib import Path

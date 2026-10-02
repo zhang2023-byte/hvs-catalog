@@ -1,4 +1,4 @@
-"""R11 最终修复回归测试：二次审核反例逐项覆盖（全部合成材料）。"""
+"""R11 final regressions for second-review counterexamples; all materials are synthetic."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from materials_helpers import (
 
 from hvs_catalog.materials.service import MaterialsService
 
-# ---- 发现 1／2／3：宏上下文事件序、等价子集与前言循环 ----
+# ---- Findings 1/2/3: macro event order, equivalent subset, and preamble cycles ----
 
 
 @pytest.mark.integration
@@ -72,7 +72,9 @@ def test_provide_def_order_and_native_default_parameters(
 
 
 def test_preamble_cycle_prepares_without_recursion_crash(tmp_path):
-    """前言循环：登记上下文缺口，准备不再递归崩溃（e2e-cycle-preamble）。"""
+    """Register a context gap for preamble cycles instead of crashing recursively
+    (e2e-cycle-preamble).
+    """
     main = (
         "\\documentclass{article}\n"
         "\\input{macros}\n"
@@ -92,11 +94,13 @@ def test_preamble_cycle_prepares_without_recursion_crash(tmp_path):
     space.close()
 
 
-# ---- 发现 4：统一包含解析与重复包含登记 ----
+# ---- Finding 4: shared include resolution and repeated-include registration ----
 
 
 def test_graph_resolves_subdir_root_relative_include():
-    """子目录主稿 input{macros} 按包根解析（graph-subdir）。"""
+    """Resolve input{macros} in a subdirectory main document relative to the package root
+    (graph-subdir).
+    """
     from hvs_catalog.materials.texgraph import resolve_manuscript
 
     members = {
@@ -113,7 +117,9 @@ def test_graph_resolves_subdir_root_relative_include():
 
 
 def test_repeated_include_keeps_edges_for_native_execution():
-    """原件按文件一次保存；每次实际执行另由原生转换定位。"""
+    """Save each original file once; native conversion separately locates each actual
+    execution.
+    """
     from hvs_catalog.materials.texgraph import resolve_manuscript
 
     members = {
@@ -129,7 +135,7 @@ def test_repeated_include_keeps_edges_for_native_execution():
     assert any("再次包含" in note for note in graph.notes)
 
 
-# ---- 发现 5／22：规范 ECSV 逻辑记录与 CSV 宽度 ----
+# ---- Findings 5/22: standard ECSV logical records and CSV width ----
 
 
 def test_ecsv_preserves_backslash_quotes_multiline_and_hash():
@@ -180,7 +186,7 @@ def test_csv_without_header_rejects_ragged_rows():
         read_csv_records(b"FIC-A,525\nFIC-B\n", has_header=False)
 
 
-# ---- 发现 6／8／21：网格核验、合并格定位、longtable 段与有限边界 ----
+# ---- Findings 6/8/21: grid checks, merged-cell locations, longtable sections, and finite bounds ----
 
 
 def test_html_ragged_row_fails_and_empty_row_kept():
@@ -249,7 +255,7 @@ def test_grid_bounds_reject_huge_expansion():
     assert "有限边界" in parsed.error
 
 
-# ---- 发现 7：Pandoc 内容对应核对 ----
+# ---- Finding 7: Pandoc content correspondence ----
 
 
 def test_pandoc_object_loss_fails_correspondence():
@@ -278,7 +284,7 @@ def test_pandoc_object_loss_fails_correspondence():
     assert parsed.status == "failed"
 
 
-# ---- 发现 9：backing CSV 位置排序、白名单与绝对路径 ----
+# ---- Finding 9: backing CSV positional order, allowlist, and absolute paths ----
 
 
 def test_pgf_read_selection_sorted_and_whitelist_and_absolute():
@@ -290,7 +296,7 @@ def test_pgf_read_selection_sorted_and_whitelist_and_absolute():
         "columns={name},columns/name/.style={create col/expr={1}}"
     ) == ["columns/name/.style 中的 create col/expr"]
 
-    # root 在 input 之后读 b.csv：较晚的 root 表取 b（不是 input 文件的 c）
+    # Root reads b.csv after input; its later table uses b, not the included file's c.
     typeset = PgfTypeset(
         file="main.tex",
         line=6,
@@ -323,7 +329,7 @@ def test_pgf_read_selection_sorted_and_whitelist_and_absolute():
     assert parsed.data_rows[0][0] == "FIC-b"
     assert parsed.backing_member == "b.csv"
 
-    # 绝对路径不映射为包内成员
+    # Absolute paths never map to package members.
     abs_typeset = PgfTypeset(
         file="main.tex",
         line=2,
@@ -346,7 +352,7 @@ def test_pgf_read_selection_sorted_and_whitelist_and_absolute():
     assert "缺失或越界" in parsed2.error or "不能确定" in parsed2.error
 
 
-# ---- 发现 11／12：独立附表与未解析资源缺口 ----
+# ---- Findings 11/12: standalone supplementary tables and unresolved resources ----
 
 
 def test_attached_tables_and_unparsed_member_and_link_gaps(tmp_path):
@@ -380,14 +386,14 @@ def test_attached_tables_and_unparsed_member_and_link_gaps(tmp_path):
     descriptions = [g["description"] for g in bundle["gaps"]]
     assert any("measurements.h5" in d and "未支持" in d for d in descriptions)
     assert any("https://example.org/objects.json" in d for d in descriptions)
-    # 消费者能读取附表
+    # The consumer can read supplementary tables.
     result = service.consume_prepared_input(handle.execution_id)
     assert result["ok"], result["problems"]
     space.close()
 
 
 def test_latin1_declared_member_not_marked_unreadable(tmp_path):
-    """声明 latin-1 的成员成功派生：不产生 unreadable 缺口（latin-ready）。"""
+    """Derive a latin-1-declared member without an unreadable gap (latin-ready)."""
     main = (
         "% !TeX encoding = latin-1\n"
         "\\documentclass{article}\n\\begin{document}\n"
@@ -405,7 +411,7 @@ def test_latin1_declared_member_not_marked_unreadable(tmp_path):
     space.close()
 
 
-# ---- 发现 14／16：缺口同步与按操作键恢复 ----
+# ---- Findings 14/16: gap synchronization and operation-key recovery ----
 
 
 def test_unsupported_range_gap_enters_prepared_revision(tmp_path):
@@ -431,7 +437,9 @@ def test_unsupported_range_gap_enters_prepared_revision(tmp_path):
 
 
 def test_interleaved_recovery_reuses_own_receipt(tmp_path):
-    """A 提交后崩溃、B 先完成、A 再恢复：按各自操作键复用回执。"""
+    """A crashes after commit, B finishes first, then A resumes: reuse receipts by each
+    operation's own key.
+    """
     import hvs_catalog.materials.service as service_module
     from hvs_catalog.materials.flow import MaterialsFlow
 
@@ -454,12 +462,12 @@ def test_interleaved_recovery_reuses_own_receipt(tmp_path):
     finally:
         service_module.MaterialsFlow = original  # type: ignore[assignment]
     assert report_a.outcome == "failed"
-    # 串行完成同来源执行 B
+    # Complete same-source execution B serially.
     _handle_b, report_b = service.prepare_materials(
         request_key="rk-b", paper=imported.canonical_id
     )
     assert report_b.outcome == "finished"
-    # 恢复 A：current 已属于 B，仍须复用 A 的回执
+    # Resume A: current belongs to B, but A must still reuse its own receipt.
     resumed = service.resume_preparation(handle_a.execution_id)
     assert resumed.outcome == "finished", resumed.errors
     bundle = service.get_prepared_input(handle_a.execution_id)
@@ -471,7 +479,7 @@ def test_interleaved_recovery_reuses_own_receipt(tmp_path):
     space.close()
 
 
-# ---- 发现 19：标题对应 ----
+# ---- Finding 19: caption correspondence ----
 
 
 def test_deluxetable_tablecaption_and_pgf_float_association():
@@ -498,7 +506,7 @@ def test_deluxetable_tablecaption_and_pgf_float_association():
     assert by_env["pgfplotstable"].label == "tab:v"
 
 
-# ---- 发现 20：绑定禁读覆盖子目录（真实 sandbox-exec；非 macOS 跳过） ----
+# ---- Finding 20: forbidden binding reads include subdirectories; real sandbox-exec, skipped off macOS ----
 
 
 @pytest.mark.integration
@@ -521,7 +529,7 @@ def test_binding_deny_covers_nested_directories(tmp_path):
     assert outcome.stdout == b"", "子目录绑定文件必须拒读"
 
 
-# ---- 发现 17／18：全退出路径输出核验与残留组清理（真实沙箱） ----
+# ---- Findings 17/18: output checks on every exit and residual process-group cleanup in a real sandbox ----
 
 
 @pytest.mark.integration
@@ -547,7 +555,7 @@ def test_fast_exit_nested_output_counted_and_orphan_group_cleaned(tmp_path):
     assert outcome.exceeded_output is True
     assert "超过" in outcome.error
 
-    # 孤儿后代：父进程正常退出后后代仍写标记 → 返回前后须清理
+    # Orphan child writes after normal parent exit; clean it up before returning.
     workdir2 = tmp_path / "orphan"
     workdir2.mkdir()
     orphan_script = "(sleep 1 && echo marker > marker.txt) & exit 0"
@@ -559,7 +567,7 @@ def test_fast_exit_nested_output_counted_and_orphan_group_cleaned(tmp_path):
     assert not (workdir2 / "marker.txt").exists(), "后代进程组必须被清理"
 
 
-# ---- 发现 24：CLI 边界 ----
+# ---- Finding 24: CLI boundary ----
 
 
 def test_cli_prepare_version_must_be_positive(capsys):

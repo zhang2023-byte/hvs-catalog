@@ -1,4 +1,4 @@
-"""记录与 JSON 的相互转换；读回内容不换算、不改写。"""
+"""Record/JSON conversion without converting or rewriting read-back contents."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from .registry import RECORD_MODELS, AnyRecord
 
 
 def parse_record(payload: str | dict[str, object]) -> AnyRecord:
-    """解析单份记录；未知记录类型或版本被拒绝。"""
+    """Parse records and reject unknown types/versions."""
     obj = json.loads(payload) if isinstance(payload, str) else payload
     if not isinstance(obj, dict):
         raise RecordFormatError("记录必须是 JSON 对象")
@@ -31,7 +31,7 @@ def record_to_json(record: Record[object]) -> str:
 
 
 def parse_records(payload: str) -> list[AnyRecord]:
-    """解析记录集合（JSON 数组）；外层结构或成员损坏时报错。"""
+    """Parse JSON record arrays, rejecting damaged envelopes/members."""
     obj = json.loads(payload)
     if not isinstance(obj, list):
         raise RecordFormatError("记录集合必须是 JSON 数组")

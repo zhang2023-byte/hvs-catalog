@@ -1,4 +1,6 @@
-"""公开契约的拒绝、不变量与诊断负例（全部合成材料）。"""
+"""Public-contract rejection, invariants, and negative diagnostics using synthetic
+materials.
+"""
 
 from __future__ import annotations
 
@@ -253,7 +255,7 @@ def test_invalid_format_prediction_is_not_fake_empty_roster():
     paper = report.papers[0]
     assert paper.l0.delivered == 1 and paper.l0.format_valid == 0
     assert paper.l0.valid_over_delivered == 0.0
-    # 不伪装成有效空名单：Gold 分母保留，correct_empty 为假
+    # Never claim a valid empty roster: preserve the Gold denominator and false correct_empty.
     assert paper.l1.fn == 1 and paper.l2.gold == 1
     assert paper.correct_empty is False
     assert paper.prediction_errors == ["prediction payload failed format validation"]
@@ -274,7 +276,7 @@ def test_missing_prediction_entry_counts_as_undelivered():
 def test_order_and_internal_ids_do_not_change_scores():
     baseline = score_sample("synthetic-s01")
     data = json.loads(sample_path("synthetic-s01").read_text("utf-8"))
-    # 反转所有列表顺序并重命名内部 ID
+    # Reverse every list and rename internal IDs.
     for obj in data["gold"][0]["objects"]:
         obj["label"] = "X" + obj["label"]
     data["gold"][0]["objects"].reverse()
@@ -321,7 +323,7 @@ def test_order_and_internal_ids_do_not_change_scores():
 def test_unit_loss_and_catalog_difference_are_attribution_or_content_mismatch():
     paper_key = "synthetic-scoring-contract"
     gold, _ = _simple_bundle()
-    # 单位丢失：null 单位不是通配
+    # Missing units are not wildcard null units.
     no_unit = PredictionPaperEntry(
         paper_key=paper_key,
         delivered=True,
@@ -352,7 +354,7 @@ def test_unit_loss_and_catalog_difference_are_attribution_or_content_mismatch():
     assert row and "unit" in row[0].fields
     assert report.papers[0].l2.correct == 0
 
-    # 目录/来源版本差异 → 归属错配诊断
+    # Catalog/source-version differences produce attribution mismatch diagnostics.
     other_version = _value(
         "p2", value="8.2", error="0.3", unit="kpc", source_note="from Gaia DR3"
     )
@@ -489,9 +491,11 @@ def test_ambiguous_alias_keeps_provisional_diagnosis_without_numeric_resolution(
     plan = _plan_for(paper_key, gold, _auxiliary())
     report = score_batch(plan, gold, [pred], auxiliary=_auxiliary())
     paper = report.papers[0]
-    # 歧义候选保留未决关系，不计 FP/FN，相关层率置空
+    # Keep ambiguous candidates unresolved without FP/FN; relevant layer rates are null.
     assert paper.l1.tp == 0 and paper.l1.fp == 0 and paper.l1.fn == 0
-    assert paper.l1.pending == 3  # 1 个歧义预测 + 2 个待定 Gold 对象
+    assert (
+        paper.l1.pending == 3
+    )  # One ambiguous prediction plus two pending Gold objects.
     assert paper.l1.precision is None and paper.l1.recall is None
     assert any(d.code == "ambiguous_object_alias" for d in paper.diagnostics)
     assert report.batch_provisional is True
@@ -500,7 +504,7 @@ def test_ambiguous_alias_keeps_provisional_diagnosis_without_numeric_resolution(
 
 
 def test_score_batch_without_agent_is_pure_and_json_roundtrips(tmp_path):
-    # JSON 往返：冻结输入就是纯数据接口
+    # JSON round trips demonstrate that frozen input is a pure-data interface.
     for path in sorted(INPUTS.glob("*.json")):
         data = json.loads(path.read_text("utf-8"))
         from hvs_catalog.evaluation.scoring import ScoringPlan
@@ -525,7 +529,7 @@ def test_scoped_coverage_validation_errors():
     gold, predictions = _simple_bundle()
     from hvs_catalog.evaluation.scoring import ScopedCoverage
 
-    # 完整 Gold 不允许再声明封闭子范围
+    # Complete Gold cannot additionally declare a closed subset.
     plan = _plan_for(paper_key, gold, _auxiliary())
     scoped_plan = plan.model_copy(
         update={
@@ -560,7 +564,7 @@ def test_agent_technical_failure_marks_batch_provisional(tmp_path):
     assert report.batch_provisional is True
     assert report.auxiliary.technical_failures == 1
     assert report.papers[0].l2.precision is None
-    # 失败也被冻结：重跑不重抽
+    # Freeze failures too; reruns do not resample.
     report2 = score_batch(
         plan,
         gold,

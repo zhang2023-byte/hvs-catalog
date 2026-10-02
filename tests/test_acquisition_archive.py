@@ -1,7 +1,8 @@
-"""源码包工程安全检查的合成测试（Lane B：archive 模块）。
+"""Synthetic source-package safety tests (Lane B: archive module).
 
-全部离线：包字节在测试内构造（tarfile/gzip/纯文本），不触网、不落
-盘解压。护栏常量按测试需要缩小（monkeypatch），生产默认值不改动。
+All tests are offline: tarfile/gzip/plain-text bytes are built in memory, without
+network access or disk extraction. Monkeypatch limits for test cases; production
+defaults remain unchanged.
 """
 
 from __future__ import annotations
@@ -42,7 +43,7 @@ def make_plain_tar(members: dict[str, bytes]) -> bytes:
 
 
 def make_member(name: str, data: bytes, *, type_: bytes, linkname: str = "") -> bytes:
-    """构造含非常规成员的单成员 tar（type 用原始字节指定）。"""
+    """Build a single-member tar with an unusual member type supplied as raw bytes."""
     raw = io.BytesIO()
     with tarfile.open(fileobj=raw, mode="w") as archive:
         info = tarfile.TarInfo(name)
@@ -59,7 +60,7 @@ def make_member(name: str, data: bytes, *, type_: bytes, linkname: str = "") -> 
 SINGLE_TEX = b"\\documentclass{article}\n\\begin{document}\nhello\n\\end{document}\n"
 
 
-# ---------------------------------------------------------------- 形态识别
+# ---------------------------------------------------------------- Format recognition
 
 
 def test_gzip_tar_inspected_with_member_hashes():
@@ -107,7 +108,7 @@ def test_directory_entries_skipped_but_files_kept():
     assert [member.name for member in inspection.members] == ["subdir/main.tex"]
 
 
-# ---------------------------------------------------------------- 不支持形态
+# ---------------------------------------------------------------- Unsupported formats
 
 
 def test_pdf_only_rejected_as_unsupported():
@@ -134,7 +135,7 @@ def test_sniff_format_variants():
         sniff_package_format(b"%PDF-x")
 
 
-# ---------------------------------------------------------------- 安全拒绝
+# ---------------------------------------------------------------- Safety rejection
 
 
 @pytest.mark.parametrize(
@@ -210,7 +211,7 @@ def test_archive_without_regular_files_rejected():
         inspect_package(raw.getvalue())
 
 
-# ---------------------------------------------------------------- 工程护栏
+# ---------------------------------------------------------------- Engineering limits
 
 
 def test_member_count_cap(monkeypatch):
@@ -234,7 +235,9 @@ def test_package_size_cap(monkeypatch):
 
 
 def test_gzip_bomb_bounded_before_expansion(monkeypatch):
-    """gzip 炸弹在流式有界解压处即被拦截：上限先于展开，而非解压完再检查。"""
+    """Reject a gzip bomb during bounded streaming decompression, before expansion
+    completes.
+    """
     monkeypatch.setattr(archive_mod, "MAX_TOTAL_DECOMPRESSED_BYTES", 10)
     payload = make_gzip_tar({"a": b"123456", "b": b"123456"})
     with pytest.raises(PackageIntegrityError, match="有界上限"):
@@ -242,7 +245,7 @@ def test_gzip_bomb_bounded_before_expansion(monkeypatch):
 
 
 def test_total_cap_boundary_exact_fit_accepted(monkeypatch):
-    """解压总量恰好等于上限时放行：护栏是严格大于，不是大于等于。"""
+    """Accept decompressed size exactly at the limit: reject only strictly greater sizes."""
     monkeypatch.setattr(archive_mod, "MAX_TOTAL_DECOMPRESSED_BYTES", 10)
     payload = make_plain_tar({"a": b"12345", "b": b"12345"})
     inspection = inspect_package(payload)
@@ -250,7 +253,9 @@ def test_total_cap_boundary_exact_fit_accepted(monkeypatch):
 
 
 def test_gzip_single_tex_official_form_supported():
-    """arXiv 官方形态：gzip 压缩的单 TeX 文件（并非每个 gzip 都是 tar）。"""
+    """Official arXiv format: a single gzip-compressed TeX file; gzip does not always
+    contain tar.
+    """
     import gzip
     import hashlib
 
@@ -290,7 +295,9 @@ def test_truncated_gzip_rejected():
 
 
 def test_gzip_pdf_inside_rejected():
-    """gzip 里包着 PDF-only 也按形态不支持拒绝，且字节可被调用方保留。"""
+    """Reject gzip-wrapped PDF-only data as unsupported while allowing the caller to retain
+    the bytes.
+    """
     import gzip
 
     payload = gzip.compress(b"%PDF-1.4 fake pdf body")
@@ -299,17 +306,19 @@ def test_gzip_pdf_inside_rejected():
 
 
 def test_gzip_bomb_allocation_bounded_before_expansion():
-    """解压炸弹的内存分配受上限约束：峰值远小于展开后的完整尺寸。
+    """Bound decompression-bomb allocations well below the full expanded size.
 
-    解压输出限制：约 4 KiB 的合成 gzip 可展开为 4 MiB；若先解压再检查，
-    拒绝前的内存峰值接近完整展开。这里用 tracemalloc 实测峰值必须
-    保持在与上限同量级，而不是与展开尺寸同量级。
+    A roughly 4 KiB synthetic gzip expands to 4 MiB. Decompressing before checking would
+    allocate near the full size before rejection. Use tracemalloc to require a peak
+    comparable to the output limit rather than the expanded size.
     """
     import gzip as gzip_mod
     import tracemalloc
 
     payload = gzip_mod.compress(b"A" * (4 * 1024 * 1024))
-    assert len(payload) < 64 * 1024  # 压缩载荷确实远小于展开尺寸
+    assert (
+        len(payload) < 64 * 1024
+    )  # The compressed payload is much smaller than its expanded size.
     tracemalloc.start()
     try:
         with pytest.raises(PackageIntegrityError, match="有界上限"):
@@ -317,14 +326,16 @@ def test_gzip_bomb_allocation_bounded_before_expansion():
         _, peak = tracemalloc.get_traced_memory()
     finally:
         tracemalloc.stop()
-    # 峰值与 64 KiB 上限同量级（含解释器/读取缓冲开销），必须远小于
-    # 4 MiB 的完整展开；放宽到 8×上限以防环境抖动，但比旧实现的
-    # ~2.5×展开尺寸小两个数量级。
+    # The peak should be comparable to the 64 KiB limit, including interpreter and read buffers,
+    # and far below the full 4 MiB expansion. Allow 8 times the limit for environment variation;
+    # this is two orders of magnitude below the old implementation's roughly 2.5 times expanded size.
     assert peak < 64 * 1024 * 8, f"解压拒绝前分配了 {peak} 字节"
 
 
 def test_gzip_output_at_cap_boundary_accepted():
-    """输出恰好等于上限的 gzip 正常解出：护栏是分配约束不是差一错误。"""
+    """Accept gzip output exactly at the limit; the allocation bound has no off-by-one
+    rejection.
+    """
     import gzip as gzip_mod
 
     body = b"B" * 1000
@@ -333,10 +344,11 @@ def test_gzip_output_at_cap_boundary_accepted():
 
 
 def test_tar_member_cap_stops_parsing_before_all_headers(monkeypatch):
-    """成员数上限在逐项解析处立即停止：不会先构造全部 TarInfo。
+    """Stop parsing at the member limit instead of constructing every TarInfo first.
 
-    成员上限设为 2 时，不得先用 getmembers() 构造 100 项再拒绝。
-    这里直接统计 TarInfo 构造次数：拒绝发生时构造数必须与上限同量级。
+    With a limit of 2, do not use getmembers() to construct 100 entries before
+    rejection. Count TarInfo constructions and require the count at rejection to be
+    comparable to the limit.
     """
 
     members = {f"file{i:03d}.tex": b"x" * 10 for i in range(200)}
@@ -353,12 +365,12 @@ def test_tar_member_cap_stops_parsing_before_all_headers(monkeypatch):
     monkeypatch.setattr(tarfile.TarInfo, "frombuf", classmethod(counting_frombuf))
     with pytest.raises(PackageIntegrityError, match="物理头部数"):
         inspect_package(payload)
-    # 逐项解析在第 6 个头部（上限 5 + 1）处立即停止，而不是 200。
+    # Stop at header 6 (limit 5 plus one), rather than parsing all 200.
     assert constructed <= 8, f"拒绝前解析了 {constructed} 个头部"
 
 
 def test_gzip_bomb_inside_tar_rejected_with_bounded_allocation():
-    """gzip→tar 双层炸弹同样在解压层被拦：不进入 tar 解析。"""
+    """Reject a nested gzip/tar bomb during decompression, before tar parsing."""
     import gzip as gzip_mod
 
     inner = make_plain_tar({f"f{i:02d}.tex": b"A" * 4096 for i in range(20)})
@@ -369,8 +381,8 @@ def test_gzip_bomb_inside_tar_rejected_with_bounded_allocation():
 
 
 def test_gnu_sparse_member_rejected():
-    """GNU sparse 成员显式拒绝（扩展头处理后的安全护栏）。"""
-    # GNU old-style sparse：类型 'S'。手工构造最小头部。
+    """Explicitly reject GNU sparse members after extension-header handling."""
+    # GNU old-style sparse type 'S': construct a minimal header manually.
     info = tarfile.TarInfo("sparse.bin")
     info.type = b"S"
     info.size = 0
@@ -384,7 +396,9 @@ def test_gnu_sparse_member_rejected():
 def _make_tar_bytes(
     members: list[tuple[str, bytes, bytes]], *, pax_format=False
 ) -> bytes:
-    """手工拼物理 tar 字节：[(name, data, typeflag)]，不做安全包装。"""
+    """Assemble physical tar bytes from (name, data, typeflag) entries without safety
+    wrappers.
+    """
     import io as _io
 
     raw = _io.BytesIO()
@@ -397,7 +411,9 @@ def _make_tar_bytes(
         block[156:157] = typeflag
         block[257:262] = b"ustar"
         block[263:265] = b"00"
-        block[148:156] = b" " * 8  # 校验和字段光空格参与计算
+        block[148:156] = (
+            b" " * 8
+        )  # Treat checksum-field bytes as spaces while calculating the checksum.
         chksum = sum(block)
         field = f"{chksum:06o}".encode() + b"\0 "
         block[148 : 148 + len(field)] = field
@@ -414,9 +430,11 @@ def _make_tar_bytes(
 
 
 def test_tar_big_pax_extension_preflight_rejects_before_parse(monkeypatch):
-    """大 PAX 扩展负载在 tarfile 解析前被物理预检拒绝。"""
+    """Reject large PAX extension payloads in physical preflight before tarfile parses
+    them.
+    """
     monkeypatch.setattr(archive_mod, "MAX_TOTAL_DECOMPRESSED_BYTES", 1024)
-    # 400016 字节的 PAX 扩展负载 + 1 字节真实文件。
+    # A 400016-byte PAX extension payload plus a one-byte real file.
     pax_payload = b"400016 path=evil.txt\n" + b"x" * (400016 - 20)
     payload = _make_tar_bytes(
         [
@@ -429,7 +447,9 @@ def test_tar_big_pax_extension_preflight_rejects_before_parse(monkeypatch):
 
 
 def test_tar_long_extension_chain_preflight_no_recursion(monkeypatch):
-    """1200 个成员各带一个 PAX 头的小包在物理预检处被截断，不触发递归。"""
+    """Stop a small archive with 1200 members and one PAX header each during physical
+    preflight, avoiding recursion.
+    """
     monkeypatch.setattr(archive_mod, "MAX_ARCHIVE_MEMBERS", 2)
     entries: list[tuple[str, bytes, bytes]] = []
     for _ in range(600):
@@ -441,7 +461,9 @@ def test_tar_long_extension_chain_preflight_no_recursion(monkeypatch):
 
 
 def test_tar_preflight_counts_before_parser_allocation(monkeypatch):
-    """量度证据：预检拒绝时 tarfile 一个头部都没解析（零 TarInfo）。"""
+    """Verify that preflight rejection precedes every tarfile header parse: zero TarInfo
+    objects.
+    """
     constructed = 0
     original_frombuf = tarfile.TarInfo.frombuf.__func__
 
@@ -459,11 +481,11 @@ def test_tar_preflight_counts_before_parser_allocation(monkeypatch):
     payload = _make_tar_bytes(entries)
     with pytest.raises(PackageIntegrityError, match="物理头部数"):
         inspect_package(payload)
-    assert constructed == 0  # 预检先于解析：tarfile 未被触及
+    assert constructed == 0  # Preflight runs before parsing: tarfile is never reached.
 
 
 def test_tar_legitimate_pax_extension_accepted():
-    """合法有界 PAX 扩展（长文件名）正常接受。"""
+    """Accept a valid bounded PAX extension for a long filename."""
     long_name = "figures/" + "x" * 140 + ".pdf"
     payload = make_plain_tar({long_name: b"%PDF-fake"})
     inspection = inspect_package(payload)
@@ -471,7 +493,7 @@ def test_tar_legitimate_pax_extension_accepted():
 
 
 def test_tar_pax_path_override_traversal_rejected():
-    """PAX path 覆盖成越界路径时，逐成员校验在解析层拒绝。"""
+    """Reject a PAX path override that escapes the root during per-member validation."""
     pax_payload = b"20 path=../evil.txt\n"
     payload = _make_tar_bytes(
         [
@@ -484,20 +506,24 @@ def test_tar_pax_path_override_traversal_rejected():
 
 
 def test_gzip_block_boundary_trailing_rejected(monkeypatch):
-    """压缩流恰落在输入块边界：EOF 后的尾随数据仍被拒绝。"""
+    """Reject data after EOF even when the compressed stream ends on an input-chunk
+    boundary.
+    """
     import gzip as gzip_mod
 
     monkeypatch.setattr(archive_mod, "_GUNZIP_CHUNK", 16)
     body = b"z" * 200
     payload = gzip_mod.compress(body)
     assert len(payload) > 16
-    # 找到输出恰好跨块的设置：直接构造尾随 EXTRA 并验证拒绝。
+    # Construct trailing EXTRA at the output boundary and verify rejection.
     with pytest.raises(PackageIntegrityError, match="尾随"):
         bounded_gunzip(payload + b"EXTRA", 4096)
 
 
 def test_gzip_output_exactly_cap_with_trailer_next_block_accepted(monkeypatch):
-    """输出恰等于额度、CRC/结束标记在下一输入块：合法边界材料被接受。"""
+    """Accept output exactly at the limit when CRC/end markers fall in the next input
+    chunk.
+    """
     import gzip as gzip_mod
 
     monkeypatch.setattr(archive_mod, "_GUNZIP_CHUNK", 16)
@@ -536,7 +562,7 @@ def test_gzip_concatenated_members_rejected_small_chunk(monkeypatch):
 
 
 def test_gzip_boundary_minus_one_and_exact_split(monkeypatch):
-    """块边界前后（-1 / 恰好 / +1）的正常流全部接受。"""
+    """Accept valid streams just before, at, and just after the chunk boundary."""
     import gzip as gzip_mod
 
     monkeypatch.setattr(archive_mod, "_GUNZIP_CHUNK", 16)
@@ -546,12 +572,12 @@ def test_gzip_boundary_minus_one_and_exact_split(monkeypatch):
 
 
 def _pax_entry(name: str, records: bytes) -> tuple[str, bytes, bytes]:
-    """构造 PAX 扩展头条目（records 为 'NN key=value\n' 负载）。"""
+    """Build a PAX extension header whose records use NN key=value newline payloads."""
     return name, records, b"x"
 
 
 def _tar_header_raw(name: str, declared_size: int, typeflag: bytes) -> bytes:
-    """只写头部块（不写数据），尺寸字段可独立于物理数据。"""
+    """Write only a header block; its size field can differ from physical data length."""
     import io as _io
 
     raw = _io.BytesIO()
@@ -576,7 +602,7 @@ def _pad_data(data: bytes) -> bytes:
 
 
 def _pax_size_record(value: int) -> bytes:
-    """构造自洽长度的 PAX ``size=NN`` 记录（前缀数字含自身）。"""
+    """Build a self-consistent PAX size=NN record whose length prefix includes itself."""
     rec = f"size={value}\n".encode()
     for width in range(1, 6):
         total = width + 1 + len(rec)
@@ -586,17 +612,19 @@ def _pax_size_record(value: int) -> bytes:
 
 
 def test_tar_local_pax_size_record_unsupported(monkeypatch):
-    """收敛边界：局部 PAX ``size`` 记录（含缩至 0）明确不支持。
+    """Explicitly exclude local PAX size records, including shrinkage to zero.
 
-    不在自定义解析器里仿真 tarfile 的覆盖
-    语义（重复字段/局部链/数值容错会打开分歧窗口），布局改变型变
-    体一律在进入 tarfile 前报告“不支持”，原始字节由调用方保留。
+    Do not emulate tarfile override semantics in the custom parser: duplicate fields,
+    local chains, and numeric tolerance can diverge. Report layout-changing variants as
+    unsupported before tarfile, retaining raw bytes for the caller.
     """
     monkeypatch.setattr(archive_mod, "MAX_TOTAL_DECOMPRESSED_BYTES", 1024)
     crafted = b"".join(
         [
             _tar_header_raw("PaxHeader", 9, b"x") + _pad_data(b"9 size=0\n"),
-            _tar_header_raw("big.bin", 4096, b"0"),  # 声明 4096，物理 0 块
+            _tar_header_raw(
+                "big.bin", 4096, b"0"
+            ),  # Declare 4096 bytes with zero physical data blocks.
             _tar_header_raw("PaxHidden", 3000, b"x") + b"H" * 3000 + _pad_data(b""),
             _tar_header_raw("real.tex", 2, b"0") + _pad_data(b"hi"),
             b"\0" * 1024,
@@ -604,11 +632,11 @@ def test_tar_local_pax_size_record_unsupported(monkeypatch):
     )
     with pytest.raises(UnsupportedPackageError, match="size"):
         inspect_package(crafted)
-    # 展示为获取结果时是“不支持”而非“损坏”：字节保留（lifecycle 层覆盖）。
+    # Acquisition reports unsupported, not damaged, and retains bytes; lifecycle tests cover this.
 
 
 def test_tar_local_pax_grow_size_record_unsupported():
-    """局部 PAX 放大尺寸（size=2048）同样明确不支持。"""
+    """Explicitly exclude local PAX size enlargement to 2048."""
     crafted = b"".join(
         [
             _tar_header_raw("PaxHeader", len(_pax_size_record(2048)), b"x")
@@ -623,7 +651,7 @@ def test_tar_local_pax_grow_size_record_unsupported():
 
 
 def test_tar_global_pax_header_unsupported(monkeypatch):
-    """全局 PAX 头（``g``）整体明确不支持，无论记录内容。"""
+    """Explicitly exclude all global PAX g headers regardless of their records."""
     monkeypatch.setattr(archive_mod, "MAX_TOTAL_DECOMPRESSED_BYTES", 1024)
     crafted = b"".join(
         [
@@ -638,7 +666,7 @@ def test_tar_global_pax_header_unsupported(monkeypatch):
 
 
 def test_tar_malformed_pax_payload_unsupported():
-    """无法完整切分的 PAX 负载明确不支持（不猜测 tarfile 容错）。"""
+    """Report unsplittable PAX payloads as unsupported without guessing tarfile tolerance."""
     crafted = b"".join(
         [
             _tar_header_raw("PaxHeader", 16, b"x") + _pad_data(b"not a record\0\n"),
@@ -651,7 +679,7 @@ def test_tar_malformed_pax_payload_unsupported():
 
 
 def test_tar_consecutive_extension_chain_unsupported():
-    """连续扩展头链（x 后再 x）在第二个头部即被拒，无递归。"""
+    """Reject chained x extension headers at the second header, without recursion."""
     entries = [("PaxHeader", b"11 mtime=0\n", b"x"), ("PaxNext", b"5 c=d\n", b"x")]
     payload = _make_tar_bytes(entries + [("real.tex", b"hi", b"0")])
     with pytest.raises(UnsupportedPackageError, match="连续扩展头链"):
@@ -659,16 +687,16 @@ def test_tar_consecutive_extension_chain_unsupported():
 
 
 def test_tar_production_chain_depth_900_unsupported_no_recursion():
-    """生产默认上限下 900 个连续有效 PAX 头：链变体先于递归拒绝。"""
+    """Reject a chain of 900 valid PAX headers under production limits before recursion."""
     entries = [("PaxHeader", b"11 mtime=0\n", b"x")] * 900
     payload = _make_tar_bytes(entries + [("real.tex", b"hi", b"0")])
-    assert len(payload) < 2 * 1024 * 1024  # 复现材料保持小体积
+    assert len(payload) < 2 * 1024 * 1024  # Keep the reproducer small.
     with pytest.raises(UnsupportedPackageError, match="连续扩展头链"):
         inspect_package(payload)
 
 
 def test_tar_legitimate_short_extension_chain_accepted():
-    """正常 PAX/GNU 长名（每成员单个扩展头）不受子集边界影响。"""
+    """Accept ordinary PAX/GNU long names with one extension header per member."""
     long_name = "figs/" + "n" * 130 + ".eps"
     deep = {f"{long_name}.{i}": b"x" * 4 for i in range(5)}
     payload = make_plain_tar(deep)
@@ -676,11 +704,11 @@ def test_tar_legitimate_short_extension_chain_accepted():
     assert len(inspection.members) == 5
 
 
-# ---------------------------------------------------------------- R extra1：PAX 允许清单
+# ---------------------------------------------------------------- R extra1: PAX allowlist
 
 
 def _pax_record(key: str, value: str) -> bytes:
-    """构造自洽长度且键值明确的 PAX 记录。"""
+    """Build a PAX record with a self-consistent length and explicit key/value."""
     rec = f"{key}={value}\n".encode()
     for width in range(1, 7):
         total = width + 1 + len(rec)
@@ -690,7 +718,7 @@ def _pax_record(key: str, value: str) -> bytes:
 
 
 def test_pax_sparse_map_field_unsupported_before_tarfile():
-    """有效定界的 ``GNU.sparse.map=garbage`` 在 tarfile 之前拒绝。"""
+    """Reject a well-delimited GNU.sparse.map=garbage record before tarfile."""
     crafted = b"".join(
         [
             _tar_header_raw(
@@ -706,7 +734,7 @@ def test_pax_sparse_map_field_unsupported_before_tarfile():
 
 
 def test_pax_sparse_major_minor_unsupported():
-    """``GNU.sparse.major/minor`` 稀疏版本字段同样在解析前拒绝。"""
+    """Reject GNU.sparse.major/minor version fields before parsing too."""
     records = _pax_record("GNU.sparse.major", "1") + _pax_record(
         "GNU.sparse.minor", "0"
     )
@@ -722,7 +750,7 @@ def test_pax_sparse_major_minor_unsupported():
 
 
 def test_pax_unknown_field_unsupported():
-    """未知字段（含 SCHILY.* 等未承诺命名空间）不在允许清单内。"""
+    """Exclude unknown keys, including unsupported SCHILY.* namespaces, from the allowlist."""
     crafted = b"".join(
         [
             _tar_header_raw(
@@ -738,7 +766,7 @@ def test_pax_unknown_field_unsupported():
 
 
 def test_pax_allowed_metadata_keys_accepted():
-    """允许清单内的纯元数据键正常接受（mtime/path/comment 等）。"""
+    """Accept allowlisted metadata-only keys such as mtime, path, and comment."""
     records = (
         _pax_record("mtime", "1234567890")
         + _pax_record("comment", "ordinary")
@@ -756,14 +784,14 @@ def test_pax_allowed_metadata_keys_accepted():
 
 
 def test_supported_key_numeric_garbage_no_plaintext_fallback():
-    """支持键上的数值垃圾（mtime=garbage）绝不回退为普通文本形态。
+    """Never reinterpret invalid numeric metadata such as mtime=garbage as plain text.
 
-    本运行时的 tarfile 对允许键上的垃圾值整体容忍（记录保留为字符
-    串、元数据取默认值），包按 tar 正常接受；若其他运行时在数值转
-    换处抛 ValueError，预检后的解析层把它分类为
-    ``TarMemberMetadataError``（完整性错误的子类，可观察、可审计），
-    同样不会退化为单文件文本。这里验证可观察行为：tar 结构被识别
-    并按 tar 检查（成员 real.tex 进入清单）。
+    This runtime's tarfile tolerates malformed allowlisted values, retaining strings and
+    default metadata, so the archive remains accepted as tar. Other runtimes may raise
+    ValueError; classify that after preflight as observable TarMemberMetadataError, a
+    subclass of integrity error. In either case, never fall back to single-file text.
+    Verify observable tar recognition and validation through the real.tex manifest
+    entry.
     """
     records = _pax_record("mtime", "garbage")
     crafted = b"".join(

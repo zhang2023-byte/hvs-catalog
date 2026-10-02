@@ -1,4 +1,4 @@
-"""保存形式的字段与形式约束：数值表达、名单条目、完成情况与引用类型。"""
+"""Saved-field/form constraints: values, roster entries, completion, and reference types."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def test_single_sided_error_kept_as_reported():
 
 def test_zero_error_not_faked_for_unreported_side():
     value = point_value(error=None, lower_error="0.2")
-    assert value.upper_error is None  # 未报告一侧保持 null，不补 0
+    assert value.upper_error is None  # Keep an unreported side null; do not fill zero.
 
 
 def test_pure_range_never_gets_central_value():
@@ -325,7 +325,7 @@ def test_boundness_positive_states_need_evidence():
         PaperBoundness.model_validate(
             {"status": "bound", "evidence_refs": [], "issue_refs": [], "gap_refs": []}
         )
-    # no_overall_conclusion 允许没有正面结论引句
+    # no_overall_conclusion requires no affirmative conclusion quote.
     PaperBoundness.model_validate(
         {
             "status": "no_overall_conclusion",

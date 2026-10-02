@@ -1,10 +1,10 @@
-"""共享提取入口：方法登记、严格请求与提取执行。
+"""Shared extraction entry points: method registration, strict requests, and execution.
 
-日常运行与评测共用 ``start_extraction``/``resume_extraction``/``get_
-extraction``；方法与步骤经可信登记表查询（``list_methods``）。当前只
-登记 ``synthetic-mock`` 实现与模拟材料（见 ``mock`` 模块），不宣称真实
-提取已可运行；真实 ``direct``/``candidate_review`` 留待后续任务接入。
-提取侧不依赖评分或 Gold；请求没有答案路径，也不接受自由 metadata。
+Ordinary/evaluation callers share start_extraction/resume_extraction/get_extraction and
+trusted list_methods registration. Only synthetic-mock implementations/materials are
+registered in mock; real direct/candidate_review extraction awaits later work.
+Extraction depends on neither scoring nor Gold; requests contain no answer paths/free
+metadata.
 """
 
 from __future__ import annotations

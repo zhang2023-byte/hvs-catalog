@@ -1,4 +1,6 @@
-"""发行内容规则的单元测试，用合成的压缩包成员名验证 tools/check_distribution。"""
+"""Distribution-content rule unit tests using synthetic archive member names for
+tools/check_distribution.
+"""
 
 import pytest
 from check_distribution import (
@@ -62,7 +64,7 @@ def test_sdist_rejects_other_top_level_and_members():
 
 
 def test_find_forbidden_paths_checks_whole_segments():
-    # 包内名为 catalog.py 的模块文件不触发；正式数据目录 catalog 才被排除
+    # A package module named catalog.py is allowed; exclude only the official catalog data directory.
     assert find_forbidden_paths(["hvs_catalog/catalog.py", "catalog/data.ecsv"]) == [
         "catalog/data.ecsv"
     ]

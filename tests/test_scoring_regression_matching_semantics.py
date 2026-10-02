@@ -1,9 +1,11 @@
-"""评分回归：独立构造的反例复现，聚焦匹配语义与安全门禁（不复用冻结 expected）。
+"""Scoring regressions from independent synthetic counterexamples focused on matching
+semantics and safety gates, without reusing frozen expectations.
 
-覆盖：ready+blocked 混合批次、别名歧义未决关系、白名单未命中不能
-证不同、归属集合内最大一对一匹配（重排/多候选/饱和+额外未知）、
-Agent 明确 different、原文片段证据与引用校验、冻结完整性与并发冲
-突、production fail closed、证据独立诊断。全部合成材料。
+Cover ready/blocked batches, alias ambiguity, allowlist misses, maximum one-to-one
+attribution matching under reordering/multiple candidates/saturation plus unknown
+extras, explicit Agent differences, evidence/reference checks, frozen
+integrity/concurrent conflicts, production fail-closed behavior, and independent
+evidence diagnostics.
 """
 
 from __future__ import annotations
@@ -145,7 +147,7 @@ def _score(plan, gold, preds, **kwargs):
 
 
 # ---------------------------------------------------------------------------
-# 裁定1：ready + blocked 混合批次不得输出整批最终率
+# Ruling 1: mixed ready/blocked batches cannot produce final whole-batch rates.
 # ---------------------------------------------------------------------------
 
 
@@ -226,21 +228,23 @@ def test_ready_blocked_mix_is_not_final():
     assert report.readiness_blocked_papers == ["synthetic-scoring-blocked"]
     assert report.batch_provisional is True
     assert "synthetic-scoring-blocked:readiness_gap" in report.provisional_reasons
-    # 全计划 L0 保留
+    # Retain L0 for the entire plan.
     assert report.micro.l0.planned == 2 and report.micro.l0.delivered == 2
-    # 微汇总计数保留但覆盖不全，比率不得作为整批最终率
+    # Retain micro counts but never present incomplete-coverage rates as whole-batch final rates.
     assert report.micro.coverage == "partial"
     assert report.micro.l1 is not None and report.micro.l1.precision is None
     assert report.micro.l2 is not None and report.micro.l2.precision is None
     assert report.micro.l2.recall is None and report.micro.l2.f1 is None
     ready = next(p for p in report.papers if p.paper_key.endswith("-ready"))
     blocked = next(p for p in report.papers if p.paper_key.endswith("-blocked"))
-    assert ready.l2.precision == 1.0  # 就绪论文确定明细保留
-    assert blocked.l1 is None and blocked.l2 is None  # 不从未知 Gold 捏造 G
+    assert ready.l2.precision == 1.0  # Retain definite details for ready papers.
+    assert (
+        blocked.l1 is None and blocked.l2 is None
+    )  # Never fabricate G from unknown Gold.
 
 
 # ---------------------------------------------------------------------------
-# 裁定2：别名歧义保留未决关系，不默认为错误
+# Ruling 2: retain ambiguous aliases as unresolved relations, not default errors.
 # ---------------------------------------------------------------------------
 
 
@@ -348,25 +352,27 @@ def test_alias_ambiguity_pending_not_counted_as_error():
     plan, gold, predictions = _ambiguity_bundle()
     report = _score(plan, gold, predictions)
     paper = report.papers[0]
-    # 确定部分保留：A 匹配 TP、C 多报 FP；歧义不默认为 FP/FN
+    # Retain definite A TP and extra C FP; ambiguity does not imply FP/FN.
     assert paper.l1.tp == 1 and paper.l1.fp == 1 and paper.l1.fn == 0
-    assert paper.l1.pending == 2  # 歧义预测 P + 待定 Gold B
+    assert paper.l1.pending == 2  # Ambiguous prediction P and pending Gold B.
     assert paper.l1.precision is None and paper.l1.recall is None
     assert paper.l1.f1 is None
     assert report.micro.l1.precision is None and report.micro.l1.pending == 2
-    # L2 保留实际 P/G 总数与确定 C；涉歧义值不标漏报/多报
+    # L2 retains actual P/G totals and definite C without marking ambiguous values missing or extra.
     assert paper.l2.correct == 1 and paper.l2.predicted == 4 and paper.l2.gold == 3
     assert paper.l2.precision is None and paper.l2.recall is None
     statuses = [row.status for row in paper.pairings]
-    assert statuses.count("unresolved_object_identity") == 2  # p4 与 g3
-    assert "value_mismatch" in statuses  # A speed 抄错仍是确定差异
-    assert "extra_object_value" in statuses  # C 的多报仍是确定 FP
+    assert statuses.count("unresolved_object_identity") == 2  # p4 and g3.
+    assert (
+        "value_mismatch" in statuses
+    )  # An incorrectly copied A speed remains a definite difference.
+    assert "extra_object_value" in statuses  # Extra C remains a definite FP.
     assert report.batch_provisional is True
     assert any(d.code == "ambiguous_object_alias" for d in paper.diagnostics)
 
 
 # ---------------------------------------------------------------------------
-# 裁定3：白名单未命中不能证不同（条件域进入未知出口）
+# Ruling 3: an allowlist miss cannot prove difference; condition comparison becomes unknown.
 # ---------------------------------------------------------------------------
 
 
@@ -428,12 +434,14 @@ def test_unsupported_condition_difference_is_provisional_not_mismatch():
 
 
 # ---------------------------------------------------------------------------
-# 裁定4：归属集合内确定性最大一对一匹配
+# Ruling 4: deterministic maximum one-to-one matching within attribution sets.
 # ---------------------------------------------------------------------------
 
 
 def _matching_bundle(pred_specs):
-    """gold: g1=8.2, g2=8.3（同归属）；pred_specs: [(record_id, value, fragments)]。"""
+    """gold has g1=8.2 and g2=8.3 with identical attribution; pred_specs contains
+    (record_id, value, fragments) tuples.
+    """
     key = "synthetic-scoring-matching"
     gold = [
         GoldPaperEntry(
@@ -484,7 +492,9 @@ def _matching_bundle(pred_specs):
 
 
 def _equivalent_mock(tmp_path):
-    """对每个未知候选都答 equivalent 的合成 mock；引用指向实际提供片段。"""
+    """Synthetic mock declares every unknown candidate equivalent and references actually
+    provided fragments.
+    """
 
     def handler(request):
         return AgentResponse(
@@ -544,7 +554,9 @@ def test_reordering_predictions_does_not_change_matching(tmp_path: Path):
 
 
 def test_multiple_legitimate_candidates_match_maximally():
-    """Gold 两条同内容值（8.2/8.2）与两条同内容预测：最大匹配 C=2。"""
+    """Two identical Gold values (8.2/8.2) and two identical predictions yield maximum
+    matching C=2.
+    """
     key = "synthetic-scoring-multi-candidate"
     gold = [
         GoldPaperEntry(
@@ -601,7 +613,9 @@ def test_multiple_legitimate_candidates_match_maximally():
 
 
 def test_saturated_matching_with_extra_unknown_keeps_final_counts():
-    """已确认匹配达到上界时，额外未知候选如实诊断但不推翻确定 C。"""
+    """When confirmed matching reaches its upper bound, diagnose extra unknown candidates
+    without overturning definite C.
+    """
     key = "synthetic-scoring-saturated"
     gold = [
         GoldPaperEntry(
@@ -652,10 +666,14 @@ def test_saturated_matching_with_extra_unknown_keeps_final_counts():
     assert paper.l2.correct == 1 and paper.l2.predicted == 2 and paper.l2.gold == 1
     assert paper.l2.precision == 0.5 and paper.l2.recall == 1.0
     assert paper.l2.f1 == 2 / 3
-    assert report.batch_provisional is False  # 未知候选不能影响已确定的 C
+    assert (
+        report.batch_provisional is False
+    )  # Unknown candidates cannot change already definite C.
     statuses = [row.status for row in paper.pairings]
     assert "matched" in statuses
-    assert "unknown_candidate_extra" in statuses  # 如实诊断，不当普通 extra_value
+    assert (
+        "unknown_candidate_extra" in statuses
+    )  # Diagnose accurately rather than classifying as ordinary extra_value.
     assert "unresolved_value" not in statuses
 
 
@@ -777,7 +795,7 @@ def test_agent_explicit_different_on_unknown_is_determined(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# 裁定6：材料绑定不匹配时不调用 Agent
+# Ruling 6: mismatched material bindings cause no Agent calls.
 # ---------------------------------------------------------------------------
 
 
@@ -853,7 +871,7 @@ def test_wrong_material_binding_prevents_agent_call(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# 裁定9：证据独立诊断
+# Ruling 9: independent evidence diagnostics.
 # ---------------------------------------------------------------------------
 
 
@@ -912,7 +930,9 @@ def test_dangling_evidence_ref_diagnosed_but_not_scored():
     )
     report = _score(plan, gold, preds)
     paper = report.papers[0]
-    assert paper.l2.correct == 1 and paper.l2.precision == 1.0  # 诊断不混入质量 C
+    assert (
+        paper.l2.correct == 1 and paper.l2.precision == 1.0
+    )  # Diagnostics do not affect quality C.
     assert any(d.code == "dangling_evidence_ref" for d in paper.diagnostics)
     assert paper.evidence_verification["dangling"] == 1
 
@@ -983,7 +1003,7 @@ def test_wrong_material_fragment_diagnosed():
 
 
 # ---------------------------------------------------------------------------
-# 裁定1 补充：混合批次的报告可序列化，字段完整
+# Ruling 1 supplement: mixed-batch reports serialize with complete fields.
 # ---------------------------------------------------------------------------
 
 

@@ -1,4 +1,6 @@
-"""命令行行为测试：帮助、版本，以及版本与 pyproject 的唯一来源一致。"""
+"""CLI behavior tests: help, version, and consistency with the sole pyproject version
+source.
+"""
 
 import tomllib
 from importlib.metadata import version as installed_version

@@ -1,19 +1,14 @@
-"""外部转换器的受限进程执行（按本机 macOS 实测的最小系统隔离）。
+"""Restricted external-converter processes using minimal isolation verified on local macOS.
 
-外部转换不能只依靠 cwd、``--path`` 和超时充当沙箱。本模块在有
-``/usr/bin/sandbox-exec`` 的 macOS 上以最小系统隔离运行 ``latexmlc``／
-``pandoc``：
+Cwd, --path, and timeouts alone are not a sandbox. On macOS with /usr/bin/sandbox-exec,
+run latexmlc/pandoc with denied networks and minimal credential-free environments; deny
+global writes except isolated conversion directories, capture/bound stdout/stderr there,
+and deny .ltxml/.pm reads while supplying controlled inputs. Bound input/output bytes
+and time, terminating timed-out processes.
 
-- **禁网络**（``deny network*``），不带凭据（最小化环境变量）；
-- **只写独立转换目录**：全盘拒绝 ``file-write*``，仅允许转换目录内写
-  入；stdout／stderr 重定向到目录内文件并限制尺寸；
-- **禁包内可执行绑定**：转换目录由程序写入唯一受控输入，并且配置拒
-  绝读取目录内 ``.ltxml``／``.pm`` 文件；
-- **有界**：输入尺寸、进程输出尺寸与运行时间均有上限，超时终止进程。
-
-不能提供该隔离的环境（非 macOS 或缺少 ``sandbox-exec``）将转换器报告
-为不可用，**不裸跑**；不建设容器平台或通用安全框架，也不声称未实测平
-台的支持。
+Without this isolation, report converters unavailable and never run unisolated. No
+container platform/general security framework is provided; untested platform support is
+not claimed.
 """
 
 from __future__ import annotations
@@ -35,13 +30,13 @@ __all__ = [
     "sandbox_profile",
 ]
 
-#: 单次转换的运行时间上限（秒）。
+#: Maximum conversion runtime in seconds.
 CONVERTER_TIMEOUT_SECONDS = 120
 
-#: 单路进程输出（stdout/stderr/HTML）的字节上限。
+#: Byte limit for each stdout/stderr/HTML output.
 MAX_CONVERTER_OUTPUT_BYTES = 8 * 1024 * 1024
 
-#: 传给外部转换器的输入文档字节上限。
+#: Byte limit for documents sent to external converters.
 MAX_CONVERTER_INPUT_BYTES = 4 * 1024 * 1024
 
 _SANDBOX_EXEC = "/usr/bin/sandbox-exec"
@@ -51,7 +46,7 @@ _VERSION_FLAGS = {"latexmlc": "--VERSION", "pandoc": "--version"}
 
 @dataclass(frozen=True)
 class ConverterAvailability:
-    """一个外部转换器的可用性与版本；不可用时给出明确原因。"""
+    """Converter availability/version with an explicit reason when unavailable."""
 
     tool: str
     available: bool
@@ -62,7 +57,7 @@ class ConverterAvailability:
 
 @dataclass(frozen=True)
 class ProcessOutcome:
-    """一次受限进程运行的结果。"""
+    """Result of one restricted process run."""
 
     returncode: int | None
     stdout: bytes
@@ -73,7 +68,7 @@ class ProcessOutcome:
 
 
 class ConverterRunner:
-    """转换器执行入口；测试可注入确定性的假实现。"""
+    """Converter execution interface; tests can inject deterministic fakes."""
 
     def availability(self, tool: str) -> ConverterAvailability:  # pragma: no cover
         raise NotImplementedError
@@ -90,13 +85,13 @@ class ConverterRunner:
 
 
 def sandbox_profile(convdir: Path) -> str:
-    """生成 macOS 最小隔离 profile：禁网络、只写转换目录、限读范围。
+    """Generate minimal macOS isolation: deny networks, restrict writes to conversion
+    directories, and allowlist reads.
 
-    读取采用明确允许范围：转换目录、实际转换材料与可信系统依赖
-    （系统与 Homebrew 安装树）；全盘拒绝其他 ``file-read-data``，阻断
-    包外私有文件与凭据读取（目录元数据与根目录本身的读取是进程引
-    导的必要条件，允许后不影响内容阻断）。不能提供该限制的环境报告
-    转换不可用，不裸跑。
+    Allow conversion directories/materials and trusted system/Homebrew dependency trees;
+    deny other file-read-data to block external private files/credentials. Directory
+    metadata/root reads are needed for bootstrap and do not allow file contents.
+    Unsupported environments report unavailable without unisolated execution.
     """
     directory = str(convdir.resolve())
     escaped = directory.replace("/", "\\/")
@@ -150,7 +145,7 @@ def _sandbox_ready() -> str | None:
 
 
 class SandboxedConverterRunner(ConverterRunner):
-    """macOS ``sandbox-exec`` 最小隔离的转换器运行器。"""
+    """Converter runner using minimal macOS sandbox-exec isolation."""
 
     def __init__(self, *, sandbox_path: str = _SANDBOX_EXEC) -> None:
         self._sandbox_path = sandbox_path
@@ -218,7 +213,7 @@ class SandboxedConverterRunner(ConverterRunner):
         error = ""
         returncode: int | None = None
         with stdout_path.open("wb") as out, stderr_path.open("wb") as err:
-            # 独立进程组：超时／超限时终止全部受控后代，不只杀直接进程。
+            # Independent process groups allow timeout/limit cleanup of all controlled descendants, not just direct children.
             process = subprocess.Popen(
                 argv,
                 cwd=str(workdir),
@@ -227,11 +222,11 @@ class SandboxedConverterRunner(ConverterRunner):
                 env=env,
                 start_new_session=True,
             )
-            # 先行记录进程组 id：直接进程退出后 getpgid 会失效，而后代
-            # 可能仍在原组内运行（二次审核发现 18）。
+            # Record the process-group ID immediately: getpgid fails after direct-child exit while descendants
+            # may remain in the original group (second-review finding 18).
             try:
                 group_id = os.getpgid(process.pid)
-            except (ProcessLookupError, OSError):  # pragma: no cover - 竞态
+            except (ProcessLookupError, OSError):  # pragma: no cover - race condition
                 group_id = process.pid
             deadline = time.monotonic() + timeout
             try:
@@ -262,9 +257,9 @@ class SandboxedConverterRunner(ConverterRunner):
         if not exceeded_output and _generated_bytes(workdir) > (
             MAX_CONVERTER_OUTPUT_BYTES
         ):
-            # 全部退出路径（含首次等待内快退出）都核验实际生成输出：
-            # 递归覆盖转换目录内任意深度的产物（二次审核反例 nested2/
-            # flat2：dd 在普通文件与子目录各写 9MB 仍返回成功）。
+            # Verify actual generated outputs on every exit path, including quick first-wait exits.
+            # Recurse through all conversion-directory depths (second-review nested2/flat2 cases:
+            # dd wrote 9 MB each to ordinary/subdirectory files but previously reported success).
             exceeded_output = True
             error = (
                 f"{tool} 生成输出超过 {MAX_CONVERTER_OUTPUT_BYTES} 字节上限，"
@@ -281,7 +276,9 @@ class SandboxedConverterRunner(ConverterRunner):
 
 
 def _safe_size(path: Path) -> int:
-    """防御性取文件尺寸；转换器可能自行清理中间文件（如 stdout 捕获）。"""
+    """Read sizes defensively because converters may remove intermediate files such as
+    captured stdout.
+    """
     try:
         return path.stat().st_size
     except OSError:
@@ -289,10 +286,11 @@ def _safe_size(path: Path) -> int:
 
 
 def _generated_bytes(workdir: Path) -> int:
-    """递归统计转换目录内全部文件字节（含子目录产物与 stdout／stderr）。
+    """Recursively total regular-file bytes under the conversion directory, including
+    nested outputs/stdout/stderr.
 
-    只统计常规文件，不跟随符号链接（目录内符号链接指向的文件不计，
-    防止经链接绕过统计）。
+    Do not follow symlinks or count their targets, preventing link-based traversal
+    during accounting.
     """
     total = 0
     for root, dirs, files in os.walk(workdir, followlinks=False):
@@ -304,16 +302,16 @@ def _generated_bytes(workdir: Path) -> int:
                 if path.is_symlink():
                     continue
                 total += path.stat().st_size
-            except OSError:  # pragma: no cover - 目录内容竞态
+            except OSError:  # pragma: no cover - directory-content race
                 continue
     return total
 
 
 def _terminate_group(process: subprocess.Popen, group_id: int | None = None) -> None:
-    """终止整个进程组（含沙箱内启动的全部受控后代）。
+    """Terminate the entire process group, including controlled sandbox descendants.
 
-    ``group_id`` 优先使用启动时记录的组 id（直接进程可能已退出，其
-    pid 不能再查询组）；组已无成员时安全忽略。
+    Prefer the group_id recorded at launch because the direct process may have exited
+    and its PID no longer resolves. Ignore safely when the group has no members.
     """
     import signal
 
@@ -329,7 +327,7 @@ def _terminate_group(process: subprocess.Popen, group_id: int | None = None) -> 
     except (ProcessLookupError, PermissionError, OSError):
         try:
             process.kill()
-        except (ProcessLookupError, OSError):  # pragma: no cover - 已退出
+        except (ProcessLookupError, OSError):  # pragma: no cover - already exited
             pass
 
 
@@ -337,13 +335,13 @@ def _capped_read(path: Path) -> bytes:
     try:
         with path.open("rb") as stream:
             data = stream.read(MAX_CONVERTER_OUTPUT_BYTES + 1)
-    except OSError:  # pragma: no cover - 目录由运行器创建
+    except OSError:  # pragma: no cover - the runner creates the directory
         return b""
     return data[:MAX_CONVERTER_OUTPUT_BYTES]
 
 
 def _probe_version(tool: str, executable: str) -> str | None:
-    """探测转换器版本（无文档输入，不进入沙箱）。"""
+    """Probe converter versions without document input or sandbox execution."""
     try:
         completed = subprocess.run(
             [executable, _VERSION_FLAGS[tool]],

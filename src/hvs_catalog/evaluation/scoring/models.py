@@ -1,13 +1,11 @@
-"""评分严格输入模型：计划、Gold、预测。
+"""Strict scoring inputs: plans, Gold, and predictions.
 
-数值 payload 复用 ``records.paper.MeasuredValue``，评分侧不自造另一套
-数值结构。输入对象携带论文内标识/明确别名、``quantity_path`` 和
-``MeasuredValue``；所有内部 ID（``value_id``、``record_id``、对象
-``label``、证据引用）只用于定位诊断，不参与科学身份匹配。
-
-全部模型可 JSON 序列化；``score_batch`` 不读取文件、不调用真实服务。
-计划中的 Gold/辅助配置指纹在评分时对实际输入重算核对，调用方提供的
-过期指纹不被无条件信任。
+Reuse records.paper.MeasuredValue instead of inventing a second value structure. Objects
+carry paper-local identifiers/explicit aliases, quantity_path, and values. Internal
+value_id/record_id/labels/evidence references locate diagnostics only, never scientific
+identity. Models serialize to JSON; score_batch reads no files or real services.
+Recompute Gold/auxiliary fingerprints against actual input instead of trusting stale
+supplied digests.
 """
 
 from __future__ import annotations
@@ -28,7 +26,9 @@ def _check_quantity_path(path: str, where: str) -> None:
 
 
 class InputReference(Config):
-    """计划绑定的外部输入（材料/规则/方案/程序等）的身份与指纹。"""
+    """Identity/fingerprint of plan-bound external materials, rules, schemes, programs, and
+    other inputs.
+    """
 
     name: str = Field(min_length=1)
     version: str = Field(min_length=1)
@@ -36,7 +36,7 @@ class InputReference(Config):
 
 
 class PaperEvaluationScope(Config):
-    """预声明的逐论文评价物理量范围与完整性声明。"""
+    """Predeclared per-paper quantity scope and completeness assertions."""
 
     paper_key: str = Field(min_length=1)
     quantity_paths: list[str] = Field(min_length=1)
@@ -51,7 +51,9 @@ class PaperEvaluationScope(Config):
 
 
 class ScopedCoverage(Config):
-    """预声明的封闭子范围（论文、对象标识、物理量），用于部分覆盖 Gold。"""
+    """Predeclared closed paper/object-identifier/quantity subset for partial Gold
+    coverage.
+    """
 
     paper_key: str = Field(min_length=1)
     object_identifiers: list[str] = Field(min_length=1)
@@ -69,7 +71,9 @@ class ScopedCoverage(Config):
 
 
 class ScoringPlan(Config):
-    """评分计划：有序唯一 paper_key、预声明范围与全部输入指纹。"""
+    """Scoring plan: ordered unique paper keys, predeclared scopes, and all input
+    fingerprints.
+    """
 
     paper_keys: list[str] = Field(min_length=1)
     scopes: list[PaperEvaluationScope] = Field(min_length=1)
@@ -100,7 +104,7 @@ class ScoringPlan(Config):
         return self
 
 
-# 片段可声明的支持字段顶层域：与内容比较的待判字段同名。
+# Allowed top-level fragment support domains match compared content field names.
 FRAGMENT_SUPPORT_BASES = frozenset(
     {
         "value",
@@ -120,14 +124,14 @@ FRAGMENT_SUPPORT_BASES = frozenset(
 
 
 class EvidenceFragment(Config):
-    """可定位、绑定材料、声明支持字段的原文片段（评分侧 sidecar）。
+    """Locatable material-bound source fragment declaring supported fields in a scoring
+    sidecar.
 
-    供辅助评分 Agent 判定使用：片段必须指向固定材料（名称+指纹）中的
-    具体位置，并显式声明它能支持的待判字段（``value``/``error``/
-    ``unit``/``condition`` 及具名分量路径，前缀声明覆盖其子字段）。
-    声明 ``value`` 的片段不能支持 ``error`` 的判定；只有双方都有与
-    当前字段相关的片段时才允许发起请求，否则保持未知、不调用。
-    该结构不证明片段确为真实原文，仅是受控评分 sidecar。
+    Auxiliary judgments require a fixed material name/fingerprint, specific location,
+    and explicit value/error/unit/condition or named-component support; prefixes cover
+    subfields. value never supports error. Both sides need field-relevant fragments
+    before calling; otherwise retain uncertainty without calls. This controlled sidecar
+    does not prove actual source authenticity.
     """
 
     fragment_id: str = Field(min_length=1)
@@ -149,7 +153,9 @@ class EvidenceFragment(Config):
         return self
 
     def supports(self, field_name: str) -> bool:
-        """该片段是否支持给定待判字段（前缀声明覆盖子字段）。"""
+        """Whether a support declaration covers the compared field, including
+        prefix-matched subfields.
+        """
         return any(
             token == field_name or field_name.startswith(token + ".")
             for token in self.supports_fields
@@ -198,7 +204,7 @@ class GoldObjectEntry(Config):
 
 
 class ConfirmedRange(Config):
-    """部分覆盖 Gold 中已确认完整的对象/物理量子范围。"""
+    """Confirmed complete object/quantity subset within partial Gold coverage."""
 
     object_identifiers: list[str] = Field(min_length=1)
     quantity_paths: list[str] = Field(min_length=1)
@@ -283,7 +289,7 @@ class PredictionObjectEntry(Config):
 
 
 class PredictionPaperEntry(Config):
-    """L0 输入：交付、格式、完成状态与错误；派生状态须一致。"""
+    """L0 delivery, format, completion, and errors with consistent derived state."""
 
     paper_key: str = Field(min_length=1)
     delivered: bool
@@ -326,10 +332,10 @@ class PredictionPaperEntry(Config):
 
 
 def gold_input_digest(entries: list[GoldPaperEntry]) -> str:
-    """实际 Gold 输入的规范 JSON 摘要；用于核对计划指纹。"""
+    """Canonical actual-Gold digest for checking plan fingerprints."""
     return sha256_of([entry.model_dump(mode="json") for entry in entries])
 
 
 def predictions_input_digest(entries: list[PredictionPaperEntry]) -> str:
-    """实际预测输入的规范 JSON 摘要；进入报告与辅助请求绑定。"""
+    """Canonical actual-prediction digest for report and auxiliary-request bindings."""
     return sha256_of([entry.model_dump(mode="json") for entry in entries])

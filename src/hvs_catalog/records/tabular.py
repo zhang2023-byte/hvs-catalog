@@ -1,21 +1,12 @@
-"""CSV／ECSV 的实际逻辑记录读取接口（保存、备份与消费共用）。
+"""Shared CSV/ECSV logical-record readers for saving, backup, and consumption.
 
-位于共用记录包：``records.validate`` 的材料核验与 pipeline 材料准备
-（backing CSV 直读、ECSV 回读核对）共用同一接口，保证保存、备份和消费
-一致。
-
-CSV／ECSV 按实际逻辑记录读取：处理显式声明的分隔符、引号与多行记
-录，不以物理行或空白拆分代替记录，也不猜分隔符。ECSV 头部是 YAML
-（``# %ECSV`` 标记后、列名行前的 ``# `` 注释行），使用安全 YAML 解析；
-未知类型、字段或不能可靠读取的元数据明确失败，不宽容猜读；
-基础表头工具迁自旧仓（MIT 许可），所有数据值保持字符串，不推断数值类型。
-
-本接口同时服务：
-
-- 材料准备中的 backing CSV 直读与 ECSV 核对；
-- ``records.validate`` 的 ``table_cell`` 材料核验（保存／备份／消费一致）。
-
-所有单元格保持原字符串表达：缺失标记、有效位数与符号不被抹去或改写。
+records.validate and material preparation share backing CSV/ECSV readers. Honor declared
+delimiters, quotes, and multiline records; never substitute physical-line/whitespace
+splitting or guess delimiters. Safely parse ECSV YAML comments after %ECSV and before
+columns. Unknown types/fields/unreliable metadata fail explicitly. Base header tools
+derive from legacy MIT code. Preserve all cells as strings, including missing markers,
+significant digits, and signs; never infer numeric types. Used by preparation direct
+backing reads/ECSV checks and table_cell validation alike.
 """
 
 from __future__ import annotations
@@ -38,21 +29,25 @@ __all__ = [
     "records_from_path",
 ]
 
-#: 单个表格文件解折的字节上限（工程护栏）。
+#: Per-table decoded byte bound.
 MAX_TABLE_FILE_BYTES = 64 * 1024 * 1024
 
 
 class TabularReadError(ValueError):
-    """表格文件不能按声明的逻辑记录读取；保留原始字节供人工检查。"""
+    """Table cannot be read as declared logical records; retain original bytes for manual
+    inspection.
+    """
 
 
 @dataclass(frozen=True)
 class LogicalRecords:
-    """一组逻辑记录：列名、按列取值的行与原表头描述。"""
+    """Logical records with column names, column-addressed rows, and original header
+    descriptions.
+    """
 
     columns: tuple[str, ...]
     rows: tuple[dict[str, str], ...]
-    # ECSV YAML 头中的列描述（无则等于列名本身）；CSV 为空映射。
+    # ECSV YAML descriptions default to column names when absent; CSV uses an empty mapping.
     column_descriptions: dict[str, str] = field(default_factory=dict)
     format: str = "csv"  # "csv" | "ecsv"
     column_metadata: dict[str, dict] = field(default_factory=dict)
@@ -64,7 +59,7 @@ class LogicalRecords:
 
 @dataclass(frozen=True)
 class EcsvStructure:
-    """ECSV 文件的结构描述（用于位置与回读核对）。"""
+    """ECSV structure for location/read-back checks."""
 
     columns: tuple[str, ...]
     column_row_line: int
@@ -86,10 +81,11 @@ def _decode(data: bytes) -> str:
 def read_csv_records(
     data: bytes, *, delimiter: str = ",", has_header: bool = True
 ) -> LogicalRecords:
-    """按显式分隔符读取 CSV 逻辑记录；引号与多行由 csv 模块处理。
+    """Read CSV logical records with explicit delimiters; csv handles quoting/multiline
+    fields.
 
-    空白物理行（csv 模块返回的空记录）不是逻辑记录；但全空单元格的
-    合法记录（如 ``,,``）保留，不算空行也不被丢弃。
+    Blank physical lines yielding empty records are ignored, but valid all-empty cells
+    such as `,,` remain records.
     """
     if len(delimiter) != 1:
         raise TabularReadError(f"CSV 分隔符必须是单个字符：{delimiter!r}")
@@ -103,8 +99,8 @@ def read_csv_records(
         raise TabularReadError("CSV 没有任何逻辑记录")
     if not has_header:
         width = max(len(row) for row in parsed)
-        # 无表头读取也核宽度：不等宽记录不得尾补空值冒充完整逻辑记录
-        # （二次审核反例 csv-ragged-no-header）；保留原字符，不补值。
+        # Headerless reads still require equal row widths; never pad trailing nulls to claim complete records
+        # (second-review csv-ragged-no-header case). Preserve characters without invented values.
         ragged = [row for row in parsed if len(row) != width]
         if ragged:
             raise TabularReadError(
@@ -134,7 +130,7 @@ def read_csv_records(
 
 
 def _parse_column_headers_lenient(header_comment_lines: list[str]) -> dict[str, str]:
-    """非 YAML 安全表头行的宽容回退解析（迁自旧仓，MIT 许可）。"""
+    """Tolerant fallback for header lines unsafe to parse as YAML, migrated under MIT."""
     headers: dict[str, str] = {}
     current: str | None = None
 
@@ -165,12 +161,11 @@ def _parse_column_headers_lenient(header_comment_lines: list[str]) -> dict[str, 
 
 
 def _parse_column_headers(header_comment_lines: list[str]) -> dict[str, str]:
-    """尽力读取 ECSV YAML 头中的列元数据；不安全解析退回宽容解析。
+    """Read ECSV column metadata best-effort, falling back to tolerant parsing when unsafe.
 
-    流式映射里未加引号的描述含逗号／括号时，``yaml.safe_load`` 可能静
-    默截断或产生未知键（如 ``description: Error with, comma`` 被拆成额
-    外的 ``comma`` 键）；检测到已知列字段之外的键时改用按行宽容解析，
-    保留原描述文本。
+    Unquoted descriptions containing commas/brackets may be silently truncated or create
+    unknown flow-mapping keys in yaml.safe_load. Unknown column keys trigger line-based
+    fallback preserving original descriptions.
     """
     body = "\n".join(
         line[2:] if line.startswith("# ") else line.removeprefix("#")
@@ -207,7 +202,7 @@ def _parse_column_headers(header_comment_lines: list[str]) -> dict[str, str]:
 
 
 def _split_space_row(line: str) -> list[str]:
-    """空格分隔 ECSV 的带引号拆分（与 csv 不同，不把连续空格当空字段）。"""
+    """Split quoted space-delimited ECSV without treating repeated spaces as empty fields."""
     import shlex
 
     try:
@@ -221,13 +216,12 @@ def _split_space_row(line: str) -> list[str]:
 
 
 def _ecsv_data_records(data_text: str, delimiter: str) -> list[list[str]]:
-    """按 ECSV 引号规则读取数据区逻辑记录。
+    """Read data-area logical records under ECSV quoting rules.
 
-    与 Astropy 行为一致：双引号字段可含空格／换行／井号，内部双引号
-    以 ``""`` 转义，反斜杠是字面文本；空格分隔不用 shell 拆词（不否
-    定反斜杠、不丢引号）。逐物理行处理不能表达多行字段，故统一交给
-    ``csv`` 读入器处理完整数据区（二次审核反例 ecsv-escaped／
-    ecsv-multiline／tabular-extra）。
+    Match Astropy: quoted fields can contain spaces/newlines/hash signs, doubled quotes
+    escape quotes, and backslashes are literal. Use csv over the complete area, never
+    shell splitting or physical-line processing that loses multiline cells
+    (ecsv-escaped/ecsv-multiline/tabular-extra cases).
     """
     try:
         return [
@@ -242,17 +236,17 @@ def _ecsv_data_records(data_text: str, delimiter: str) -> list[list[str]]:
 
 
 def _normalize_ecsv_delimiter(declared: object) -> str:
-    """规范化 ECSV 声明的分隔符；未声明按规范默认空格。
+    """Normalize declared ECSV delimiters; absent declarations use standard default space.
 
-    ECSV 规范与 Astropy 默认写出均为空格分隔且不声明 delimiter；
-    逗号／制表符必须显式声明（见 APE 6 及 astropy ECSV 实现）。
+    ECSV/Astropy default output uses spaces without delimiter declarations; commas/tabs
+    require explicit declarations under APE 6/Astropy behavior.
     """
     if not isinstance(declared, str):
         return " "
     raw = declared.strip()
     value = raw.strip("'\"")
     if not value:
-        # 声明本身就是空白字符（裸空格或 ``' '``）；空声明视同未声明。
+        # Declarations may contain bare/quoted whitespace; empty declarations mean absent.
         return " "
     if value in ("space", "whitespace"):
         return " "
@@ -262,7 +256,7 @@ def _normalize_ecsv_delimiter(declared: object) -> str:
 
 
 def parse_ecsv_structure(data: bytes) -> EcsvStructure:
-    """机械核验 ECSV：可解码、有列名行与数据行；返回结构描述。"""
+    """Mechanically verify decodable ECSV with column/data rows and return its structure."""
     text = _decode(data)
     lines = text.split("\n")
     if lines and lines[-1] == "":
@@ -271,8 +265,8 @@ def parse_ecsv_structure(data: bytes) -> EcsvStructure:
         raise TabularReadError("缺少 '# %ECSV' 头标记")
     delimiter = " "
     declared_names: list[str] | None = None
-    # YAML 元数据只从初始头部读取：遇到首个非注释行即停止，多行单元
-    # 格中以 # 开头的内容不是元数据（二次审核反例 tabular-extra）。
+    # Read YAML only from the initial comment header, stopping at the first noncomment;
+    # hash-prefixed text inside multiline cells is not metadata (tabular-extra case).
     header_lines: list[str] = []
     body_start = len(lines)
     for index, line in enumerate(lines[1:], start=1):
@@ -365,9 +359,9 @@ def parse_ecsv_structure(data: bytes) -> EcsvStructure:
     if len(set(columns)) != len(columns):
         raise TabularReadError(f"ECSV 列名重复：{list(columns)}")
     if declared_names is not None and list(columns) != declared_names:
-        # 与 Astropy ECSV 读入一致：YAML 声明的列名必须与列名行实际拆出的
-        # 记号一致，否则是分隔符与列结构不匹配（如未声明 delimiter 的逗号
-        # 数据被空格默认读成单记号），拒绝猜读。
+        # Match Astropy: YAML column names must equal tokens parsed from the column row.
+        # Otherwise delimiter/structure disagree, such as undeclared comma data parsed as one
+        # space-default token; reject instead of guessing.
         raise TabularReadError(
             f"ECSV 头部声明的列名（{declared_names}）与列名行拆出的记号"
             f"（{list(columns)}）不一致；分隔符与列结构不匹配，拒绝猜读"
@@ -410,7 +404,7 @@ def _metadata_mapping(value: object) -> dict:
 
 
 def read_ecsv_records(data: bytes) -> LogicalRecords:
-    """按逻辑记录读取 ECSV：YAML 头元数据＋规范引号规则的数据区。"""
+    """Read ECSV logical records with YAML metadata and standard data quoting."""
     structure = parse_ecsv_structure(data)
     text = _decode(data)
     lines = text.split("\n")
@@ -466,7 +460,7 @@ def read_ecsv_records(data: bytes) -> LogicalRecords:
 def read_table_records(
     data: bytes, *, media_type: str | None = None, name: str | None = None
 ) -> LogicalRecords:
-    """按媒体类型或文件名选择读取器；未支持格式明确报错。"""
+    """Choose readers by media type/filename; explicitly reject unsupported formats."""
     hint = (media_type or "").lower()
     lowered = (name or "").lower()
     if hint in ("text/ecsv",) or lowered.endswith(".ecsv"):
@@ -480,7 +474,7 @@ def read_table_records(
 
 
 def records_from_path(path, *, delimiter: str = ",") -> LogicalRecords:
-    """从路径读取逻辑记录（供 ``records.validate`` 等消费方共用）。"""
+    """Read logical records from paths for shared consumers such as records.validate."""
     data = path.read_bytes()
     lowered = str(path).lower()
     if lowered.endswith(".ecsv"):

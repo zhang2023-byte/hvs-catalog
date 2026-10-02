@@ -1,9 +1,10 @@
-"""材料准备模块：来源包展开、正文／表格解析与准备输入交付。
+"""Material preparation: package expansion, body/table parsing, and prepared-input
+delivery.
 
-公共入口见 ``service``（``MaterialsService.prepare_materials``／
-``resume_preparation``／``get_prepared_input``）；流程编排见 ``flow``，
-外部转换隔离见 ``sandbox``，编号范围展开见 ``ranges``，CSV／ECSV 逻辑
-记录读取在共用记录包 ``records.tabular``（保存、备份与消费一致）。
+Public service entry points include prepare_materials, resume_preparation, and
+get_prepared_input. flow orchestrates; sandbox isolates external converters; ranges
+expands identifiers. Shared records.tabular reads CSV/ECSV logical records consistently
+for saving, backup, and consumption.
 """
 
 from __future__ import annotations

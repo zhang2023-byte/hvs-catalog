@@ -1,4 +1,4 @@
-"""记录外层结构、引用类型与各类记录共用的基础定义。"""
+"""Shared record envelopes, references, and foundational definitions."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 class RecordFormatError(ValueError):
-    """记录结构不满足共同定义，例如未知记录类型或版本。"""
+    """Record violates shared structure, such as unknown type/version."""
 
 
 class Config(BaseModel):
@@ -23,7 +23,7 @@ class Config(BaseModel):
 
 
 def canonical_json(value: object) -> str:
-    """确定性 JSON 序列化，用于指纹、去重键和清单哈希。"""
+    """Deterministic JSON for fingerprints, deduplication, and manifest hashes."""
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
@@ -117,7 +117,7 @@ def build_record(
     data: DataT,
     revision: int = 1,
 ) -> Record[DataT]:
-    """按具体记录模型组装外层，避免调用方手工拼写字段。"""
+    """Assemble envelopes from concrete models instead of manual field spelling."""
     return model(
         schema_tag=SchemaTag(name=model.RECORD_NAME, version=model.RECORD_VERSION),
         record_id=record_id,

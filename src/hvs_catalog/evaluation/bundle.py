@@ -1,16 +1,15 @@
-"""评分演示的输入集保存、指纹核对与离线重评（评分集成）。
+"""Save scoring-demo inputs, verify fingerprints, and rescore offline.
 
-``save_scoring_bundle`` 把一次评分的全部纯输入（计划、Gold、预测与
-辅助配置）连同重算摘要写成单个规范 JSON 文件；摘要绑定**完整计划**
-（``plan_digest``：覆盖范围、程序/规则/材料/Gold/辅助引用、版本及
-全部计分与溯源字段）以及 Gold、预测与辅助配置。``load_scoring_
-bundle`` 在读取时按同一规范化规则重算全部摘要并与文件内记录核对，
-任一内容被改动即拒绝（变更检测），正常往返幂等。
-``score_scoring_bundle`` 用核对后的输入离线重评——同一文件在任何新
-进程中给出相同摘要的评分结果，不需要重新提取。
+save_scoring_bundle writes complete pure inputs (plan, Gold, predictions, auxiliary
+configuration) and recomputed digests to canonical JSON. plan_digest binds the complete
+scope, program/rules/material/Gold/auxiliary references, versions, scoring, and
+provenance fields. load_scoring_bundle recomputes every digest using the same
+canonicalization and rejects changes; ordinary round trips are idempotent.
+score_scoring_bundle rescores validated input offline with identical result digests in
+fresh processes, without extraction.
 
-文件只包含合成演示输入；真实 Gold 与含答案材料的保存、传输仍按
-获准私有评分空间执行，本模块不提供真实仓扫描。
+Files contain only synthetic demo input. Real Gold/answer-bearing storage and transfer
+require authorized private scoring workspaces; no real repository scanning occurs here.
 """
 
 from __future__ import annotations
@@ -46,15 +45,16 @@ BUNDLE_SCHEMA_VERSION = 1
 
 
 class ScoringBundleError(ValueError):
-    """输入集缺失、结构不符或指纹核对失败。"""
+    """Missing, malformed, or fingerprint-invalid scoring input bundle."""
 
 
 def plan_digest(plan: ScoringPlan) -> str:
-    """完整评分计划的规范摘要：覆盖范围、程序/规则/材料/Gold/辅助引用、
-    版本及全部计分与溯源字段。
+    """Canonical complete-plan digest covering scope, program/rules/material/Gold/auxiliary
+    references, versions, scoring, and provenance.
 
-    摘要是完整性检测（保存与加载用同一规范化规则重算比对），不是
-    密码学身份认证，不要求防御可重签名的恶意作者。
+    Recomputing at save/load detects changes; this is integrity detection, not
+    cryptographic identity authentication, and need not defend against malicious authors
+    who can resign contents.
     """
     return sha256_of(plan.model_dump(mode="json"))
 
@@ -76,7 +76,7 @@ def save_scoring_bundle(
     predictions: list[PredictionPaperEntry],
     auxiliary: AuxiliaryScoringConfig,
 ) -> dict:
-    """把评分输入集与摘要写成规范 JSON；返回写入的摘要。"""
+    """Write scoring inputs and digests as canonical JSON; return the written digests."""
     digests = _digests(plan, gold, predictions, auxiliary)
     payload = {
         "schema": {"name": BUNDLE_SCHEMA_NAME, "version": BUNDLE_SCHEMA_VERSION},
@@ -108,7 +108,7 @@ def _validate_schema(payload: dict) -> None:
 def load_scoring_bundle(
     path: str | Path,
 ) -> tuple[ScoringPlan, list, list, AuxiliaryScoringConfig]:
-    """读取并核对评分输入集；内容被改动时拒绝（变更检测）。"""
+    """Load and verify scoring inputs, rejecting changed contents."""
     target = Path(path)
     try:
         payload = json.loads(target.read_text(encoding="utf-8"))
@@ -150,6 +150,8 @@ def load_scoring_bundle(
 
 
 def score_scoring_bundle(path: str | Path) -> ScoringReport:
-    """核对输入集指纹并离线重评；同一文件在任何进程得到相同摘要。"""
+    """Verify bundle fingerprints and rescore offline with identical digests across
+    processes.
+    """
     plan, gold, predictions, auxiliary = load_scoring_bundle(path)
     return score_batch(plan, gold, predictions, auxiliary=auxiliary)

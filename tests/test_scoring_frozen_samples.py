@@ -1,9 +1,10 @@
-"""固定手算样例：冻结输入 JSON × 人工预期结果（S01–S10）。
+"""Frozen manually calculated examples: JSON inputs against independent expected results
+(S01-S10).
 
-输入来自 ``tests/fixtures/scoring/inputs/``（由 samples.py 确定性
-生成并冻结，文件按样例职责命名），预期来自
-``expected/expected.json`` 的人工手算值；测试不得用评分程序反算预期。
-加载与比较工具见 ``scoring_sample_helpers``。全部材料虚构。
+samples.py deterministically generates frozen inputs under
+tests/fixtures/scoring/inputs/ with descriptive filenames. Expected results are manually
+calculated in expected/expected.json, never derived by running the scorer.
+Loading/comparison helpers live in scoring_sample_helpers. All materials are fictional.
 """
 
 from __future__ import annotations
@@ -102,7 +103,7 @@ def test_s01_pairing_and_diagnosis_semantics():
     ]
     assert len(mismatch) == 1
     assert mismatch[0].gold_ref.endswith("|g2")
-    # A speed 抄错绝不按 within_gold_error 宽恕：中心值不同即不同。
+    # An incorrectly copied A speed is never forgiven by within_gold_error; differing central values differ.
     assert paper.quantity_breakdown[1].metrics.correct == 0
 
 

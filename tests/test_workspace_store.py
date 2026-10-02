@@ -1,6 +1,8 @@
-"""业务库：保存与按准确修订读取、事务原子性、操作键重放与当前输出一致（A05/A06/A14）。
+"""Business store: exact-revision reads/saves, atomicity, operation-key replay, and
+consistent current output (A05/A06/A14).
 
-记录内容来自共同记录的合成夹具（虚构材料），路径改写后发布到空间 sources/ 下。
+Records use fictional shared fixtures whose rewritten paths are published under
+workspace sources/.
 """
 
 from __future__ import annotations
@@ -32,7 +34,7 @@ def space(tmp_path):
 
 
 def _commit(space, records, key, **kwargs):
-    # 问题记录必须与步骤绑定同事务提交；测试默认绑定到固定步骤名
+    # Commit question records and step bindings together; tests default to a fixed step name.
     kwargs.setdefault(
         "question_steps",
         {r.record_id: "fixture-step" for r in records if r.RECORD_NAME == "question"},
@@ -91,7 +93,7 @@ def test_commit_and_read_back_all_ten_record_types_by_exact_revision(space):
         latest[record.record_id] = max(latest.get(record.record_id, 0), record.revision)
     for record_id, revision in latest.items():
         assert store.current_revision(record_id) == revision
-    # 查询不存在的修订不会隐式回退到最新修订
+    # Missing revisions never implicitly fall back to latest.
     missing = store.read_record(
         records[0].ref().model_copy(update={"revision": records[0].revision + 5})
     )
@@ -106,11 +108,13 @@ def test_old_revision_and_its_references_are_preserved_after_new_revision(space)
     papers = sorted(
         (r for r in records if r.RECORD_NAME == "paper"), key=lambda r: r.revision
     )
-    paper = papers[-1]  # 夹具论文已含两个修订；在当前修订上继续
+    paper = papers[
+        -1
+    ]  # Fixture papers already have two revisions; continue from current.
     paper_current = store.current_revision(paper.record_id)
     assert paper_current == paper.revision
 
-    # 名单形成新修订；论文不随之更新时整体拒绝（当前输出不一致）
+    # A new roster revision without an updated paper rejects atomically for inconsistent current output.
     roster_v2 = roster.model_copy(update={"revision": 2, "created_at": STAMP})
     with pytest.raises(WorkspaceIntegrityError, match="当前输出不一致"):
         _commit(
@@ -140,12 +144,12 @@ def test_old_revision_and_its_references_are_preserved_after_new_revision(space)
     )
     assert not receipt.replayed
 
-    # 旧修订原样保留：数值字符串与引文不因新修订被替换
+    # Retain old revisions verbatim; new revisions never replace old value strings or quotes.
     old_roster = store.read_record(roster.ref())
     assert old_roster == roster
     old_paper = store.read_record(paper.ref())
     assert old_paper.data.roster_ref.revision == paper.data.roster_ref.revision
-    # 准确读取旧引用得到旧内容；不存在隐式“最新版本”替换
+    # Exact old references return old contents without implicit latest-version substitution.
     assert store.read_record_current(roster.record_id).revision == 2
     assert store.read_record_current(paper.record_id).revision == paper_current + 1
 
@@ -153,7 +157,7 @@ def test_old_revision_and_its_references_are_preserved_after_new_revision(space)
 def test_batch_is_atomic_when_validation_fails(space):
     records = _collection(space, names=("gap-conflict",))
     paper = next(r for r in records if r.RECORD_NAME == "paper")
-    # 一个引用损坏的论文记录：引用不存在的名单修订
+    # A broken paper references a nonexistent roster revision.
     broken = paper.model_copy(
         update={
             "record_id": "broken-paper",
@@ -170,7 +174,7 @@ def test_batch_is_atomic_when_validation_fails(space):
     broken_records = list(records) + [broken]
     with pytest.raises(WorkspaceIntegrityError, match="未通过校验"):
         _commit(space, broken_records, "op-broken")
-    # 事务整体未提交：库里没有任何记录，也没有留下回执
+    # Atomic rollback leaves no records or receipts in the database.
     store = space.store()
     assert store.list_records() == []
     assert store.find_receipt("op-broken") is None
@@ -196,7 +200,7 @@ def test_expected_revision_stale_rejects_and_keeps_state(space):
         expected_revisions={evidence.record_id: 1},
     )
     assert not ok.replayed
-    # 旧预期修订的并发更新（当前已是 2）被拒绝，旧内容不能覆盖新修订
+    # Reject concurrent updates expecting an old revision when current is already two; never overwrite newer contents.
     with pytest.raises(RevisionStaleError):
         _commit(
             space,
@@ -213,17 +217,17 @@ def test_same_operation_key_replay_returns_original_receipt(space):
     assert replay.replayed
     assert replay.created_at == first.created_at
     assert replay.content_digest == first.content_digest
-    # 重放不增加新修订
+    # Replay creates no new revision.
     assert len(space.store().list_records()) == len(records)
-    # 同键异内容拒绝
+    # Reject same-key/different-content requests.
     changed = [records[0].model_copy(update={"record_id": "other"})]
     with pytest.raises(OperationKeyConflictError, match="不同内容"):
         _commit(space, changed, "op-key-1")
-    # 同内容换操作键：记录已存在且内容相同，作为无变化提交返回回执
+    # Same contents under another operation key returns a no-change receipt when records already match.
     duplicate = _commit(space, records, "op-key-2")
     assert duplicate.replayed
     assert len(space.store().list_records()) == len(records)
-    # 相同编号与修订只能保存相同内容
+    # Identical identifiers/revisions can save only identical contents.
     tampered = [
         record.model_copy(
             update={
@@ -247,7 +251,9 @@ def test_same_operation_key_replay_returns_original_receipt(space):
 
 
 def test_roster_revision_requires_referencing_paper_update(space):
-    """A14 存储层：新名单必须与引用它的论文一起更新，缺一整体拒绝。"""
+    """A14 storage: update new rosters together with referencing papers; either missing
+    side rejects atomically.
+    """
     records = _collection(space, names=("gap-conflict",))
     _commit(space, records, "op-init")
     roster = next(r for r in records if r.RECORD_NAME == "roster")
@@ -260,13 +266,15 @@ def test_roster_revision_requires_referencing_paper_update(space):
             "op-missing-paper",
             expected_revisions={roster.record_id: 1},
         )
-    # 整体拒绝：名单修订没有落库，不能靠保留旧记录绕过对应检查
+    # Rejection persists no roster revision; old records cannot bypass correspondence checks.
     assert space.store().current_revision(roster.record_id) == 1
     assert space.store().find_receipt("op-missing-paper") is None
 
 
 def test_run_record_artifact_references_are_verified(space):
-    """运行归档文件引用由本层核验：缺失或哈希改变时拒绝提交。"""
+    """This layer verifies run archive references and rejects commits for missing files or
+    changed hashes.
+    """
     snapshot = InputSnapshot(
         source_refs=[],
         rules=current_rules_ref(),
@@ -304,7 +312,7 @@ def test_run_record_artifact_references_are_verified(space):
     )
     with pytest.raises(WorkspaceIntegrityError, match="缺失或不可读"):
         _commit(space, [run], "op-run-missing")
-    # 文件存在但哈希不符
+    # The file exists but its hash differs.
     ref = space.publish_run_file("exec-x", "missing-prompt.md", b"actual prompt")
     snapshot_ok = snapshot.model_copy(
         update={"prompt_refs": [ref.model_copy(update={"sha256": "1" * 64})]}

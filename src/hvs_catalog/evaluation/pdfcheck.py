@@ -1,9 +1,10 @@
-"""合成 PDF 材料的只读检查：存在、哈希、可打开与文件页序号边界。
+"""Read-only synthetic PDF checks for existence, hash, opening, and file page bounds.
 
-可打开性与页数由成熟解析器 pypdf 按实际页树和页内容流判定，不使用
-自写正则特征；文件头与结束标记只作为附加的结构事实。解析器无法打开
-或无法可靠提取文本时如实报告，不当作检查通过。引文匹配仍只是辅助
-结果——命中不能证明对象或科学判断正确，无法提取也不算检查失败。
+pypdf uses actual page trees/content streams for opening/page counts, not custom regex
+heuristics. Headers/end markers are additional structural facts. Report
+parser/readability failures accurately. Quote matching is auxiliary: matches cannot
+prove object/science correctness, and unavailable text extraction is not itself a check
+failure.
 """
 
 from __future__ import annotations
@@ -28,7 +29,9 @@ def _brief(exc: BaseException) -> str:
 
 @dataclass(frozen=True)
 class PdfAnalysis:
-    """成熟解析器对一份 PDF 字节的结构化判定；文本按页树顺序提取。"""
+    """Structured PDF-byte analysis by an established parser, extracting text in page-tree
+    order.
+    """
 
     openable: bool
     page_count: int | None
@@ -37,10 +40,11 @@ class PdfAnalysis:
 
 
 def analyze_pdf(data: bytes) -> PdfAnalysis:
-    """用成熟解析器打开字节流并按实际页树统计页数、提取每页文本。
+    """Open bytes through an established parser, count actual pages, and extract page text.
 
-    解析器拒绝、文档加密或缺少结束标记时判为不可打开并给出说明；页
-    文本提取失败只影响引文辅助核对，不影响可打开性判定。
+    Parser rejection, encryption, or missing EOF markers make documents unopenable with
+    reasons. Text extraction failure affects auxiliary quote checks only, not opening
+    status.
     """
     if not data.startswith(_PDF_MAGIC):
         return PdfAnalysis(openable=False, page_count=None, notes=("缺少 PDF 文件头",))
@@ -83,7 +87,7 @@ def analyze_pdf(data: bytes) -> PdfAnalysis:
 
 @dataclass(frozen=True)
 class PdfInspection:
-    """一次 PDF 文件检查的客观结果；不包含科学判断。"""
+    """Objective PDF-file check results without scientific judgments."""
 
     name: str
     exists: bool
@@ -108,7 +112,7 @@ class PdfInspection:
 
 
 def inspect_pdf(path: Path, *, expected_sha256: str | None) -> PdfInspection:
-    """检查一个 PDF 文件；任何读取失败都如实报告，不抛出。"""
+    """Check a PDF and report all read failures rather than raising them."""
     path = Path(path)
     if not path.exists():
         return PdfInspection(
@@ -135,10 +139,10 @@ def inspect_pdf(path: Path, *, expected_sha256: str | None) -> PdfInspection:
 
 
 def extract_page_texts(data: bytes) -> list[str]:
-    """按实际页树顺序尽力提取文本；无法打开时返回空列表。
+    """Extract text best-effort in page-tree order; return an empty list if opening fails.
 
-    只用于引文的辅助核对：提取不到文本时调用方据此报告“无法自动核
-    验”，不能当作引文错误。
+    Use only for auxiliary quote checks. Missing text means automatic verification
+    unavailable, never evidence of an incorrect quote.
     """
     return analyze_pdf(data).page_texts
 
@@ -146,12 +150,11 @@ def extract_page_texts(data: bytes) -> list[str]:
 def quote_result(
     page_texts: list[str], *, page: int | None, quote: str
 ) -> tuple[str, str]:
-    """在已提取的页文本中核对引文；返回（结果, 说明）。
+    """Check quotes against extracted page text and return (result, explanation).
 
-    - matched：在指定页（未给页序号时全文）找到引文文本
-    - not_found：能提取文本但未找到引文
-    - not_extractable：页面文字无法可靠提取
-    - skipped：未提供引文，无从核对
+    matched finds text on the specified page, or anywhere if no ordinal is given;
+    not_found means text was extractable but absent; not_extractable means unreliable
+    extraction; skipped means no supplied quote.
     """
     if not quote.strip():
         return "skipped", "未提供引文，无从核对；空引文单独不判错"
@@ -177,7 +180,7 @@ def quote_result(
 
 
 def check_quote(data: bytes, *, page: int | None, quote: str) -> tuple[str, str]:
-    """解析字节流后做引文辅助核对；结果为辅助信息，不构成错误。"""
+    """Parse bytes and run auxiliary quote checking; results are informational, not errors."""
     analysis = analyze_pdf(data)
     if not analysis.openable:
         return "not_extractable", "文件无法作为 PDF 打开，引文未自动核验"

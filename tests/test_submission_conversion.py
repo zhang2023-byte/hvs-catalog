@@ -1,4 +1,6 @@
-"""简化填写到保存记录的转换：展开、编号、证据生成与拒绝场景。"""
+"""Convert simplified submissions to saved records: expansion, identifiers, evidence
+generation, and rejection cases.
+"""
 
 from __future__ import annotations
 
@@ -70,7 +72,9 @@ def inline_table(column, excerpt, parts):
 
 
 def compact_value(value, error, condition, source_kind, evidence):
-    evidence = copy.deepcopy(evidence)  # 各用例独立修改自己的证据
+    evidence = copy.deepcopy(
+        evidence
+    )  # Each case modifies its own independent evidence.
     payload = {
         "value": value,
         "error": error,
@@ -191,7 +195,7 @@ def test_full_expansion_and_references(gap_source):
     ]
     assert rv.state == "partial"
     assert [gap.gap_id for gap in rv.gap_refs] == ["gap-velocity"]
-    assert len(rv.issue_refs) == 1  # 冲突生成的问题
+    assert len(rv.issue_refs) == 1  # Questions generated from conflicts.
     assert all(row.state == "complete" and not row.gap_refs for row in others)
 
     conflict = obj.quantity_conflicts[0]
@@ -201,17 +205,17 @@ def test_full_expansion_and_references(gap_source):
     assert question.data.category == "numeric_conflict"
     assert question.data.status == "open"
 
-    # 冲突双方不在普通数值组中；两组来源数值并存
+    # Conflict alternatives stay outside ordinary value groups; both source value groups coexist.
     confirmed = obj.quantities[0].values[0]
     assert confirmed.source == "prior_work"
     assert {value.value for value in conflict.alternatives} == {"520", "525"}
 
-    # 证据合并：正文同一定位的两组数值共用一条证据记录
+    # Merge evidence: two value groups at the same body location share one evidence record.
     text_evidence = [r for r in result.evidence if r.data.file_id == "main"]
     assert len(text_evidence) == 1
     assert len(result.evidence) == 3
 
-    # 保存形式补齐全部键
+    # Saved representations include every key.
     saved = conflict.alternatives[0]
     assert (
         saved.coverage is None and saved.epoch is None and saved.error_components == []
@@ -522,7 +526,7 @@ def test_inline_question_created_open(gap_source):
     result = convert_quantity_submission(
         make_context(gap_source), QuantitySubmission.model_validate(payload)
     )
-    assert len(result.questions) == 2  # 冲突问题 + 新疑问
+    assert len(result.questions) == 2  # Conflict question plus a new question.
     inline = next(q for q in result.questions if q.data.category == "interpretation")
     assert inline.data.status == "open"
     distance_row = next(
@@ -568,7 +572,7 @@ def test_identical_conflict_alternatives_rejected(gap_source):
 
 
 # ---------------------------------------------------------------------------
-# 名单与候选步骤
+# Roster and candidate steps.
 # ---------------------------------------------------------------------------
 
 
@@ -635,7 +639,7 @@ def test_roster_conversion(gap_source):
     assert contribution.paper_boundness.status == "bound"
     assert len(contribution.quantity_coverage) == 18
     assert all(row.state == "not_checked" for row in contribution.quantity_coverage)
-    assert contribution.quantities == []  # 名单步骤不创建空数值组
+    assert contribution.quantities == []  # Roster steps create no empty value groups.
     assert result.roster.method == "direct"
 
 

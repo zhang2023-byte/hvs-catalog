@@ -1,8 +1,7 @@
-"""运行模块：执行创建、步骤结果与恢复。
+"""Runtime execution creation, step results, and recovery.
 
-公共入口：``create_execution``、``get_execution``、``commit_step_result``、
-``resume_execution`` 及运行上下文与流程适配器基类。设计约束见
-[架构设计](../../../docs/design/architecture.md#工作空间与恢复接口方案)。
+Public APIs include create_execution/get_execution/commit_step_result/resume_execution
+and context/adapter bases. See ../../../docs/design/architecture.md for constraints.
 """
 
 from __future__ import annotations

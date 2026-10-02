@@ -1,15 +1,14 @@
-"""``score_batch``：纯输入的整批 L0/L1/L2 评分入口。
+"""score_batch: pure-input batch L0/L1/L2 scoring.
 
-接口是可 JSON 序列化的纯输入（计划、Gold、预测、辅助配置）；本函数
-不读取文件、不调用真实服务。只有当辅助配置显式给出冻结目录并注入
-同步适配器时，才会在该目录持久保存 Agent 判定。
-
-计划中的指纹按规范 JSON/哈希对实际输入重算核对，过期指纹整批拒绝；
-重复论文、计划外论文、重复内部记录 ID、错论文归属等同样拒绝，不默
-默覆盖。缺失预测视作未交付并保留本篇 Gold 分母；部分覆盖 Gold 只在
-预声明封闭子范围内给 scoped 指标，没有封闭范围时只报告准备缺口、
-不出最终分数。影响 L2 计分的未决项或辅助技术失败令整批 provisional，
-保留确定计数、最终 L2 比率置空。
+Accept JSON-serializable plan/Gold/prediction/auxiliary inputs without reading files or
+real services, except persisting Agent judgments in explicitly configured frozen
+directories with injected synchronous adapters. Recompute fingerprints canonically;
+reject stale digests, duplicate/out-of-plan papers, duplicate record IDs, and wrong
+ownership without silent overwrites. Missing predictions remain undelivered with Gold
+denominators. Partial Gold receives scoped metrics only within predeclared closed
+subsets; otherwise report preparation gaps without final scores. Score-affecting L2
+unknowns/technical failures make batches provisional, retain definite counts, and null
+final L2 rates.
 """
 
 from __future__ import annotations
@@ -70,15 +69,16 @@ def _revalidate_inputs(
     gold: list[GoldPaperEntry],
     predictions: list[PredictionPaperEntry],
 ) -> tuple[ScoringPlan, list[GoldPaperEntry], list[PredictionPaperEntry]]:
-    """对当前实际嵌套内容做全量结构重校验并返回重建后的副本。
+    """Fully revalidate current nested structures and return reconstructed validated copies
+    before indexing, hashing, Agent calls, or caches.
 
-    在任何索引/摘要/Agent/缓存操作之前执行。模型约束在构造时检查；
-    ``model_validate(instance)`` 对同类实例默认跳过重校验，且字段赋值
-    或列表追加不会触发父级跨模型约束——构造合法后被变异的输入（如
-    重复 record_id、重复 label/物理量、可序列化类型变异如 bytes 路径）
-    必须在此显式拒绝。重建从 ``model_dump(mode="json")`` 的纯数据
-    出发：后续索引、指纹、归属、Agent 上下文/请求、评分与报告统一
-    使用返回的校验副本，不校验 A 却使用 B；副本不写回调用者。
+    Construction validation alone is insufficient: model_validate(instance) skips
+    same-type revalidation, and assignment/list append bypasses parent cross-model
+    constraints. Explicitly reject mutated duplicate record_ids/labels/quantities and
+    handle serializable type changes such as bytes paths. Rebuild from
+    model_dump(mode='json') pure data; all indexing/fingerprints/attribution/Agent
+    contexts/requests/scores/reports use returned copies, never validating one object
+    while using another or writing back to callers.
     """
     rebuilt_gold: list[GoldPaperEntry] = []
     rebuilt_predictions: list[PredictionPaperEntry] = []
@@ -111,9 +111,9 @@ def score_batch(
     auxiliary: AuxiliaryScoringConfig,
     agent_adapter: AgentAdapter | None = None,
 ) -> ScoringReport:
-    """对整批计划论文输出逐论文与微汇总的 L0/L1/L2 报告。"""
-    # 全部后续处理（索引、指纹、归属、Agent 请求、评分、报告）统一
-    # 使用重校验后重建的副本；调用者原对象不被修改，也不参与计分。
+    """Produce per-paper and micro L0/L1/L2 reports for every planned paper."""
+    # All later indexing, fingerprints, attribution, Agent requests, scores, and reports use
+    # reconstructed validated copies; original caller objects are neither changed nor scored.
     plan, gold, predictions = _revalidate_inputs(plan, gold, predictions)
     gold_map = _validate_inputs(plan, gold, predictions, auxiliary)
     pred_map = {entry.paper_key: entry for entry in predictions}
@@ -255,9 +255,9 @@ def _build_auxiliary(
         context_digests={
             "gold": gold_input_digest(gold),
             "predictions": predictions_input_digest(predictions),
-            # 完整计划（论文范围、scopes、scoped_coverages、证据注册表、
-            # 全部引用指纹）参与冻结请求绑定：范围或注册表变化不可复用
-            # 旧冻结判定；摘要由计划对象规范化计算，不可自报。
+            # Bind the complete plan, including papers, scopes, scoped_coverages, evidence registry,
+            # and all reference fingerprints, to frozen requests; scope/registry changes cannot reuse
+            # old judgments. Compute the digest canonically from the plan rather than accepting self-reported values.
             "scoring_plan": sha256_of(plan.model_dump(mode="json")),
             "materials": plan.materials_ref.fingerprint,
             "science_rules": plan.science_rules_ref.fingerprint,
@@ -407,9 +407,9 @@ def _score_paper(
                 refs=[pred_obj.label],
             )
         )
-    # 同一已唯一确认 Gold 身份的全部预测对象（TP + 重复）逐条检查独立
-    # 诊断字段：贡献类型/作者判断不遍历池内每条预测会漏诊且受列表顺
-    # 序影响；这些诊断仅定位实际不一致条目，绝不计入 L1/L2 质量。
+    # Diagnose every prediction sharing one definite Gold identity, including TP and duplicates.
+    # Skipping pooled entries misses contribution/author errors and makes diagnostics order-dependent;
+    # these diagnostics locate actual inconsistencies without contributing to L1/L2 quality.
     pooled_by_gold: dict[str, tuple[GoldObjectEntry, list[PredictionObjectEntry]]] = {}
     for gold_obj, pred_obj in l1_match.matched_pairs:
         pooled_by_gold[gold_obj.label] = (gold_obj, [pred_obj])
@@ -444,9 +444,9 @@ def _score_paper(
         counts["predicted"] += predicted
         counts["gold"] += gold
 
-    # 记录池已在诊断段建立（pooled_by_gold）：同一身份的数值候选
-    # 合并后按现有科学归属关系做记录级一对一，Gold 值仅消耗一次，
-    # 所有预测值仍入 P；不由列表顺序/内部 label 挑唯一可比较者。
+    # pooled_by_gold already exists from diagnostics; merge same-identity value candidates,
+    # then apply existing scientific attribution and record-level one-to-one matching. Consume each Gold once
+    # while every prediction enters P; list order/internal labels never select the sole comparable entry.
     for label in sorted(pooled_by_gold):
         gold_obj, pooled_preds = pooled_by_gold[label]
         gold_groups = {
@@ -554,7 +554,7 @@ def _score_paper(
                         side="prediction",
                     )
                 )
-    # 身份歧义对象：值计入实际 P/G 总数，但对应关系未决，不标漏报/多报
+    # Ambiguous-identity values enter actual P/G totals but remain unresolved, without missing/extra labels.
     for pred_obj in l1_match.ambiguous_pred:
         for group in pred_obj.quantities:
             if group.quantity_path in effective_paths:
@@ -707,13 +707,13 @@ def _evidence_verification(
     *,
     pred_in_scope: list,
 ) -> dict[str, int]:
-    """预测值证据的独立核验状态；只作诊断，不影响 C。
+    """Independent prediction-evidence checks are diagnostic only and never affect C.
 
-    统计范围与 scoped L1/L2 一致：只覆盖封闭子范围内的对象与范围内
-    物理量；范围外对象的证据状态单列（``out_of_scope``），不混入
-    scope 统计。无可核对材料时明确 not_verified；提供证据注册表时
-    判明悬空引用；片段绑定材料与计划不符时判 wrong_material。不以
-    字段恰好相等推断证据可靠，也不给出"已验证"结论。
+    Use the same scope as L1/L2: closed-subset objects and in-scope quantities. Report
+    out_of_scope evidence separately. Without checkable materials, mark not_verified;
+    registries expose dangling references, and fragment/plan material mismatches yield
+    wrong_material. Equal fields alone do not establish evidence reliability or verified
+    status.
     """
     counts = {
         "values": 0,
@@ -730,7 +730,7 @@ def _evidence_verification(
         for group in obj.quantities:
             for entry in group.values:
                 if not in_scope or group.quantity_path not in effective_paths:
-                    # 范围外（对象或物理量）的证据状态单列，不混入 scope 统计
+                    # Report out-of-scope object/quantity evidence separately, outside scoped statistics.
                     counts["out_of_scope"] += 1
                     continue
                 counts["values"] += 1
@@ -788,7 +788,7 @@ def code_of(reason: str) -> str:
 def _out_of_scope_rows(
     obj, effective_paths: set[str], *, side: str
 ) -> list[PairingDetail]:
-    """范围外对象的全部数值都记为 out_of_scope_value。"""
+    """Classify every value of an out-of-scope object as out_of_scope_value."""
     rows: list[PairingDetail] = []
     for group in obj.quantities:
         rows.extend(

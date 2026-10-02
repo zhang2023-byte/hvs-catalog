@@ -587,7 +587,7 @@
     },
     "GoldEvidence": {
       "additionalProperties": false,
-      "description": "专家在固定 PDF 中看到该内容的位置。\n\n``location`` 逐字保留原位置说明（页、表、节或对象行）；``page`` 是\nPDF 文件页序号（从 1 起），与书页上印刷的页码不同，只在明确知道时\n填写，不从位置文本猜测；``quote`` 是可选引文，空字符串表示未提供。",
+      "description": "Location where an expert saw the content in the fixed PDF.\n\nPreserve location descriptions (page/table/section/object row) verbatim. page is the\none-based file page ordinal, distinct from printed page numbers; fill only when\nexplicitly known, never inferred from text. quote is optional; an empty string means\nabsent.",
       "properties": {
         "file_id": {
           "anyOf": [
@@ -633,7 +633,7 @@
     },
     "GoldProbability": {
       "additionalProperties": false,
-      "description": "显式印出的覆盖概率或分位点；换算由消费方负责，不写回记录。",
+      "description": "Explicitly printed coverage probability or quantile; consumers perform conversions\nwithout writing them back.",
       "properties": {
         "value": {
           "minLength": 1,

@@ -1,27 +1,23 @@
-"""arXiv 协议层：标识解析、查询构造、Atom 解析与源码下载入口。
+"""arXiv protocol: identifiers, query construction, Atom parsing, and source-download entry
+points.
 
-本模块的解析与构造函数是纯函数，不产生网络或磁盘副作用；
-:class:`ArxivApiService` 组合传输客户端完成实际请求，并向获取生命周
-期层暴露结构化结果与错误分类：
+Parsing/building functions have no network/disk effects. ArxivApiService composes
+transport and exposes lifecycle results/classified errors. Empty valid Atom results
+differ from failed requests, which raise. Expose missing/invalid totals, wrong start
+offsets, unexpectedly empty/truncated/duplicate pages, ceiling excess, and unrequested
+batch entries as PaginationAnomaly without hiding them; lifecycle determines coverage.
 
-- 空结果（合法 Atom、总数为 0）与请求失败是不同结果，失败抛异常。
-- 分页异常（总数缺失/非法、起始序号不符、应有条目却为空、未到末页
-  却被截断、条目重复、超出 API 检索上限、批次中出现未请求的条目）
-  作为 :class:`PaginationAnomaly` 数据暴露，绝不静默抹平；覆盖是否完
-  整由生命周期层根据这些数据判断。
-- 论文标识永不编造：畸形标识、缺失版本、与请求不匹配的返回一律拒
-  绝。新式标识（``2101.01234v2``）与旧式标识（``astro-ph/0507001v3``）
-  都受支持；元数据同时保留无版本身份、具体版本号与 API 原始标识
-  URL（溯源依据）。
-- 查询必须显式给定首提日期范围（按 UTC 解释）与稳定排序，分页切片
-  受 API 上限约束；分页窗口、单批标识数与请求 URL 长度在发送前
-  受工程护栏检查，超出即拒绝并报告，不依赖服务端截断。
-- 源码下载要求先冻结具体版本号，并在交付前严格校验最终 URL 与请
-  求的论文/版本一一对应（仅接受官方 ``/e-print/``/``/src/`` 路径上
-  的精确版本标识）；HTML 错误页与 PDF-only 以“不可用”区分上抛，
-  不做归档解析（归档安全由后续组件负责）。Atom 条目中的
-  ``http://arxiv.org/abs/...`` 是历史标识符形式，按标识符结构校
-  验；仅适用于实际出站请求的 HTTPS/端口/凭据约束在传输层执行。
+Never invent paper IDs; reject malformed/missing-version/mismatched returns. Support
+modern 2101.01234v2 and legacy astro-ph/0507001v3, retaining unversioned identity,
+version, and original API URL provenance. Queries require initial-submission UTC dates
+and stable sorting. Validate pagination windows, batch counts, and URL lengths before
+sending, with reported engineering limits rather than server truncation.
+
+Freeze download versions and strictly verify exact official /e-print/ or /src/ final URL
+correspondence before delivering bytes. Classify HTML/PDF-only as unavailable; later
+components inspect archives. Atom http://arxiv.org/abs identifiers are historical
+identity strings, structurally validated here; outbound HTTPS/port/credential rules
+apply in transport, not historical identifiers.
 """
 
 from __future__ import annotations
@@ -37,33 +33,33 @@ from enum import Enum
 from .rate_limit import SystemClock
 from .transport import ArxivHttpClient, ArxivHttpError, TransportResponse
 
-#: 官方入口：API 查询与源码包下载（e-print）。
+#: Official API query and e-print source-download endpoints.
 ARXIV_API_BASE_URL = "https://export.arxiv.org/api/query"
 ARXIV_EPRINT_BASE_URL = "https://arxiv.org/e-print/"
 
-#: API 分页限制：单页条目上限与检索总量上限（超出部分无法建立覆盖）。
+#: API page-size/retrieval ceilings; coverage beyond the total ceiling cannot be established.
 MAX_PAGE_SIZE = 2000
 RETRIEVAL_CEILING = 30000
 
-#: 按标识批量查询的单批上限与请求 URL 长度上限。
-#: 两者都是工程保守护栏，不是官方声明的能力上限：达到上限时拒绝发
-#: 送并明确报告，由调用方拆小批次或缩小条件，绝不依赖服务端截断。
+#: Identifier batch-count and request-URL length limits.
+#: Both are conservative engineering limits, not official capability ceilings; reject excessive requests
+#: and report bounds so callers can split batches/narrow scope, never relying on server truncation.
 MAX_ID_LIST_LENGTH = 200
 MAX_REQUEST_URL_BYTES = 8192
 
-#: 生产环境的响应界限：API 响应与源码包的大小、超时。
+#: Production size/time bounds for API and source-package responses.
 API_MAX_RESPONSE_BYTES = 32 * 1024 * 1024
 SOURCE_MAX_RESPONSE_BYTES = 256 * 1024 * 1024
 API_TIMEOUT = 60.0
 SOURCE_TIMEOUT = 180.0
 
-#: 源码下载的显式内容协商声明。
+#: Explicit source-download content negotiation.
 #:
-#: 显式声明能够接收并分类的表示类型；不保证服务端接受请求——
-#: tar/gzip 源码包是交付目标；PDF-only 与 HTML 错误页也会被接收后按
-#: 内容类型分类（不支持/不可用），``*/*`` 兜底保证错误页不被内容协
-#: 商挡在分类之前。传输编码声明 ``identity``：本地读取不做传输层解
-#: 压，避免把压缩响应误当原始字节。不伪造浏览器身份、不换端点。
+#: Declare representations that can be accepted/classified without guaranteeing server acceptance.
+#: tar/gzip packages are deliverable; accept PDF-only/HTML responses to classify unsupported/unavailable
+#: contents. */* prevents negotiation from hiding error pages before classification.
+#: Request identity transfer encoding because local reads do not decompress transport encodings,
+#: avoiding confusion with original bytes. Never spoof browsers or change endpoints.
 SOURCE_ACCEPT_HEADERS = {
     "Accept": (
         "application/x-eprint-tar, application/gzip, application/x-gzip, "
@@ -91,30 +87,30 @@ _LOOKUP_VERSION_MISMATCH = "version_mismatch"
 
 
 class ArxivProtocolError(Exception):
-    """协议层错误基类。"""
+    """Base protocol error."""
 
 
 class ArxivIdentifierError(ArxivProtocolError, ValueError):
-    """arXiv 标识畸形、缺版本或与请求不匹配。"""
+    """Malformed, unversioned-required, or mismatched arXiv identifier."""
 
 
 class ArxivQueryError(ArxivProtocolError, ValueError):
-    """检索请求不满足显式范围或取值约束。"""
+    """Search request violates explicit scope/value constraints."""
 
 
 class ArxivResponseError(ArxivProtocolError):
-    """服务返回的内容不是可解析的 Atom 结果（含 HTML 错误页）。"""
+    """Server content is not parseable Atom, including HTML errors."""
 
 
 class ArxivSourceError(ArxivProtocolError):
-    """源码包下载内容异常（如空响应），不能当作成功。"""
+    """Invalid source-download contents, such as empty responses, cannot count as success."""
 
 
 class ArxivSourceUnavailableError(ArxivSourceError):
-    """该版本没有可用的 LaTeX 源码包；``reason`` 说明不可用原因。
+    """No usable LaTeX source package for this version, with reason.
 
-    ``reason`` 取值：``not_found``（该版本无源码）、``html_error``
-    （返回 HTML 错误页）、``pdf_only``（只有 PDF 提交）。
+    Reasons: not_found for absent source, html_error for returned HTML error pages, and
+    pdf_only for PDF-only submissions.
     """
 
     def __init__(self, message: str, *, reason: str) -> None:
@@ -145,11 +141,10 @@ def _valid_month(yymm: str) -> bool:
 
 @dataclass(frozen=True)
 class ArxivIdentifier:
-    """解析后的 arXiv 论文标识：无版本身份 + 具体版本（可选）。
+    """Parsed arXiv identity with optional exact version.
 
-    ``canonical_id`` 是无版本身份（新式 ``2101.01234`` 或旧式
-    ``astro-ph/0507001``），同一论文的所有版本共享该身份；``version``
-    为具体版本号，下载源码前必须固定。
+    canonical_id is the shared unversioned modern/legacy paper identity. Fix version
+    before source download.
     """
 
     canonical_id: str
@@ -170,12 +165,11 @@ class ArxivIdentifier:
 
 
 def parse_arxiv_identifier(text: str) -> ArxivIdentifier:
-    """严格解析 arXiv 标识；畸形输入抛 :class:`ArxivIdentifierError`。
+    """Strictly parse arXiv identifiers; malformed inputs raise ArxivIdentifierError.
 
-    接受带或不带版本号的新式标识（``2101.01234``、``2101.01234v2``）
-    与旧式标识（``astro-ph/0507001``、``astro-ph/0507001v3``、
-    ``math.AG/0309136``）。内部空白、错误版本号（如 ``v0``）、非法
-    月份或任何其他形式一律拒绝，不做猜测。
+    Accept modern and legacy forms with/without versions, including 2101.01234,
+    astro-ph/0507001, and math.AG/0309136. Reject internal whitespace, invalid versions
+    such as v0, invalid months, and other forms without guessing.
     """
     if not isinstance(text, str):
         raise ArxivIdentifierError(f"arXiv 标识必须是字符串：{text!r}")
@@ -212,15 +206,13 @@ def parse_arxiv_identifier(text: str) -> ArxivIdentifier:
 
 
 def parse_entry_id_url(url: str) -> ArxivIdentifier:
-    """从 Atom 条目的 ``<id>`` URL 解析标识；结构不符即拒绝。
+    """Parse Atom id URLs with strict identity structure.
 
-    严格结构：``http(s)://<官方主机>/abs/<精确的 arXiv 标识>``，仅
-    接受 http/https 历史形式与对应标准端口（http→80/缺省、
-    https→443/缺省）；拒绝其他协议（如 ftp）、凭据、非标准端口、
-    额外路径段、查询、fragment 与空白。这些 URL 是标识符，不是出站
-    请求：官方老源可合法使用 ``http://``，因此这里不施加仅适用于实
-    际出站请求的 HTTPS 约束（见传输层出站预检）。本校验独立于注入
-    的传输：不依赖客户端层是否执行了网络侧检查。
+    Accept historical http/https official-host /abs/exact-ID forms with corresponding
+    default/80/443 ports. Reject other schemes, credentials, nonstandard ports, extra
+    paths, queries, fragments, and whitespace. These are identifiers, not outbound
+    requests, so historical HTTP remains valid while transport enforces outbound HTTPS.
+    Validate independently of injected transport/client network checks.
     """
     if not isinstance(url, str) or not url or any(ch.isspace() for ch in url):
         raise ArxivResponseError(f"条目 id 包含空白或非字符串：{url!r}")
@@ -257,12 +249,12 @@ def parse_entry_id_url(url: str) -> ArxivIdentifier:
 
 @dataclass(frozen=True)
 class ArxivSearchRequest:
-    """一次显式受限的检索：首提日期范围（UTC）、检索词、类别与分页。
+    """Explicit bounded search: initial-submission UTC date range, terms, categories, and
+    pagination.
 
-    日期按 UTC 解释，对应 arXiv 的首提（initial submission）时间；范
-    围闭区间覆盖 ``submitted_from`` 与 ``submitted_to`` 两天。排序显
-    固定为 ``submittedDate``（默认）或 ``lastUpdatedDate``，方向显式
-    给定，保证分页可回查、可恢复。检索词与类别至少提供其一。
+    Dates include both submitted_from/submitted_to days. Fix submittedDate (default) or
+    lastUpdatedDate sorting and explicit direction for traceable/resumable pagination.
+    Require terms or categories.
     """
 
     submitted_from: date
@@ -283,7 +275,7 @@ class ArxivSearchRequest:
             raise ArxivQueryError(
                 f"首提日期范围颠倒：{self.submitted_from} > {self.submitted_to}"
             )
-        # 检索词归一为单个短语：输入中的引号视为普通空白，防止破坏短语语法。
+        # Normalize terms into one phrase; treat input quotes as whitespace to preserve phrase syntax.
         object.__setattr__(
             self, "terms", " ".join(self.terms.replace('"', " ").split())
         )
@@ -314,8 +306,8 @@ class ArxivSearchRequest:
             raise ArxivQueryError(
                 f"单页条目必须在 1..{MAX_PAGE_SIZE}：{self.page_size!r}"
             )
-        # 请求前拒绝超出检索覆盖上限的分页窗口：API 在上限之外无法建
-        # 立覆盖，缩小窗口或拆分日期范围是调用方的显式责任。
+        # Reject pagination beyond retrieval coverage before sending; callers must narrow pages
+        # or split date ranges explicitly because the API cannot establish coverage beyond the ceiling.
         if self.start + self.page_size > RETRIEVAL_CEILING:
             raise ArxivQueryError(
                 f"分页窗口超出检索上限 {RETRIEVAL_CEILING}："
@@ -352,7 +344,7 @@ class ArxivSearchRequest:
 
 
 class PaginationAnomaly(Enum):
-    """分页或批次结果中的异常信号，暴露给生命周期层判断覆盖情况。"""
+    """Pagination/batch anomalies exposed to lifecycle coverage decisions."""
 
     TOTAL_MISSING = "total_missing"
     TOTAL_INVALID = "total_invalid"
@@ -369,11 +361,12 @@ class PaginationAnomaly(Enum):
 
 @dataclass(frozen=True)
 class ArxivPaperMeta:
-    """一条论文元数据：无版本身份、具体版本与 API 原始标识（溯源）。
+    """Paper metadata: unversioned identity, exact version, and original API identifier
+    provenance.
 
-    ``published`` 是首次提交时间、``updated`` 是当前版本修订时间（均
-    为 API 返回的 ISO-8601 原文）；``doi``/``journal_ref`` 为可选的期
-    刊引用信息，仅作元数据保留，提取依据仍是固定的 arXiv 版本。
+    published/updated preserve initial/current-revision ISO-8601 timestamps from the
+    API. Optional doi/journal_ref remain metadata only; extraction still uses fixed
+    arXiv versions.
     """
 
     canonical_id: str
@@ -392,7 +385,7 @@ class ArxivPaperMeta:
 
 @dataclass(frozen=True)
 class ArxivSearchPage:
-    """一次检索分页的结果与异常信号。"""
+    """Search-page results and anomalies."""
 
     request: ArxivSearchRequest
     response_url: str
@@ -404,17 +397,19 @@ class ArxivSearchPage:
 
     @property
     def ceiling_exceeded(self) -> bool:
-        """结果总数是否超出 API 检索上限（此时无法建立完整覆盖）。"""
+        """Whether total results exceed the API retrieval ceiling, preventing complete
+        coverage.
+        """
         return PaginationAnomaly.CEILING_EXCEEDED in self.anomalies
 
     @property
     def has_more(self) -> bool | None:
-        """是否还有未取分页；覆盖无法确立时返回 ``None``。
+        """Whether pages remain, or None if coverage cannot be established.
 
-        总数未知**或存在任何分页异常**时返回 ``None``：异常分页不能
-        被解读为“已覆盖完整”，生命周期层必须先处理异常。因此
-        ``has_more is False`` 当且仅当总数已知、条目数与声明一致且
-        无异常，是唯一的“本页覆盖完整”信号。
+        Unknown totals or any pagination anomaly return None: anomalous pages never
+        prove complete coverage. Lifecycle must handle them first. has_more=False is the
+        sole complete-page signal, requiring known totals, consistent entry counts, and
+        no anomalies.
         """
         if self.total_results is None or self.anomalies:
             return None
@@ -423,11 +418,10 @@ class ArxivSearchPage:
 
 @dataclass(frozen=True)
 class ArxivIdLookup:
-    """按标识请求元数据时单个标识的结果状态。
+    """Per-identifier metadata lookup result.
 
-    ``status``：``found``（找到，``meta`` 有值）、``not_found``（服务
-    未返回该标识）、``version_mismatch``（返回了其他版本而不是请求
-    的具体版本）。
+    found includes meta; not_found means absent; version_mismatch means another version
+    was returned instead of the requested exact version.
     """
 
     requested: ArxivIdentifier
@@ -437,7 +431,7 @@ class ArxivIdLookup:
 
 @dataclass(frozen=True)
 class ArxivIdBatchResult:
-    """一次按标识批量查询的结果与异常信号。"""
+    """Identifier-batch results and anomalies."""
 
     response_url: str
     fetched_at: float
@@ -454,7 +448,7 @@ class ArxivIdBatchResult:
 
 @dataclass(frozen=True)
 class ArxivSourceDownload:
-    """一次成功取回的固定版本源码包原始字节（未解析）。"""
+    """Successfully retrieved fixed-version source-package bytes, unparsed."""
 
     identifier: ArxivIdentifier
     final_url: str
@@ -556,12 +550,12 @@ def parse_atom_search_page(
     response_url: str,
     fetched_at: float,
 ) -> ArxivSearchPage:
-    """解析一次检索分页的 Atom 响应；矛盾信号进 ``anomalies``。
+    """Parse Atom search pages and expose contradictions through anomalies.
 
-    除缺失/非法总数、起始序号不符、空页、截断、重复、超出检索上限
-    外，还暴露自相矛盾的分页：负数总数、条目数超过声明总数、条目
-    数超过请求页长。存在异常时 :attr:`ArxivSearchPage.has_more` 为
-    ``None``，不能宣称覆盖完整；已解析的条目仍保留供部分使用。
+    Include missing/invalid totals, wrong offsets, empty/truncated/duplicate pages,
+    retrieval ceiling excess, negative totals, counts above totals, and counts above
+    requested page sizes. Anomalies make has_more=None, never complete coverage; retain
+    parsed entries for partial use.
     """
     root = _parse_atom_root(payload)
     anomalies: list[PaginationAnomaly] = []
@@ -573,7 +567,7 @@ def parse_atom_search_page(
     else:
         parsed_total = _parse_int_text(total_raw)
         if parsed_total is None or parsed_total < 0:
-            # 负数或非整数总数与覆盖声明自相矛盾，按非法处理。
+            # Negative/noninteger totals contradict coverage assertions and are invalid.
             anomalies.append(PaginationAnomaly.TOTAL_INVALID)
         else:
             total = parsed_total
@@ -591,7 +585,7 @@ def parse_atom_search_page(
     count = len(entries)
     if total is not None:
         if request.start + count > total:
-            # 返回条目超出声明总数的覆盖范围（含 total=0 却有条目）。
+            # Returned entries exceed declared totals, including nonempty results with total=0.
             anomalies.append(PaginationAnomaly.RESULTS_EXCEED_TOTAL)
         expected = total - request.start
         if expected > 0 and count == 0:
@@ -599,7 +593,7 @@ def parse_atom_search_page(
         if 0 < count < request.page_size and request.start + count < total:
             anomalies.append(PaginationAnomaly.TRUNCATED_PAGE)
     if count > request.page_size:
-        # 服务返回了超过请求页长的条目，不能当作可信分页。
+        # More entries than the requested page size cannot establish trustworthy pagination.
         anomalies.append(PaginationAnomaly.RESULTS_EXCEED_PAGE)
 
     return ArxivSearchPage(
@@ -620,13 +614,12 @@ def parse_atom_id_list(
     response_url: str,
     fetched_at: float,
 ) -> ArxivIdBatchResult:
-    """解析按标识批量查询的 Atom 响应，逐标识给出结果状态。
+    """Parse identifier-batch Atom responses with per-identifier status.
 
-    服务对不存在或无法解析的标识会返回 “Error” 条目：这类条目记为
-    :attr:`PaginationAnomaly.MALFORMED_ENTRY_ID` 并从结果中排除，对应
-    请求标识的状态为 ``not_found``；返回了未请求标识时记为
-    ``unrequested_entry``。请求了具体版本而返回其他版本时状态为
-    ``version_mismatch``，绝不静默替换。
+    Error entries for absent/unparseable IDs become MALFORMED_ENTRY_ID anomalies and are
+    excluded; corresponding requests get not_found. Unrequested returns become
+    unrequested_entry anomalies. Different versions yield version_mismatch without
+    silent substitution.
     """
     root = _parse_atom_root(payload)
     anomalies: list[PaginationAnomaly] = []
@@ -697,9 +690,11 @@ def _require_atom_response(response: TransportResponse) -> None:
 
 
 def _require_request_url_bound(url: str) -> None:
-    """请求前检查 URL 长度：工程保守护栏，非官方声明上限。
+    """Check request-URL length before sending using a conservative engineering limit, not
+    an official ceiling.
 
-    超限时拒绝发送并明确报告，由调用方缩小条件，不依赖服务端截断。
+    Reject excess explicitly so callers narrow conditions; never rely on server
+    truncation.
     """
     if len(url.encode("utf-8")) > MAX_REQUEST_URL_BYTES:
         raise ArxivQueryError(
@@ -709,13 +704,13 @@ def _require_request_url_bound(url: str) -> None:
 
 
 def _verify_source_final_url(final_url: str, identifier: ArxivIdentifier) -> None:
-    """验证源码最终 URL 与请求的论文和具体版本一一对应。
+    """Verify exact final-source URL correspondence to the requested paper/version.
 
-    先做与注入传输无关的独立 URL 结构校验：仅 HTTPS、官方主机、缺省
-    或 443 端口、无凭据/查询/fragment；再验证路径**精确等于**官方
-    ``/e-print/`` 或 ``/src/`` 上请求的版本化标识（路径可经百分号解
-    码）。无版本、不同版本、额外路径、非标准协议/端口/成分或非官方
-    主机一律拒绝交付——无法确认对应关系时不做猜测。
+    Independently validate HTTPS, official host, default/443 port, and absent
+    credentials/query/fragment, then require percent-decoded paths exactly matching
+    official /e-print/ or /src/ versioned identifiers. Reject absent/different versions,
+    extra paths/components, nonstandard schemes/ports, or unofficial hosts rather than
+    guessing.
     """
     try:
         split = urllib.parse.urlsplit(final_url)
@@ -758,16 +753,12 @@ def _verify_source_final_url(final_url: str, identifier: ArxivIdentifier) -> Non
 
 
 class ArxivApiService:
-    """arXiv API 与源码下载的协议入口；所有请求经统一传输客户端。
+    """arXiv API/source protocol service; every request uses the shared transport client.
 
-    参数：
-        client: :class:`ArxivHttpClient`（含节流门与重试）；缺省为生
-            产默认客户端。
-        api_base_url: API 查询入口（默认官方地址）。
-        clock: 提供 ``fetched_at`` 时间戳的时钟，默认系统时钟。
-
-    该服务只做协议与传输，不保存任何状态；持久化、进度与恢复由生命
-    周期层负责。
+    client is ArxivHttpClient with throttling/retries, defaulting to production.
+    api_base_url defaults to the official API. clock supplies fetched_at timestamps,
+    defaulting to the system clock. This service handles protocol/transport only;
+    lifecycle owns persistence, progress, and recovery.
     """
 
     def __init__(
@@ -786,7 +777,7 @@ class ArxivApiService:
         return self._client
 
     def search(self, request: ArxivSearchRequest) -> ArxivSearchPage:
-        """执行一次显式受限的检索分页请求。"""
+        """Execute one explicitly bounded search-page request."""
         url = request.to_request_url(self._api_base_url)
         _require_request_url_bound(url)
         response = self._client.get(
@@ -803,12 +794,11 @@ class ArxivApiService:
     def metadata_by_ids(
         self, identifiers: Sequence[ArxivIdentifier | str]
     ) -> ArxivIdBatchResult:
-        """按显式标识（可含版本）批量查询元数据。
+        """Query metadata for explicit identifiers with optional versions.
 
-        畸形标识在发出任何请求之前即被拒绝；单批标识数也受限
-        于 :data:`MAX_ID_LIST_LENGTH`（工程保守护栏），超出时拒绝发送
-        并由调用方拆批，不依赖服务端截断。请求顺序保留在结果中，
-        每个标识单独给出 ``found``/``not_found``/``version_mismatch``。
+        Reject malformed IDs before any request and batches above MAX_ID_LIST_LENGTH so
+        callers split them, without server truncation. Preserve request order and return
+        found/not_found/version_mismatch per identifier.
         """
         parsed = tuple(
             parse_arxiv_identifier(identifier)
@@ -841,16 +831,13 @@ class ArxivApiService:
         )
 
     def download_source(self, identifier: ArxivIdentifier | str) -> ArxivSourceDownload:
-        """下载固定具体版本的源码包原始字节；不做任何归档解析。
+        """Download fixed-version source bytes without archive parsing.
 
-        版本号必须已经冻结（不带版本号的标识会被拒绝：先查元数据确
-        定版本再下载）。返回前严格校验最终 URL 与请求的论文和版本一
-        一对应（仅接受官方 ``/e-print/`` 或 ``/src/`` 路径上的精确版
-        本标识），无法确认对应关系时拒绝交付字节，不做猜测。HTML
-        错误页、PDF-only 与 404 统一以
-        :class:`ArxivSourceUnavailableError` 区分上抛；空响应体视为失
-        败。``payload`` 是未经解析的原始字节，归档安全检查由后续组件
-        负责。
+        Require already frozen versions; unversioned callers must query metadata first.
+        Strictly verify exact official /e-print/ or /src/ final URL correspondence
+        before returning, refusing uncertainty. Classify HTML errors, PDF-only, and 404
+        as ArxivSourceUnavailableError; empty bodies fail. payload retains raw unparsed
+        bytes for later archive safety checks.
         """
         ident = (
             parse_arxiv_identifier(identifier)

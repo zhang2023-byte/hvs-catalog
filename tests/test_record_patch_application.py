@@ -1,7 +1,8 @@
-"""补丁应用纯函数：校验与应用共用解释，只增不覆盖（A13 基础）。
+"""Pure patch application: validation/application share interpretation and add without
+overwriting (A13 foundation).
 
-集合校验（``validate_collection``）与实际应用（运行层）走同一
-目标定位与字段约束；这里的用例同时在两条入口上核对。
+validate_collection and runtime application use the same target resolution and field
+constraints; verify cases through both entry points.
 """
 
 from __future__ import annotations
@@ -136,7 +137,7 @@ def test_missing_item_and_unsupported_record_rejected():
 
 
 def test_validation_and_application_share_field_constraints():
-    """校验拒绝的补丁，应用同样拒绝（两套入口一个解释）。"""
+    """Patches rejected by validation also fail application under the same interpretation."""
     paper = _paper()
     bad_patch = DecisionPatch(
         target={"record_id": "paper-x", "revision": 1, "item_id": "contribution-A"},
@@ -147,7 +148,9 @@ def test_validation_and_application_share_field_constraints():
 
 
 def test_collection_validation_enforces_patch_scope(tmp_path):
-    """集合校验继续核对补丁范围与指纹（复用共同纯函数）。"""
+    """Collection validation still verifies patch scope/fingerprints through shared pure
+    functions.
+    """
     from hvs_catalog.records import DecisionRecord, QuestionRecord, build_record
 
     paper = _paper()

@@ -1,10 +1,11 @@
-"""评分与实验用的合成 Gold 及评分计划引用（全部虚构材料）。
+"""Synthetic Gold and scoring-plan references for evaluation/experiments; all materials are
+fictional.
 
-合成条目按 ``pipeline`` 模拟材料的固定内容在评分侧独立书写：提取侧
-不读取本模块，Gold 内容不回灌提取或专家决定。对象名、数值、条件与
-单位和模拟材料逐字一致（同一条虚构原文的两份转录），仅用于验证适
-配、评分与两组对照报告的离线链路；不是真实论文、真实 Gold 或正式
-评分结果。
+Independently transcribe fixed pipeline mock contents on the scoring side. Extraction
+never imports this module or receives Gold through requests/decisions. Names, values,
+conditions, and units match mock materials verbatim as two transcriptions of one
+fictional source. Use only to verify offline adaptation/scoring/two-group reports, never
+as real papers, real Gold, or official scores.
 """
 
 from __future__ import annotations
@@ -46,7 +47,7 @@ def _fp(seed: str) -> str:
 
 
 def _materials_fingerprint(paper_key: str) -> str:
-    """合成材料指纹：来源包正文逐字节的哈希。"""
+    """Synthetic material fingerprint: byte-for-byte source-package body hash."""
     if paper_key == PAPER_C:
         text = "\n".join(C_LINES) + "\n"
     else:
@@ -170,7 +171,7 @@ _SYNTHETIC_GOLD: dict[str, GoldPaperEntry] = {
 
 
 def synthetic_gold_entries() -> list[GoldPaperEntry]:
-    """全部合成 Gold 条目（A/B/C 三篇，全部虚构）。"""
+    """All fictional synthetic Gold entries for papers A/B/C."""
     return [
         _SYNTHETIC_GOLD[PAPER_A],
         _SYNTHETIC_GOLD[PAPER_B],
@@ -192,7 +193,9 @@ def synthetic_gold_for_paper(paper_key: str) -> GoldPaperEntry:
 def build_experiment_plan(
     paper_keys: list[str], gold: list[GoldPaperEntry]
 ) -> ScoringPlan:
-    """按合成 Gold 构建评分计划；输入指纹来自实际内容重算。"""
+    """Build scoring plans from synthetic Gold, recomputing fingerprints from actual
+    contents.
+    """
     auxiliary = protocol_only_config()
     return ScoringPlan(
         paper_keys=paper_keys,

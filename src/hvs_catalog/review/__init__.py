@@ -1,7 +1,7 @@
-"""裁决模块：待办与决定的共同接口。
+"""Shared pending-question/decision interfaces.
 
-接口契约见 [裁决共同接口方案](../../../docs/design/review.md#裁决共同接口方案)；
-保存、锁与恢复由 workspace 与 runtime 提供。
+See ../../../docs/design/review.md for interface contracts; workspace/runtime provide
+saving, locking, and recovery.
 """
 
 from __future__ import annotations

@@ -1,7 +1,8 @@
-"""本地导入与备份恢复的合成测试（Lane B：import/backup 集成）。
+"""Synthetic local-import and backup/restore tests (Lane B integration).
 
-全部离线：导入文件在系统临时目录构造；备份/恢复用工作空间公共 API；
-恢复后的查询与材料回读在真实子进程中完成（独立进程恢复验证）。
+All tests are offline: build imported files in temporary directories and use public
+workspace backup/restore APIs. Query restored progress and reread materials in real
+subprocesses to verify independent-process recovery.
 """
 
 from __future__ import annotations
@@ -69,7 +70,7 @@ PACKAGE_B = make_tar_gz({"main.tex": b"\\documentclass{article}B"})
 
 
 class ScriptedApi:
-    """下载脚本化、其余拒绝的协议替身。"""
+    """Protocol fake with scripted downloads that rejects other operations."""
 
     def __init__(self, downloads: dict[str, bytes]) -> None:
         self.downloads = downloads
@@ -92,7 +93,7 @@ class ScriptedApi:
             fetched_at=1_700_000_000.0,
         )
 
-    def search(self, request):  # pragma: no cover - 不应被调用
+    def search(self, request):  # pragma: no cover - must not be called
         raise AssertionError("本测试不应触网")
 
     def metadata_by_ids(self, identifiers):  # pragma: no cover
@@ -122,13 +123,13 @@ def test_import_ok_with_declared_identity_and_provenance(space, tmp_path):
     selection = service.get_selection("2305.01234")
     assert selection.state == "imported"
     assert selection.via == "local_import"
-    # 溯源明确标注是本地声明，不是 arXiv 核实。
+    # Identify provenance as a local declaration, not arXiv verification.
     assert "local import" in selection.retrieval
     assert "expert X" in selection.retrieval
     record = space.store().read_record_current(result.material_ref.record_id)
     assert record is not None
     assert "local import" in record.data.origin.retrieval
-    # 清单持久化（含成员哈希），原始字节可回读。
+    # Persist the manifest and member hashes; raw bytes remain readable.
     inventory = {item["name"] for item in selection.package_inventory}
     assert inventory == {"main.tex", "fig/datum.dat"}
     assert (
@@ -184,7 +185,7 @@ def test_import_same_identity_version_different_bytes_rejected(space, tmp_path):
         service.import_local_package(
             conflicting, arxiv_id="2305.01234v2", provenance="two"
         )
-    # 既有材料未被覆盖。
+    # Existing material is not overwritten.
     selection = service.get_selection("2305.01234")
     assert (
         space.read_file(
@@ -209,9 +210,9 @@ def test_import_identical_bytes_reusable_keeps_provenance(space, tmp_path):
     )
     assert repeat.replayed
     assert repeat.raw_path == first_result.raw_path
-    # 一份材料记录 + 两条声明事件记录（两个不同声明各持久化首登时间）。
+    # One material record plus two declaration events, each retaining its first registration time.
     assert len(space.store().list_records()) == 3
-    # 首次溯源仍在记录中（不因重复导入丢失）。
+    # Retain original provenance across repeated imports.
     record = space.store().read_record_current(repeat.material_ref.record_id)
     assert "first copy" in record.data.origin.retrieval
 
@@ -266,7 +267,7 @@ def test_import_size_cap(space, tmp_path, monkeypatch):
         )
 
 
-# ---------------------------------------------------------------- 备份/恢复 + 子进程
+# ---------------------------------------------------------------- Backup/restore and subprocesses
 
 
 RESTORE_QUERY_SCRIPT = textwrap.dedent(
@@ -317,10 +318,12 @@ RESTORE_QUERY_SCRIPT = textwrap.dedent(
 
 @pytest.mark.integration
 def test_backup_restore_then_subprocess_resume_query(tmp_path):
-    """完整流程 → 备份 → 恢复到新目录 → 独立进程免网络查询全部进度与材料。"""
+    """Run the full flow, back up, restore to a fresh directory, then query all progress
+    and materials offline in an independent process.
+    """
     space = initialize_workspace(tmp_path / "space")
 
-    # 1) 发现轮次（单页完成）。
+    # 1) Complete a single-page discovery round.
     from test_acquisition_lifecycle import script_single_page
 
     entries = (
@@ -339,17 +342,17 @@ def test_backup_restore_then_subprocess_resume_query(tmp_path):
     status = service.run_discovery(request)
     assert status.state == "complete"
 
-    # 2) 获取一篇（发现轮次外年份的旧论文，显式版本）。
+    # 2) Fetch an older paper outside the discovery year range, with an explicit version.
     download_api = ScriptedApi({"2101.01234v2": PACKAGE_A})
     service2 = AcquisitionService(space, download_api, clock=FakeClock())
     result = service2.acquire("2101.01234v2")
     assert result.state == "downloaded"
 
-    # 3) 修订检查发现 v5 待处理。
+    # 3) Find pending v5 through revision checking.
     revision_api = _RevisionApi({"2101.01234": _meta("2101.01234", 5)})
     AcquisitionService(space, revision_api, clock=FakeClock()).check_revisions()
 
-    # 4) 本地导入另一篇。
+    # 4) Import another paper locally.
     package = tmp_path / "local.tar.gz"
     package.write_bytes(PACKAGE_B)
     service3 = AcquisitionService(space, ScriptedApi({}), clock=FakeClock())
@@ -358,14 +361,14 @@ def test_backup_restore_then_subprocess_resume_query(tmp_path):
     )
     assert import_result.canonical_id == "2305.01234"
 
-    # 5) 备份 → 恢复到全新目录。
+    # 5) Back up and restore to a fresh directory.
     backup_dir = tmp_path / "backup"
     report = backup_workspace(space, backup_dir)
     assert report.files
     restored_root = tmp_path / "restored"
     restored = restore_workspace(backup_dir, restored_root)
     try:
-        # 6) 独立子进程：免网络查询全部进度、溯源与材料。
+        # 6) Query all progress, provenance, and materials offline in an independent subprocess.
         proc = subprocess.run(
             [
                 sys.executable,
@@ -436,7 +439,9 @@ class _RevisionApi(ScriptedApi):
 
 
 def test_backup_includes_all_referenced_material(tmp_path):
-    """备份清单覆盖记录引用的全部来源文件（无未备份的孤儿状态）。"""
+    """Include every source file referenced by records in the backup manifest, leaving no
+    unbacked orphan state.
+    """
     space = initialize_workspace(tmp_path / "space")
     try:
         service = AcquisitionService(
@@ -447,14 +452,16 @@ def test_backup_includes_all_referenced_material(tmp_path):
         backup_dir = tmp_path / "backup"
         report = backup_workspace(space, backup_dir)
         paths = {entry["path"] for entry in report.files}
-        assert result.raw_path in paths  # 原始包已入备份
-        assert "business.db" in paths  # 记录/回执/meta 已入备份
+        assert result.raw_path in paths  # Raw package bytes are backed up.
+        assert "business.db" in paths  # Records, receipts, and metadata are backed up.
     finally:
         space.close()
 
 
 def test_import_replay_with_new_provenance_retained(space, tmp_path):
-    """相同字节重复导入：材料与首次溯源不动，新来源声明追加到溯源日志。"""
+    """Repeated imports of identical bytes preserve material and original provenance while
+    appending new source declarations to the log.
+    """
     first = tmp_path / "a.tar.gz"
     first.write_bytes(PACKAGE_A)
     again = tmp_path / "b.tar.gz"
@@ -471,11 +478,11 @@ def test_import_replay_with_new_provenance_retained(space, tmp_path):
     assert status is not None
     logged = [item["provenance"] for item in status.provenance_log]
     assert logged == ["first copy", "mirror at other site"]
-    # 材料记录只有一份（字节复用）；两个声明各有一条声明事件记录。
+    # One material record reuses the bytes; two declarations have separate event records.
     assert len(space.store().list_records()) == 3
     record = space.store().read_record_current(repeat.material_ref.record_id)
     assert "first copy" in record.data.origin.retrieval
-    # 同一声明再次导入：幂等，不产生重复日志条目。
+    # Reimporting the same declaration is idempotent and adds no duplicate log entries.
     third = service.import_local_package(
         again, arxiv_id="2305.01234v2", provenance="mirror at other site"
     )
@@ -483,12 +490,14 @@ def test_import_replay_with_new_provenance_retained(space, tmp_path):
     status = service.get_selection("2305.01234")
     assert status is not None
     assert len(status.provenance_log) == 2
-    # 声明记录是来源权威，无独立声明/选择回执协调路径。
+    # Declaration records are authoritative; no separate declaration/selection receipt coordination exists.
     assert len(space.store().list_records()) == 3
 
 
 def test_unsupported_retained_bytes_survive_backup_restore(tmp_path):
-    """形态不支持时保留的原始字节经尝试记录入备份，恢复后仍可读。"""
+    """Back up raw bytes retained for unsupported formats through attempt records; they
+    remain readable after restore.
+    """
     from hvs_catalog.records.common import ArtifactRef
 
     space = initialize_workspace(tmp_path / "space")
@@ -503,14 +512,16 @@ def test_unsupported_retained_bytes_survive_backup_restore(tmp_path):
         record = space.store().read_record_current(attempt_id)
         assert record is not None
         assert service.get_selection("2401.00009").error
-        # 尝试记录把保留字节作为附件引用：备份沿记录遍历到这些字节。
+        # Attempt records reference retained bytes as attachments, which backup traverses.
         backup_dir = tmp_path / "backup"
         report = backup_workspace(space, backup_dir)
         paths = {entry["path"] for entry in report.files}
         assert result.raw_path in paths
-        assert "business.db" in paths  # 尝试记录随业务库入备份
+        assert (
+            "business.db" in paths
+        )  # Back up attempt records with the business database.
         assert report.problems == []
-        # 恢复到新空间后字节仍可按哈希核对读取。
+        # After restoring to a fresh workspace, verify and read bytes by hash.
         restored_root = tmp_path / "restored"
         restored = restore_workspace(backup_dir, restored_root)
         try:
@@ -527,7 +538,7 @@ def test_unsupported_retained_bytes_survive_backup_restore(tmp_path):
 
 
 def test_integrity_rejected_retained_bytes_covered_by_attempt_record(tmp_path):
-    """安全检查拒绝时保留的字节同样有尝试记录（备份可遍历）。"""
+    """Retain an attempt record for safety-rejected bytes too, allowing backup traversal."""
     import tarfile as tarfile_mod
 
     bomb_shell = io.BytesIO()

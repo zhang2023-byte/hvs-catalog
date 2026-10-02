@@ -1,4 +1,6 @@
-"""待办与决定：绑定、重放、冲突与过期拒绝、未决答复保留（A09/A10/A11）。"""
+"""Pending questions and decisions: binding, replay, conflicting/stale rejection, and
+unresolved answers (A09/A10/A11).
+"""
 
 from __future__ import annotations
 
@@ -38,7 +40,7 @@ def service(tmp_path):
 
 @pytest.fixture()
 def waiting(space, service):
-    """跑 A 篇到等待裁决；返回 (execution, flow, question)。"""
+    """Run paper A until review wait; return (execution, flow, question)."""
     execution, flow, _ = start_execution(space, paper="A", request_key="a")
     report = resume_execution(space, execution.execution_id, flow, service=service)
     assert report.outcome == "paused"
@@ -50,7 +52,7 @@ def test_create_question_replay_returns_original(space, waiting):
     execution, _, question = waiting
     assert question.status == "open"
     assert question.needs_processing
-    # 同请求同内容：编号派生自空间、执行与内容，重建得到同一问题
+    # Identical request/content derives the same question identity from workspace, execution, and contents.
     from shared_scenarios import material as m
 
     from hvs_catalog.records.common import RecordRef
@@ -87,13 +89,15 @@ def test_cross_step_submission_rejected(space, waiting):
 
 
 def test_same_display_question_different_context_not_reused(space, service, waiting):
-    """A09：相同显示问题不造成决定串用——指纹按实际固定内容计算。"""
+    """A09: identical display questions cannot mix decisions; fingerprints reflect actual
+    fixed contents.
+    """
     other = initialize_workspace(space.root.parent / "second")
     try:
         ex2, flow2, _ = start_execution(other, paper="A", request_key="a")
         resume_execution(other, ex2.execution_id, flow2, service=service)
         q2 = pending_questions(other, execution_id=ex2.execution_id)[0]
-        # 同一显示文本在两个空间各自存在；决定保存互不串用
+        # Identical display text in separate workspaces never mixes saved decisions.
         assert q2.record.data.prompt == _q_prompt(space)
         submit_expert_decision(
             other,
@@ -101,7 +105,7 @@ def test_same_display_question_different_context_not_reused(space, service, wait
             question_ref=q2.question_ref,
             request_key="dec-2",
         )
-        # 第一个空间的问题仍为 open，没有被动使用其他空间的决定
+        # The first workspace's question remains open, without implicitly consuming another workspace's decision.
         space_q = pending_questions(space)[0]
         assert space_q.status == "open"
         assert space_q.decisions == []
@@ -136,7 +140,7 @@ def test_same_key_different_content_rejected(space, waiting):
 
 
 def test_conflicting_answer_rejected_and_duplicate_saved_once(space, waiting):
-    """A10：重复答复只保存一次；冲突答复拒绝。"""
+    """A10: save repeated answers once and reject conflicting answers."""
     execution, _, question = waiting
     first = submit_expert_decision(
         space,
@@ -159,7 +163,7 @@ def test_conflicting_answer_rejected_and_duplicate_saved_once(space, waiting):
         request_key="dec-2",
     )
     assert not different_key.first_save
-    # 冲突内容被拒绝
+    # Reject conflicting contents.
     conflicting = _submission_for(
         question,
         answer_en="A conflicting expert answer.",
@@ -172,7 +176,7 @@ def test_conflicting_answer_rejected_and_duplicate_saved_once(space, waiting):
             submission=conflicting,
             request_key="dec-3",
         )
-    # 只有一份决定记录；问题只答复一次
+    # Only one decision record exists and the question is answered once.
     decisions = [r for r in space.store().list_records() if r.RECORD_NAME == "decision"]
     assert len(decisions) == 1
     view = pending_questions(space, execution_id=execution.execution_id)[0]
@@ -205,7 +209,9 @@ def test_stale_fingerprint_rejected(space, waiting):
 def test_unresolved_answer_keeps_question_open_and_independent_tasks_proceed(
     space, service, waiting
 ):
-    """A11：答复仍未决——可靠保存、不应用补丁、不排除对象、独立任务可推进。"""
+    """A11: save unresolved answers reliably without patches/exclusion; independent tasks
+    can advance.
+    """
     execution, _, question = waiting
     receipt = submit_expert_decision(
         space,
@@ -220,19 +226,19 @@ def test_unresolved_answer_keeps_question_open_and_independent_tasks_proceed(
     assert view.status == "answered"
     assert view.answered_outcome == "unresolved"
     assert view.application is None
-    assert view.needs_processing  # 已答复仍未决，仍需处理
-    # 论文保持原修订：没有补丁、没有科学排除
+    assert view.needs_processing  # Answered but unresolved still needs handling.
+    # Keep the original paper revision with no patch or scientific exclusion.
     from shared_scenarios import material as m
 
     paper = space.store().read_record_current(
         m.paper_record_id("A", execution.execution_id)
     )
     assert paper.revision == 1
-    # 独立任务（B 篇）可以随后推进到完成
+    # Independent paper B can subsequently complete.
     ex_b, flow_b, _ = start_execution(space, paper="B", request_key="b")
     report_b = resume_execution(space, ex_b.execution_id, flow_b, service=service)
     assert report_b.outcome == "finished"
-    # A 篇恢复后仍停在等待，不把未决执行成科学解决
+    # Recovery of A still waits instead of treating unresolved science as resolved.
     from shared_scenarios import direct_flow
 
     report_a = resume_execution(
@@ -279,12 +285,14 @@ def test_model_actor_rejected(space, waiting):
 
 
 def test_superseded_question_rejects_old_answer(space, waiting):
-    """A10：替代问题后提交旧答复被拒；旧成功回执可查但不重新生效。"""
+    """A10: reject stale answers after supersession; historical successful receipts remain
+    queryable but never reapply.
+    """
     from hvs_catalog.records.rules import load_rules
     from hvs_catalog.review import QuestionContent
 
     execution, _, question = waiting
-    # 先答复并应用
+    # Answer and apply first.
     submit_expert_decision(
         space,
         execution_id=execution.execution_id,
@@ -297,8 +305,8 @@ def test_superseded_question_rejects_old_answer(space, waiting):
         __import__("shared_scenarios", fromlist=["direct_flow"]).direct_flow(),
         service=service,
     )
-    # 材料变化：替代问题（同一目标的更新上下文，指向论文新修订的条目）。
-    # 替代必须引用当前修订（答复后为 v2）；引用旧修订按过期拒绝
+    # Changed material supersedes the question with updated context targeting the new paper revision.
+    # Supersession must reference current v2 after answering; reject old revisions as stale.
     with pytest.raises(RevisionStaleError, match="只能替代当前修订"):
         ReviewService(space).supersede_question(
             execution_id=execution.execution_id,
@@ -343,9 +351,9 @@ def test_superseded_question_rejects_old_answer(space, waiting):
     old_view = review.get_question(question.question_ref)
     assert old_view.status == "superseded"
     assert old_view.superseded_by == new_view.question_ref
-    # 旧答复保留（历史可查），问题显示已失效
+    # Retain historical answers while marking the question superseded.
     assert old_view.decisions
-    # 旧成功回执可查：同键重放仍返回原回执，并提示已失效
+    # Replay the same key to obtain the old successful receipt with a superseded notice.
     replay = submit_expert_decision(
         space,
         execution_id=execution.execution_id,
@@ -355,7 +363,7 @@ def test_superseded_question_rejects_old_answer(space, waiting):
     assert not replay.first_save
     assert replay.question_status == "superseded"
     assert replay.note and "不可再次应用" in replay.note
-    # 向失效问题换新键提交旧答复：过期拒绝
+    # A new key submitting an old answer to a superseded question is stale and rejected.
     with pytest.raises(RevisionStaleError, match="已被替代"):
         submit_expert_decision(
             space,
@@ -363,8 +371,8 @@ def test_superseded_question_rejects_old_answer(space, waiting):
             question_ref=question.question_ref,
             request_key="dec-after-supersede",
         )
-    # 新问题不接受旧决定：旧补丁目标（修订 1）不在新问题的目标范围内，
-    # 整体拒绝
+    # The new question rejects the old decision because its v1 patch target lies outside current targets;
+    # reject the entire submission.
     from shared_scenarios import material as m
 
     stale_patch = m.expert_decision_patch(

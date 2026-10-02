@@ -1,22 +1,20 @@
-"""两组对照实验：同一论文同材料/方法/模型，只改专家裁决开关。
+"""Two-group comparisons vary only expert review for identical paper, material, method, and
+model.
 
-完整执行 S11/E20 场景：开启组暂停等待专家、提交固定模拟人类决定后
-恢复；关闭组（评测/合成模式）不请求也不等待专家，纯 AI 组保存
-``model_judgments`` 而不写专家决定。模拟决定内容来自 ``pipeline``
-固定模拟材料，不从 Gold、评分或诊断读取；Gold 在提取完成后才单独
-进入评分，不参与专家决定。
+S11/E20 enabled runs pause for fixed simulated human decisions and resume;
+evaluation/synthetic disabled runs never request/wait for experts and save
+model_judgments, never expert decisions. Decisions derive from fixed pipeline mock
+semantics, not Gold/scoring/diagnostics. Gold enters scoring only after extraction.
 
-报告逐组给出逐论文 L0/L1/L2 质量与完成/未决/失败、问题与专家次数、
-调用用量与 tokens、专家用时；质量不合成总分，未知用量/用时为
-``null``，不伪造 0。专家用时没有可信计时证据——问题创建到答复的
-墙钟等待包含排队时间，不能当作专家实际操作时间，因此恒为
-``null``。科学完成状态（``science_completion``：pending/partial/
-complete/failed/unfinished）与运行图终止状态（``run_state``）分开
-报告：图 finished 只说明流程不再执行，开放/已答仍未决的科学问题或
-名单未决条目不得报 complete。单组或两组失败/部分执行不丢弃：逐组
-保留状态、已存名单/数值、原始错误、用量与问题/专家事实并对完整预
-定计划分别评分；无法安全建立评价身份的组明确阻断（``blocked_
-reason``）而不伪造质量。全部材料均为合成虚构。
+Report per-group/per-paper L0/L1/L2 quality, completion/pending/failure,
+questions/expert counts, calls/usage/tokens, and expert time without a composite score.
+Unknown usage/time is null. Creation-to-answer wall time includes queues and cannot
+establish expert work time, so expert time is always null. science_completion and
+run_state differ: finished graphs may still have unresolved science. Failed/partial
+groups retain saved outputs, original errors, usage, and expert/question facts and score
+against the complete planned denominator. Block groups lacking safe evaluation
+identities with blocked_reason rather than fabricated quality. All materials are
+fictional.
 """
 
 from __future__ import annotations
@@ -25,7 +23,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-WorkspaceLike = Any  # 结构上需 Workspace；避免仅为类型标注产生循环导入
+WorkspaceLike = (
+    Any  # Workspace is structurally required; avoid circular imports solely for typing.
+)
 
 from ..pipeline import (
     ExtractionReport,
@@ -58,8 +58,8 @@ __all__ = [
     "run_two_group_experiment",
 ]
 
-#: 模拟专家的固定决定：按问题类别选择，内容来自模拟材料语义，
-#: 与 Gold/评分完全无关。
+#: Fixed simulated expert decisions follow question categories and mock-material semantics,
+#: entirely independently of Gold and scoring.
 SIMULATED_EXPERT_CHOICES = {
     "author_assessment": "no_overall_conclusion",
     "inclusion": "include",
@@ -67,21 +67,23 @@ SIMULATED_EXPERT_CHOICES = {
 
 
 class ExperimentError(ValueError):
-    """实验无法按固定安排完成（材料/方法/开关组合不支持等）。"""
+    """The fixed experiment cannot complete, for example because material/method/switch
+    combinations are unsupported.
+    """
 
 
 @dataclass
 class GroupOutcome:
-    """一组执行的全部事实（报告与测试共用）。"""
+    """Complete execution facts for one group, shared by reports and tests."""
 
     switch: str  # expert_on | expert_off
     request_key: str
     handle: dict
-    report: dict  # 最终 ExtractionReport.to_dict()
-    status: dict  # get_extraction 只读状态
+    report: dict  # Final ExtractionReport.to_dict().
+    status: dict  # Read-only get_extraction state.
     service_calls: list[dict]
     decisions: list[dict]
-    predictions: Any  # PredictionPaperEntry | None（阻断时为 None）
+    predictions: Any  # PredictionPaperEntry or None when blocked.
     blocked_reason: str | None = None
 
     def to_dict(self) -> dict:
@@ -147,7 +149,9 @@ def _run_group(
         if not expert:
             raise ExperimentError("关闭专家组不应暂停等待专家；运行配置与开关不一致")
         pending = report.pending_question
-        if pending is None:  # pragma: no cover - paused 必有待办问题
+        if (
+            pending is None
+        ):  # pragma: no cover - paused executions always have pending questions
             raise ExperimentError("执行暂停但没有待办问题")
         question_ref = RecordRef.model_validate(pending["question_ref"])
         view = next(
@@ -177,10 +181,10 @@ def _run_group(
         )
         report = resume_extraction(space, handle.execution_id, service=service)
         guard += 1
-        if guard > 10:  # pragma: no cover - 模拟材料至多一个问题
+        if guard > 10:  # pragma: no cover - mock material has at most one question
             raise ExperimentError("模拟决定循环超出预期，中止实验")
     if report.outcome not in ("finished", "failed"):
-        # 失败/部分执行不丢弃整组；仅不可推进的状态明确阻断
+        # Retain failed/partial groups; explicitly block only states that cannot advance.
         raise ExperimentError(
             f"实验组 {request_key} 处于不可报告状态（outcome={report.outcome}）"
         )
@@ -190,7 +194,7 @@ def _run_group(
     try:
         predictions = prediction_from_execution(space, handle.execution_id)
     except GoldAdaptationError as exc:
-        # 无法安全建立评价身份：明确阻断该组，不伪造空预测或质量
+        # Without a safe evaluation identity, block the group rather than fabricating empty predictions or quality.
         blocked_reason = f"预测适配失败：{exc}"
     return GroupOutcome(
         switch="expert_on" if expert else "expert_off",
@@ -217,7 +221,9 @@ def _roster_record(space, execution_id: str) -> RosterRecord | None:
 
     try:
         refs = execution_result_refs(space, execution_id)
-    except WorkspaceError:  # 阻断组可能连执行身份都不可读：事实标缺失
+    except (
+        WorkspaceError
+    ):  # Blocked groups may lack readable execution identity; mark facts missing.
         return None
     for ref in refs:
         record = space.store().read_record_current(ref.record_id)
@@ -251,7 +257,9 @@ def _paper_record(space, execution_id: str) -> PaperRecord | None:
 
     try:
         refs = execution_result_refs(space, execution_id)
-    except WorkspaceError:  # 阻断组可能连执行身份都不可读：事实标缺失
+    except (
+        WorkspaceError
+    ):  # Blocked groups may lack readable execution identity; mark facts missing.
         return None
     for ref in refs:
         record = space.store().read_record_current(ref.record_id)
@@ -307,13 +315,13 @@ def _group_summary(space: WorkspaceLike, group: GroupOutcome, gold) -> dict:
         "model_judgments": len(group.status["model_judgments"]),
         "usage": {
             "attempts": usage["attempts"],
-            # 未知用量保持 null，不伪造 0
+            # Unknown usage stays null, never fabricated zero.
             "tokens": usage["tokens"],
         },
-        # 专家实际操作时间没有可信计时证据：创建→答复的墙钟等待包含
-        # 排队，不能当作专家用时，恒为 null。
+        # No trustworthy expert work timing exists; creation-to-answer wall time includes
+        # queueing, so never treat it as expert time and always report null.
         "expert_time_seconds": None,
-        # 科学完成状态与运行图终止状态分开；失败/未决不丢事实
+        # Separate scientific completion from graph termination; retain facts after failures/unresolved issues.
         "science_completion": science_state,
         "science_completion_reasons": science_reasons,
         "quality": quality,
@@ -330,14 +338,15 @@ def run_two_group_experiment(
     journal_dir: Path | None = None,
     service_factory: Any = None,
 ) -> dict:
-    """对一篇合成论文执行开关两组并返回完整实验报告。
+    """Run both review-switch groups for one synthetic paper and return a complete
+    comparison report.
 
-    两组使用完全相同的材料、方法与模型配置，只有 ``expert_
-    adjudication`` 开关不同（S11）；评测/合成模式的关闭组即纯 AI 组
-    （E20）。开启组的模拟人类决定按固定材料语义提交，不从 Gold 或
-    评分读取。单组或两组失败/部分执行仍生成完整两组报告（完整计划
-    分母、已存输出、原始错误与用量）；``service_factory(switch,
-    request_key)`` 供测试注入实际服务故障，生产调用缺省使用模拟服务。
+    Material, method, and model configuration are identical except expert_adjudication
+    (S11); disabled evaluation/synthetic runs form the AI-only group (E20). Enabled
+    simulated decisions follow fixed material semantics, never Gold/scoring.
+    Failed/partial groups still produce complete reports with full planned denominators,
+    saved outputs, errors, and usage. service_factory(switch, request_key) injects
+    actual failures in tests; default calls use mock services.
     """
     if mode not in ("evaluation", "synthetic"):
         raise ExperimentError(
@@ -385,7 +394,9 @@ def run_two_group_experiment(
 def build_experiment_report(
     space: WorkspaceLike, paper_key: str, *, on: GroupOutcome, off: GroupOutcome
 ) -> dict:
-    """把两组执行事实与评分结果组装成实验报告（不合成总分）。"""
+    """Assemble execution facts and scoring into a two-group report without a composite
+    score.
+    """
     gold = synthetic_gold_for_paper(paper_key)
     if on.handle["execution_id"] == off.handle["execution_id"]:
         raise ExperimentError("两组必须使用不同的执行")  # pragma: no cover
@@ -406,7 +417,7 @@ def build_experiment_report(
                 "expert_on": on.handle["input_digest"],
                 "expert_off": off.handle["input_digest"],
             },
-            # 关闭组固定输入不含开启组本轮新增决定（实验层核对）
+            # Experiment checks that disabled fixed input excludes newly added enabled-group decisions.
             "expert_off_existing_decision_refs": off.status["config"][
                 "existing_decision_refs"
             ],

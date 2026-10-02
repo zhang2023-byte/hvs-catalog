@@ -1,11 +1,10 @@
-"""共享提取入口：建立、推进与查询提取执行的 Python 公共 API。
+"""Shared extraction Python API for creation, advancement, and queries.
 
-日常与评测共用同一入口：``start_extraction`` 建立或复用执行（复用
-``runtime.create_execution`` 的固定输入快照与请求键语义），``resume_
-extraction`` 经 ``runtime.resume_execution`` 推进（新执行、暂停后恢复
-或已完成执行的幂等重入），``get_extraction`` 只读查询状态、配置、问
-题、模型判断与用量。恢复只使用执行内保存的快照（方法、模型与裁决
-开关），不接受新的请求内容；改变配置必须用新请求键建立新执行。
+start_extraction creates/reuses runtime frozen-input/request-key executions.
+resume_extraction advances new runs, paused recovery, or idempotent completed reentry.
+get_extraction reads state/configuration/questions/model judgments/usage. Recovery uses
+saved snapshots only, never new requests; configuration changes require new
+keys/executions.
 """
 
 from __future__ import annotations
@@ -46,12 +45,14 @@ __all__ = [
 
 
 class PipelineRequestError(ValueError):
-    """请求不满足入口约定（未知方法、模型配置或实现支持范围等）。"""
+    """Request violates entry contracts, including unknown methods/configuration/support
+    scope.
+    """
 
 
 @dataclass(frozen=True)
 class ExtractionHandle:
-    """``start_extraction`` 的返回：执行标识与冻结配置回显。"""
+    """start_extraction result: execution identity and echoed frozen configuration."""
 
     execution_id: str
     request_key: str
@@ -81,12 +82,12 @@ class ExtractionHandle:
 
 @dataclass
 class ExtractionReport:
-    """一次推进的结果：状态、问题、步骤与原始故障信息。"""
+    """Advancement result: state, questions, steps, and original failures."""
 
     execution_id: str
     outcome: str  # paused | finished | failed
     mode: str  # fresh | resumed | already-finished
-    state: str  # 运行清单状态（running/waiting_review/finished/failed/…）
+    state: str  # Run-manifest state: running, waiting_review, finished, failed, and others.
     config: dict
     steps: list[StepRunInfo] = field(default_factory=list)
     pending_question: dict | None = None
@@ -116,12 +117,11 @@ class ExtractionReport:
 
 
 def _validated_model_specs(registration, models, *, context: str) -> list[ModelSpec]:
-    """按受限参数策略校验并返回进入固定快照的内容副本。
+    """Validate restricted parameters before execution and return snapshot content copies.
 
-    校验在建立执行前完成；返回的 ``ModelSpec`` 携带校验后的参数副本，
-    保证固定快照与实际发送内容一致，调用方之后变异请求对象不影响执行。
-    未声明策略与流程层一样经 ``effective_policy`` 解释为空策略，语义
-    不分叉。
+    ModelSpec copies make snapshots equal actual sent contents despite later caller
+    mutation. effective_policy treats undeclared policies as empty consistently with
+    flow validation.
     """
     declared = registration.spec.parameter_policy
     policy = effective_policy(declared)
@@ -154,10 +154,11 @@ def _validated_model_specs(registration, models, *, context: str) -> list[ModelS
 
 
 def _check_stored_model_specs(registration, snapshot_models) -> None:
-    """恢复入口核对已存模型参数与同一受限策略；不改写旧快照。
+    """Recovery validates saved parameters through the same policy without rewriting
+    snapshots.
 
-    修复前或旁路建立的执行可能携带未支持/可变嵌套参数；这里拒绝推进
-    而不是改写存储内容假装安全，也不把未校验参数发给服务。
+    Reject unsupported nested legacy/bypass parameters rather than rewriting data to
+    appear safe or sending unchecked content.
     """
     try:
         _validated_model_specs(
@@ -196,11 +197,11 @@ def start_extraction(
     request_key: str,
     registry: PipelineRegistry | None = None,
 ) -> ExtractionHandle:
-    """按严格请求建立（或同请求同输入复用）一个提取执行。
+    """Create/reuse extraction through strict requests.
 
-    请求中的方法、模式、逐步/默认模型与专家裁决开关进入固定输入快
-    照并参与执行摘要；同请求键换任何输入都会被拒绝，配置改变须用新
-    请求键建立新执行。请求没有 Gold、评分或答案路径参数。
+    Freeze methods, modes, default/step models, and review switches into
+    snapshots/digests. Changed same-key input rejects; new configuration requires new
+    keys. Requests have no Gold/scoring/answer paths.
     """
     registration = _default_registry(registry).get(request.method)
     _validate_models(registration.spec, request)
@@ -245,10 +246,10 @@ def resume_extraction(
     service: Any,
     registry: PipelineRegistry | None = None,
 ) -> ExtractionReport:
-    """推进一个提取执行；恢复只使用执行内保存的固定配置。
+    """Advance extraction with saved fixed configuration only.
 
-    推进中新执行、暂停后恢复与已完成执行的幂等重入共用本入口；方法
-    从执行快照解析（未登记时拒绝推进），不接收新的请求内容。
+    Share initial execution, paused recovery, and completed reentry; resolve frozen
+    registered methods and accept no new request contents.
     """
     handle = get_execution(space, execution_id)
     registration = _default_registry(registry).get(handle.input_snapshot.method)
@@ -261,7 +262,7 @@ def resume_extraction(
 def get_extraction(
     space: Workspace, execution_id: str, *, registry: PipelineRegistry | None = None
 ) -> dict:
-    """只读查询执行状态、配置、步骤、问题、模型判断与用量。"""
+    """Read-only execution state/configuration/step/question/model-judgment/usage queries."""
     handle = get_execution(space, execution_id)
     run = _current_run(space, handle)
     questions = ReviewService(space).list_questions(execution_id=execution_id)
@@ -314,7 +315,7 @@ def get_extraction(
         "errors": [error.message for error in run.data.errors],
         "usage": {
             "attempts": attempts_total,
-            # 未知用量保持 null，不伪造 0
+            # Unknown usage stays null, never fabricated zero.
             "tokens": sum(known_tokens)
             if len(known_tokens) == attempts_total
             else None,
@@ -326,12 +327,12 @@ def get_extraction(
 def pending_questions(
     space: Workspace, execution_id: str | None = None
 ) -> list[QuestionView]:
-    """列出待办问题（等价 ``ReviewService.list_questions``）。"""
+    """List pending questions, equivalent to ReviewService.list_questions."""
     return ReviewService(space).list_questions(execution_id=execution_id)
 
 
 def list_methods(registry: PipelineRegistry | None = None) -> list[dict]:
-    """列出登记的方法、步骤与实现标记（当前仅 synthetic-mock）。"""
+    """List registered methods, steps, and markers, currently synthetic-mock only."""
     return [
         {
             "method_id": registration.spec.method_id,
@@ -352,9 +353,9 @@ def list_methods(registry: PipelineRegistry | None = None) -> list[dict]:
 
 
 def supported_parameters(registry: PipelineRegistry | None = None) -> dict:
-    """列出各方法声明的受限模型参数支持集（字段/类型/值域）。
+    """List declared restricted parameter fields/types/ranges per method.
 
-    未声明支持集的方法不出现在结果中，即不接受任何模型参数。
+    Undeclared methods are omitted and accept no parameters.
     """
     described: dict[str, list[dict]] = {}
     for registration in _default_registry(registry).list_methods():
@@ -366,7 +367,7 @@ def supported_parameters(registry: PipelineRegistry | None = None) -> dict:
 
 def _current_run(space: Workspace, handle: ExecutionHandle) -> RunRecord:
     run = space.store().read_record_current(handle.run_ref.record_id)
-    if not isinstance(run, RunRecord):  # pragma: no cover - 数据应一致
+    if not isinstance(run, RunRecord):  # pragma: no cover - data should be consistent
         raise WorkspaceIntegrityError(f"执行 {handle.execution_id} 的运行清单缺失")
     return run
 
@@ -422,7 +423,7 @@ def _build_report(
 
 
 def execution_result_refs(space: Workspace, execution_id: str) -> list[RecordRef]:
-    """读取执行的全部结果引用（评分适配使用的稳定入口）。"""
+    """Read all execution result references for stable scoring adaptation."""
     handle = get_execution(space, execution_id)
     run = _current_run(space, handle)
     return list(run.data.result_refs)

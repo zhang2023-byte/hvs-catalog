@@ -1,4 +1,4 @@
-"""记录类型注册表：schema.name 到具体记录模型的唯一映射。"""
+"""Unique schema.name mapping to concrete record models."""
 
 from __future__ import annotations
 

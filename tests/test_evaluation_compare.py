@@ -1,4 +1,6 @@
-"""逐项比较：旧输入与草稿/新答案的差异报告（只读，含内容哈希）。"""
+"""Read-only item comparisons of legacy input against drafts/new answers, including content
+hashes.
+"""
 
 from __future__ import annotations
 
@@ -20,7 +22,9 @@ def _setup(tmp_path, document=None):
 
 
 def test_migrated_draft_compares_identical(tmp_path):
-    """逐字迁移后比较：数值逐字一致（含证据位置与引文）。"""
+    """After verbatim migration, values, evidence locations, and quotes compare
+    identically.
+    """
     legacy = _setup(tmp_path)
     result = migrate_legacy_annotation(
         legacy_path=legacy, draft_dir=tmp_path / "draft", material_root=tmp_path
@@ -51,7 +55,7 @@ def test_changed_value_reported_as_difference(tmp_path):
     assert report.difference_count > 0
     item = next(item for item in report.items if "radial_velocity" in item.subject)
     assert item.status == "different"
-    # 比较只报告，不修改任何一侧
+    # Comparison only reports and modifies neither side.
     assert (
         json.loads(legacy.read_text())["contributions"][0]["quantities"][0]["values"][
             0
@@ -135,6 +139,6 @@ def test_fresh_draft_without_legacy_mapping_reports_unmatched(tmp_path):
     fresh.write_text(json.dumps(draft, ensure_ascii=False), encoding="utf-8")
     legacy = _setup(tmp_path)
     report = compare_legacy_with_current(legacy_path=legacy, current_path=fresh)
-    # 全新草稿没有旧输入对应：旧条目全部未对应
+    # A fresh draft has no legacy counterpart: all legacy entries are unmatched.
     assert report.unmatched_old == ["contributions[0]"]
     assert report.unmatched_new == ["c1"]

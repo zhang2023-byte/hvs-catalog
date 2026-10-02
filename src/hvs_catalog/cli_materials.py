@@ -1,15 +1,16 @@
-"""``hvs-catalog materials`` 子命令组：材料准备生命周期。
+"""hvs-catalog materials commands manage material preparation.
 
-设计与边界：
+Status queries neither access networks nor initialize implicitly; the workspace must
+exist. prepare creates or reuses same-request execution from an exact acquired source
+revision. Multiple valid main documents require explicit --root-file selection, never
+filename guessing. resume continues after expert decisions for ambiguous identifier
+ranges; submit decisions through the shared ReviewService Python interface, not these
+commands. The formal review CLI and web interface are not yet available.
 
-- 状态查询不触网、不隐式初始化；工作空间必须已经存在。
-- ``prepare`` 以获取阶段保存的准确来源修订建立（或同请求复用）准备
-  执行；多个有效主稿必须显式 ``--root-file`` 选择，不按名称猜。
-- ``resume`` 在歧义编号范围等待专家决定后继续；专家决定经 R05 共同
-  接口（review CLI／Python）提交，本组不提供裁决入口。
-- 退出码：0 成功；1 工程错误；2 参数错误；3 暂停等待决定；4 无可用
-  材料；5 已完成（幂等重入）。准备完成但存在缺口仍是成功：缺口随
-  ``--json`` 输出如实呈现，不被记成"论文未报告"或"成功空名单"。
+Exit codes: 0 success; 1 engineering error; 2 argument error; 3 waiting for decision; 4
+no usable material; 5 already complete/idempotent reentry. Completed preparation with
+gaps is still success; --json reports gaps accurately, never as unreported science or a
+successful empty roster.
 """
 
 from __future__ import annotations
@@ -33,7 +34,7 @@ EXIT_ALREADY_FINISHED = 5
 
 
 def build_materials_parser(commands: argparse._SubParsersAction) -> None:
-    """注册 materials 子命令组。"""
+    """Register materials subcommands."""
     group = commands.add_parser(
         "materials",
         help="材料准备：来源包展开、正文／表格解析与准备输入交付",
@@ -187,8 +188,8 @@ def _run_prepare(args: argparse.Namespace) -> int:
     if report.outcome == "paused":
         return EXIT_PAUSED
     if report.mode == "already-finished":
-        # prepare 的幂等重放：同请求同输入已完成，与 resume 的幂等重入
-        # 同一退出码（文档语义对齐，二次审核发现 24）。
+        # Completed same-request/input prepare replay uses the same exit code as idempotent resume,
+        # aligning documented semantics for second-review finding 24.
         return EXIT_ALREADY_FINISHED
     if report.outcome == "failed":
         for error in report.errors:

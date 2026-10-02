@@ -1,4 +1,4 @@
-"""CSV／ECSV 逻辑记录读取接口与 table_cell 核验语义的合成测试。"""
+"""Synthetic CSV/ECSV logical-record reader and table_cell validation tests."""
 
 from __future__ import annotations
 
@@ -39,9 +39,9 @@ def test_csv_logical_records_handle_quotes_multiline_and_duplicates():
     assert len(records.rows) == 3
     assert records.rows[0]["note"] == "quoted, value"
     assert records.rows[1]["note"] == "multi\nline note"
-    # 同名对象保留两行，不默取第一行
+    # Retain both rows for same-named objects; never silently choose the first.
     assert [r["object"] for r in records.rows] == ["FIC-A", "FIC-B", "FIC-A"]
-    # 原字符串保留：符号与位数不改写
+    # Preserve original strings, symbols, and digits.
     assert records.rows[2]["rv"] == "525"
 
 
@@ -59,10 +59,12 @@ def test_ecsv_keeps_col001_names_headers_and_precision():
     records = read_ecsv_records(ECSV_TEXT.encode("utf-8"))
     assert list(records.columns) == ["col_001", "col_002", "col_003"]
     assert records.column_descriptions["col_001"] == "Object"
-    # 引号内的复杂描述（含逗号）保留
+    # Retain quoted complex descriptions, including commas.
     assert records.column_descriptions["col_003"] == "Error with, comma"
     assert records.rows[2]["col_001"] == "HVS01"
-    assert records.rows[2]["col_002"] == "+9.40"  # 有效位数与符号保留
+    assert (
+        records.rows[2]["col_002"] == "+9.40"
+    )  # Preserve significant digits and symbols.
     assert records.rows[1]["col_002"] == "-430"
 
 
@@ -84,13 +86,13 @@ def test_read_table_records_dispatches_by_format():
         read_table_records(b"X", media_type="application/fits")
 
 
-# ---- table_cell 核验语义（records.validate 集成共用接口） ----
+# ---- table_cell semantics through the shared records.validate interface ----
 
 
 def _collection_with_table(
     tmp_path, locator: dict, table_text: bytes, name: str, excerpt: str = "525"
 ):
-    """构造含一个 CSV/ECSV 证据的记录集合。"""
+    """Build a record collection with one CSV/ECSV evidence item."""
 
     from hvs_catalog.records.common import build_record
     from hvs_catalog.records.source import (
@@ -223,7 +225,7 @@ def test_table_cell_multi_hit_with_row_number_selects_nth_hit(tmp_path):
         "table.csv",
     )
     assert issues == []
-    # 序号是命中后的 1 基序号：第 2 个命中仍是 525；换列核对备注
+    # The ordinal is one-based among matches: the second match still says 525; verify notes in another column.
     issues = _validate(
         tmp_path,
         {
@@ -235,7 +237,7 @@ def test_table_cell_multi_hit_with_row_number_selects_nth_hit(tmp_path):
         CSV_TEXT.encode(),
         "table.csv",
     )
-    # excerpt 是 525 与 note 不符：应报引文不一致，而不是定位失败
+    # Excerpt 525 differs from the note: report quote mismatch, not locator failure.
     assert any("引文" in i.message for i in issues)
 
 
@@ -309,21 +311,20 @@ def test_table_cell_hash_change_detected(tmp_path):
 
 
 def test_csv_keeps_legal_all_empty_record_not_as_blank_line():
-    """全空单元格的合法记录（`,,,`）保留，行序与记录数不变。"""
+    """Retain valid all-empty records (`,,,`) without changing row order or count."""
     records = read_csv_records(b"name,rv,err\nFIC-A,525,10\n,,\nFIC-B,...,12\n")
     assert [row["name"] for row in records.rows] == ["FIC-A", "", "FIC-B"]
     assert records.rows[1] == {"name": "", "rv": "", "err": ""}
-    # 真正的空白物理行仍然不是逻辑记录。
+    # Truly blank physical lines still are not logical records.
     records = read_csv_records(b"name,rv\nFIC-A,525\n\nFIC-B,430\n")
     assert len(records.rows) == 2
 
 
 def test_ecsv_spec_default_space_reads_astropy_written():
-    """规范 Astropy 默认写出的、未声明 delimiter 的空格 ECSV 正确读取。
+    """Read standard Astropy-default space-delimited ECSV without a delimiter declaration.
 
-    Astropy ``Table.write(format="ascii.ecsv")`` 默认写出空格分隔且
-    不声明 delimiter；未声明时按规范默认空格读取，不得读成单列
-    ``name rv``（初审反例）。
+    Table.write(format='ascii.ecsv') defaults to spaces and omits delimiter. Follow the
+    standard default instead of treating name rv as one column (review example).
     """
     text = (
         "# %ECSV 1.0\n"
@@ -341,7 +342,9 @@ def test_ecsv_spec_default_space_reads_astropy_written():
 
 
 def test_ecsv_undeclared_delimiter_comma_data_rejected():
-    """未声明 delimiter 的逗号数据与空格默认不匹配：拒绝猜读（Astropy 同行为）。"""
+    """Reject undeclared comma-delimited ECSV that conflicts with the space default,
+    matching Astropy behavior.
+    """
     text = (
         "# %ECSV 1.0\n"
         "# ---\n"
@@ -357,7 +360,9 @@ def test_ecsv_undeclared_delimiter_comma_data_rejected():
 
 
 def test_ecsv_spec_default_space_supports_locator_and_consume(tmp_path):
-    """规范默认空格 ECSV 的保存→定位→消费与声明分隔符同一接口。"""
+    """Default-space ECSV uses the same save/location/consumption interface as explicitly
+    delimited files.
+    """
     text = (
         "# %ECSV 1.0\n"
         "# ---\n"
@@ -396,7 +401,7 @@ def test_ecsv_spec_default_space_supports_locator_and_consume(tmp_path):
 
 
 def test_ecsv_declared_space_delimiter_reads_with_quotes():
-    """声明 space 的 ECSV 按空格＋引号语义读取，不丢字段。"""
+    """Read explicitly space-delimited ECSV with quoting semantics and no lost fields."""
     text = (
         "# %ECSV 1.0\n"
         "# ---\n"
@@ -426,7 +431,7 @@ def test_ecsv_duplicate_columns_and_bad_delimiter_rejected():
         "id\n"
         "FIC-B\n"
     )
-    # 多字符分隔符统一转为 TabularReadError，不泄漏 TypeError。
+    # Convert multicharacter delimiter errors to TabularReadError without leaking TypeError.
     with pytest.raises(TabularReadError, match="单个字符"):
         read_ecsv_records(dup.encode())
     duplicate_columns = (
@@ -445,7 +450,9 @@ def test_ecsv_duplicate_columns_and_bad_delimiter_rejected():
 
 
 def test_table_cell_missing_row_key_column_fails(tmp_path):
-    """不存在的行键列必须明确失败，不能以默认 None 认证任意对象。"""
+    """Explicitly fail missing row-key columns; default None must not certify arbitrary
+    objects.
+    """
     issues = _validate(
         tmp_path,
         {

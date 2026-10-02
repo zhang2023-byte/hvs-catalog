@@ -44,6 +44,7 @@ hvs-catalog acquisition material --space ./ws --id 2401.01234
 |---|---|
 | 0 | 成功 |
 | 1 | 工程错误、空间忙或本地导入拒绝；被拒绝的本地文件未导入 |
+| 2 | 命令参数错误 |
 | 3 | 发现未完，可恢复；不能当作完整覆盖 |
 | 4 | 远程材料形态不支持，收到的原始字节已保留 |
 | 5 | 源码不可用，保留待处理；不表示科学上无关 |
@@ -66,7 +67,7 @@ hvs-catalog acquisition material --space ./ws --id 2401.01234
 
 ## 材料准备（正文与表格）
 
-材料准备已通过人类专家验收；实际验证范围及本次审核安排见 [当前交接](../.dev/progress.md)。仍须核对输入的已知缺口，工程准备完成不代表材料完整或科学判断已确认。
+当前能力见 [README](../README.md#当前可用能力)，验收与验证范围见 [任务总表](../.dev/progress.md#任务总表)。仍须核对输入的已知缺口，工程准备完成不代表材料完整或科学判断已确认。
 
 从获取阶段已保存的源码包准备提取输入：安全展开成员、组织主稿正文／附录、转换常用表环境为 ECSV、确定性展开对象编号范围，并把已知缺口随输入一起交付。入口复用工作空间锁、runtime、事务与 R05 裁决接口；准备接口不接收 Gold。
 
@@ -87,8 +88,9 @@ Python 共用入口：`MaterialsService.prepare_materials`／`resume_preparation
 - 支持 `tabular`／`tabular*`、`longtable`、`deluxetable`／`deluxetable*` 及可证明的 `pgfplotstable` backing CSV。包内 CSV／ECSV 按逻辑记录读取，JSON／普通文本按实际结构定位；FITS、自定义 DAT、图片／PDF 表格保留材料与提及，不做 OCR／PDF 提取，包外链接不获取。具体转换与回退条件见 [支持格式和对应要求](design/workflow.md#表格转换与原件对应)。
 - 普通表在只读完整作者上下文中经一次沙箱 LaTeXML 转换，可以包含多张表；按原生来源位置和每次执行定位，不猜首表／表序。最低对应粒度为表块，不宣称每个单元格的精确 TeX 行号；无法证明对应的内容保留诊断和 Gap。联合核对进程、转换诊断、错误节点、表身份及完整网格，退出码为零不够，普通字面表不猜首行为表头。工具缺失或无法安全隔离时保留有效材料和缺口，不裸跑；实测隔离及系统依赖边界见 [技术职责](design/architecture.md#技术选择与责任)。
 - 转换表以字符串保留原表达：中性列名 `col_001`、多层表头、单位、标题、脚注与合并格结构；ECSV 写出后回读逐单元格核对。对象行定位按命中行键处理：零命中失败，唯一命中可不填序号，多命中必须补键或明确序号，不默取第一行（保存／备份／消费共用同一接口）。
-- 编号范围仅对含义明确的稳定前缀对象记法确定性有界展开（保留前导零、原写法、规则与成员）；纯整数区间语义不明时经 R05 接口提问并等待专家，决定只应用一次，未决范围不当作完整名单；物理量区间与坐标符号不参与展开。
-- 退出码：0 成功；1 工程错误；3 暂停等待决定；4 无可用材料；5 已完成幂等重入（prepare 同请求同输入的重放与 resume 的已完成重入相同，均返回 5）。准备完成但存在缺口仍是成功，缺口在 `--json` 输出中如实呈现。
+- 编号范围仅对含义明确的稳定前缀对象记法确定性有界展开（保留前导零、原写法、规则与成员）；物理量区间与坐标符号不参与展开。材料准备的 `--expert-adjudication` 默认关闭，独立于提取入口默认开启的裁决配置。语义不明的范围只有在开启此选项且明确提供候选解释时才经共同接口提问并等待专家；否则保留未决范围和缺口，不猜补成员。
+- CLI 可用 `--range "1--5|main.tex|10|10|candidates:objects=HVS"` 声明待专家核对的对象前缀解释；Python 使用 `range_notations[].candidates`。这些候选不构成已确认成员，决定通过 `ReviewService.submit_decision` 保存，再用 `materials resume` 接续，决定只应用一次；正式裁决 CLI／网页尚未提供。
+- 退出码：0 成功；1 工程错误；2 参数错误；3 暂停等待决定；4 无可用材料；5 已完成幂等重入（prepare 同请求同输入的重放与 resume 的已完成重入相同，均返回 5）。准备完成但存在缺口仍是成功，缺口在 `--json` 输出中如实呈现。
 
 ## 模型配置与调用
 
@@ -122,9 +124,9 @@ hvs-catalog models check --config model.json
 }
 ```
 
-省略 `parameters` 使用该模型完整默认配置，包括最大输出上限。显式提供 `parameters` 时，字典即完整发送参数，**不合并默认值**；`{}` 表示全部省略。修改默认配置时可从 `models list` 的 `default_parameters` 复制后调整，例如 DeepSeek 的 `{"max_tokens":4096,"thinking_type":"enabled","reasoning_effort":"high"}`。支持的字段、类型、取值范围、互斥规则分别校验，不接受任意 `extra_body`；嵌套思考字段由适配器转换。实际发送、省略、转换及公开默认依据都进入固定快照，未报告的服务端实际值保留未知。输出与思考计数差异见 [模型配置设计](design/extraction.md#模型接口与运行配置)。
+省略 `parameters` 使用该模型完整默认配置，包括最大输出上限。显式提供 `parameters` 时，字典即完整发送参数，**不合并默认值**；`{}` 表示全部省略。修改默认配置时可从 `models list` 的 `default_parameters` 复制后调整，例如 DeepSeek 的 `{"max_tokens":4096,"thinking_type":"enabled","reasoning_effort":"high"}`。支持的字段、类型、取值范围、互斥规则分别校验，不接受任意 `extra_body`；嵌套思考字段由适配器转换。实际发送、省略、转换及公开默认依据都进入固定快照，未报告的服务端实际值保留未知。各模型的输出与思考计数方式由 `models list` 的 `output_accounting` 给出。
 
-API Key 由环境变量或显式 `--env-file` 指定文件读取，环境变量优先；文件不执行 shell。项目本地 `.env` 已配置并忽略，不随包发行。其他使用者可建立自己的文件，只需 `TOKENDANCE_API_KEY=...`，不将其写入 JSON。网关地址来自 JSON／运行配置；`.env` 中其他变量不自动改变配置。
+API Key 由环境变量或显式 `--env-file` 指定文件读取，环境变量优先；文件不执行 shell。使用者可建立自己的本机 `.env`，只需 `TOKENDANCE_API_KEY=...`，保持 Git 忽略，不随包发行，也不将密钥写入 JSON。网关地址来自 JSON／运行配置；`.env` 中其他变量不自动改变配置。
 
 同账户本机进程和不同工作空间须使用相同 `quota_store` 与 `quota_group`；相对路径在首次加载时按当前工作目录固定为绝对路径。默认额度数据库为 `~/.local/state/hvs-catalog/tokendance.sqlite3`，默认 50000 RPM／100 并发，四模型共用；其他账户按实际额度配置，目标值不得超过账户值。共享组的限流参数不一致时拒绝调用；要调整上限，应先停止旧进程并等待其租约及滚动窗口失效，再让全部进程使用新的共享额度数据库。同空间写入仍串行，100 并发通过不同空间实现。流式请求直到完成或关闭才释放名额；进程退出后的租约覆盖总时限并留 30 秒余量，不立即释放未知请求的名额。
 
@@ -137,11 +139,11 @@ hvs-catalog models status --space MODEL_SPACE --execution EXECUTION_ID
 hvs-catalog models resume --space MODEL_SPACE --execution EXECUTION_ID --env-file .env
 ```
 
-也可用 `--model MODEL_ID` 代替 `--config`；`--plain --non-stream` 验证普通非流式输出。`--quota-store PATH` 可显式指定共享额度数据库。CLI 返回执行 ID、状态、尝试、原始响应引用、解析结果、服务请求标识和已知 Token 用量。产品不填报金额；本次开发验证的预算和账单由独立工具 `tools/probe_tokendance.py` 管理，不进入业务记录。
+也可用 `--model MODEL_ID` 代替 `--config`；`--plain --non-stream` 验证普通非流式输出。`--quota-store PATH` 可显式指定共享额度数据库。CLI 返回执行 ID、状态、尝试、原始响应引用、解析结果、服务请求标识和已知 Token 用量。产品不填报金额；开发验证的预算和账单独立管理，具体范围及结果见 [计划](../.dev/plan.md#验证与实验安排) 和 [进度](../.dev/progress.md)。
 
 恢复使用保存的输入和配置，已保存响应不再次调用。出现 `completion_unknown` 时，尝试保留 `pending`，运行报告失败并阻止自动重发；须人工核对后才另建请求。已确定失败也不由恢复自动重试，修正输入／配置后使用新 `request-key`。只有可确认的发送前连接失败和 429 会在首次运行内自动重试，最多三次，每次共享门限并遵循 `Retry-After`；鉴权、参数、空响应、截断和格式错误直接报告，不更换提示、模型或协议。完整空间备份仍按工作空间约定进行，额度数据库单独属于本机账户限流状态。
 
-未来供应商／pi-ai 桥接实现可信 `ModelAdapter` 的配置检查、协议转换、发送和解析，显式传入 `start_call` 和 `resume_call`，复用相同记录与恢复接口；配置不会动态加载代码。本次未安装 pi-ai。
+当前接口不依赖 pi-ai。扩展供应商的可信适配器职责见 [模型配置设计](design/extraction.md#模型接口与运行配置)；适配器对象显式传入 `start_call` 和 `resume_call`，配置不会动态加载代码。
 
 ## 持久化与恢复演示
 
@@ -155,8 +157,8 @@ hvs-catalog models resume --space MODEL_SPACE --execution EXECUTION_ID --env-fil
 hvs-catalog demo run --space SPACE
 hvs-catalog demo status --space SPACE
 hvs-catalog demo decide --space SPACE --choice no_overall_conclusion
-hvs-catalog demo decide --space SPACE --choice no_overall_conclusion  # 同决定回放
-hvs-catalog demo decide --space SPACE --choice keep_pending          # 已有不同决定，退出码 2
+hvs-catalog demo decide --space SPACE --choice no_overall_conclusion  # Replay the same decision
+hvs-catalog demo decide --space SPACE --choice keep_pending          # Conflicting existing decision: exit code 2
 ```
 
 第一步在名单→数值后等待共享裁决，进程退出；后续命令在新进程查看／恢复。正常暂停到完成累计两次模拟调用，恢复复用已存结果／响应，同决定只保存应用一次。在另一个新目录可直接选择 `keep_pending`：答复已保存但仍未决，流程继续暂停。
@@ -168,9 +170,9 @@ hvs-catalog demo decide --space SPACE --choice keep_pending          # 已有不
 另用新目录验证死亡窗口：
 
 ```bash
-hvs-catalog demo run --space CRASH_SPACE --crash-after-response  # 退出码 70
-hvs-catalog demo status --space CRASH_SPACE                    # 外部已调用一次
-hvs-catalog demo run --space CRASH_SPACE                       # 累计三次，暂停
+hvs-catalog demo run --space CRASH_SPACE --crash-after-response  # Exit code 70
+hvs-catalog demo status --space CRASH_SPACE                    # One external call occurred
+hvs-catalog demo run --space CRASH_SPACE                       # Three total calls; paused
 hvs-catalog demo decide --space CRASH_SPACE --choice no_overall_conclusion
 ```
 

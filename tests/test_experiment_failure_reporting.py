@@ -1,12 +1,12 @@
-"""失败保留名单、科学完成状态与两组失败报告。
+"""Retain rosters, scientific completion state, and reports when experiment groups fail.
 
-- 数值步骤失败不丢已存名单——delivered/format_valid 按有效输出、
-  completion=partial、原始错误保留；数值未产出保持空，Gold 数值全入 G；
-  真正无有效结果的失败仍 failed。恢复后行为一并验证。
-- 科学完成状态与运行图终止分开——开放/已答仍未决问题或名单未决
-  条目不得报 complete；图 finished 只是运行事实。
-- 单组或两组失败仍生成完整两组报告，分母完整、原始错误与用量
-  保留，未知仍 null；不为报告成功自动裁决未知。
+Value-step failures keep saved rosters: delivered/format_valid reflect valid outputs,
+completion is partial, errors survive, missing values stay empty, and all Gold values
+enter G. Truly absent valid results remain failed; verify recovery too. Scientific
+completion differs from graph termination: unresolved questions/roster entries prevent
+complete even if the graph finished. One or two failed groups still produce complete
+reports with full denominators, errors, usage, and null unknowns; reporting never
+automatically adjudicates unknown science.
 """
 
 from __future__ import annotations
@@ -52,7 +52,9 @@ def space(tmp_path):
 
 
 class _FailingStepService(PipelineMockService):
-    """按步骤名注入实际服务故障：真实经运行层转为 failed 报告。"""
+    """Inject actual service failures by step name; the runtime converts them into failed
+    reports.
+    """
 
     def __init__(self, fail_steps: tuple[str, ...]):
         super().__init__()
@@ -87,11 +89,13 @@ def _score(space, execution_id, paper_key):
     ), prediction
 
 
-# ---- 数值失败保留名单与完整分母 ----
+# ---- Retain rosters and full denominators after value failures ----
 
 
 def test_direct_quantities_failure_preserves_roster_as_partial(space):
-    """direct 数值失败：已存名单保留为部分结果，Gold 数值全入 G。"""
+    """A direct value-step failure retains the roster as partial output and includes all
+    Gold values in G.
+    """
     source = import_mock_source(space, PAPER_B)
     handle = _start(space, source, method="direct", key="direct-quantity-failure")
     failed = resume_extraction(
@@ -106,17 +110,23 @@ def test_direct_quantities_failure_preserves_roster_as_partial(space):
     assert any("quantities failure" in error for error in prediction.errors)
     (obj,) = prediction.objects
     assert obj.identifiers == ["FIC-B-1"]
-    assert obj.quantities == []  # 数值未产出保持空，不伪造
+    assert (
+        obj.quantities == []
+    )  # Missing value output stays empty; do not fabricate it.
     report, prediction = _score(space, handle.execution_id, PAPER_B)
     (paper,) = report.papers
     assert paper.l0.completion_counts == {"partial": 1}
-    assert paper.l1.tp == 1 and paper.l1.fn == 0  # 已确认名单照常计 L1
+    assert (
+        paper.l1.tp == 1 and paper.l1.fn == 0
+    )  # Confirmed roster objects still count toward L1.
     assert paper.l2.correct == 0 and paper.l2.predicted == 0
-    assert paper.l2.gold == 1  # 完整 G 分母
+    assert paper.l2.gold == 1  # Complete G denominator.
 
 
 def test_candidate_review_quantities_failure_preserves_roster_as_partial(space):
-    """candidate_review 同样保留名单；未决条目不算已确认 L1 对象。"""
+    """candidate_review also retains its roster; unresolved entries are not confirmed L1
+    objects.
+    """
     source = import_mock_source(space, PAPER_C)
     handle = _start(
         space, source, method="candidate_review", key="candidate-quantity-failure"
@@ -129,7 +139,9 @@ def test_candidate_review_quantities_failure_preserves_roster_as_partial(space):
     assert prediction.completion == "partial"
     assert prediction.delivered is True
     identifiers = [obj.identifiers for obj in prediction.objects]
-    assert identifiers == [["FIC-C-1"]]  # 未决条目不是多报也不是已确认
+    assert identifiers == [
+        ["FIC-C-1"]
+    ]  # Unresolved entries are neither extra predictions nor confirmed objects.
     report, _ = _score(space, handle.execution_id, PAPER_C)
     (paper,) = report.papers
     assert paper.l1.tp == 1 and paper.l1.fn == 1
@@ -137,7 +149,9 @@ def test_candidate_review_quantities_failure_preserves_roster_as_partial(space):
 
 
 def test_quantities_failure_recovery_completes_and_reuses_roster(space):
-    """恢复用健康服务后完成；名单复用不再调用名单步骤。"""
+    """Recovery with a healthy service completes execution without rerunning the saved
+    roster step.
+    """
     source = import_mock_source(space, PAPER_B)
     handle = _start(space, source, method="direct", key="quantity-failure-recovery")
     resume_extraction(
@@ -146,7 +160,7 @@ def test_quantities_failure_recovery_completes_and_reuses_roster(space):
     healthy = PipelineMockService()
     finished = resume_extraction(space, handle.execution_id, service=healthy)
     assert finished.outcome == "finished"
-    assert healthy.calls_for_step("direct_roster") == 0  # 名单结果复用
+    assert healthy.calls_for_step("direct_roster") == 0  # Reuse the roster result.
     prediction = prediction_from_execution(space, handle.execution_id)
     assert prediction.completion == "complete"
     (obj,) = prediction.objects
@@ -154,7 +168,9 @@ def test_quantities_failure_recovery_completes_and_reuses_roster(space):
 
 
 def test_roster_failure_is_failed_not_empty_success(space):
-    """名单步骤失败：真正无有效结果，failed 而不是空名单成功。"""
+    """Roster-step failure yields no valid output and remains failed, rather than
+    successful empty output.
+    """
     source = import_mock_source(space, PAPER_B)
     handle = _start(space, source, method="direct", key="direct-roster-failure")
     failed = resume_extraction(
@@ -194,7 +210,7 @@ def test_candidate_review_roster_failure_is_failed(space):
     assert paper.l1.fn == 2 and paper.l2.gold == 2
 
 
-# ---- 科学完成状态与图终止分离 ----
+# ---- Separate scientific completion from graph termination ----
 
 
 def _question(status, outcome=None):
@@ -265,12 +281,12 @@ def test_science_completion_errors_and_unfinished_are_partial():
         quantity_coverage=coverage,
     )
     paper = SimpleNamespace(data=SimpleNamespace(object_contributions=[contribution]))
-    # 图已终止但覆盖未完成：partial
+    # A terminated graph with incomplete coverage is partial.
     status = {"state": "finished", "errors": [], "questions": []}
     state, reasons = science_completion(status, roster=None, paper=paper)
     assert state == "partial"
     assert any("not_checked" in reason for reason in reasons)
-    # 仍处失败：错误是现存事实；已恢复的历史错误不阻止 complete
+    # Current failure remains a fact; recovered historical errors do not prevent complete.
     status = {"state": "failed", "errors": ["boom"], "questions": []}
     state, reasons = science_completion(status, roster=None, paper=paper)
     assert state == "partial"
@@ -298,7 +314,9 @@ def test_science_completion_errors_and_unfinished_are_partial():
 
 
 def test_s11_off_group_not_complete_and_pending(space):
-    """S11 C 关闭组：图 finished 但存在未决科学内容，不得报 complete。"""
+    """S11 C with expert review disabled: a finished graph with unresolved science cannot
+    report complete.
+    """
     report = run_two_group_experiment(space, PAPER_C, method="candidate_review")
     off = report["groups"]["expert_off"]
     on = report["groups"]["expert_on"]
@@ -311,7 +329,9 @@ def test_s11_off_group_not_complete_and_pending(space):
 
 
 def test_e20_off_group_not_complete_and_pending(space):
-    """E20 A 关闭组：模型判断后问题未决，L0 不得报 complete。"""
+    """E20 A with expert review disabled: unresolved questions after model judgment prevent
+    L0 complete.
+    """
     report = run_two_group_experiment(space, PAPER_A, method="direct")
     off = report["groups"]["expert_off"]
     assert off["run_state"] == "finished"
@@ -320,7 +340,7 @@ def test_e20_off_group_not_complete_and_pending(space):
     assert report["groups"]["expert_on"]["science_completion"] == "complete"
 
 
-# ---- 失败组仍生成完整两组报告 ----
+# ---- Failed groups still produce complete two-group reports ----
 
 
 def _factory(fail_on: tuple[str, ...], fail_off: tuple[str, ...]):
@@ -332,7 +352,9 @@ def _factory(fail_on: tuple[str, ...], fail_off: tuple[str, ...]):
 
 
 def test_experiment_off_group_failure_reports_both_groups(space):
-    """只有关闭组数值失败：两组都在，失败组保留名单、错误与完整分母。"""
+    """Only the disabled group's value step fails: retain both groups and the failed
+    group's roster, errors, and full denominator.
+    """
     report = run_two_group_experiment(
         space,
         PAPER_C,
@@ -352,13 +374,15 @@ def test_experiment_off_group_failure_reports_both_groups(space):
     assert off["quality"]["l2"]["predicted"] == 0
     assert isinstance(off["usage"]["tokens"], int)
     assert off["expert_time_seconds"] is None
-    # 未决科学内容与失败并存：pending 优先，失败事实单独保留
+    # When unresolved science and failure coexist, pending takes precedence; retain failure separately.
     assert off["science_completion"] == "pending"
     assert off["failures"]
 
 
 def test_experiment_on_group_failure_reports_both_groups(space):
-    """只有开启组数值失败（决定已提交）：另一组正常，两组都在。"""
+    """Only the enabled group's value step fails after decision submission: both groups
+    remain, and the other succeeds.
+    """
     report = run_two_group_experiment(
         space,
         PAPER_C,
@@ -368,15 +392,19 @@ def test_experiment_on_group_failure_reports_both_groups(space):
     on = report["groups"]["expert_on"]
     off = report["groups"]["expert_off"]
     assert on["run_state"] == "failed"
-    assert on["decisions"]["human"] == 1  # 决定事实保留
+    assert on["decisions"]["human"] == 1  # Retain the decision fact.
     assert any("quantities failure" in error for error in on["failures"])
-    assert on["quality"]["l1"]["tp"] == 2  # include 决定后的名单已确认
+    assert (
+        on["quality"]["l1"]["tp"] == 2
+    )  # The roster is confirmed after an include decision.
     assert on["quality"]["l2"]["gold"] == 2 and on["quality"]["l2"]["predicted"] == 0
     assert off["run_state"] == "finished"
 
 
 def test_experiment_both_groups_early_failure_keeps_denominators(space):
-    """两组名单前失败：完整 G、全 FN、零交付，报告仍逐组生成。"""
+    """Both groups fail before the roster: retain complete G, all false negatives, zero
+    delivery, and per-group reports.
+    """
     report = run_two_group_experiment(
         space,
         PAPER_C,
@@ -397,7 +425,9 @@ def test_experiment_both_groups_early_failure_keeps_denominators(space):
 
 
 def test_experiment_direct_method_failure_combination(space):
-    """direct 方法失败组合同样出完整报告（覆盖第二种方法）。"""
+    """Failed direct-method groups also produce complete reports, covering the second
+    method.
+    """
     report = run_two_group_experiment(
         space,
         PAPER_B,
@@ -415,7 +445,9 @@ def test_experiment_direct_method_failure_combination(space):
 
 
 def test_group_summary_reports_blocked_reason_without_quality(space):
-    """无法安全建立评价身份的组明确阻断，不出伪造质量。"""
+    """Block groups whose evaluation identity cannot safely be established instead of
+    fabricating quality results.
+    """
     gold = synthetic_gold_for_paper(PAPER_B)
     group = GroupOutcome(
         switch="expert_on",
@@ -451,11 +483,13 @@ def test_group_summary_reports_blocked_reason_without_quality(space):
     assert summary["failures"] == ["identity lost"]
 
 
-# ---- 科学完成状态纳入名单覆盖/未列清范围/作者判断材料缺口 ----
+# ---- Scientific completion includes roster coverage, unlisted ranges, and author-assessment material gaps ----
 
 
 def _healthy_records(space):
-    """跑一次真实健康的执行，取回记录格式合法的名单与论文记录。"""
+    """Run one actual healthy execution and retrieve structurally valid roster and paper
+    records.
+    """
     from hvs_catalog.pipeline import execution_result_refs
     from hvs_catalog.records.paper import PaperRecord
     from hvs_catalog.records.roster import RosterRecord
@@ -479,7 +513,9 @@ def _healthy_records(space):
 
 
 def _patched(record, **data_overrides):
-    """按记录格式合法字段重建记录（不写入空间，仅内存视图）。"""
+    """Rebuild records through valid fields as in-memory views without writing to the
+    workspace.
+    """
     from hvs_catalog.records.paper import PaperRecord
     from hvs_catalog.records.roster import RosterRecord
 
@@ -507,9 +543,11 @@ def _finished_status(errors=("historical boom",)):
 
 
 def test_roster_coverage_partial_is_partial_with_reasons(space):
-    """名单覆盖 partial（含材料缺口）→ partial 并列具体原因。"""
+    """Partial roster coverage with material gaps yields partial completion and specific
+    reasons.
+    """
     roster, paper = _healthy_records(space)
-    assert roster.data.coverage.state == "complete"  # 基线先确认
+    assert roster.data.coverage.state == "complete"  # Confirm the baseline first.
     patched = _patched(
         roster,
         coverage={
@@ -525,7 +563,7 @@ def test_roster_coverage_partial_is_partial_with_reasons(space):
 
 
 def test_roster_unresolved_groups_are_pending(space):
-    """未列清的原文范围按既定语义保留未决（pending）。"""
+    """An unlisted original range remains pending under the established semantics."""
     roster, paper = _healthy_records(space)
     patched = _patched(
         roster,
@@ -545,15 +583,17 @@ def test_roster_unresolved_groups_are_pending(space):
 
 
 def test_boundness_gap_refs_only_is_partial(space):
-    """status=None 且仅有材料 gap_refs 的作者判断是材料缺口 partial。"""
+    """An author assessment with status=None and only gap_refs is a material gap and
+    remains partial.
+    """
     roster, paper = _healthy_records(space)
     dump = paper.model_dump(mode="json")
     contribution = dump["data"]["object_contributions"][0]
-    assert contribution["paper_boundness"]["status"] is not None  # 基线
+    assert contribution["paper_boundness"]["status"] is not None  # Baseline.
     contribution["paper_boundness"] = {
         "status": None,
         "evidence_refs": [],
-        "issue_refs": [],  # 无科学问题：纯材料缺口
+        "issue_refs": [],  # No scientific question: only a material gap.
         "gap_refs": _gap_ref(roster),
     }
     from hvs_catalog.records.paper import PaperRecord
@@ -565,7 +605,7 @@ def test_boundness_gap_refs_only_is_partial(space):
 
 
 def test_boundness_with_issue_refs_stays_pending(space):
-    """issue_refs 关联科学问题的作者判断仍按既定 pending。"""
+    """An author assessment linked to scientific questions by issue_refs remains pending."""
     roster, paper = _healthy_records(space)
     dump = paper.model_dump(mode="json")
     contribution = dump["data"]["object_contributions"][0]
@@ -584,7 +624,9 @@ def test_boundness_with_issue_refs_stays_pending(space):
 
 
 def test_clean_records_with_resolved_question_stay_complete(space):
-    """真正完整、待决已解决、历史错误已恢复 → 仍 complete。"""
+    """Truly complete results with resolved pending items and recovered historical errors
+    remain complete.
+    """
     roster, paper = _healthy_records(space)
     status = {
         "state": "finished",
@@ -594,16 +636,18 @@ def test_clean_records_with_resolved_question_stay_complete(space):
     state, reasons = science_completion(status, roster, paper)
     assert state == "complete"
     assert reasons == []
-    # 未修改的真实记录基线：complete
+    # Unmodified real-record baseline: complete.
     state, _ = science_completion(_finished_status(), roster, paper)
     assert state == "complete"
 
 
 def test_l0_and_report_do_not_overstate_complete_with_real_records(space):
-    """预测 L0 与报告层不高报 complete（partial/pending 分层保留）。"""
+    """Prediction L0 and reports never overstate completion; retain partial/pending
+    distinctions.
+    """
     roster, paper = _healthy_records(space)
     status = _finished_status()
-    # 覆盖缺口：L0 partial（科学完成非 complete），不冒称 complete
+    # Coverage gaps make L0 partial; do not claim scientific completion.
     patched_roster = _patched(
         roster,
         coverage={"state": "partial", "checked_file_ids": ["paper"], "gap_refs": []},
@@ -611,7 +655,7 @@ def test_l0_and_report_do_not_overstate_complete_with_real_records(space):
     l0 = _l0_from_status(status, patched_roster, paper)
     assert l0["delivered"] is True
     assert l0["completion"] == "partial"
-    # 未列清范围：科学 pending → L0 仍 partial（评分模型无 delivered+pending）
+    # Unlisted ranges are scientifically pending but L0 partial; the scoring model has no delivered+pending state.
     pending_roster = _patched(
         roster,
         unresolved_groups=[
@@ -628,6 +672,6 @@ def test_l0_and_report_do_not_overstate_complete_with_real_records(space):
     assert l0["completion"] == "partial"
     state, _ = science_completion(status, pending_roster, paper)
     assert state == "pending"
-    # 已交付事实与历史错误不因覆盖缺口被抹掉（分母与诊断保全）
+    # Coverage gaps do not erase delivery facts or historical errors; preserve denominators and diagnostics.
     assert l0["delivered"] is True and l0["format_valid"] is True
     assert any("boom" in error for error in l0["errors"])
