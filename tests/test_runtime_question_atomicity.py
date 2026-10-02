@@ -45,6 +45,7 @@ def _run_child(tmp_path: Path, code: str, *args) -> int:
     return result.returncode
 
 
+@pytest.mark.integration
 def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, service):
     """问题提交后、步骤回执前真实退出——新进程零新增调用地接续。"""
     space_root = tmp_path / "space"
@@ -121,6 +122,7 @@ def test_crash_after_question_commit_resumes_without_extra_calls(tmp_path, servi
         space.close()
 
 
+@pytest.mark.integration
 def test_crash_inside_question_transaction_leaves_no_half_state(tmp_path, service):
     """问题事务中途真实退出——无半份问题、无残留绑定。"""
     space_root = tmp_path / "space"

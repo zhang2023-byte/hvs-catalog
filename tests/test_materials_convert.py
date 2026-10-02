@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from materials_helpers import (
     good_latexml_html,
 )
@@ -225,6 +226,7 @@ def test_internal_rejects_unresolved_macro_instead_of_warning():
     assert "未解析宏" in parsed.error
 
 
+@pytest.mark.integration
 def test_native_expands_author_macro_while_internal_does_not_guess(tmp_path):
     from materials_helpers import native_materials_probe
 
@@ -429,6 +431,7 @@ def test_pgf_declared_delimiter_is_used_and_unknown_value_fails():
     assert "分隔符" in parsed2.error
 
 
+@pytest.mark.integration
 def test_native_subdir_root_and_body_renewcommand(tmp_path):
     from materials_helpers import native_materials_probe
 

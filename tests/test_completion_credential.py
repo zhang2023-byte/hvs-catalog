@@ -133,6 +133,7 @@ resume_execution(space, sys.argv[3], direct_flow(), service=service)
 """
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     ("window", "exit_code"), [("before_commit", 74), ("after_commit", 75)]
 )

@@ -22,6 +22,8 @@ from hvs_catalog.evaluation import (
 from hvs_catalog.workspace import SpaceLock
 from hvs_catalog.workspace.errors import WorkspaceBusyError
 
+pytestmark = pytest.mark.integration
+
 CHILD = """
 import json, os, sys
 from pathlib import Path

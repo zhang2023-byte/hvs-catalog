@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import pytest
 from materials_helpers import DRAFT_TEX, synthetic_package
 
-from hvs_catalog.materials.cleaning import strip_tex_comments
+from hvs_catalog.materials.cleaning import (
+    mask_macro_bodies,
+    mask_verbatim,
+    scan_view,
+    strip_tex_comments,
+)
 from hvs_catalog.materials.expansion import expand_source_package
 from hvs_catalog.materials.texgraph import (
     BODY_UNAVAILABLE_MULTIPLE_ROOTS,
@@ -230,3 +236,48 @@ def test_verbatim_and_dynamic_and_draft_gating(tmp_path):
     assert not any(p.file == "draft.tex" for p in graph.problems)
     assert "draft.tex" in graph.excluded
     assert [f.name for f in graph.files] == ["main.tex", "sec.tex"]
+
+
+def positioned_text(newline):
+    table = r"\begin{tabular}{lc}FIC-A & 00525 \\ \end{tabular}"
+    text = newline.join(
+        [
+            r"观测值 00525，转义 \% 保留。",
+            r"% \begin{tabular}{c}comment example\end{tabular}",
+            r"\begin{verbatim}",
+            r"\begin{tabular}{c}verbatim example\end{tabular}",
+            r"\end{verbatim}",
+            r"\newcommand{\example}[1]{",
+            r"\begin{tabular}{c}macro example #1\end{tabular}",
+            r"}",
+            r"\iffalse \iftrue hidden \fi \else",
+            table,
+            r"\fi",
+            "",
+        ]
+    )
+    return text, table
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n"], ids=["lf", "crlf"])
+@pytest.mark.parametrize(
+    "transform", [strip_tex_comments, mask_verbatim, mask_macro_bodies, scan_view]
+)
+def test_scan_transforms_preserve_source_positions(newline, transform):
+    text, table = positioned_text(newline)
+    view = transform(text)
+    assert len(view) == len(text)
+    assert [i for i, c in enumerate(view) if c == "\n"] == [
+        i for i, c in enumerate(text) if c == "\n"
+    ]
+    assert view.index(table) == text.index(table)
+    assert r"转义 \% 保留" in view
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n"], ids=["lf", "crlf"])
+def test_scan_view_excludes_examples_but_keeps_active_table(newline):
+    text, table = positioned_text(newline)
+    view = scan_view(text)
+    assert view.count(r"\begin{tabular}") == 1
+    assert table in view
+    assert "example" not in view and "hidden" not in view

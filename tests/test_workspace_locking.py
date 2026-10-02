@@ -65,6 +65,7 @@ def test_same_thread_reentrant_other_thread_busy(tmp_path):
     space.close()
 
 
+@pytest.mark.integration
 def test_cross_process_lock_returns_busy(tmp_path):
     space = initialize_workspace(tmp_path / "space")
     root = str(space.root)
@@ -87,6 +88,7 @@ def test_cross_process_lock_returns_busy(tmp_path):
     space.close()
 
 
+@pytest.mark.integration
 def test_lock_released_after_holder_process_termination(tmp_path):
     space = initialize_workspace(tmp_path / "space")
     root = str(space.root)
@@ -118,6 +120,7 @@ def test_two_spaces_lock_independently(tmp_path):
     b.close()
 
 
+@pytest.mark.integration
 def test_lock_file_not_inherited_by_subprocess(tmp_path):
     space = initialize_workspace(tmp_path / "space")
     lock = space.lock()
@@ -149,6 +152,7 @@ def test_lock_file_not_inherited_by_subprocess(tmp_path):
     space.close()
 
 
+@pytest.mark.integration
 def test_exec_closes_lock_descriptor_without_normal_release(tmp_path):
     """锁持有者直接 exec，存活的新程序不能继续占用旧锁。"""
     space = initialize_workspace(tmp_path / "space")
@@ -191,6 +195,7 @@ def test_exec_closes_lock_descriptor_without_normal_release(tmp_path):
         space.close()
 
 
+@pytest.mark.integration
 def test_forked_child_must_reacquire_and_sees_parent_busy(tmp_path):
     """父进程持锁时 fork 的子进程不能借用重入记录进入临界区。"""
 
@@ -243,6 +248,7 @@ def test_forked_child_must_reacquire_and_sees_parent_busy(tmp_path):
     space.close()
 
 
+@pytest.mark.integration
 def test_fork_child_survives_registry_guard_held_by_other_thread(tmp_path):
     """fork 瞬间注册表锁被其他线程持有时，子进程回调不得死锁。
 
@@ -493,6 +499,7 @@ finally:
 """
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     "window",
     [

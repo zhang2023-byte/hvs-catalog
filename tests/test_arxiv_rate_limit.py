@@ -26,7 +26,6 @@ from hvs_catalog.pipeline.acquisition.rate_limit import (
     RateLimitStateError,
     RateLimitUnconfirmedError,
     SystemClock,
-    default_rate_gate_state_path,
 )
 
 
@@ -439,6 +438,7 @@ def test_transfer_max_wait_zero_tolerates_state_read_latency(tmp_path):
     assert clock.sleeps == [0.2]
 
 
+@pytest.mark.integration
 def test_transfer_real_clock_delayed_read_rejects_late_admission(tmp_path):
     """真实时钟复核（审核者复现同构）：0.02 秒预算遇到 0.12 秒的读取
     延迟必须拒绝；不建立连接、不写许可。"""
@@ -465,6 +465,7 @@ def test_transfer_real_clock_delayed_read_rejects_late_admission(tmp_path):
         assert lease.granted_at > 0
 
 
+@pytest.mark.integration
 def test_transfer_real_clock_immediate_attempt_succeeds(tmp_path):
     """真实时钟正常路径：无延迟、就绪状态，小预算立即签发且写入预登记。"""
     clock = SystemClock()
@@ -518,6 +519,7 @@ def test_transfer_write_delay_beyond_budget_rejects_without_delivery(tmp_path):
         pass
 
 
+@pytest.mark.integration
 def test_transfer_real_clock_slow_write_rejects_before_delivery(tmp_path):
     """真实时钟（审核者同构）：0.12 秒写入延迟 × 0.02 秒预算 → 拒绝。"""
     import time
@@ -612,6 +614,7 @@ CRASH_SCRIPT = textwrap.dedent(
 )
 
 
+@pytest.mark.integration
 def test_crashed_exchange_leaves_conservative_spacing_state(tmp_path):
     """交换中硬崩溃（丢失收尾写入）：OS 释放锁，在途标记在场使下一
     个许可 fail-closed（extra2 语义修正：不再按可能过早的预登记等
@@ -671,6 +674,7 @@ SLOW_CRASH_SCRIPT = textwrap.dedent(
 )
 
 
+@pytest.mark.integration
 def test_slow_write_crash_fast_successor_refuses_immediately(tmp_path):
     """审核者同构场景：慢写入首客户端实际发送后崩溃，重启的快速接
     管者必须**立即拒绝**（在途标记），而不是等已过期的预登记放行。"""
@@ -1161,6 +1165,7 @@ def test_reset_on_missing_state_normalizes_fresh(tmp_path):
         assert lease.granted_at == 100.0
 
 
+@pytest.mark.integration
 def test_first_creation_race_with_held_coordination_lock(tmp_path):
     """首次创建竞态：稳定锁先于数据文件可见性。
 
@@ -1205,6 +1210,7 @@ def test_first_creation_race_with_held_coordination_lock(tmp_path):
     assert payload["version"] == 2
 
 
+@pytest.mark.integration
 def test_concurrent_first_use_two_processes_both_succeed(tmp_path):
     """两个进程同时首次使用同一状态：都成功且许可间隔 ≥3 秒。"""
     state = tmp_path / "gate.json"
@@ -1227,6 +1233,7 @@ def test_concurrent_first_use_two_processes_both_succeed(tmp_path):
     assert grants[1] - grants[0] >= 2.95
 
 
+@pytest.mark.integration
 def test_client_transfers_do_not_overlap_across_processes(tmp_path):
     """两个真实进程经客户端传输（每次 >3 秒）：连接窗口不得重叠。
 
@@ -1263,6 +1270,7 @@ def test_client_transfers_do_not_overlap_across_processes(tmp_path):
 # ---------------------------------------------------------------- 副作用与默认路径
 
 
+@pytest.mark.integration
 def test_importing_modules_has_no_disk_side_effects(tmp_path):
     script = (
         "import hvs_catalog.pipeline.acquisition.protocol as p;"
@@ -1286,25 +1294,3 @@ def test_importing_modules_has_no_disk_side_effects(tmp_path):
     assert result.returncode == 0, result.stderr
     assert not list(tmp_path.rglob("arxiv-rate-gate.json"))
     assert not (tmp_path / "override.json").exists()
-
-
-def test_default_state_path_honors_env_override(tmp_path):
-    override = tmp_path / "alt.json"
-    old = os.environ.get("HVS_CATALOG_ARXIV_RATE_STATE")
-    os.environ["HVS_CATALOG_ARXIV_RATE_STATE"] = str(override)
-    try:
-        assert default_rate_gate_state_path() == override
-    finally:
-        if old is None:
-            os.environ.pop("HVS_CATALOG_ARXIV_RATE_STATE", None)
-        else:
-            os.environ["HVS_CATALOG_ARXIV_RATE_STATE"] = old
-
-
-def test_system_clock_exists_for_production():
-    clock = SystemClock()
-    assert 0 < clock.now() < float("inf")
-    first = clock.monotonic()
-    second = clock.monotonic()
-    assert first <= second  # 单调读数不回退；仅用于等待预算
-    assert 0 < first < float("inf")

@@ -38,6 +38,7 @@ def test_profile_limits_reads_to_conversion_dir_and_system(tmp_path):
     assert "(ltxml|pm)" in profile  # 包内可执行绑定拒读
 
 
+@pytest.mark.integration
 @pytest.mark.skipif(not REAL_SANDBOX, reason="需要本机 macOS sandbox-exec")
 def test_sandbox_denies_network_local_endpoint_and_outside_access(tmp_path):
     """网络拒绝用新建本地合成端点验证，不访问任何外部服务。"""
@@ -134,6 +135,7 @@ def test_sandbox_denies_network_local_endpoint_and_outside_access(tmp_path):
     assert inside.read_text().strip() == "SYNTH-MATERIAL"
 
 
+@pytest.mark.integration
 @pytest.mark.skipif(not REAL_LATEXML, reason="需要本机 latexmlc 实测最小隔离")
 def test_real_latexml_under_sandbox_converts_table(tmp_path):
     runner = SandboxedConverterRunner()
@@ -175,6 +177,7 @@ def test_real_latexml_under_sandbox_converts_table(tmp_path):
     assert "FIC-A" in html
 
 
+@pytest.mark.integration
 @pytest.mark.skipif(not REAL_LATEXML, reason="需要本机 latexmlc 实测最小隔离")
 def test_real_latexml_missing_macro_reports_conversion_error(tmp_path):
     """缺宏时退出码 0 但诊断非零、输出含错误节点（联合判定依据）。"""
@@ -229,6 +232,7 @@ def test_missing_sandbox_reports_unavailable_and_refuses(tmp_path, monkeypatch):
     assert "拒绝运行" in outcome.error
 
 
+@pytest.mark.integration
 def test_timeout_kills_process(tmp_path):
     import time
 
@@ -246,6 +250,7 @@ def test_timeout_kills_process(tmp_path):
     assert time.monotonic() - start < 20
 
 
+@pytest.mark.integration
 @pytest.mark.skipif(not REAL_SANDBOX, reason="需要本机 sandbox-exec")
 def test_output_limit_fails_generation_and_kills_group(tmp_path):
     """生成期间超限明确失败并终止进程组，不先写满磁盘再截断。"""
@@ -269,6 +274,7 @@ def test_output_limit_fails_generation_and_kills_group(tmp_path):
     assert b"DONE-MARKER" not in outcome.stdout
 
 
+@pytest.mark.integration
 @pytest.mark.skipif(not REAL_SANDBOX, reason="需要本机 sandbox-exec")
 def test_timeout_kills_process_group_including_children(tmp_path):
     """超时终止整个进程组：合成后代进程不能在超时后继续写出标记。"""

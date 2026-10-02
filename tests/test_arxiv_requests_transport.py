@@ -1,6 +1,9 @@
 """Production single-hop adapter, all responses synthetic and offline."""
 
+import gzip
+import http.server
 import io
+import threading
 
 import pytest
 import requests
@@ -200,3 +203,59 @@ def test_default_client_persists_rate_limit(wire, tmp_path):
     assert len(calls) == 1
     assert client.gate.snapshot().cooldown_until is not None
     assert client.gate.snapshot().in_flight_since is None
+
+
+@pytest.fixture
+def local_http(monkeypatch):
+    """Exercise the real adapter with a loopback-only synthetic HTTP response."""
+    raw = gzip.compress(b"synthetic source bytes\n", mtime=0)
+    requests_seen = []
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            requests_seen.append(self.path)
+            self.send_response(200)
+            self.send_header(
+                "Content-Length", str(len(raw) + (3 if self.path == "/short" else 0))
+            )
+            self.send_header("Content-Encoding", "gzip")
+            self.end_headers()
+            self.wfile.write(raw)
+            self.wfile.flush()
+            self.close_connection = True
+
+        def log_message(self, *_args):
+            pass
+
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1")
+    monkeypatch.setenv("no_proxy", "127.0.0.1")
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(
+        target=lambda: server.serve_forever(poll_interval=0.01), daemon=True
+    )
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}", raw, requests_seen
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+@pytest.mark.integration
+def test_real_requests_preserves_encoded_response_bytes(local_http):
+    base, raw, requests_seen = local_http
+    result = RequestsTransport().fetch(base + "/encoded", timeout=2, max_bytes=len(raw))
+    assert result.body == raw
+    assert result.headers["content-encoding"] == "gzip"
+    assert requests_seen == ["/encoded"]
+
+
+@pytest.mark.integration
+def test_real_requests_maps_truncated_connection_to_error(local_http):
+    base, _raw, requests_seen = local_http
+    url = base + "/short"
+    with pytest.raises(ArxivConnectionError) as caught:
+        RequestsTransport().fetch(url, timeout=2, max_bytes=1024)
+    assert caught.value.url == url
+    assert requests_seen == ["/short"]

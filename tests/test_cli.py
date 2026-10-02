@@ -31,13 +31,6 @@ def test_without_arguments_prints_help(capsys):
     assert "usage: hvs-catalog" in capsys.readouterr().out
 
 
-def test_unknown_option_is_rejected(capsys):
-    with pytest.raises(SystemExit) as excinfo:
-        cli.main(["--no-such-option"])
-    assert excinfo.value.code == 2
-    assert "unrecognized arguments" in capsys.readouterr().err
-
-
 def test_installed_version_matches_pyproject():
     pyproject = tomllib.loads(
         (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")

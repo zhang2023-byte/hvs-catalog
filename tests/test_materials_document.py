@@ -35,6 +35,7 @@ def document(body, preamble=r"\newcommand{\obj}{FIC-A}"):
     )
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     "prefix",
     [
@@ -54,6 +55,7 @@ def test_native_context_does_not_leak_inactive_or_local_definitions(tmp_path, pr
     assert consumer["ok"] and consumer["materials_complete"]
 
 
+@pytest.mark.integration
 def test_native_same_line_order_and_unlabelled_tables(tmp_path):
     source = document(TABLE + r"\renewcommand{\obj}{FIC-B}" + TABLE)
     bundle, rows, _ = native_materials_probe(tmp_path, {"main.tex": source})
@@ -68,6 +70,7 @@ def test_native_same_line_order_and_unlabelled_tables(tmp_path):
     assert bundle["gaps"] == []
 
 
+@pytest.mark.integration
 def test_native_repeated_include_retains_each_execution(tmp_path):
     main = document(r"\input{rows}\renewcommand{\obj}{FIC-B}\input{rows}")
     bundle, rows, _ = native_materials_probe(
@@ -83,6 +86,7 @@ def test_native_repeated_include_retains_each_execution(tmp_path):
     assert bundle["gaps"] == []
 
 
+@pytest.mark.integration
 def test_native_two_content_tables_in_one_float_keep_distinct_origins(tmp_path):
     body = (
         r"\begin{table}\caption[Short]{Full synthetic caption}"
@@ -98,6 +102,7 @@ def test_native_two_content_tables_in_one_float_keep_distinct_origins(tmp_path):
     assert bundle["gaps"] == []
 
 
+@pytest.mark.integration
 def test_native_author_style_and_bbl_are_actual_dependencies(tmp_path):
     main = document(r"\input{refs.bbl}" + TABLE, r"\usepackage{synthetic}")
     bundle, rows, _ = native_materials_probe(
@@ -115,6 +120,7 @@ def test_native_author_style_and_bbl_are_actual_dependencies(tmp_path):
     assert "unused.tex" not in sources and bundle["gaps"] == []
 
 
+@pytest.mark.integration
 def test_native_default_arguments_and_explicit_argument_keep_both_rows(tmp_path):
     main = document(
         r"\begin{tabular}{lc}\obj & 525 \\ \obj[FIC-B] & 610 \\ \end{tabular}",
@@ -124,6 +130,7 @@ def test_native_default_arguments_and_explicit_argument_keep_both_rows(tmp_path)
     assert rows == [[["FIC-A", "525"], ["FIC-B", "610"]]] and bundle["gaps"] == []
 
 
+@pytest.mark.integration
 def test_native_undefined_object_is_a_gap_not_empty_identity_success(tmp_path):
     bundle, rows, consumer = native_materials_probe(
         tmp_path,
@@ -142,6 +149,7 @@ def test_native_undefined_object_is_a_gap_not_empty_identity_success(tmp_path):
     )
 
 
+@pytest.mark.integration
 def test_shadowed_local_style_cannot_silently_certify_wrong_object(tmp_path):
     main = document(TABLE, r"\newcommand{\obj}{FIC-A}\usepackage{booktabs}")
     bundle, rows, consumer = native_materials_probe(
@@ -430,6 +438,7 @@ def test_two_flow_failures_keep_readable_run_and_can_resume(tmp_path, monkeypatc
         space.close()
 
 
+@pytest.mark.integration
 def test_native_macro_generated_body_range_is_not_silently_omitted(tmp_path):
     bundle, _, consumer = native_materials_probe(
         tmp_path,

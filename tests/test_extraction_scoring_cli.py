@@ -131,6 +131,7 @@ def _run_extract(tmp_path) -> Path:
     return tmp_path / "out" / "evaluation-inputs.json"
 
 
+@pytest.mark.integration
 def test_score_demo_new_process_rescore_is_stable(tmp_path):
     """新进程重评：同一输入集给出相同摘要与结果。"""
     bundle_path = _run_extract(tmp_path)
@@ -186,6 +187,7 @@ def test_bundle_rejects_full_plan_tamper(tmp_path):
     assert plan.paper_keys == ["FIC-CANDIDATE-C"]
 
 
+@pytest.mark.integration
 def test_score_demo_new_process_rejects_plan_tamper(tmp_path):
     """新进程重评对计划篡改拒绝，不只核对 Gold/预测/辅助。"""
     bundle_path = _run_extract(tmp_path)
@@ -200,6 +202,7 @@ def test_score_demo_new_process_rejects_plan_tamper(tmp_path):
     assert "摘要不符" in result.stderr and "plan" in result.stderr
 
 
+@pytest.mark.integration
 def test_score_demo_rejects_tampered_inputs(tmp_path):
     bundle_path = _run_extract(tmp_path)
     bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
@@ -302,6 +305,7 @@ def test_extract_demo_off_group_daily_keeps_question_open(tmp_path, capsys):
     assert report["status"]["questions"][0]["status"] == "open"
 
 
+@pytest.mark.integration
 def test_help_texts_state_real_extraction_not_available():
     extract_help = _cli(["extract", "--help"], Path.cwd())
     assert extract_help.returncode == 0

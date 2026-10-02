@@ -291,6 +291,7 @@ def _run_driver(tmp_path, *args, timeout=90.0):
     return payload
 
 
+@pytest.mark.integration
 def test_new_process_recovery_uses_frozen_source_revision(tmp_path):
     """新进程恢复：来源升版后仍用冻结的 C v1 完成，摘要不变。"""
     from hvs_catalog.workspace import initialize_workspace

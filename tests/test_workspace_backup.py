@@ -103,6 +103,7 @@ def _continue_in_subprocess(tmp_path, space_root, execution_id, ledger):
     return json.loads(result.stdout.strip().splitlines()[-1])
 
 
+@pytest.mark.integration
 def test_backup_waiting_answer_and_restore_continues(tmp_path, service):
     """A19 状态一：等待答复时备份，恢复后在新目录新进程继续。"""
     space = initialize_workspace(tmp_path / "space")
@@ -140,6 +141,7 @@ def test_backup_waiting_answer_and_restore_continues(tmp_path, service):
     space.close()
 
 
+@pytest.mark.integration
 def test_backup_pending_apply_state(tmp_path, service):
     """A19 状态二：决定已保存、结果待应用。"""
     space = initialize_workspace(tmp_path / "space")
@@ -176,6 +178,7 @@ def test_backup_pending_apply_state(tmp_path, service):
         space.close()
 
 
+@pytest.mark.integration
 def test_backup_applied_awaiting_resume_state(tmp_path, service):
     """A19 状态三：结果已应用、框架待恢复。"""
     space = initialize_workspace(tmp_path / "space")
@@ -223,6 +226,7 @@ def test_backup_applied_awaiting_resume_state(tmp_path, service):
         space.close()
 
 
+@pytest.mark.integration
 def test_backup_finished_state_and_receipts_complete(tmp_path, service):
     """A19 状态四：完成后备份；回执完整、恢复后可核对。"""
     space = initialize_workspace(tmp_path / "space")

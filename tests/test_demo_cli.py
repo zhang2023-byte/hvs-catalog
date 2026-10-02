@@ -5,6 +5,10 @@ import os
 import subprocess
 import sys
 
+import pytest
+
+pytestmark = pytest.mark.integration
+
 
 def demo(tmp_path, *args, code=0):
     env = os.environ.copy()

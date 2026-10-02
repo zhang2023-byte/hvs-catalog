@@ -429,6 +429,7 @@ def test_external_link_mention_kept_as_gap_not_fetched(tmp_path):
     space.close()
 
 
+@pytest.mark.integration
 def test_real_latexml_end_to_end_when_available(tmp_path):
     """本机装有 latexmlc 时走真实转换链；缺失环境跳过，不冒称已验证。"""
     import platform

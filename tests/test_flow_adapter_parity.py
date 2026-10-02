@@ -4,11 +4,14 @@ import json
 import subprocess
 import sys
 
+import pytest
 from shared_scenarios import import_materials, open_service, start_execution
 from tiny_flow import TinyFlow
 
 from hvs_catalog.runtime import build_input_snapshot, create_execution, resume_execution
 from hvs_catalog.workspace import backup_workspace, initialize_workspace
+
+pytestmark = pytest.mark.integration
 
 DRIVER = """
 import json, sys

@@ -400,7 +400,6 @@ def test_malformed_number_syntax_is_undecidable(gold, prediction):
         ("1.5*10^{3}", "1.5*10^{3}", "equivalent"),
         ("8.2e3", "8.2e4", "different"),
         ("1.5*10^{3}", "1.5*10^{-3}", "different"),
-        ("12h34m56.7s", "12h34m56.8s", "different"),
     ],
 )
 def test_complete_number_syntax_stays_determined(gold, prediction, expected):

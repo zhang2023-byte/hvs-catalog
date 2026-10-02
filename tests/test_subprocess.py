@@ -1,8 +1,10 @@
 """独立子进程验证：控制台命令与 python -m 都能查询帮助和版本。
 
-子进程在仓库外的临时目录运行，并清除 PYTHONPATH，确保不依赖源码路径。
+子进程在仓库外临时目录运行，清除 PYTHONPATH，验证当前安装环境的
+入口与实际包导入；全新 wheel 的独立安装由 tools/check_distribution.py 验证。
 """
 
+import json
 import os
 import shutil
 import subprocess
@@ -11,6 +13,10 @@ from importlib.metadata import version as installed_version
 from pathlib import Path
 
 import pytest
+
+import hvs_catalog
+
+pytestmark = pytest.mark.integration
 
 
 def _clean_env() -> dict[str, str]:
@@ -61,7 +67,15 @@ def test_module_run_version(tmp_path):
 
 
 def test_import_from_clean_cwd(tmp_path):
-    script = "from importlib.metadata import version; print(version('hvs-catalog'))"
+    script = (
+        "import json, hvs_catalog; from pathlib import Path; "
+        "from importlib.metadata import version; "
+        "print(json.dumps({'origin': str(Path(hvs_catalog.__file__).resolve()), "
+        "'version': version('hvs-catalog')}))"
+    )
     result = _run([sys.executable, "-c", script], tmp_path)
     assert result.returncode == 0, result.stderr
-    assert result.stdout.strip() == installed_version("hvs-catalog")
+    payload = json.loads(result.stdout)
+    assert payload["version"] == installed_version("hvs-catalog")
+    assert Path(payload["origin"]) == Path(hvs_catalog.__file__).resolve()
+    assert tmp_path not in Path(payload["origin"]).parents

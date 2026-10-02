@@ -120,12 +120,16 @@ def load_scoring_bundle(
     recorded = payload.get("digests")
     if not isinstance(recorded, dict):
         raise ScoringBundleError("评分输入集缺少摘要记录")
+    for field in ("gold", "predictions"):
+        if field not in payload:
+            raise ScoringBundleError(f"评分输入集缺少字段：{field}")
+        if not isinstance(payload[field], list):
+            raise ScoringBundleError(f"评分输入集字段 {field} 必须是 JSON 列表")
     try:
         plan = ScoringPlan.model_validate(payload["plan"])
-        gold = [GoldPaperEntry.model_validate(item) for item in payload.get("gold", [])]
+        gold = [GoldPaperEntry.model_validate(item) for item in payload["gold"]]
         predictions = [
-            PredictionPaperEntry.model_validate(item)
-            for item in payload.get("predictions", [])
+            PredictionPaperEntry.model_validate(item) for item in payload["predictions"]
         ]
         auxiliary = AuxiliaryScoringConfig.model_validate(payload["auxiliary"])
     except KeyError as exc:

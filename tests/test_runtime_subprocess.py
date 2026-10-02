@@ -30,6 +30,8 @@ from hvs_catalog.workspace import (
     initialize_workspace,
 )
 
+pytestmark = pytest.mark.integration
+
 HELPERS = Path(__file__).parent / "runtime_helpers.py"
 
 

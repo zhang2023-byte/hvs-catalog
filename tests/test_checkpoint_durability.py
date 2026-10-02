@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 
+import pytest
 from shared_scenarios import (
     direct_flow,
     open_service,
@@ -51,6 +52,7 @@ raise AssertionError('hard exit expected')
 """
 
 
+@pytest.mark.integration
 def test_checkpoint_committed_before_response_and_hard_exit(tmp_path):
     driver = tmp_path / "checkpoint.py"
     driver.write_text(DRIVER)

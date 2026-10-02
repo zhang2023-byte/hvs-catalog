@@ -16,6 +16,8 @@ from hvs_catalog.workspace import (
     open_workspace,
 )
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.mark.parametrize("existing", [False, True])
 def test_initialize_empty_or_new_directory(tmp_path, existing):

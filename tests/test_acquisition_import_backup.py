@@ -315,6 +315,7 @@ RESTORE_QUERY_SCRIPT = textwrap.dedent(
 )
 
 
+@pytest.mark.integration
 def test_backup_restore_then_subprocess_resume_query(tmp_path):
     """完整流程 → 备份 → 恢复到新目录 → 独立进程免网络查询全部进度与材料。"""
     space = initialize_workspace(tmp_path / "space")

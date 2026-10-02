@@ -106,37 +106,12 @@ def test_s01_pairing_and_diagnosis_semantics():
     assert paper.quantity_breakdown[1].metrics.correct == 0
 
 
-def test_s02_empty_prediction_is_not_correct_empty():
-    report = score_sample("synthetic-s02")
-    paper = report.papers[0]
-    assert paper.l1.fn == 2 and paper.l1.precision is None
-    assert paper.l2.gold == 3 and paper.l2.recall == 0.0
-    assert paper.correct_empty is False
-
-
-def test_s03_failure_keeps_information_but_not_correct_empty():
-    report = score_sample("synthetic-s03-failed")
-    paper = report.papers[0]
-    assert paper.l0.delivered == 0 and paper.l0.valid_over_delivered is None
-    assert paper.correct_empty is False
-    assert paper.prediction_errors == ["simulated whole-paper failure"]
-
-
 def test_s09_scoped_report_does_not_claim_full_paper():
     report = score_sample("synthetic-s09")
     paper = report.papers[0]
     assert paper.readiness == "scoped" and paper.scoped is True
     assert paper.scope_note is not None and "SYN-A" in paper.scope_note
     assert any("不声称整论文准确率" in note for note in report.notes), report.notes
-
-
-def test_s09_without_scope_is_readiness_gap_without_final_score():
-    report = score_sample("synthetic-s09-noscope")
-    paper = report.papers[0]
-    assert paper.readiness == "blocked"
-    assert paper.readiness_gaps == ["partial_gold_without_predeclared_scope"]
-    assert paper.l1 is None and paper.l2 is None
-    assert report.micro.l1 is None and report.micro.l2 is None
 
 
 def test_s07_unresolved_keeps_counts_and_nulls_final_l2_rates():

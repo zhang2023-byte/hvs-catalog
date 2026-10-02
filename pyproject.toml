@@ -42,6 +42,9 @@ include = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "integration: 离线原生转换、真实进程退出或竞争、本机 HTTP 和实时时钟边界",
+]
 
 [tool.ruff]
 extend-exclude = [".work"]

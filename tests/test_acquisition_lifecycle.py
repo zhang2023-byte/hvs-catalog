@@ -655,6 +655,7 @@ def test_status_projections_no_network_no_writes_and_backup(space, tmp_path):
         restored.close()
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     "operation", ["discover", "fetch", "import", "revisions", "empty-revisions"]
 )
@@ -736,6 +737,7 @@ else:
 """
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     "operation,window",
     [
@@ -819,6 +821,7 @@ def test_precise_crash_windows_new_process_resume(tmp_path, operation, window):
         space.close()
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     "stage", ["discover", "metadata", "download", "revisions", "import"]
 )

@@ -24,6 +24,7 @@ from hvs_catalog.workspace import (
 )
 
 
+@pytest.mark.integration
 @pytest.mark.skipif(
     platform.system() != "Darwin", reason="Only macOS isolation has been verified"
 )

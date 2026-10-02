@@ -15,6 +15,8 @@ from hvs_catalog.pipeline import (
 from hvs_catalog.pipeline.mock import PipelineMockService, import_mock_source
 from hvs_catalog.workspace import initialize_workspace
 
+pytestmark = pytest.mark.integration
+
 DRIVER = """
 import os, sys
 from hvs_catalog.pipeline import resume_extraction

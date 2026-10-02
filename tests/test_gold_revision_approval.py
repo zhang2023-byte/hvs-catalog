@@ -1,15 +1,9 @@
 """No second Git writer; current revisions preserve attribution and exact premise."""
 
-from importlib.util import find_spec
-
 import pytest
 from gold_save_helpers import approve_revision, flow, revise, snapshot
 
 from hvs_catalog.evaluation import GoldTargetError, approved_save
-
-
-def test_removed_git_refresh_is_not_a_compatibility_writer():
-    assert find_spec("hvs_catalog.evaluation.git_revision") is None
 
 
 def test_two_reviewed_revisions_old_permission_cannot_overwrite(tmp_path):

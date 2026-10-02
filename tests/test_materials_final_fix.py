@@ -21,6 +21,7 @@ from hvs_catalog.materials.service import MaterialsService
 # ---- 发现 1／2／3：宏上下文事件序、等价子集与前言循环 ----
 
 
+@pytest.mark.integration
 def test_context_parent_after_child_uses_before_include_definition(tmp_path):
     texts = {
         "main.tex": r"\documentclass{article}\newcommand{\obj}{FIC-A}\begin{document}\input{sec}\renewcommand{\obj}{FIC-B}\end{document}",
@@ -31,6 +32,7 @@ def test_context_parent_after_child_uses_before_include_definition(tmp_path):
     assert bundle["gaps"] == [] and consumer["materials_complete"]
 
 
+@pytest.mark.integration
 def test_context_local_after_include_wins(tmp_path):
     texts = {
         "main.tex": r"\documentclass{article}\begin{document}\input{macros}\renewcommand{\obj}{FIC-A}\begin{tabular}{ll}\obj & 525 \\ \end{tabular}\end{document}",
@@ -40,12 +42,14 @@ def test_context_local_after_include_wins(tmp_path):
     assert rows == [[["FIC-A", "525"]]] and bundle["gaps"] == []
 
 
+@pytest.mark.integration
 def test_commented_redefinition_not_in_context(tmp_path):
     main = "\\documentclass{article}\n\\newcommand{\\obj}{FIC-A}\n\\begin{document}\n% \\renewcommand{\\obj}{FIC-B}\n\\begin{tabular}{ll}\\obj & 525 \\\\ \\end{tabular}\n\\end{document}"
     bundle, rows, _ = native_materials_probe(tmp_path, {"main.tex": main})
     assert rows == [[["FIC-A", "525"]]] and bundle["gaps"] == []
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     ("definition", "expected"),
     [
@@ -497,6 +501,7 @@ def test_deluxetable_tablecaption_and_pgf_float_association():
 # ---- 发现 20：绑定禁读覆盖子目录（真实 sandbox-exec；非 macOS 跳过） ----
 
 
+@pytest.mark.integration
 def test_binding_deny_covers_nested_directories(tmp_path):
     pytest.importorskip("hvs_catalog.materials.sandbox")
     from hvs_catalog.materials.sandbox import (
@@ -519,6 +524,7 @@ def test_binding_deny_covers_nested_directories(tmp_path):
 # ---- 发现 17／18：全退出路径输出核验与残留组清理（真实沙箱） ----
 
 
+@pytest.mark.integration
 def test_fast_exit_nested_output_counted_and_orphan_group_cleaned(tmp_path):
     from hvs_catalog.materials.sandbox import (
         MAX_CONVERTER_OUTPUT_BYTES,
