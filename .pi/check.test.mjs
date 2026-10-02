@@ -17,6 +17,17 @@ for (const verdict of ['pass', 'blocked', 'changes_required']) {
     assert.equal(validateReview(report, schema, value.Check), verdict);
   });
 }
+for (const severity of ['must_fix', 'optional']) {
+  test(`accept complete findings beyond twenty: ${severity}`, () => {
+    const verdict = severity === 'must_fix' ? 'changes_required' : 'pass';
+    const report = {...good, verdict, findings:Array.from({length:41}, (_, i) => ({...finding, severity, file:`fixture-${i}.py`}))};
+    assert.equal(validateReview(report, schema, value.Check), verdict);
+  });
+}
+test('accept complete residual risks beyond twenty', () => {
+  const report = {...good, risks:Array.from({length:41}, (_, i) => `Synthetic risk ${i}; not a new requirement`)};
+  assert.equal(validateReview(report, schema, value.Check), 'pass');
+});
 for (const [name, change] of Object.entries({
   'unknown verdict': {verdict:'PASS'},
   'unknown severity': {findings:[{...finding,severity:'critical'}]},
@@ -25,7 +36,6 @@ for (const [name, change] of Object.entries({
   'whitespace evidence': {validation:'   '},
   'unexpected fields': {extra:true},
   'wrong risk type': {risks:[42]},
-  'too many findings': {findings:Array(21).fill(finding)},
   'pass with must-fix': {findings:[finding]},
   'changes without findings': {verdict:'changes_required'},
 })) test(`reject ${name}`, () => assert.throws(() => validateReview({...good,...change},schema,value.Check)));
@@ -34,13 +44,15 @@ test('reject missing report / missing verdict', () => {
   const {verdict,...incomplete}=good;
   assert.throws(() => validateReview(incomplete,schema,value.Check));
 });
-const profile={model:'provider/model',thinking:'high',tools:['read','bash'],acceptanceRole:'read-only'};
-const agent={name:'review',source:'project',executable:true,runner:{type:'pi'},model:{value:profile.model,thinking:profile.thinking},tools:{ambient:false,names:profile.tools,mcpDirectTools:[]},extensions:{names:[]},execution:{defaultAsync:true},acceptance:{role:'read-only',policy:{level:'attested'}}};
+const profile={model:'provider/model',thinking:'high',tools:['read','bash'],acceptanceRole:'read-only',timeoutMs:3600000};
+const agent={name:'review',source:'project',executable:true,runner:{type:'pi'},model:{value:profile.model,thinking:profile.thinking},tools:{ambient:false,names:profile.tools,mcpDirectTools:[]},extensions:{names:[]},execution:{defaultAsync:true,timeoutMs:profile.timeoutMs},acceptance:{role:'read-only',policy:{level:'attested'}}};
 test('accept documented scalar attested policy', () => validateCapabilities({agents:[{...agent,acceptance:{role:'read-only',policy:'attested'}}]},{review:profile}));
 test('allow additive upstream capability fields and tool reordering', () => validateCapabilities({agents:[{...agent,newField:true,tools:{...agent.tools,names:['bash','read']}}],futureMetadata:{}},{review:profile}));
 for (const [name, change] of Object.entries({
   'missing executable': {executable:undefined},
   'disabled agent': {executable:false},
+  'missing runtime deadline': {execution:{defaultAsync:true}},
+  'mismatched runtime deadline': {execution:{defaultAsync:true,timeoutMs:1800000}},
   'extra write tool': {tools:{...agent.tools,names:['read','bash','write']}},
   'ambient tools': {tools:{...agent.tools,ambient:true}},
   'unexpected extensions': {extensions:{names:['unexpected']}},
@@ -78,6 +90,7 @@ test('project leaves parent model choice free and preserves separate writer/revi
     name, sdk.parseFrontmatter(fs.readFileSync(new URL(`./agents/${name}.md`, import.meta.url), 'utf8')).frontmatter,
   ]));
   assert.equal(profiles['hvs-implementer'].model, 'zai-coding-cn/glm-5.3');
+  assert.equal(profiles['hvs-implementer'].timeoutMs, 7200000);
   assert.equal(profiles['hvs-simplifier'].model, 'openai-codex/gpt-6.1-sol');
   assert.equal(profiles['hvs-reviewer'].model, 'openai-codex/gpt-6.1-sol');
   assert.equal(profiles['hvs-simplifier'].acceptanceRole, 'writer');

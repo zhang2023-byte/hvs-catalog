@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import csv
 import hashlib
 import json
 from collections.abc import Iterable
@@ -954,25 +953,65 @@ def _check_locator(
         if actual != record.data.excerpt:
             issues.append(ValidationIssue(where, "引文与指定版本的原文行不一致"))
     elif locator.kind == "table_cell":
+        # 与材料准备共用同一 CSV／ECSV 逻辑记录接口（保存、备份与消费
+        # 一致）；零命中失败，唯一命中可不填序号，多命中必须补键或明确
+        # 序号，不默取第一行。row_number 是命中 row_key 后的 1 基序号，
+        # 不是源文件物理行号。
+        from .tabular import TabularReadError, read_table_records
+
         try:
-            rows = list(csv.DictReader(path.read_text(encoding="utf-8").splitlines()))
-        except (csv.Error, UnicodeDecodeError) as exc:
-            issues.append(ValidationIssue(where, f"表格文件无法解析：{exc}"))
+            records = read_table_records(
+                path.read_bytes(), media_type=file.media_type, name=file.path
+            )
+        except TabularReadError as exc:
+            issues.append(ValidationIssue(where, f"表格文件无法按逻辑记录读取：{exc}"))
             return
-        if locator.column not in (rows[0].keys() if rows else ()):
+        columns = records.column_list()
+        if locator.column not in columns:
             issues.append(ValidationIssue(where, f"表格列不存在：{locator.column}"))
+            return
+        missing_key_columns = [key for key in locator.row_key if key not in columns]
+        if missing_key_columns:
+            issues.append(
+                ValidationIssue(
+                    where,
+                    "行键列不存在："
+                    + ", ".join(missing_key_columns)
+                    + "（不能用不存在的列认证任意对象行）",
+                )
+            )
+            return
+        if any(value is None for value in locator.row_key.values()):
+            issues.append(ValidationIssue(where, "行键含空值：不能与实际单元格比较"))
             return
         matched = [
             row
-            for row in rows
+            for row in records.rows
             if all(
                 str(row.get(key)) == str(value)
                 for key, value in locator.row_key.items()
             )
         ]
+        if not matched:
+            issues.append(ValidationIssue(where, "行键零命中：定位不到对象行"))
+            return
+        if len(matched) > 1 and locator.row_number is None:
+            issues.append(
+                ValidationIssue(
+                    where,
+                    f"行键命中 {len(matched)} 行且未填 row_number："
+                    "多命中必须补足行键或明确序号，不默取第一行",
+                )
+            )
+            return
         row_number = locator.row_number or 1
         if not (1 <= row_number <= len(matched)):
-            issues.append(ValidationIssue(where, "行键定位不到对象行"))
+            issues.append(
+                ValidationIssue(
+                    where,
+                    f"行序号 {row_number} 超出命中行数 {len(matched)}",
+                )
+            )
             return
         cell = matched[row_number - 1].get(locator.column)
         if cell != record.data.excerpt:

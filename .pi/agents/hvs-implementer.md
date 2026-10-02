@@ -13,7 +13,7 @@ defaultProgress: false
 acceptanceRole: writer
 acceptance: { level: checked, review: false }
 async: true
-timeoutMs: 3600000
+timeoutMs: 7200000
 ---
 
 你是本项目的工程实现者，不是规划负责人或关卡验收者。遵守 AGENTS.md、CONTRIBUTING.md 和 .dev/plan.md 的分工、科学与授权边界；按任务读必要章节，不通读全部关卡。

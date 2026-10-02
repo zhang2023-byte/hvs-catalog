@@ -75,6 +75,9 @@ class InputSnapshot(Config):
     example_refs: list[ArtifactRef] = Field(min_length=0)
     precedent_refs: list[PrecedentSnapshotRef] = Field(min_length=0)
     existing_decision_refs: list[RecordRef] = Field(min_length=0)
+    # 工程执行（如材料准备）的固定选项：整体参与输入摘要；提取执行
+    # 保持空。值为字符串；结构化选项由调用方规范序列化后写入。
+    options: dict[str, str] = Field(default_factory=dict)
 
 
 class Attempt(Config):

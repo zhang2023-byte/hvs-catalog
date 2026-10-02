@@ -64,6 +64,32 @@ hvs-catalog acquisition material --space ./ws --id 2401.01234
 
 实际特殊归档形态的出现率、全量检索覆盖、跨机协调和断电耐久尚未验证；明确的“不支持”不代表该形态罕见。
 
+## 材料准备（正文与表格）
+
+材料准备已通过人类专家验收；实际验证范围及本次审核安排见 [当前交接](../.dev/progress.md)。仍须核对输入的已知缺口，工程准备完成不代表材料完整或科学判断已确认。
+
+从获取阶段已保存的源码包准备提取输入：安全展开成员、组织主稿正文／附录、转换常用表环境为 ECSV、确定性展开对象编号范围，并把已知缺口随输入一起交付。入口复用工作空间锁、runtime、事务与 R05 裁决接口；准备接口不接收 Gold。
+
+```bash
+hvs-catalog materials prepare --space ./ws --paper 2501.01111 --request-key rk-1 [--root-file main.tex] [--version N] [--encoding utf-8|latin-1] [--expert-adjudication] [--range "HVS1--HVS5|sec1.tex|1|1"] [--json]
+hvs-catalog materials status --space ./ws [--execution exec-000001] [--json]
+hvs-catalog materials resume --space ./ws --execution exec-000001 [--json]
+hvs-catalog materials consume --space ./ws --execution exec-000001 [--json]
+```
+
+Python 共用入口：`MaterialsService.prepare_materials`／`resume_preparation`／`get_preparation`／`get_prepared_input`／`consume_prepared_input`；纯函数 `expand_range_notation` 供编号范围展开。日常与评测消费同一份输入；无模型合成消费者 `consume_prepared_input` 核对全部附件引用与 ECSV 回读；`ok` 仅表示工程完整性，`materials_complete` 另表示是否存在材料缺口，不能混同科学验收。
+
+行为要点：
+
+- 输入是获取阶段保存的准确来源修订与原包哈希，不重新下载；准备结果另存来源包新修订（成员、派生 UTF-8 文本与缺口），不覆盖旧修订。同请求同输入重放复用已保存结果；改输入（含主稿选择、范围记号、转换器版本、解析代码或观测绑定）须用新请求键；当前材料流程为版本2，不自动混用旧检查点。
+- 主稿唯一时自动确定；多个有效主稿必须 `--root-file` 显式选择，不按名称猜。`\input`／`\include` 只跟随字面路径；缺件、循环、越界、动态或不支持的包含形式逐项记入缺口，不使有效主稿整体失败；未引用草稿保留在清单中，不断言科学无关。
+- 正文去注释保持行位置，保护 verbatim。成员解码只按明确依据：UTF-8 直接解码；成员声明（`% !TeX encoding`）或操作者 `--encoding` 固定选择为 latin-1 时派生保留行数的 UTF-8 文本并登记映射；未声明且 UTF-8 失败的成员保持未处理，不猜编码。
+- 支持 `tabular`／`tabular*`、`longtable`、`deluxetable`／`deluxetable*` 及可证明的 `pgfplotstable` backing CSV。包内 CSV／ECSV 按逻辑记录读取，JSON／普通文本按实际结构定位；FITS、自定义 DAT、图片／PDF 表格保留材料与提及，不做 OCR／PDF 提取，包外链接不获取。具体转换与回退条件见 [支持格式和对应要求](design/workflow.md#表格转换与原件对应)。
+- 普通表在只读完整作者上下文中经一次沙箱 LaTeXML 转换，可以包含多张表；按原生来源位置和每次执行定位，不猜首表／表序。最低对应粒度为表块，不宣称每个单元格的精确 TeX 行号；无法证明对应的内容保留诊断和 Gap。联合核对进程、转换诊断、错误节点、表身份及完整网格，退出码为零不够，普通字面表不猜首行为表头。工具缺失或无法安全隔离时保留有效材料和缺口，不裸跑；实测隔离及系统依赖边界见 [技术职责](design/architecture.md#技术选择与责任)。
+- 转换表以字符串保留原表达：中性列名 `col_001`、多层表头、单位、标题、脚注与合并格结构；ECSV 写出后回读逐单元格核对。对象行定位按命中行键处理：零命中失败，唯一命中可不填序号，多命中必须补键或明确序号，不默取第一行（保存／备份／消费共用同一接口）。
+- 编号范围仅对含义明确的稳定前缀对象记法确定性有界展开（保留前导零、原写法、规则与成员）；纯整数区间语义不明时经 R05 接口提问并等待专家，决定只应用一次，未决范围不当作完整名单；物理量区间与坐标符号不参与展开。
+- 退出码：0 成功；1 工程错误；3 暂停等待决定；4 无可用材料；5 已完成幂等重入（prepare 同请求同输入的重放与 resume 的已完成重入相同，均返回 5）。准备完成但存在缺口仍是成功，缺口在 `--json` 输出中如实呈现。
+
 ## 持久化与恢复演示
 
 `hvs-catalog demo` 使用共享 `pipeline`、`workspace`、`runtime`、`review`，全程 synthetic-mock。请指定全新独立目录 `SPACE`，不接管日常空间或旧演示，不提供 reset 删除捷径。

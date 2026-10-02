@@ -252,6 +252,21 @@ def test_zero_exit_with_bad_artifact_reports_context(
                 [_experiment_report(), _experiment_report(paper_key="FIC-CANDIDATE-C")],
             )
             return subprocess.CompletedProcess(command, 0, "EXPERIMENTS-OK", "")
+        elif any(part.endswith("installed_materials_check.py") for part in command):
+            payload = {
+                "outcome": "finished",
+                "errors": [],
+                "summary": {
+                    "body_status": "organized",
+                    "table_count": 1,
+                    "table_success": 1,
+                },
+                "consume_ok": True,
+                "consume_problems": [],
+                "observer_installed": True,
+                "parser_fingerprint": "a" * 64,
+                "flow_version": "2",
+            }
         else:
             pytest.fail(f"unexpected command: {command}")
         return subprocess.CompletedProcess(command, code, json.dumps(payload), "")

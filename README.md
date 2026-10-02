@@ -10,10 +10,11 @@
 | 共同记录格式 | 十类记录的 JSON 读写、准确修订引用、原文证据校验与三种步骤的简化填写展开；见 [记录设计](docs/design/records.md) 和 [生成合同](contracts/generated/README.md)。 |
 | 工作空间、运行与裁决 | Python 接口支持固定输入、事务保存、暂停恢复和整体备份恢复；见 [接口与支持边界](docs/design/architecture.md#工作空间与恢复接口方案)。 |
 | arXiv 获取 | CLI／Python 支持按条件发现、固定版本获取、本地导入、修订检查和状态查询；见 [操作说明](docs/operations.md#arxiv-材料获取)。 |
+| 材料准备 | 固定来源包的正文组织、完整作者上下文表格转换、明确对象编号范围展开及统一缺口交付；见 [操作说明](docs/operations.md#材料准备正文与表格) 和 [支持范围](docs/design/workflow.md#提取材料的准备)。 |
 | Gold 工具 | 旧 v4 只读迁移／比较、草稿检查、当前答案配对的获准保存与读取；见 [生成用法与人工恢复](contracts/generated/gold/README.md)。工具不执行 Git，不自动迁移真实私仓。 |
 | 提取与评分基础 | 共享提取入口、专家裁决开关、L0/L1/L2 合成评分及两组报告；**当前两种方法仅为 synthetic-mock，不是真实提取能力**。见 [离线演示](docs/operations.md#合成提取与重评) 和 [评分设计](docs/design/evaluation.md#提取与评分的集成入口)。 |
 
-正式正文／表格解析、真实模型提取、裁决网页与正式裁决 CLI、对象关联与资料补全、星表网站及发布尚未提供。`hvs-catalog methods list --json` 如实列出已登记方法和步骤。
+真实模型提取、裁决网页与正式裁决 CLI、对象关联与资料补全、星表网站及发布尚未提供；OCR／PDF／FITS 表格提取与包外获取不在当前范围。`hvs-catalog methods list --json` 如实列出已登记方法和步骤。
 
 50 篇私有 Gold 已验收，尚未正式评分；材料与科学就绪核对、真实模型验证及具体调用授权仍须完成。关卡状态和实测范围见 [当前进度](.dev/progress.md)，不把合成测试当作真实模型质量证据。
 

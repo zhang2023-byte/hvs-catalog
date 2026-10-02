@@ -193,6 +193,7 @@ def build_input_snapshot(
     precedent_refs: list | None = None,
     existing_decision_refs: list[RecordRef] | None = None,
     rules: RulesRef | None = None,
+    options: dict[str, str] | None = None,
 ) -> InputSnapshot:
     """按当前环境组装输入快照；规则引用默认取当前规则来源。"""
     from ..records.rules import load_rules
@@ -211,6 +212,7 @@ def build_input_snapshot(
         example_refs=list(example_refs or []),
         precedent_refs=list(precedent_refs or []),
         existing_decision_refs=list(existing_decision_refs or []),
+        options=dict(options or {}),
     )
 
 
@@ -546,6 +548,9 @@ def append_run_revision(
             "data": run.data.model_copy(update=payload),
         }
     )
+    # model_copy does not run validators. Never persist a revision that only
+    # becomes unreadable on the next status/resume/backup operation.
+    new_run = RunRecord.model_validate(new_run.model_dump(mode="python"))
     store.commit(
         CommitRequest(
             operation_key=operation_key

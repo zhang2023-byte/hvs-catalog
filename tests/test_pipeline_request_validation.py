@@ -198,6 +198,7 @@ def test_daily_and_evaluation_share_one_entry_and_snapshot_has_no_answer_channel
         "example_refs",
         "precedent_refs",
         "existing_decision_refs",
+        "options",
     }
     for name in ("gold", "answers", "score", "metadata"):
         assert name not in snapshot_fields

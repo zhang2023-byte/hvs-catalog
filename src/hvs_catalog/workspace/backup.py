@@ -72,10 +72,12 @@ def _sha256_file(path: Path) -> str:
 
 
 def _referenced_files(space: Workspace) -> list[str]:
-    """收集全部已保存记录引用的来源与运行文件（相对根目录）。
+    """收集全部已保存记录与检查点状态引用的文件（相对根目录）。
 
     规则归档是约定路径（记录数据只存哈希不存路径），按执行清单补充，
-    否则恢复出的空间无法通过执行输入核验。
+    否则恢复出的空间无法通过执行输入核验。检查点状态中的
+    ``{path, sha256}`` 形状引用（如材料准备输出的正文视图、ECSV 与
+    准备输入附件）同样纳入备份，恢复后消费入口才能完整回读。
     """
     from ..runtime.execution import rules_archive_rel
 
@@ -85,7 +87,29 @@ def _referenced_files(space: Workspace) -> list[str]:
             paths.append(ref["path"])
     for row in space.store().list_executions():
         paths.append(rules_archive_rel(row.execution_id))
+    paths.extend(_checkpoint_artifact_paths(space))
     return sorted(set(paths))
+
+
+def _checkpoint_artifact_paths(space: Workspace) -> list[str]:
+    """读取各执行检查点状态引用的归档文件路径（不解析为记录）。"""
+    from langgraph.checkpoint.sqlite import SqliteSaver
+
+    conn = space.checkpoint_connection()
+    paths: list[str] = []
+    try:
+        saver = SqliteSaver(conn)
+        for tup in saver.list(None):
+            values = (
+                dict(tup.checkpoint.get("channel_values") or {})
+                if tup.checkpoint is not None
+                else {}
+            )
+            for ref in walk_artifact_refs(values):
+                paths.append(ref["path"])
+    finally:
+        conn.close()
+    return paths
 
 
 def verify_record_artifacts(space: Workspace) -> list[str]:
@@ -155,6 +179,25 @@ def checkpoint_state_problems(
             bound = values.get("execution_id")
             if isinstance(bound, str) and bound != thread_id:
                 problems.append(f"检查点状态绑定执行 {bound}，当前执行为 {thread_id}")
+            # 状态中的 {path, sha256} 附件引用按保存哈希核验实际文件；
+            # 消费、恢复、完成核对与整体备份共用同一核验，改写不因"完成"
+            # 跳过。
+            for ref in walk_artifact_refs(values):
+                path = space.root / ref["path"]
+                try:
+                    import hashlib
+
+                    actual = hashlib.sha256(path.read_bytes()).hexdigest()
+                except OSError:
+                    problems.append(
+                        f"检查点附件缺失或不可读：{ref['path']}（执行 {thread_id}）"
+                    )
+                    continue
+                if actual != ref["sha256"]:
+                    problems.append(
+                        f"检查点附件与保存哈希不符：{ref['path']}"
+                        f"（期望 {ref['sha256'][:12]}，实际 {actual[:12]}）"
+                    )
             for ref in walk_state_refs(values):
                 record = store.read_record(ref)
                 if record is None:

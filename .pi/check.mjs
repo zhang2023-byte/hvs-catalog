@@ -38,6 +38,7 @@ export function validateCapabilities(capabilities, profiles) {
     assert.deepEqual(agent.tools.mcpDirectTools, []);
     assert.deepEqual(agent.extensions.names, []);
     assert.equal(agent.execution.defaultAsync, true);
+    assert.equal(agent.execution.timeoutMs, profile.timeoutMs, `${name}: runtime deadline differs from declared policy`);
     assert.equal(agent.acceptance.role, profile.acceptanceRole);
     if (profile.acceptanceRole === 'writer') {
       assert.equal(agent.acceptance.policy.level, 'checked');
@@ -119,6 +120,7 @@ export async function checkProject() {
     }
     assert.equal(profiles['hvs-reviewer'].acceptanceRole, 'read-only');
     assert.equal(profiles['hvs-implementer'].model, 'zai-coding-cn/glm-5.3');
+    assert.equal(profiles['hvs-implementer'].timeoutMs, 7200000, 'Implementation deadline must match the approved two-hour limit');
     assert.equal(profiles['hvs-simplifier'].model, 'openai-codex/gpt-6.1-sol');
     assert.equal(profiles['hvs-reviewer'].model, 'openai-codex/gpt-6.1-sol');
     const childModels = [...new Set(Object.values(profiles).map(p => p.model))];

@@ -27,6 +27,94 @@ CHECK_ADJUDICATION = ("on", "off")
 #: 子进程超时（秒）：任一步骤超时按失败报告，不无限等待。
 SUBPROCESS_TIMEOUT = 180
 
+MATERIALS_DRIVER = r'''
+"""仓库外安装包走查：材料准备共享入口的端到端合成链路。
+
+只用安装后的公共入口：导入合成包、准备材料（默认转换器路径，本机缺
+工具时内部解析器兜底）、无模型消费核对。
+"""
+
+import io
+import json
+import sys
+import tarfile
+from pathlib import Path
+
+from hvs_catalog.materials import sandbox
+from hvs_catalog.materials.flow import parser_fingerprint
+from hvs_catalog.materials.service import MaterialsService
+from hvs_catalog.pipeline.acquisition.lifecycle import AcquisitionService
+from hvs_catalog.workspace import initialize_workspace, open_workspace
+
+ROW = chr(92) + chr(92)  # LaTeX 行分隔
+MAIN_TEX = (
+    "\\" + "documentclass{article}" + "\n"
+    + "\\" + "newcommand{\\objname}[1]{#1}" + "\n"
+    + "\\" + "begin{document}" + "\n"
+    + "\\" + "begin{table}" + "\\" + "caption{RV table}"
+      + "\\" + "label{tab:rv}" + "\n"
+    + "\\" + "begin{tabular}{lcc}" + "\\" + "hline"
+      + " Object & RV & Err " + ROW + "\n"
+    + "\\" + "hline" + "\n"
+    + "\\" + "objname{FIC-A} & 525 & 10 " + ROW + "\n"
+    + "\\" + "hline" + "\\" + "end{tabular}"
+      + "\\" + "end{table}" + "\n"
+    + "\\" + "end{document}" + "\n"
+)
+
+
+def make_tar_gz(members):
+    raw = io.BytesIO()
+    with tarfile.open(fileobj=raw, mode="w:gz") as archive:
+        for name, data in members.items():
+            info = tarfile.TarInfo(name)
+            info.size = len(data)
+            archive.addfile(info, io.BytesIO(data))
+    return raw.getvalue()
+
+
+def main():
+    work = Path(sys.argv[1])
+    space_dir = work / "space"
+    initialize_workspace(space_dir)
+    space = open_workspace(space_dir)
+    package_path = work / "source.tar.gz"
+    package_path.write_bytes(make_tar_gz({"main.tex": MAIN_TEX.encode("utf-8")}))
+    AcquisitionService(space).import_local_package(
+        package_path, arxiv_id="2501.02222", version=1, provenance="installed check"
+    )
+    service = MaterialsService(space)
+    handle, report = service.prepare_materials(
+        request_key="installed-materials", paper="2501.02222"
+    )
+    consumed = service.consume_prepared_input(handle.execution_id)
+    print(
+        json.dumps(
+            {
+                "outcome": report.outcome,
+                "errors": report.errors,
+                "summary": report.summary,
+                "consume_ok": consumed["ok"],
+                "consume_problems": consumed["problems"],
+                "observer_installed": Path(sandbox.__file__).with_name("source_trace.ltxml").is_file(),
+                "parser_fingerprint": parser_fingerprint(),
+                "flow_version": handle.flow_version,
+                "materials_complete": consumed["materials_complete"],
+                "tables": [
+                    {"environment": t["environment"], "status": t["status"]}
+                    for t in service.get_prepared_input(handle.execution_id)["tables"]
+                ],
+            },
+            ensure_ascii=False,
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+'''
+
+
 PIPELINE_DRIVER = '''
 """仓库外安装包走查：共享提取入口的跨进程暂停、决定与恢复。
 
@@ -246,6 +334,35 @@ def experiment_report_problems(reports: Sequence[object]) -> list[str]:
     return problems
 
 
+def materials_check_problems(payload: object) -> list[str]:
+    """核对材料准备走查输出：完成、正文组织、表格与无模型消费。"""
+    if not isinstance(payload, dict):
+        return ["材料准备走查输出不是 JSON 对象"]
+    problems: list[str] = []
+    if payload.get("outcome") != "finished":
+        problems.append(
+            f"材料准备应完成，实际 {payload.get('outcome')!r}：{payload.get('errors')}"
+        )
+        return problems
+    summary = payload.get("summary") or {}
+    if payload.get("observer_installed") is not True:
+        problems.append("发行包缺少可信 source_trace.ltxml 观测绑定")
+    fingerprint = payload.get("parser_fingerprint")
+    if not isinstance(fingerprint, str) or len(fingerprint) != 64:
+        problems.append("安装后的解析实现没有有效冻结指纹")
+    if payload.get("flow_version") != "2":
+        problems.append("安装后的材料流程不是当前版本2")
+    if summary.get("body_status") != "organized":
+        problems.append(f"合成正文应组织成功，实际 {summary.get('body_status')!r}")
+    if int(summary.get("table_count") or 0) < 1:
+        problems.append("合成包至少应发现一张表")
+    if int(summary.get("table_success") or 0) < 1:
+        problems.append("至少一张表应转换成功（含内部解析器兜底）")
+    if payload.get("consume_ok") is not True:
+        problems.append(f"无模型消费核对未通过：{payload.get('consume_problems')}")
+    return problems
+
+
 def verify_pipeline_and_scoring(
     venv_dir: Path, work_dir: Path, script: Path
 ) -> list[str]:
@@ -456,4 +573,15 @@ def verify_pipeline_and_scoring(
         reports = read_artifact(reports_path, "two-group experiments", list)
         if reports is not None:
             problems.extend(experiment_report_problems(reports))
+
+    # 7) 材料准备链路：合成包导入 → 准备 → 无模型消费核对
+    materials_driver = work_dir / "installed_materials_check.py"
+    materials_driver.write_text(MATERIALS_DRIVER, encoding="utf-8")
+    materials_space = work_dir / "materials-work"
+    materials_space.mkdir(exist_ok=True)
+    materials_result = run_json([python, "-I", materials_driver, materials_space])
+    if materials_result is None:
+        problems.append("材料准备走查驱动失败")
+    else:
+        problems.extend(materials_check_problems(materials_result))
     return problems

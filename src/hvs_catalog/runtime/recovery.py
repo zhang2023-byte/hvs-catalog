@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
+from uuid import uuid4
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
@@ -144,7 +145,7 @@ def _resume_locked(
                         state="failed",
                         errors=[
                             RunError(
-                                error_id=f"err-inconsistent-{execution_id}",
+                                error_id=f"err-inconsistent-{execution_id}-{uuid4().hex}",
                                 kind="recovery_inconsistent",
                                 message="; ".join(problems),
                             )
@@ -183,7 +184,7 @@ def _resume_locked(
                 state="failed",
                 errors=[
                     RunError(
-                        error_id=f"err-apply-{execution_id}",
+                        error_id=f"err-apply-{execution_id}-{uuid4().hex}",
                         kind="apply_failure",
                         message=message,
                     )
@@ -243,7 +244,7 @@ def _resume_locked(
             state="failed",
             errors=[
                 RunError(
-                    error_id=f"err-flow-{execution_id}",
+                    error_id=f"err-flow-{execution_id}-{uuid4().hex}",
                     kind="flow_failure",
                     message=message,
                 )
@@ -278,7 +279,7 @@ def _resume_locked(
             state="failed",
             errors=[
                 RunError(
-                    error_id=f"err-incomplete-{execution_id}",
+                    error_id=f"err-incomplete-{execution_id}-{uuid4().hex}",
                     kind="incomplete",
                     message="; ".join(problems) or "框架未到达结束节点",
                 )

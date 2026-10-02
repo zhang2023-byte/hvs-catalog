@@ -1,0 +1,15 @@
+# Trusted hvs-catalog observer. Never supplied by a source package.
+# Reads LaTeXML's native source locators; does not change TeX definitions.
+package LaTeXML::Package::HvsSourceTrace;
+use strict;
+use warnings;
+use LaTeXML::Package;
+
+for my $tag ('ltx:tabular', 'ltx:tr', 'ltx:td', 'ltx:table', 'ltx:p') {
+  Tag($tag, 'afterOpen:late' => sub {
+    my ($document, $node, $box) = @_;
+    my $locator = $box && $box->getLocator;
+    $node->setAttribute('hvs-locator', $locator->stringify) if $locator;
+  });
+}
+1;

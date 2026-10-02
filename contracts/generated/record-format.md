@@ -643,6 +643,7 @@ cost compatibility boundary in the architecture document.
 | `example_refs` | list of `ArtifactRef` | yes | minItems 0 |  |
 | `precedent_refs` | list of `PrecedentSnapshotRef` | yes | minItems 0 |  |
 | `existing_decision_refs` | list of `RecordRef` | yes | minItems 0 |  |
+| `options` | `object` | no |  |  |
 
 #### Attempt
 

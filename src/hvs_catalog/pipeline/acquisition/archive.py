@@ -98,6 +98,7 @@ _MEDIA_TYPES = {
     ".txt": "text/plain",
     ".md": "text/markdown",
     ".csv": "text/csv",
+    ".ecsv": "text/ecsv",
     ".pdf": "application/pdf",
     ".eps": "application/postscript",
     ".ps": "application/postscript",

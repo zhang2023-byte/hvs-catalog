@@ -197,7 +197,7 @@ def test_table_cell_row_key_mismatch_rejected():
     def wrong_row(payload):
         payload["data"]["locator"]["row_key"] = {"object": "FIC-B"}
 
-    with pytest.raises(CollectionValidationError, match="行键定位不到对象行"):
+    with pytest.raises(CollectionValidationError, match="行键零命中"):
         validate_collection(
             replace(records, "gap-conflict-ev-table-value", wrong_row),
             materials_root=FIXTURES,

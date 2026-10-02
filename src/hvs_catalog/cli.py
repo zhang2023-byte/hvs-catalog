@@ -285,8 +285,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--output", default=None, type=Path, help="可选：评分报告 JSON 输出路径"
     )
     from .cli_acquisition import build_acquisition_parser
+    from .cli_materials import build_materials_parser
 
     build_acquisition_parser(commands)
+    build_materials_parser(commands)
     return parser
 
 
@@ -745,4 +747,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = args.handler(args)
         assert isinstance(result, int)
         return EXIT_OK if result == 0 else result
+    if args.command == "materials":
+        from .cli_materials import run_materials_command
+
+        return run_materials_command(args)
     return 0

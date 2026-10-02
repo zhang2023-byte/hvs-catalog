@@ -8,13 +8,12 @@
     "summary": { "type": "string", "minLength": 1, "maxLength": 2000 },
     "findings": {
       "type": "array",
-      "maxItems": 20,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["severity", "file", "issue", "fix"],
         "properties": {
-          "severity": { "type": "string", "enum": ["must_fix", "optional"] },
+          "severity": { "type": "string", "enum": ["must_fix", "optional"], "description": "Reviewer recommendation; the parent decides which findings merit repair." },
           "file": { "type": "string", "minLength": 1, "maxLength": 1000 },
           "issue": { "type": "string", "minLength": 1, "maxLength": 2000 },
           "fix": { "type": "string", "minLength": 1, "maxLength": 2000 }
@@ -22,6 +21,6 @@
       }
     },
     "validation": { "type": "string", "minLength": 1, "maxLength": 4000 },
-    "risks": { "type": "array", "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 1000 } }
+    "risks": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 1000 } }
   }
 }
