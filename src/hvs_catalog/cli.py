@@ -289,6 +289,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     build_acquisition_parser(commands)
     build_materials_parser(commands)
+    from .cli_llm import add_model_commands
+
+    add_model_commands(commands)
     return parser
 
 
@@ -751,4 +754,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         from .cli_materials import run_materials_command
 
         return run_materials_command(args)
+    if args.command == "models":
+        from .cli_llm import run_model_command
+
+        return run_model_command(args)
     return 0

@@ -90,6 +90,59 @@ Python 共用入口：`MaterialsService.prepare_materials`／`resume_preparation
 - 编号范围仅对含义明确的稳定前缀对象记法确定性有界展开（保留前导零、原写法、规则与成员）；纯整数区间语义不明时经 R05 接口提问并等待专家，决定只应用一次，未决范围不当作完整名单；物理量区间与坐标符号不参与展开。
 - 退出码：0 成功；1 工程错误；3 暂停等待决定；4 无可用材料；5 已完成幂等重入（prepare 同请求同输入的重放与 resume 的已完成重入相同，均返回 5）。准备完成但存在缺口仍是成功，缺口在 `--json` 输出中如实呈现。
 
+## 模型配置与调用
+
+`hvs_catalog.llm` 提供 `CallRequest`、`ModelConfig`、`RuntimeConfig`、`start_call`／`resume_call`／`get_call`。当前接入 Token Dance 的 `deepseek-v4.1-flash`、`glm-5.3-flash`、`mimo-v2.6-flash` 和 `qwen3.8-flash`，固定各自官方上游，关闭回退。真实提取步骤尚未接入；当前 CLI 仅执行英文合成对象 `SYN-1`、数值 `42` 的连通验证，不证明提取质量。
+
+模型列表给出默认值、各模型允许的参数及官方依据；配置检查不联网：
+
+```bash
+hvs-catalog models list
+hvs-catalog models check --config model.json
+```
+
+非敏感配置使用 JSON。例如下列配置选择 DeepSeek 的公开默认参数；模型选择只是配置示例，最终提取模型仍待实验确定：
+
+```json
+{
+  "model": {"model": "deepseek-v4.1-flash", "stream": true},
+  "runtime": {
+    "base_url": "https://tokendance.space/gateway/v1",
+    "credential_env": "TOKENDANCE_API_KEY",
+    "quota_group": "tokendance-account",
+    "account_rpm": 50000,
+    "rpm": 50000,
+    "account_concurrency": 100,
+    "concurrency": 100,
+    "connect_timeout": 10,
+    "idle_timeout": 180,
+    "total_timeout": 600,
+    "max_attempts": 3
+  }
+}
+```
+
+省略 `parameters` 使用该模型完整默认配置，包括最大输出上限。显式提供 `parameters` 时，字典即完整发送参数，**不合并默认值**；`{}` 表示全部省略。修改默认配置时可从 `models list` 的 `default_parameters` 复制后调整，例如 DeepSeek 的 `{"max_tokens":4096,"thinking_type":"enabled","reasoning_effort":"high"}`。支持的字段、类型、取值范围、互斥规则分别校验，不接受任意 `extra_body`；嵌套思考字段由适配器转换。实际发送、省略、转换及公开默认依据都进入固定快照，未报告的服务端实际值保留未知。输出与思考计数差异见 [模型配置设计](design/extraction.md#模型接口与运行配置)。
+
+API Key 由环境变量或显式 `--env-file` 指定文件读取，环境变量优先；文件不执行 shell。项目本地 `.env` 已配置并忽略，不随包发行。其他使用者可建立自己的文件，只需 `TOKENDANCE_API_KEY=...`，不将其写入 JSON。网关地址来自 JSON／运行配置；`.env` 中其他变量不自动改变配置。
+
+同账户本机进程和不同工作空间须使用相同 `quota_store` 与 `quota_group`；相对路径在首次加载时按当前工作目录固定为绝对路径。默认额度数据库为 `~/.local/state/hvs-catalog/tokendance.sqlite3`，默认 50000 RPM／100 并发，四模型共用；其他账户按实际额度配置，目标值不得超过账户值。共享组的限流参数不一致时拒绝调用；要调整上限，应先停止旧进程并等待其租约及滚动窗口失效，再让全部进程使用新的共享额度数据库。同空间写入仍串行，100 并发通过不同空间实现。流式请求直到完成或关闭才释放名额；进程退出后的租约覆盖总时限并留 30 秒余量，不立即释放未知请求的名额。
+
+以下真实调用会使用账户额度。参数中的 `--max-output 4096` 只缩小本次验证的输出上限，思考设置沿用模型配置；省略该选项使用生产最大上限：
+
+```bash
+hvs-catalog models probe --config model.json --space MODEL_SPACE \
+    --request-key probe-1 --env-file .env --max-output 4096
+hvs-catalog models status --space MODEL_SPACE --execution EXECUTION_ID
+hvs-catalog models resume --space MODEL_SPACE --execution EXECUTION_ID --env-file .env
+```
+
+也可用 `--model MODEL_ID` 代替 `--config`；`--plain --non-stream` 验证普通非流式输出。`--quota-store PATH` 可显式指定共享额度数据库。CLI 返回执行 ID、状态、尝试、原始响应引用、解析结果、服务请求标识和已知 Token 用量。产品不填报金额；本次开发验证的预算和账单由独立工具 `tools/probe_tokendance.py` 管理，不进入业务记录。
+
+恢复使用保存的输入和配置，已保存响应不再次调用。出现 `completion_unknown` 时，尝试保留 `pending`，运行报告失败并阻止自动重发；须人工核对后才另建请求。已确定失败也不由恢复自动重试，修正输入／配置后使用新 `request-key`。只有可确认的发送前连接失败和 429 会在首次运行内自动重试，最多三次，每次共享门限并遵循 `Retry-After`；鉴权、参数、空响应、截断和格式错误直接报告，不更换提示、模型或协议。完整空间备份仍按工作空间约定进行，额度数据库单独属于本机账户限流状态。
+
+未来供应商／pi-ai 桥接实现可信 `ModelAdapter` 的配置检查、协议转换、发送和解析，显式传入 `start_call` 和 `resume_call`，复用相同记录与恢复接口；配置不会动态加载代码。本次未安装 pi-ai。
+
 ## 持久化与恢复演示
 
 `hvs-catalog demo` 使用共享 `pipeline`、`workspace`、`runtime`、`review`，全程 synthetic-mock。请指定全新独立目录 `SPACE`，不接管日常空间或旧演示，不提供 reset 删除捷径。

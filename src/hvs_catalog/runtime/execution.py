@@ -505,6 +505,7 @@ def append_run_revision(
     extra_result_refs: list[RecordRef] | None = None,
     operation_key: str | None = None,
     meta_updates: dict[str, str] | None = None,
+    usage: Usage | None = None,
 ) -> RunRecord:
     """为运行清单追加一个新修订；用于暂停、完成、失败与模型判断。
 
@@ -541,6 +542,8 @@ def append_run_revision(
     }
     if state is not None:
         payload["state"] = state
+    if usage is not None:
+        payload["usage"] = usage
     new_run = run.model_copy(
         update={
             "revision": run.revision + 1,

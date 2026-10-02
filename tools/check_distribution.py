@@ -24,7 +24,9 @@
    函数见 installed_pipeline_checks）：包来源与方法查询、3 篇合成论文
    × 2 方法 × 裁决开/关共 12 个 CLI 用例、保存输入的重复评分一致性与
    计划篡改拒绝、独立进程暂停→决定→恢复，以及两组对照实验的隔离与
-   专家用时未知边界。全部合成材料，不依赖仓库源码路径。
+   专家用时未知边界。全部合成材料，不依赖仓库源码路径；
+10. 用安装后的模型接口与 CLI 访问本机合成 HTTP/SSE 服务，核对四种
+    参数转换、工具输出、持久保存与不重复调用的恢复，不调用付费模型。
 
 用法：uv run python tools/check_distribution.py [Python 版本]
 
@@ -43,6 +45,7 @@ import zipfile
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
+from installed_llm_checks import verify_installed_llm
 from installed_pipeline_checks import verify_pipeline_and_scoring
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -1411,6 +1414,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             for problem in problems:
                 print(f"  - {problem}")
             return 1
+        problems = verify_installed_llm(venv_dir, work_dir, script)
+        if problems:
+            print("[失败] 仓库外模型接口与 CLI 走查未通过：")
+            for problem in problems:
+                print(f"  - {problem}")
+            return 1
     print(
         f"[通过] 仓库外全新环境安装 wheel，独立子进程查询帮助与版本均正常（{version}）；"
         "持久化恢复演示走查通过（重启恢复、结果复用、决定规则、重复调用）；"
@@ -1422,6 +1431,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "拒绝、跨进程暂停决定恢复、两组对照实验隔离与专家用时边界）；"
         "材料准备走查通过（合成包导入、准备、无模型消费核对，转换器"
         "按本机实际可用性工作）；"
+        "模型接口与 CLI 走查通过（四模型 HTTP/SSE、工具输出、持久保存、恢复复用及许可随包）；"
         "获取子系统 CLI 走查通过（文档化公开初始化、导入/重放、"
         "状态人读+JSON、材料输出、未就绪/未初始化/缺检索条件/缺来源"
         "声明的错误码边界；安装后 discover/fetch/revisions 的离线合成"
