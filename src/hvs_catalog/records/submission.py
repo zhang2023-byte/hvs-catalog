@@ -167,6 +167,19 @@ class RosterSubmission(Config):
     unresolved_groups: list[UnresolvedGroupSubmission]
 
 
+class DiscoveryCandidate(Config):
+    identifiers: list[InlineIdentifier] = Field(min_length=1)
+
+
+class DiscoverySubmission(Config):
+    """Provisional inventory; scientific fields reuse the roster/evidence definitions."""
+
+    coverage: RosterCoverageSubmission
+    candidates: list[DiscoveryCandidate]
+    unresolved_groups: list[UnresolvedGroupSubmission]
+    questions: list[InlineQuestion]
+
+
 # ---------------------------------------------------------------------------
 # Per-candidate judgment with candidate_review.
 # ---------------------------------------------------------------------------

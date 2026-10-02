@@ -153,7 +153,7 @@ Gold 私仓现有资料目录与使用要求见 [Gold README](../../../hvs-catal
 
 ```mermaid
 flowchart LR
-    C[上层调用者：合成流程，后续 CLI 或网页] --> Q[review：待办与决定]
+    C[上层调用者：CLI、合成流程，后续网页] --> Q[review：待办与决定]
     C --> R[runtime：运行与恢复]
     Q --> W[workspace：事务与操作回执]
     R --> W

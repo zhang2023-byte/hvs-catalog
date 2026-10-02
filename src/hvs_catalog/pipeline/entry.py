@@ -9,6 +9,7 @@ keys/executions.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -196,6 +197,7 @@ def start_extraction(
     request: ExtractionRequest,
     request_key: str,
     registry: PipelineRegistry | None = None,
+    configuration=None,
 ) -> ExtractionHandle:
     """Create/reuse extraction through strict requests.
 
@@ -205,18 +207,36 @@ def start_extraction(
     """
     registration = _default_registry(registry).get(request.method)
     _validate_models(registration.spec, request)
-    validated_models = _validated_model_specs(
-        registration, request.models, context="提取请求"
-    )
+    frozen = {}
+    if configuration is None:
+        validated_models = _validated_model_specs(
+            registration, request.models, context="提取请求"
+        )
+    else:
+        from .configuration import ExtractionConfig, freeze_configuration
+
+        configuration = ExtractionConfig.model_validate(configuration.model_dump())
+        if (
+            configuration.request(request.source_refs).model_dump()
+            != request.model_dump()
+        ):
+            raise PipelineRequestError("提取请求与完整运行配置不一致")
+        validated_models = [
+            ModelSpec.model_validate(item.model_dump()) for item in request.models
+        ]
     problems = registration.check_request(space, request)
     if problems:
         raise PipelineRequestError("提取请求未通过运行前检查：" + "；".join(problems))
+    if configuration is not None:
+        with space.lock():
+            frozen = freeze_configuration(space, configuration)
     snapshot = _build_input_snapshot(
         source_refs=list(request.source_refs),
         method=request.method,
         models=validated_models,
         expert_adjudication=request.expert_adjudication,
         existing_decision_refs=list(request.existing_decision_refs),
+        **frozen,
     )
     flow = registration.build_flow(registration.spec, mode=request.mode)
     handle, reused = _create_execution(
@@ -253,7 +273,10 @@ def resume_extraction(
     """
     handle = get_execution(space, execution_id)
     registration = _default_registry(registry).get(handle.input_snapshot.method)
-    _check_stored_model_specs(registration, handle.input_snapshot.models)
+    from .configuration import validate_configuration_snapshot
+
+    if validate_configuration_snapshot(handle.input_snapshot) is None:
+        _check_stored_model_specs(registration, handle.input_snapshot.models)
     flow = registration.build_flow(registration.spec, mode=handle.mode)
     report = _resume_execution(space, execution_id, flow, service=service)
     return _build_report(space, handle, report)
@@ -282,6 +305,15 @@ def get_extraction(
                 "step_id": step.step_id,
                 "state": step.state,
                 "attempts": len(step.attempts),
+                "tokens": (
+                    sum(a.usage.tokens for a in step.attempts)
+                    if step.attempts
+                    and all(
+                        a.usage is not None and a.usage.tokens is not None
+                        for a in step.attempts
+                    )
+                    else None
+                ),
                 "result_refs": [
                     ref.model_dump(mode="json") for ref in step.result_refs
                 ],
@@ -380,6 +412,13 @@ def _config_echo(handle: ExecutionHandle) -> dict:
         "expert_adjudication": snapshot.expert_adjudication,
         "models": [item.model_dump(mode="json") for item in snapshot.models],
         "rules_version": snapshot.rules.version,
+        "configuration": (
+            json.loads(snapshot.options["extraction_config"])
+            if "extraction_config" in snapshot.options
+            else None
+        ),
+        "prompt_refs": [ref.model_dump(mode="json") for ref in snapshot.prompt_refs],
+        "example_refs": [ref.model_dump(mode="json") for ref in snapshot.example_refs],
         "existing_decision_refs": [
             ref.model_dump(mode="json") for ref in snapshot.existing_decision_refs
         ],

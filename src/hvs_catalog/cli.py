@@ -1,5 +1,5 @@
 """CLI entry point for help/version, offline persistence/recovery demos, Gold tools,
-synthetic extraction and independent scoring demos, and arXiv
+extraction configuration/previews, synthetic extraction and scoring, and arXiv
 discovery/fetch/revision/import/status.
 
 List implemented operations only. Real direct/candidate_review extraction and official
@@ -29,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="hvs-catalog",
         description=(
             "高速星文献提取与星表系统（当前提供帮助、版本查询、持久化恢复"
-            "演示、Gold 工具，以及合成提取与独立评分演示）。"
+            "演示、Gold 工具、提取配置与提示预览，以及合成提取与独立评分演示）。"
         ),
     )
     parser.add_argument(
@@ -206,15 +206,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     extract = commands.add_parser(
         "extract",
-        help="共享提取入口（当前提供合成 demo；真实提取尚未实现）",
+        help="提取配置、完整提示预览与合成模拟运行",
         description=(
-            "日常与评测共用的提取入口。当前只提供合成材料演示："
-            "用模拟服务走名单→数值→收尾全链路，支持专家裁决开关与"
-            "暂停后模拟决定恢复；不调用真实模型，不产生货币费用。"
+            "日常与评测共用的提取配置及入口。支持离线配置检查、完整提示预览，"
+            "以及用合成材料和模拟服务走名单→数值→收尾全链路、保存与恢复执行。"
+            "不调用真实模型，不产生货币费用。"
             "真实 direct/candidate_review 提取留待后续关卡。"
         ),
     )
     extract_commands = extract.add_subparsers(dest="extract_command", required=True)
+    from .cli_extraction import add_extraction_commands
+
+    add_extraction_commands(extract_commands)
     extract_demo = extract_commands.add_parser(
         "demo",
         help="合成共享提取演示：执行、暂停/决定/恢复并保存输出",
@@ -741,7 +744,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "methods":
         return _run_methods(args)
     if args.command == "extract":
-        return _run_extract_demo(args)
+        if args.extract_command == "demo":
+            return _run_extract_demo(args)
+        from .cli_extraction import run_extraction_command
+
+        return run_extraction_command(args)
     if args.command == "score":
         return _run_score_demo(args)
     if args.command == "acquisition":

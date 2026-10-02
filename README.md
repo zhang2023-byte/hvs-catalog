@@ -7,11 +7,12 @@
 | 能力 | 当前范围与入口 |
 |---|---|
 | Python 包与 CLI | 可独立安装；支持帮助、版本查询和 `python -m hvs_catalog`。 |
-| 共同记录格式 | 十类记录的 JSON 读写、准确修订引用、原文证据校验与三种步骤的简化填写展开；见 [记录设计](docs/design/records.md) 和 [生成合同](contracts/generated/README.md)。 |
+| 共同记录格式 | 十类记录的 JSON 读写、准确修订引用、原文证据校验与步骤填写格式；候选发现使用共同字段的临时清单，名单／候选判断／数值支持简化填写展开。见 [记录设计](docs/design/records.md) 和 [生成合同](contracts/generated/README.md)。 |
 | 工作空间、运行与裁决 | Python 接口支持固定输入、事务保存、暂停恢复和整体备份恢复；见 [接口与支持边界](docs/design/architecture.md#工作空间与恢复接口方案)。 |
 | arXiv 获取 | CLI／Python 支持按条件发现、固定版本获取、本地导入、修订检查和状态查询；见 [操作说明](docs/operations.md#arxiv-材料获取)。 |
 | 材料准备 | 固定来源包的正文组织、完整作者上下文表格转换、明确对象编号范围展开及统一缺口交付；见 [操作说明](docs/operations.md#材料准备正文与表格) 和 [支持范围](docs/design/workflow.md#提取材料的准备)。 |
 | 模型接口 | Token Dance 四个固定 Flash 模型及官方上游；支持参数检查、HTTP／SSE 工具输出、账户共享限流、调用记录和恢复；见 [操作说明](docs/operations.md#模型配置与调用)。 |
+| 提取配置与提示 | 默认 direct、DeepSeek Flash、专家求助；支持逐步模型配置、英文提示组装、离线检查与完整请求预览，以及固定输入的模拟运行／恢复。见 [操作说明](docs/operations.md#提取配置与提示预览)。 |
 | Gold 工具 | 旧 v4 只读迁移／比较、草稿检查、当前答案配对的获准保存与读取；见 [生成用法与人工恢复](contracts/generated/gold/README.md)。工具不执行 Git，不自动迁移真实私仓。 |
 | 提取与评分基础 | 共享提取入口、专家裁决开关、L0/L1/L2 合成评分及两组报告；**当前两种方法仅为 synthetic-mock，不是真实提取能力**。见 [离线演示](docs/operations.md#合成提取与重评) 和 [评分设计](docs/design/evaluation.md#提取与评分的集成入口)。 |
 

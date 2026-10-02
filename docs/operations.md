@@ -94,7 +94,7 @@ Python 共用入口：`MaterialsService.prepare_materials`／`resume_preparation
 
 ## 模型配置与调用
 
-`hvs_catalog.llm` 提供 `CallRequest`、`ModelConfig`、`RuntimeConfig`、`start_call`／`resume_call`／`get_call`。当前接入 Token Dance 的 `deepseek-v4.1-flash`、`glm-5.3-flash`、`mimo-v2.6-flash` 和 `qwen3.8-flash`，固定各自官方上游，关闭回退。真实提取步骤尚未接入；当前 CLI 仅执行英文合成对象 `SYN-1`、数值 `42` 的连通验证，不证明提取质量。
+`hvs_catalog.llm` 提供 `CallRequest`、`ModelConfig`、`RuntimeConfig`、`start_call`／`resume_call`／`get_call`。当前接入 Token Dance 的 `deepseek-v4.1-flash`、`glm-5.3-flash`、`mimo-v2.6-flash` 和 `qwen3.8-flash`，固定各自官方上游，关闭回退。真实提取步骤尚未接入；`models probe` 只执行英文合成对象 `SYN-1`、数值 `42` 的连通验证，不证明提取质量。
 
 模型列表给出默认值、各模型允许的参数及官方依据；配置检查不联网：
 
@@ -103,7 +103,7 @@ hvs-catalog models list
 hvs-catalog models check --config model.json
 ```
 
-非敏感配置使用 JSON。例如下列配置选择 DeepSeek 的公开默认参数；模型选择只是配置示例，最终提取模型仍待实验确定：
+非敏感配置使用 JSON。下例使用 DeepSeek 的默认参数；提取默认配置及逐步模型选择见 [提取配置操作](#提取配置与提示预览)：
 
 ```json
 {
@@ -144,6 +144,51 @@ hvs-catalog models resume --space MODEL_SPACE --execution EXECUTION_ID --env-fil
 恢复使用保存的输入和配置，已保存响应不再次调用。出现 `completion_unknown` 时，尝试保留 `pending`，运行报告失败并阻止自动重发；须人工核对后才另建请求。已确定失败也不由恢复自动重试，修正输入／配置后使用新 `request-key`。只有可确认的发送前连接失败和 429 会在首次运行内自动重试，最多三次，每次共享门限并遵循 `Retry-After`；鉴权、参数、空响应、截断和格式错误直接报告，不更换提示、模型或协议。完整空间备份仍按工作空间约定进行，额度数据库单独属于本机账户限流状态。
 
 当前接口不依赖 pi-ai。扩展供应商的可信适配器职责见 [模型配置设计](design/extraction.md#模型接口与运行配置)；适配器对象显式传入 `start_call` 和 `resume_call`，配置不会动态加载代码。
+
+## 提取配置与提示预览
+
+默认配置选择 `direct`、`deepseek-v4.1-flash`、流式和该模型已定义的默认参数，并开启专家求助。以下操作离线检查与组装提示，不调用模型：
+
+```bash
+hvs-catalog extract config > extraction.json
+hvs-catalog extract check --config extraction.json
+hvs-catalog extract preview --config extraction.json --step direct_roster --input step-input.json > request-preview.json
+```
+
+配置文件可只填需要设置的选项。例如保持默认 DeepSeek，候选判断和数值分别指定 GLM 与 MiMo：
+
+```json
+{
+  "method": "candidate_review",
+  "step_models": {
+    "review_candidates": {"model": "glm-5.3-flash"},
+    "quantities": {"model": "mimo-v2.6-flash"}
+  },
+  "examples": {"quantities": ["E13", "E14", "E16", "E19"]}
+}
+```
+
+`step_models` 中每项是完整模型配置，`parameters` 的省略与显式字典规则同 [模型配置](#模型配置与调用)，不混入另一模型的参数。`use_model_supplements: false` 关闭模型补充提示，科学规则与填写要求照常保留；当前补充提示没有额外文字。`examples` 按步骤指定编号，空列表关闭该步例子；未指定使用英文步骤资源的默认选择，选例不代替科学规则。
+
+`step-input.json` 提供 `manuscript` 字符串，包含准备好的原文块、表格及其文件／位置标识。例如名单预览的最小合成输入：
+
+```json
+{"manuscript": "FILE paper\n1|Synthetic A was selected as a Galactic unbound candidate."}
+```
+
+`targets` 提供本步必要的已有候选或名单对象；逐项 review 恰好一个带 `item_id` 的候选，数值步骤提供带 `object_id` 的名单对象，每项保留 `identifiers` 名称列表。`material_gaps` 是缺口列表，每项提供 `gap_id`、英文 `description` 和共同定义的 `affected_targets`，可带 `reason` 与 `file_id`。`open_questions` 每项提供 `question_id`、英文 `prompt`，可带 `category`、`target_ids`、`gap_ids` 和原文就地证据 `evidence`；不传记录修订或维护信息。原文、标识、数值和证据不翻译。完整预览同时输出 `request`（模型、两条消息和当前步骤工具 Schema）、`prepared`（模型适配器转换的实际协议参数）、内容摘要、选例及判例归档信息。步骤不存在、收尾配置模型、无关／重复例子、缺少必需英文内容或已有结果时拒绝，不生成模型调用。
+
+日常 `mode: daily` 开启专家裁决。后续纯 AI 对照配置显式指定 `mode: evaluation` 与 `expert_adjudication: false`；`synthetic` 可用来模拟两种裁决配置。提示只改变歧义处理要求，仍保留未决、缺口和科学范围。可显式传入带审定状态、版本、英文说明、条件及边界的 `precedents` 快照，必须声明 `approved: true`；省略或未审定时拒绝。当前只核对所提供的输入，不代替科学审批，实际判例制作、审批、查找与库复用由 R21 接入。
+
+以下命令使用固定的虚构论文与模拟服务，验证配置接入各步、请求归档及恢复，不代表真实论文提取：
+
+```bash
+hvs-catalog extract simulate --config extraction.json --space /tmp/hvs-config-demo --paper FIC-R05-B --request-key configured-example
+hvs-catalog extract status --space /tmp/hvs-config-demo --execution exec-000001
+hvs-catalog extract resume --space /tmp/hvs-config-demo --execution exec-000001
+```
+
+模拟执行可在科学疑问处暂停，决定提交仍用现有 Python 裁决接口。恢复只读取原运行的配置、提示、选例与判例内容；编辑配置文件或提示资源不会改写原运行。新材料、实际英文提示或配置使用新的 `request-key`。归档损坏或缺失时拒绝恢复，不能用当前提示替换。`status` 可回查完整配置和提示／例子引用，以及每步调用次数和已知 tokens；模拟服务用量是固定合成值。日常与评测通过同一个 Python 配置／提取入口，实际模型提取由后续方法实现接入。
 
 ## 持久化与恢复演示
 

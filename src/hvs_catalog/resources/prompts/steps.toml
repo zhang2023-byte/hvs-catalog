@@ -1,0 +1,32 @@
+instruction_language = "en"
+
+[steps.direct_roster]
+task = "Identify the complete roster of eligible objects and this paper's contributions. Apply the inclusion rules directly, preserve the authors' assessments and evidence, and record exclusions, unresolved questions and material gaps."
+explanations = ["S01", "S02", "S03", "S04", "S06", "S07"]
+definitions = ["states"]
+examples = ["E01", "E04", "E05", "E07", "E08", "E12", "E13", "E19"]
+format = "roster"
+
+[steps.discover_candidates]
+task = "Find every identifiable object that may qualify under the inclusion rules, including relevant historical candidates. Return a provisional inventory with printed identifiers and evidence for subsequent per-candidate judgment. Discovery alone does not establish eligibility or an author assessment. Preserve unresolved groups, identity questions and material gaps."
+explanations = ["S01", "S02", "S03", "S04", "S06", "S07"]
+definitions = ["states"]
+examples = ["E05", "E09", "E10", "E12", "E13", "E19"]
+format = "discovery"
+
+[steps.review_candidates]
+task = "Judge exactly the supplied candidate against the complete paper materials. Record inclusion, exclusion or an unresolved disposition, the contribution and author assessment where applicable, and supporting evidence. Do not add candidates, drop the supplied candidate, or treat the provisional inventory as an inclusion decision."
+explanations = ["S01", "S02", "S03", "S04", "S06", "S07"]
+definitions = ["states"]
+examples = ["E01", "E04", "E05", "E07", "E08", "E12", "E13", "E19"]
+format = "candidate"
+
+[steps.quantities]
+task = "For the supplied roster objects, collect all reported or adopted values in the approved quantity scope. Preserve original representations, units, errors, conditions and evidence. Keep distinct results separate and report unresolved numerical conflicts and incomplete coverage. Use the supplied identities and inclusion decisions; report any contradictory evidence rather than silently changing them."
+explanations = ["S01", "S02", "S05", "S06", "S07"]
+definitions = ["quantities"]
+examples = ["E12", "E13", "E14", "E15", "E16", "E17", "E18", "E19"]
+format = "quantity"
+
+# Optional expression guidance belongs here; scientific requirements stay in rules.toml.
+[models]

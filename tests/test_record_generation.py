@@ -66,7 +66,12 @@ def test_every_record_type_has_schema_and_doc_entry():
 
 def test_submission_schemas_do_not_leak_management_fields():
     outputs = build_outputs()
-    for key in ("submission.roster", "submission.candidate", "submission.quantity"):
+    for key in (
+        "submission.roster",
+        "submission.candidate",
+        "submission.discovery",
+        "submission.quantity",
+    ):
         text = outputs[f"schemas/{key}.json"]
         schema = json.loads(text)
         # Administrative fields appear at no nesting level.
@@ -103,7 +108,12 @@ def test_quantity_template_lists_scope_and_instructions():
 
 def test_all_templates_share_common_instructions():
     outputs = build_outputs()
-    for name in ("roster-extraction", "candidate-judgment", "quantity-extraction"):
+    for name in (
+        "roster-extraction",
+        "candidate-judgment",
+        "candidate-discovery",
+        "quantity-extraction",
+    ):
         assert COMMON_INSTRUCTIONS in outputs[f"templates/{name}.md"]
 
 

@@ -144,11 +144,12 @@ flowchart LR
 
 ### 英文填写要求与生成范围
 
-提交给模型的结构仅含当前步骤需要填写的内容。正式英文模板分别为[名单提取](../../contracts/generated/templates/roster-extraction.md)、[候选判断](../../contracts/generated/templates/candidate-judgment.md)和[数值提取](../../contracts/generated/templates/quantity-extraction.md)，字段与展开规则见[生成说明](../../contracts/generated/record-format.md#filling-formats-and-expansion-rules)。下面维护填写职责与转换理由；模板的实际提取效果在后续接入时验证。
+提交给模型的结构仅含当前步骤需要填写的内容。正式英文模板分别为[名单提取](../../contracts/generated/templates/roster-extraction.md)、[候选发现](../../contracts/generated/templates/candidate-discovery.md)、[候选判断](../../contracts/generated/templates/candidate-judgment.md)和[数值提取](../../contracts/generated/templates/quantity-extraction.md)，字段与展开规则见[生成说明](../../contracts/generated/record-format.md#filling-formats-and-expansion-rules)。模板同时说明程序职责；提示组装只发送科学填写部分和对应 Schema。候选发现复用共同字段形成临时清单，不新增正式记录类型。下面维护填写职责与转换理由；实际提取效果在后续接入时验证。
 
 | 步骤填写格式 | 必须填写 | 程序提供或保存 |
 |---|---|---|
 | 名单提取 | 条目、原始标识、收录/排除/待决、研究摘要、贡献类型、作者总体及条件判断、证据、范围和缺口 | 固定论文/来源上下文，步骤方法、编号和运行信息 |
+| 候选发现 | 潜在对象的标识及证据、覆盖范围、未展开群体和身份问题；不填写收录、贡献或作者判断 | 固定材料、已知缺口及后续候选编号 |
 | 候选判断 | 程序给定候选的判断及对应科学字段；没有列清的组保持未完成 | 既有候选编号和材料引用；不能擅自增删候选以伪装完成 |
 | 数值提取 | 程序指定对象的 `quantities`、`quantity_conflicts`、显式 `coverage` 声明、就地填写的证据及问题；必需列表即使为空也显式填写 | 对象编号、已有名单和来源上下文；展开后的 18 项完成记录、记录版本、调用状态和用量 |
 

@@ -23,6 +23,8 @@ repository.
 10. Exercise installed model interfaces/CLI against local synthetic HTTP/SSE: four
     parameter conversions, tools, persistence, and recovery without duplicate calls or
     paid models.
+11. Exercise extraction configuration, shared English prompt resources, CLI previews,
+    four-model step overrides, and saved mock pause/decision/recovery across processes.
 
 All materials are synthetic and independent of repository source paths. Usage: uv run
 python tools/check_distribution.py [Python version]. The optional version, such as 3.12,
@@ -41,6 +43,7 @@ import zipfile
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
+from installed_extraction_checks import verify_installed_extraction
 from installed_llm_checks import verify_installed_llm
 from installed_pipeline_checks import verify_pipeline_and_scoring
 
@@ -1409,6 +1412,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             for problem in problems:
                 print(f"  - {problem}")
             return 1
+        problems = verify_installed_extraction(venv_dir, work_dir, script)
+        if problems:
+            print("[失败] 仓库外提取配置、提示与恢复走查未通过：")
+            for problem in problems:
+                print(f"  - {problem}")
+            return 1
     print(
         f"[通过] 仓库外全新环境安装 wheel，独立子进程查询帮助与版本均正常（{version}）；"
         "持久化恢复演示走查通过（重启恢复、结果复用、决定规则、重复调用）；"
@@ -1421,6 +1430,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "材料准备走查通过（合成包导入、准备、无模型消费核对，转换器"
         "按本机实际可用性工作）；"
         "模型接口与 CLI 走查通过（四模型 HTTP/SSE、工具输出、持久保存、恢复复用及许可随包）；"
+        "提取配置与提示走查通过（英文资源、完整预览、逐步模型与跨进程模拟恢复）；"
         "获取子系统 CLI 走查通过（文档化公开初始化、导入/重放、"
         "状态人读+JSON、材料输出、未就绪/未初始化/缺检索条件/缺来源"
         "声明的错误码边界；安装后 discover/fetch/revisions 的离线合成"

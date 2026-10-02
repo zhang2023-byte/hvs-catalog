@@ -161,7 +161,12 @@ class ExtractionFlow(DefaultFlowAdapter):
             if self.parameter_policy is not None
             else self.spec.parameter_policy
         )
-        for item in ctx.execution.input_snapshot.models:
+        from .configuration import validate_configuration_snapshot
+
+        configuration = validate_configuration_snapshot(ctx.execution.input_snapshot)
+        for item in (
+            ctx.execution.input_snapshot.models if configuration is None else ()
+        ):
             try:
                 policy.validate(
                     item.parameters,
@@ -222,7 +227,7 @@ class ExtractionFlow(DefaultFlowAdapter):
         }
 
     def _op_input(self, ctx: RuntimeContext, step_id: str, state: dict) -> dict:
-        return {
+        result = {
             "execution_id": ctx.execution.execution_id,
             "step": step_id,
             "paper_key": state["paper_key"],
@@ -230,6 +235,12 @@ class ExtractionFlow(DefaultFlowAdapter):
             "rules": state["rules_version"],
             "model": self._model_spec(ctx, step_id),
         }
+        if ctx.execution.input_snapshot.prompt_refs:
+            result["prompt_refs"] = [
+                ref.model_dump(mode="json")
+                for ref in ctx.execution.input_snapshot.prompt_refs
+            ]
+        return result
 
     def _call(
         self,
@@ -311,11 +322,18 @@ class ExtractionFlow(DefaultFlowAdapter):
         return list(step.result_refs) if step is not None else []
 
     def _stored_response(
-        self, ctx: RuntimeContext, step_id: str, request: dict
+        self,
+        ctx: RuntimeContext,
+        step_id: str,
+        request: dict,
+        state: dict | None = None,
     ) -> dict | None:
         """Find archived responses for identical step requests; reuse without service
         calls.
         """
+        from .configuration import configured_request
+
+        request = configured_request(ctx, step_id, request, state or {})
         run = ctx.space.store().read_record_current(ctx.execution.run_ref.record_id)
         step = (
             next((s for s in run.data.steps if s.step_id == step_id), None)
@@ -347,6 +365,9 @@ class ExtractionFlow(DefaultFlowAdapter):
         state: dict,
         call_key: str,
     ) -> dict:
+        from .configuration import configured_request
+
+        request = configured_request(ctx, step_id, request, state)
         stored = self._stored_response(ctx, step_id, request)
         if stored is not None:
             return stored
@@ -454,6 +475,7 @@ class ExtractionFlow(DefaultFlowAdapter):
                 ctx,
                 "discover_candidates",
                 {"step": "discover_candidates", **op_input},
+                state,
             )
             if (
                 response is None

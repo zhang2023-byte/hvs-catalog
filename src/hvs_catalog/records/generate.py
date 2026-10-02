@@ -88,6 +88,7 @@ from .source import (
 )
 from .submission import (
     CandidateSubmission,
+    DiscoverySubmission,
     QuantitySubmission,
     RosterSubmission,
     ValueSubmission,
@@ -485,6 +486,13 @@ def _expansion_section() -> list[str]:
         "",
         f"> {COMMON_INSTRUCTIONS}",
         "",
+        (
+            "Candidate discovery is a provisional transport inventory, using the shared "
+            "identifier/evidence, material coverage, unresolved group and question fields. "
+            "It contains no disposition, contribution or author-assessment judgment; "
+            "the application assigns candidate identifiers for subsequent review."
+        ),
+        "",
         "Numeric filling rules:",
         "",
         f"- Always provided by the extractor: {required}.",
@@ -680,6 +688,35 @@ def render_roster_template() -> str:
             f"> {COMMON_INSTRUCTIONS}",
             "",
             "The complete field structure is defined by `schemas/submission.roster.json`.",
+            "",
+        ]
+    )
+
+
+def render_discovery_template() -> str:
+    return "\n".join(
+        [
+            "<!-- Generated -->",
+            "# Candidate discovery filling format (candidate_review method)",
+            "",
+            (
+                "Return coverage, a provisional candidates list with printed identifiers and inline source evidence, unresolved_groups and identity questions. "
+                "Reuse the shared source, coverage, question and group fields. The application assigns candidate identifiers after discovery. "
+                "Do not fill eligibility decisions or contribution judgments in this inventory."
+            ),
+            "",
+            "## Required behavior",
+            "",
+            "- Preserve every identifiable potential candidate and its paper evidence; discovery is not a final inclusion decision.",
+            "- Preserve original identifiers and unresolved ranges. Do not invent missing members or silently merge ambiguous identities.",
+            "- Report missing or unreadable material in coverage and keep affected parts incomplete.",
+            "- Return every required list, including empty lists. An empty inventory alone does not establish that the paper contains no eligible objects.",
+            "",
+            "## Common instructions",
+            "",
+            f"> {COMMON_INSTRUCTIONS}",
+            "",
+            "The complete field structure is defined by `schemas/submission.discovery.json`.",
             "",
         ]
     )
@@ -912,10 +949,11 @@ The [Gold contracts](gold/README.md) in `gold/` are generated from
 
 - `record-format.md` — full record format documentation
 - `schemas/submission.roster.json`, `schemas/submission.candidate.json`,
-  `schemas/submission.quantity.json` — step filling formats
+  `schemas/submission.discovery.json`, `schemas/submission.quantity.json` — step filling formats
 - `templates/roster-extraction.md`, `templates/candidate-judgment.md`,
-  `templates/quantity-extraction.md` — English step filling templates
-  sent to extractors
+  `templates/candidate-discovery.md`, `templates/quantity-extraction.md` — English step filling templates
+  covering extractor and application responsibilities. Prompt assembly sends only
+  scientific filling sections and the corresponding submission schema.
 
 Per record type:
 
@@ -932,9 +970,11 @@ def build_outputs() -> dict[str, str]:
         "record-format.md": render_format_document(),
         "templates/roster-extraction.md": render_roster_template(),
         "templates/candidate-judgment.md": render_candidate_template(),
+        "templates/candidate-discovery.md": render_discovery_template(),
         "templates/quantity-extraction.md": render_quantity_template(),
         "schemas/submission.roster.json": _schema_json(RosterSubmission),
         "schemas/submission.candidate.json": _schema_json(CandidateSubmission),
+        "schemas/submission.discovery.json": _schema_json(DiscoverySubmission),
         "schemas/submission.quantity.json": _schema_json(QuantitySubmission),
     }
     for name, model in RECORD_MODELS.items():

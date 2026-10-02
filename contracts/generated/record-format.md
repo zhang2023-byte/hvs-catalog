@@ -766,6 +766,8 @@ Step submissions contain only the scientific fields of that step. The applicatio
 
 > Return only the scientific fields requested for this step. Write new summaries, questions and precedent notes in English; preserve the paper's printed identifiers, values, units, conditions and excerpts in their original form. Use only the supplied paper materials and fixed references. Provide every required list explicitly; an empty list does not establish that the paper reported nothing. Keep material gaps, unresolved scientific questions and the authors' assessment distinct. Supply the evidence required by this step; never invent missing content or silently resolve conflicting results. Use application-supplied identifiers where provided. The application creates persistent record identifiers, references and execution metadata; it does not supply scientific judgments or expert decisions.
 
+Candidate discovery is a provisional transport inventory, using the shared identifier/evidence, material coverage, unresolved group and question fields. It contains no disposition, contribution or author-assessment judgment; the application assigns candidate identifiers for subsequent review.
+
 Numeric filling rules:
 
 - Always provided by the extractor: `limit_kind`, `condition`, `source`, `evidence`.

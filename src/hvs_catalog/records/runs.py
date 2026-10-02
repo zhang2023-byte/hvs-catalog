@@ -74,8 +74,8 @@ class InputSnapshot(Config):
     example_refs: list[ArtifactRef] = Field(min_length=0)
     precedent_refs: list[PrecedentSnapshotRef] = Field(min_length=0)
     existing_decision_refs: list[RecordRef] = Field(min_length=0)
-    # Fixed engineering options, such as preparation, enter complete digests; extraction leaves them
-    # empty. Values are strings; callers canonically serialize structured options.
+    # Fixed options, including preparation and resolved extraction configuration, enter
+    # complete digests. Values are strings; callers canonically serialize structured options.
     options: dict[str, str] = Field(default_factory=dict)
 
 

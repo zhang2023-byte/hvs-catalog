@@ -9,6 +9,13 @@ metadata.
 
 from __future__ import annotations
 
+from .configuration import (
+    ExtractionConfig,
+    check_extraction_config,
+    load_extraction_config,
+    preview_extraction_prompt,
+    start_configured_extraction,
+)
 from .entry import (
     ExtractionHandle,
     ExtractionReport,
@@ -85,6 +92,7 @@ __all__ = [
     "STEP_QUANTITIES",
     "STEP_REVIEW_CANDIDATES",
     "SUPPORTED_PAPER_KEYS",
+    "ExtractionConfig",
     "ExtractionFlow",
     "ExtractionHandle",
     "ExtractionReport",
@@ -104,15 +112,19 @@ __all__ = [
     "StepSpec",
     "UnknownMethodError",
     "build_default_registry",
+    "check_extraction_config",
     "effective_policy",
     "execution_result_refs",
     "get_extraction",
     "import_mock_source",
     "list_methods",
+    "load_extraction_config",
     "pending_questions",
+    "preview_extraction_prompt",
     "registered_source_binding",
     "resolve_registered_material",
     "resume_extraction",
+    "start_configured_extraction",
     "start_extraction",
     "submit_expert_decision",
     "supported_parameters",
