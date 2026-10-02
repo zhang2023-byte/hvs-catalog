@@ -240,4 +240,8 @@ hvs-catalog score demo --inputs EXTRACT_OUTPUT/evaluation-inputs.json
 
 ## Gold 检查、保存与人工恢复
 
+评分前已确认的范围及问题通过评分侧 Python 接口固定：`GoldReadinessReview` 与 `gold_readiness_fingerprint(pair)` 绑定当前完整配对，把每个已裁定缺口的代码、位置、处理和依据交给 `gold_entries_from_compact_pair(pair, scoring_review=review)`。该入口不重写 Gold、不核验真实 PDF，也不授权保存；完整材料核对及具体专家决定须先完成。字段和处理边界见 [Gold 评分就绪](design/evaluation.md#gold-适配与就绪门禁)。
+
+`ScoringPlan.limitations` 接收已审定的 `EvaluationLimitation`，用 `LimitationScope` 明确论文内对象标识、可选物理量、条件和科学归属。默认评分保留 PDF/源码差异和作者问题；包外及既无 Gold 又不提供模型输入的解析范围可显式设置 `exclude_from_default`。已有 PDF Gold 的范围不能以不支持解析为由排除默认分。PDF/源码不对齐的范围设置 `exclude_from_reference` 后，`score_batch` 和保存输入集的重评入口同时返回原默认结果与 `reference_score`，后者同步排除两侧对应条目并重算。`limitation_effects` 保存证据、受影响记录及观察到的错误，是潜在原因清单；条件或身份归属不明时受影响指标保持暂定。问题清单进入完整计划指纹，修改后不能按旧指纹重评。未提供清单的已有合成输入及其指纹保持原样。
+
 当前格式、Python／CLI 参数、内容绑定批准和中断后的完整人工恢复步骤由 [生成 Gold 说明](../contracts/generated/gold/README.md#current-save-and-manual-recovery) 维护。工作副本、材料根和单篇正式目标须分别指定；工具不执行 Git，也不自动接管旧逐版目标。科学审定、保存授权及评价快照见 [Gold 维护约定](design/evaluation.md#gold-的局部修正与-git-历史)。

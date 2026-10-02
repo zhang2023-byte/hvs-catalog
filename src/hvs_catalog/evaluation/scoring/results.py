@@ -137,6 +137,21 @@ class AuxiliarySummary(Config):
     technical_failures: int = 0
 
 
+class LimitationEffect(Config):
+    """Potential explanation of observed errors, not an automatic causal verdict."""
+
+    limitation_id: str
+    paper_key: str
+    category: str
+    basis: str
+    evidence: list[str]
+    gold_refs: list[str] = Field(default_factory=list)
+    prediction_refs: list[str] = Field(default_factory=list)
+    observed_error_refs: list[str] = Field(default_factory=list)
+    excluded_from_default: bool = False
+    excluded_from_reference: bool = False
+
+
 class ScoringReport(Config):
     digests: dict[str, str]
     references: dict[str, dict[str, str]]
@@ -148,3 +163,9 @@ class ScoringReport(Config):
     correct_empty_papers: list[str] = Field(default_factory=list)
     auxiliary: AuxiliarySummary
     notes: list[str] = Field(default_factory=list)
+    limitation_effects: list[LimitationEffect] = Field(
+        default_factory=list, exclude_if=lambda value: not value
+    )
+    reference_score: ScoringReport | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )

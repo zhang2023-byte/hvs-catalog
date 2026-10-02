@@ -116,6 +116,12 @@ def score_batch(
     # reconstructed validated copies; original caller objects are neither changed nor scored.
     plan, gold, predictions = _revalidate_inputs(plan, gold, predictions)
     gold_map = _validate_inputs(plan, gold, predictions, auxiliary)
+    if plan.limitations:
+        from .limitations import score_with_limitations
+
+        return score_with_limitations(
+            plan, gold, predictions, auxiliary=auxiliary, agent_adapter=agent_adapter
+        )
     pred_map = {entry.paper_key: entry for entry in predictions}
     resolver, adjudicator = _build_auxiliary(
         plan, gold, predictions, auxiliary, agent_adapter

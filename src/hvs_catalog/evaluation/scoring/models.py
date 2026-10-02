@@ -70,6 +70,74 @@ class ScopedCoverage(Config):
         return self
 
 
+class LimitationScope(Config):
+    """Predeclared scientific scope; labels and measured numbers never select it."""
+
+    object_identifiers: list[str] = Field(min_length=1)
+    quantity_path: str | None = None
+    conditions: list[str] = Field(default_factory=list)
+    attribution: dict[
+        Literal[
+            "source",
+            "source_note",
+            "frame",
+            "epoch",
+            "coordinate_format",
+            "representation",
+            "purpose",
+            "author_usage",
+        ],
+        list[str],
+    ] = Field(default_factory=dict, exclude_if=lambda value: not value)
+
+    @model_validator(mode="after")
+    def _consistent(self) -> LimitationScope:
+        if any(not item.strip() for item in self.object_identifiers + self.conditions):
+            raise ValueError("问题范围的标识与条件不能为空")
+        for items in (self.object_identifiers, self.conditions):
+            if len(items) != len(set(items)):
+                raise ValueError("问题范围的标识或条件重复")
+        if self.quantity_path is not None:
+            _check_quantity_path(self.quantity_path, "问题范围")
+        elif self.conditions or self.attribution:
+            raise ValueError("条件和科学归属范围必须绑定具体物理量")
+        for values in self.attribution.values():
+            if not values or any(not value.strip() for value in values):
+                raise ValueError("科学归属范围必须显式给出非空表达")
+            if len(values) != len(set(values)):
+                raise ValueError("科学归属范围表达重复")
+        return self
+
+
+class EvaluationLimitation(Config):
+    """Reviewed potential error context, fixed before predictions are inspected."""
+
+    limitation_id: str = Field(min_length=1)
+    paper_key: str = Field(min_length=1)
+    category: Literal[
+        "pdf_source_mismatch",
+        "author_issue",
+        "unsupported_material",
+        "external_out_of_scope",
+    ]
+    scope: LimitationScope
+    basis: str = Field(min_length=1)
+    evidence: list[str] = Field(min_length=1)
+    exclude_from_default: bool = False
+    exclude_from_reference: bool = False
+
+    @model_validator(mode="after")
+    def _allowed_exclusions(self) -> EvaluationLimitation:
+        if self.exclude_from_default and self.category not in {
+            "unsupported_material",
+            "external_out_of_scope",
+        }:
+            raise ValueError("PDF差异与作者问题仍保留在默认评分范围")
+        if self.exclude_from_reference and self.category != "pdf_source_mismatch":
+            raise ValueError("参考评分仅额外排除预声明的PDF/源码不对齐范围")
+        return self
+
+
 class ScoringPlan(Config):
     """Scoring plan: ordered unique paper keys, predeclared scopes, and all input
     fingerprints.
@@ -85,6 +153,9 @@ class ScoringPlan(Config):
     auxiliary_ref: InputReference
     scoped_coverages: list[ScopedCoverage] = Field(default_factory=list)
     known_evidence_record_ids: list[str] = Field(default_factory=list)
+    limitations: list[EvaluationLimitation] = Field(
+        default_factory=list, exclude_if=lambda value: not value
+    )
 
     @model_validator(mode="after")
     def _consistent(self) -> ScoringPlan:
@@ -101,6 +172,16 @@ class ScoringPlan(Config):
         unknown = [key for key in scoped_keys if key not in set(self.paper_keys)]
         if unknown:
             raise ValueError(f"封闭子范围引用了计划外论文：{unknown}")
+        ids = [item.limitation_id for item in self.limitations]
+        if len(ids) != len(set(ids)):
+            raise ValueError("评分问题编号重复")
+        scopes = {item.paper_key: set(item.quantity_paths) for item in self.scopes}
+        for item in self.limitations:
+            if item.paper_key not in scopes:
+                raise ValueError("评分问题引用了计划外论文")
+            path = item.scope.quantity_path
+            if path is not None and path not in scopes[item.paper_key]:
+                raise ValueError("评分问题的物理量超出计划范围")
         return self
 
 

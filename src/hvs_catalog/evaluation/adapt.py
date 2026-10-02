@@ -26,10 +26,12 @@ never scans real repositories.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
+
+from pydantic import Field, model_validator
 
 from ..pipeline import execution_result_refs, get_extraction
-from ..records.common import RecordRef
+from ..records.common import SHA256_PATTERN, Config, RecordRef, sha256_of
 from ..records.paper import (
     CoverageReport,
     DirectEvidencePart,
@@ -65,12 +67,15 @@ from .scoring import (
 __all__ = [
     "GoldAdaptation",
     "GoldAdaptationError",
+    "GoldReadinessDecision",
+    "GoldReadinessReview",
     "adapt_annotation",
     "adapt_compact_answer",
     "adapt_compact_gold_pair",
     "gold_entries_from_annotation",
     "gold_entries_from_compact_answer",
     "gold_entries_from_compact_pair",
+    "gold_readiness_fingerprint",
     "prediction_from_execution",
     "science_completion",
 ]
@@ -80,6 +85,47 @@ class GoldAdaptationError(ValueError):
     """Gold or extraction output cannot be honestly mapped to scoring input, for example
     due to preparation gaps.
     """
+
+
+class GoldReadinessDecision(Config):
+    """A human decision on one exact preparation gap, not a generic approval flag."""
+
+    code: str = Field(min_length=1)
+    subject: str = Field(min_length=1)
+    outcome: Literal[
+        "outside_scoring_scope", "retained_limitation", "defined_reference"
+    ]
+    basis: str = Field(min_length=1)
+
+
+class GoldReadinessReview(Config):
+    """Scoring-only review bound to the complete current answer and metadata.
+
+    The authorized preparation caller supplies actual human decisions. This is not
+    save permission, PDF verification, or a replacement for missing evidence.
+    """
+
+    pair_sha256: str = Field(pattern=SHA256_PATTERN)
+    decision_source: str = Field(min_length=1)
+    decisions: list[GoldReadinessDecision] = Field(min_length=1)
+    complete_within_scoring_scope: bool = False
+
+    @model_validator(mode="after")
+    def _unique(self) -> GoldReadinessReview:
+        keys = [(item.code, item.subject) for item in self.decisions]
+        if len(keys) != len(set(keys)):
+            raise ValueError("Gold评分准备裁定重复")
+        return self
+
+
+def gold_readiness_fingerprint(pair: CompactGoldPair) -> str:
+    """Bind all scientific content, material declarations, and prior review metadata."""
+    return sha256_of(
+        {
+            "answer": pair.answer.model_dump(mode="json"),
+            "metadata": pair.metadata.model_dump(mode="json", by_alias=True),
+        }
+    )
 
 
 #: Answer-only adaptation permits structural mapping but never establishes official readiness.
@@ -331,20 +377,57 @@ def _preparation_gaps(
     pair: CompactGoldPair,
     *,
     confirmed_ranges: dict[str, list[ConfirmedRange]] | None,
+    scoring_review: GoldReadinessReview | None = None,
 ) -> list[str]:
     """Map shared in-memory preparation checks to categorized readiness gaps.
 
     After validate_compact_gold_pair binding checks, reuse the full checker's file-free
     pair_preparation_problems without changing categories, codes, subjects, or messages.
-    Resolve partial_coverage only when an authorized preparation party explicitly
-    declares an approved complete closed subset for the paper; this resolves coverage
-    alone, retaining other material/science gaps. In-memory checks do not claim actual
-    PDF/material verification; see GoldAdaptation for formal_readiness guarantees.
+    Resolve coverage through an approved closed subset or a content-bound human
+    scoring-scope decision. Other accepted material/science gaps require their own
+    exact decisions; missing evidence and undefined references cannot be waived.
+    In-memory checks do not claim actual PDF/material verification; see GoldAdaptation
+    for formal_readiness guarantees.
     """
     ranges = _confirmed_for(pair.answer.arxiv_id, confirmed_ranges)
     gaps: list[str] = []
-    for problem in pair_preparation_problems(pair):
+    problems = pair_preparation_problems(pair)
+    decisions = {}
+    if scoring_review is not None:
+        scoring_review = GoldReadinessReview.model_validate(
+            scoring_review.model_dump(mode="json")
+        )
+        if scoring_review.pair_sha256 != gold_readiness_fingerprint(pair):
+            raise GoldAdaptationError("评分准备裁定与当前完整Gold/元数据指纹不符")
+        available = {(item.code, item.subject) for item in problems}
+        for decision in scoring_review.decisions:
+            key = (decision.code, decision.subject)
+            if key not in available:
+                raise GoldAdaptationError("评分准备裁定引用了不存在的缺口")
+            if decision.code not in {
+                "partial_coverage",
+                "material_differences",
+            } and not decision.code.startswith("unresolved_"):
+                raise GoldAdaptationError(
+                    "缺证据、缺条件或未结构化科学结果须修复Gold，不能豁免"
+                )
+            if decision.code == "partial_coverage":
+                if not scoring_review.complete_within_scoring_scope:
+                    raise GoldAdaptationError("部分覆盖裁定须明确确认本轮评分范围完整")
+                if decision.outcome != "outside_scoring_scope":
+                    raise GoldAdaptationError(
+                        "部分覆盖缺口只能以明确的评分范围裁定处理"
+                    )
+            if (
+                decision.code.startswith("unresolved_")
+                and decision.outcome == "retained_limitation"
+            ):
+                raise GoldAdaptationError("科学未决项须确定参考答案或明确在评分范围外")
+            decisions[key] = decision
+    for problem in problems:
         if problem.code == "partial_coverage" and ranges:
+            continue
+        if (problem.code, problem.subject) in decisions:
             continue
         label = (
             "科学待决缺口" if problem.category == "science_pending" else "材料准备缺口"
@@ -391,6 +474,7 @@ def adapt_compact_gold_pair(
     pair: CompactGoldPair,
     *,
     confirmed_ranges: dict[str, list[ConfirmedRange]] | None = None,
+    scoring_review: GoldReadinessReview | None = None,
 ) -> GoldAdaptation:
     """Adapt compact v2 official pairs to scoring Gold inputs and bindings in memory.
 
@@ -408,13 +492,37 @@ def adapt_compact_gold_pair(
         raise GoldAdaptationError(
             f"compact Gold 配对绑定校验失败，不能适配：{exc}"
         ) from exc
-    gaps = _preparation_gaps(pair, confirmed_ranges=confirmed_ranges)
+    gaps = _preparation_gaps(
+        pair, confirmed_ranges=confirmed_ranges, scoring_review=scoring_review
+    )
+    scoring_complete = (
+        scoring_review is not None
+        and scoring_review.complete_within_scoring_scope
+        and any(item.code == "partial_coverage" for item in scoring_review.decisions)
+    )
+    entries = (
+        [
+            GoldPaperEntry(
+                paper_key=pair.answer.arxiv_id,
+                coverage="complete",
+                objects=_objects_from_contributions(pair.answer.contributions),
+            )
+        ]
+        if scoring_complete
+        else _entries_from_answer(pair.answer, confirmed_ranges=confirmed_ranges)
+    )
+    binding = _pair_binding(pair)
+    limitations = []
+    if scoring_review is not None:
+        binding["scoring_review"] = scoring_review.model_dump(mode="json")
+        limitations = [item.basis for item in scoring_review.decisions]
     return GoldAdaptation(
         paper_key=pair.answer.arxiv_id,
-        entries=_entries_from_answer(pair.answer, confirmed_ranges=confirmed_ranges),
-        binding=_pair_binding(pair),
+        entries=entries,
+        binding=binding,
         formal_readiness=not gaps,
         readiness_gaps=gaps,
+        limitations=limitations,
     )
 
 
@@ -524,14 +632,18 @@ def gold_entries_from_compact_pair(
     pair: CompactGoldPair,
     *,
     confirmed_ranges: dict[str, list[ConfirmedRange]] | None = None,
+    scoring_review: GoldReadinessReview | None = None,
 ) -> list[GoldPaperEntry]:
     """Adapt compact v2 official pairs to ready scoring Gold through the strict wrapper.
 
-    Validate pair bindings first; reject unresolved scientific items and other
-    preparation gaps rather than marking ready.
+    Validate pair bindings first; reject preparation gaps without applicable
+    content-bound human scoring decisions. The review never replaces missing
+    evidence or material verification.
     """
     return _require_ready(
-        adapt_compact_gold_pair(pair, confirmed_ranges=confirmed_ranges)
+        adapt_compact_gold_pair(
+            pair, confirmed_ranges=confirmed_ranges, scoring_review=scoring_review
+        )
     )
 
 

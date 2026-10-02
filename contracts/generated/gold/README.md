@@ -31,7 +31,7 @@ that a reader must understand; they remain checked when files are read.
 | Metadata `schema.version = 2` | Current two-file format; the earlier working annotation format used 1 |
 | Old Stella `schema.version = 4` | A separate input format supported by the legacy reader |
 | Git commit | Authorized historical content; no new vN directories or version index |
-| Old saved `vN/` directories | Historical layout, rejected by the current writer; no migration performed |
+| Old saved `vN/` directories | Historical layout, rejected and not automatically migrated by the current writer |
 | Paper or source `version` | The version of the paper or source material |
 | Rules `version` | The scientific rule set used for the annotation |
 
