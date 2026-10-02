@@ -59,4 +59,6 @@ hvs-catalog demo decide --space DEMO_SPACE --choice no_overall_conclusion
 - **使用已交付功能**：[操作说明](docs/operations.md)；Gold 的字段、保存与恢复用法从其 [生成入口](contracts/generated/gold/README.md) 查阅。
 - **开发和维护**：[CONTRIBUTING](CONTRIBUTING.md)；科学正文见 [英文提取规则](docs/science-rules.md)，字段与模板见 [生成合同](contracts/generated/README.md)。
 
+人员与工具分工、开发方式及独立技术审核的启用条件统一见 [开发方案](.dev/plan.md#开发方案)。
+
 主仓管理代码及获准的正式星表，参考答案由独立的 `hvs-catalog-gold` 私有仓库管理；资料归属见 [内容进入哪里](docs/design/architecture.md#内容进入哪里)。
