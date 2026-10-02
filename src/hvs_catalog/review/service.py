@@ -354,6 +354,77 @@ class ReviewService:
             store.commit(request)
             return self._view(question_id)
 
+    def create_questions(
+        self,
+        *,
+        execution_id: str,
+        step_id: str,
+        request_key: str,
+        questions: list[QuestionRecord],
+        records: list[AnyRecord],
+    ) -> list[QuestionView]:
+        """Save mutually referencing step results and question bindings atomically.
+
+        Callers assemble IDs with derive_question_id using complete QuestionContent.
+        Batch creation has the same fixed-context and replay boundary as creation of
+        one question; it never creates unbound question records.
+        """
+        with self.space.lock():
+            self._require_execution(execution_id)
+            ids = [q.record_id for q in questions]
+            if len(ids) != len(set(ids)):
+                raise ValueError("duplicate question identity in batch")
+            for question in questions:
+                data = question.data
+                content = QuestionContent(
+                    category=data.category,
+                    target_refs=data.target_refs,
+                    source_refs=data.source_refs,
+                    rules_ref=data.rules_ref,
+                    prompt=data.prompt,
+                    evidence_refs=data.evidence_refs,
+                    gap_refs=data.gap_refs,
+                    context_refs=data.context_refs,
+                )
+                if (
+                    question.execution_id != execution_id
+                    or question.revision != 1
+                    or data.status != "open"
+                    or data.decision_refs
+                    or question.record_id
+                    != derive_question_id(
+                        execution_id, content, space_id=self.space.identity.space_id
+                    )
+                ):
+                    raise ValueError(
+                        "question batch requires new, correctly derived fixed-context questions"
+                    )
+            self.space.store().commit(
+                CommitRequest(
+                    operation_key=request_key,
+                    kind=QUESTION_CREATE_KIND,
+                    new_records=[*records, *questions],
+                    execution_id=execution_id,
+                    step_id=step_id,
+                    result_refs=[q.ref() for q in questions],
+                    question_steps={qid: step_id for qid in ids},
+                    content={
+                        "execution_id": execution_id,
+                        "step_id": step_id,
+                        "questions": [
+                            q.data.model_dump(mode="json") for q in questions
+                        ],
+                        "records": [
+                            r.model_dump(
+                                mode="json", by_alias=True, exclude={"created_at"}
+                            )
+                            for r in records
+                        ],
+                    },
+                )
+            )
+            return [self._view(qid) for qid in ids]
+
     def submit_decision(
         self,
         *,

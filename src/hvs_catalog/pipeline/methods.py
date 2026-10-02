@@ -1,7 +1,8 @@
-"""Registered extraction methods/common steps, synthetic-mock only.
+"""Registered full-flow demos and separately delivered model steps.
 
 direct produces a roster; candidate_review discovers then judges candidates. Both share
-quantities for values/contributions and finalize. Real implementations await later work.
+quantities for values/contributions and finalize in full-flow demos. Only the direct
+roster model step is delivered; remaining model steps await later work.
 """
 
 from __future__ import annotations
@@ -104,6 +105,7 @@ DIRECT_METHOD = MethodSpec(
     real_extraction=False,
     version="1",
     parameter_policy=MOCK_PARAMETER_POLICY,
+    model_steps=(STEP_DIRECT_ROSTER,),
 )
 
 CANDIDATE_REVIEW_METHOD = MethodSpec(

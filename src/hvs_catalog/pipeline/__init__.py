@@ -1,8 +1,8 @@
 """Shared extraction entry points: method registration, strict requests, and execution.
 
 Ordinary/evaluation callers share start_extraction/resume_extraction/get_extraction and
-trusted list_methods registration. Only synthetic-mock implementations/materials are
-registered in mock; real direct/candidate_review extraction awaits later work.
+trusted list_methods registration. Full-flow demos are synthetic; prepared direct
+roster extraction uses the same entry/runtime and the real model-call service.
 Extraction depends on neither scoring nor Gold; requests contain no answer paths/free
 metadata.
 """
@@ -72,6 +72,7 @@ from .registry import (
     UnknownMethodError,
 )
 from .request import ExtractionRequest, StepModel
+from .roster import start_roster_extraction
 
 __all__ = [
     "CANDIDATE_REVIEW_METHOD",
@@ -126,6 +127,7 @@ __all__ = [
     "resume_extraction",
     "start_configured_extraction",
     "start_extraction",
+    "start_roster_extraction",
     "submit_expert_decision",
     "supported_parameters",
 ]

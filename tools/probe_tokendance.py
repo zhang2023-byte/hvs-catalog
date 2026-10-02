@@ -171,11 +171,10 @@ def confirm_bill(portal, baseline, call_report, space, price):
         ids.append(candidates)
     if not ids or any(not values for values in ids):
         return None, []
-    params = {"limit": 500, "model_id": price["model_id"]}
-    if baseline:
-        params["start_id"] = baseline
-    else:
-        params["window"] = "1h"
+    # start_id is an older-page cursor, not a lower bound for new usage. A recent
+    # bounded read plus exact trace matching cannot attribute unrelated calls.
+    # If usage has aged out of this window, retain the reservation as unknown.
+    params = {"limit": 500, "model_id": price["model_id"], "window": "1h"}
     for _ in range(3):
         rows = portal.get("/v1/usage", params=params, authenticated=True)["items"]
         matched = []
@@ -183,7 +182,8 @@ def confirm_bill(portal, baseline, call_report, space, price):
             candidates_rows = [
                 r
                 for r in rows
-                if r.get("trace_id") in candidates or r.get("id") in candidates
+                if r.get("id") != baseline
+                and (r.get("trace_id") in candidates or r.get("id") in candidates)
             ]
             if len(candidates_rows) != 1:
                 break

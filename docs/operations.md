@@ -94,7 +94,7 @@ Python 共用入口：`MaterialsService.prepare_materials`／`resume_preparation
 
 ## 模型配置与调用
 
-`hvs_catalog.llm` 提供 `CallRequest`、`ModelConfig`、`RuntimeConfig`、`start_call`／`resume_call`／`get_call`。当前接入 Token Dance 的 `deepseek-v4.1-flash`、`glm-5.3-flash`、`mimo-v2.6-flash` 和 `qwen3.8-flash`，固定各自官方上游，关闭回退。真实提取步骤尚未接入；`models probe` 只执行英文合成对象 `SYN-1`、数值 `42` 的连通验证，不证明提取质量。
+`hvs_catalog.llm` 提供 `CallRequest`、`ModelConfig`、`RuntimeConfig`、`start_call`／`resume_call`／`get_call`。当前接入 Token Dance 的 `deepseek-v4.1-flash`、`glm-5.3-flash`、`mimo-v2.6-flash` 和 `qwen3.8-flash`，固定各自官方上游，关闭回退。[direct 名单提取](#direct-名单提取) 已使用此接口；`models probe` 只执行英文合成对象 `SYN-1`、数值 `42` 的连通验证，不证明提取质量。
 
 模型列表给出默认值、各模型允许的参数及官方依据；配置检查不联网：
 
@@ -188,7 +188,25 @@ hvs-catalog extract status --space /tmp/hvs-config-demo --execution exec-000001
 hvs-catalog extract resume --space /tmp/hvs-config-demo --execution exec-000001
 ```
 
-模拟执行可在科学疑问处暂停，决定提交仍用现有 Python 裁决接口。恢复只读取原运行的配置、提示、选例与判例内容；编辑配置文件或提示资源不会改写原运行。新材料、实际英文提示或配置使用新的 `request-key`。归档损坏或缺失时拒绝恢复，不能用当前提示替换。`status` 可回查完整配置和提示／例子引用，以及每步调用次数和已知 tokens；模拟服务用量是固定合成值。日常与评测通过同一个 Python 配置／提取入口，实际模型提取由后续方法实现接入。
+模拟执行可在科学疑问处暂停，决定提交仍用现有 Python 裁决接口。恢复只读取原运行的配置、提示、选例与判例内容；编辑配置文件或提示资源不会改写原运行。新材料、实际英文提示或配置使用新的 `request-key`。归档损坏或缺失时拒绝恢复，不能用当前提示替换。`status` 可回查完整配置和提示／例子引用，以及每步调用次数和已知 tokens；模拟服务用量是固定合成值。日常与评测通过同一个 Python 配置／提取入口，实际名单操作见下一节。
+
+## direct 名单提取
+
+先按 [材料准备](#材料准备正文与表格) 获得已完成的准备执行编号，再在同一空间执行：
+
+```bash
+hvs-catalog extract roster --space SPACE --preparation PREPARATION_ID --request-key roster-example --config extraction.json --env-file /path/to/.env
+hvs-catalog extract status --space SPACE --execution EXTRACTION_ID
+hvs-catalog extract resume --space SPACE --execution EXTRACTION_ID --env-file /path/to/.env
+```
+
+`roster` 创建并运行名单步骤，返回提取执行编号；这会调用真实 Token Dance 模型，凭据及参数规则见 [模型调用](#模型配置与调用)。省略 `--config` 使用默认 direct 与 DeepSeek Flash。Python 对应 `start_roster_extraction(space, preparation_execution_id=..., request_key=..., configuration=...)`，再用共同的 `resume_extraction`、`get_extraction`；`CallService` 可指定凭据文件。
+
+输入固定为准备完成的来源修订、呈现给模型的材料、规则、提示与配置；恢复校验所有附件指纹。提示包含引用的源码正文、可读附属文本、派生表格／映射，以及准备阶段的编号范围观察和缺口；不把未引用的 TeX 草稿或图片二进制当正文。编号范围观察只辅助定位，不能代替作者结论或直接决定对象资格。表格转换失败时仍呈现可读原源码并保留缺口；缺口不得凭模型回复抹去。
+
+输出使用共同 `RosterRecord`、`PaperRecord`、证据与问题记录，保存排除项、待决项、未列清群体及条件判断；18 种物理量保持 `not_checked`。启用专家裁决时遇未决科学问题暂停，通过 [共同 Python 裁决接口](design/review.md#裁决共同接口方案) 保存决定后恢复；关闭时将模型提交及解释记录为 `model_judgments`，链接原响应和科学结果，保留问题和待决成果，图结束不表示科学完成。
+
+格式纠正最多两轮，原响应和每次请求均保存。已有可解析的科学字段不得在纠正中改变；证据须对应输入中的文件、位置与原文，不能编造。截断、调用失败、无有效工具提交或无效证据不能保存为成功空名单。已归档响应恢复时复用；发出后完成状态不明时拒绝重发，须检查记录后另建请求，可能有已发生而未确认的服务计费。实际科学覆盖与准确率由后续真实评价检验，小范围接通检查不构成质量结论。
 
 ## 持久化与恢复演示
 

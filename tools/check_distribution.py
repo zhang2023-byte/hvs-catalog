@@ -25,6 +25,8 @@ repository.
     paid models.
 11. Exercise extraction configuration, shared English prompt resources, CLI previews,
     four-model step overrides, and saved mock pause/decision/recovery across processes.
+12. Join installed source preparation to direct roster CLI/model calls over local HTTP,
+    inspect common records, and recover without a second service request.
 
 All materials are synthetic and independent of repository source paths. Usage: uv run
 python tools/check_distribution.py [Python version]. The optional version, such as 3.12,

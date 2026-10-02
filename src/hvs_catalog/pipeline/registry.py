@@ -1,8 +1,8 @@
 """Trusted code-bound extraction method/step registration and identifier lookup.
 
 Bind trusted caller specs/builders/preflight objects only, never import/execute
-record/request strings. Register implemented synthetic-mock only; real
-direct/candidate_review follows later delivery without current real-extraction claims.
+record/request strings. Full-flow implementation and delivered model steps are
+reported separately so roster delivery cannot claim full quantity extraction.
 """
 
 from __future__ import annotations
@@ -56,9 +56,9 @@ class StepSpec:
 class MethodSpec:
     """Roster method with ordered steps, implementation marker, and restricted parameters.
 
-    implementation currently identifies synthetic-mock; real_extraction=False denies
-    real-paper capability. Trusted parameter_policy declares fields/types/ranges; absent
-    means empty, accepting none rather than arbitrary contents.
+    implementation identifies full-flow support; model_steps reports delivered model
+    steps without claiming real full-flow capability. Trusted parameter_policy declares
+    fields/types/ranges; absent means empty, accepting none rather than arbitrary contents.
     """
 
     method_id: str
@@ -67,10 +67,13 @@ class MethodSpec:
     real_extraction: bool
     version: str
     parameter_policy: ParameterPolicy | None = None
+    model_steps: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.method_id:
             raise MethodRegistrationError("method_id 不能为空")
+        if not set(self.model_steps) <= {s.step_id for s in self.steps}:
+            raise MethodRegistrationError("model_steps must identify registered steps")
         ids = [step.step_id for step in self.steps]
         if len(ids) != len(set(ids)):
             raise MethodRegistrationError(f"方法 {self.method_id} 步骤编号重复")
@@ -132,6 +135,7 @@ class PipelineRegistry:
             real_extraction=spec.real_extraction,
             version=spec.version,
             parameter_policy=spec.parameter_policy,
+            model_steps=spec.model_steps,
         )
         self._methods[spec.method_id] = registration
         return registration

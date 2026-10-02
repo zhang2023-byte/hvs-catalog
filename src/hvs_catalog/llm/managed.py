@@ -68,12 +68,12 @@ def _run(ctx):
     return run
 
 
-def _attempts(ctx):
-    step = next((s for s in _run(ctx).data.steps if s.step_id == STEP), None)
+def _attempts(ctx, step_id=STEP):
+    step = next((s for s in _run(ctx).data.steps if s.step_id == step_id), None)
     return list(step.attempts) if step else []
 
 
-def _save(ctx, attempts, *, step_state="running", error_kind=None):
+def _save(ctx, attempts, *, step_state="running", error_kind=None, step_id=STEP):
     error = None
     if error_kind:
         error = RunError(
@@ -87,7 +87,7 @@ def _save(ctx, attempts, *, step_state="running", error_kind=None):
         ctx.space,
         ctx.execution,
         step=StepRecord(
-            step_id=STEP,
+            step_id=step_id,
             state=step_state,
             input_refs=[],
             attempts=attempts,
@@ -99,8 +99,8 @@ def _save(ctx, attempts, *, step_state="running", error_kind=None):
     )
 
 
-def _finalize(ctx, attempts, envelope):
-    attempt = attempts[-1]
+def _finalize(ctx, attempts, envelope, *, index=-1, step_id=STEP):
+    attempt = attempts[index]
     error = envelope.get("error")
     uncertain = envelope.get("uncertain", False)
     attempt = attempt.model_copy(
@@ -109,8 +109,13 @@ def _finalize(ctx, attempts, envelope):
             "finished_at": datetime.now(UTC) if not uncertain else None,
         }
     )
-    attempts[-1] = attempt
-    _save(ctx, attempts, error_kind="completion_unknown" if uncertain else error)
+    attempts[index] = attempt
+    _save(
+        ctx,
+        attempts,
+        error_kind="completion_unknown" if uncertain else error,
+        step_id=step_id,
+    )
     return attempt
 
 
@@ -122,26 +127,73 @@ def _execute(ctx, service: CallService):
     digest = sha256_of(prepared)
     if ctx.reuse_step(STEP, digest):
         return {"completed": True}
-    attempts = _attempts(ctx)
+    envelope = execute_model_call(ctx, service, request, prepared)
+    if envelope.get("error"):
+        _save(ctx, _attempts(ctx), step_state="failed")
+        raise CallFailure(envelope["error"])
+    ctx.commit_step(step_id=STEP, input_digest=digest, records=[], result_refs=[])
+    return {"completed": True}
+
+
+FORMAT_ERRORS = frozenset(
+    {"missing_or_multiple_tool_calls", "wrong_tool", "invalid_tool_arguments"}
+)
+
+
+def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_key=None):
+    """Execute one durable logical call inside the owning business flow.
+
+    Each correction has a separate fixed call key. All physical attempts stay in
+    the owning step, use account quota, and retain the existing unknown-completion
+    boundary. The caller validates science and commits the business step.
+    Known output-format failures are returned for bounded caller correction.
+    """
+    attempts = _attempts(ctx, step_id)
+    prefix = f"{call_key}-" if call_key else ""
+    indices = [
+        i
+        for i, a in enumerate(attempts)
+        if a.request is not None
+        and Path(a.request.path).name.startswith(prefix + "attempt-")
+    ]
+    for i in indices:
+        if json.loads(ctx.space.read_file(attempts[i].request)) != prepared:
+            raise CallFailure("archived call key is bound to different input")
+    index = indices[-1] if indices else None
     # A response committed before a crash is enough to finish; an unconfirmed
     # outbound call never authorizes another send during normal recovery.
-    if attempts and attempts[-1].state == "pending":
-        if attempts[-1].response is None:
-            _save(ctx, attempts, step_state="failed", error_kind="completion_unknown")
+    if index is not None and attempts[index].state == "pending":
+        if attempts[index].response is None:
+            _save(
+                ctx,
+                attempts,
+                step_state="failed",
+                error_kind="completion_unknown",
+                step_id=step_id,
+            )
             raise CallFailure(
                 "completion_unknown; create a new request only after reviewing the uncertain call"
             )
-        envelope = json.loads(ctx.space.read_file(attempts[-1].response))
-        _finalize(ctx, attempts, envelope)
-    if attempts and attempts[-1].state == "succeeded":
-        ctx.commit_step(step_id=STEP, input_digest=digest, records=[], result_refs=[])
-        return {"completed": True}
-    if attempts:
+        envelope = json.loads(ctx.space.read_file(attempts[index].response))
+        _finalize(ctx, attempts, envelope, index=index, step_id=step_id)
+    if index is not None:
+        envelope = (
+            json.loads(ctx.space.read_file(attempts[index].response))
+            if attempts[index].response
+            else None
+        )
+        if (
+            attempts[index].state == "succeeded"
+            or envelope
+            and envelope.get("error") in FORMAT_ERRORS
+        ):
+            return envelope
         # Resume may complete archival, but does not restart an exhausted or
         # explicitly failed logical call (including format correction).
         raise CallFailure(
             "previous model call failed; inspect it and create a new request"
         )
+    digest = sha256_of(prepared)
     credential = service.credential()
     if credential.get_secret_value() in canonical_json(prepared):
         raise CallFailure("credential values must not occur in model inputs")
@@ -151,7 +203,13 @@ def _execute(ctx, service: CallService):
         try:
             lease = quota.acquire()
         except TimeoutError:
-            _save(ctx, attempts, step_state="failed", error_kind="quota_wait_expired")
+            _save(
+                ctx,
+                attempts,
+                step_state="failed",
+                error_kind="quota_wait_expired",
+                step_id=step_id,
+            )
             raise CallFailure(
                 "quota_wait_expired; no physical request was sent"
             ) from None
@@ -160,7 +218,7 @@ def _execute(ctx, service: CallService):
             number = index + 1
             request_ref = ctx.space.publish_run_file(
                 ctx.execution.execution_id,
-                f"requests/attempt-{number:03d}.json",
+                f"requests/{prefix}attempt-{number:03d}.json",
                 canonical_json(prepared).encode(),
             )
             attempts.append(
@@ -174,7 +232,7 @@ def _execute(ctx, service: CallService):
                     service_request_id=None,
                 )
             )
-            _save(ctx, attempts)
+            _save(ctx, attempts, step_id=step_id)
             service.hook("after_pending")
             try:
                 exchange = service.adapter.send(
@@ -221,7 +279,7 @@ def _execute(ctx, service: CallService):
             envelope["request_sha256"] = digest
             response_ref = ctx.space.publish_run_file(
                 ctx.execution.execution_id,
-                f"responses/attempt-{number:03d}.json",
+                f"responses/{prefix}attempt-{number:03d}.json",
                 canonical_json(envelope).encode(),
             )
             exchange = envelope["exchange"]
@@ -238,25 +296,22 @@ def _execute(ctx, service: CallService):
                     or exchange.get("headers", {}).get("x-request-id"),
                 }
             )
-            _save(ctx, attempts)
+            _save(ctx, attempts, step_id=step_id)
             service.hook("after_archive")
-            _finalize(ctx, attempts, envelope)
+            _finalize(ctx, attempts, envelope, step_id=step_id)
             if envelope["retryable"]:
                 delay = envelope.get("retry_after")
                 quota.cooldown(delay if delay is not None else min(2**index, 30))
         finally:
             quota.release(lease)
-        if not envelope["error"]:
-            ctx.commit_step(
-                step_id=STEP, input_digest=digest, records=[], result_refs=[]
-            )
-            return {"completed": True}
+        if not envelope["error"] or envelope["error"] in FORMAT_ERRORS:
+            return envelope
         if (
             envelope["uncertain"]
             or not envelope["retryable"]
             or number == service.runtime.max_attempts
         ):
-            _save(ctx, attempts, step_state="failed")
+            _save(ctx, attempts, step_state="failed", step_id=step_id)
             raise CallFailure(
                 "completion_unknown" if envelope["uncertain"] else envelope["error"]
             )

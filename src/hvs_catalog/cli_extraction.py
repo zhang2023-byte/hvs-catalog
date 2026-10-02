@@ -1,4 +1,4 @@
-"""Offline extraction configuration, complete request previews and mock runs."""
+"""Extraction configuration, previews, prepared roster calls and mock runs."""
 
 from __future__ import annotations
 
@@ -42,12 +42,21 @@ def add_extraction_commands(commands):
         default="FIC-R05-B",
     )
     simulate.add_argument("--request-key", required=True)
+    roster = commands.add_parser(
+        "roster", help="对固定准备输入执行真实 direct 名单提取"
+    )
+    roster.add_argument("--config", type=Path)
+    roster.add_argument("--space", type=Path, required=True)
+    roster.add_argument("--preparation", required=True, help="已完成的材料准备执行编号")
+    roster.add_argument("--request-key", required=True)
+    roster.add_argument("--env-file", type=Path)
     for name in ("status", "resume"):
         command = commands.add_parser(
-            name, help="查询模拟执行" if name == "status" else "按固定输入恢复模拟执行"
+            name, help="查询提取执行" if name == "status" else "按固定输入恢复提取执行"
         )
         command.add_argument("--space", type=Path, required=True)
         command.add_argument("--execution", required=True)
+        command.add_argument("--env-file", type=Path)
 
 
 def run_extraction_command(args) -> int:
@@ -70,6 +79,7 @@ def run_extraction_command(args) -> int:
                 get_extraction,
                 import_mock_source,
                 resume_extraction,
+                start_roster_extraction,
             )
             from .workspace import (
                 WORKSPACE_FILENAME,
@@ -77,7 +87,24 @@ def run_extraction_command(args) -> int:
                 open_workspace,
             )
 
-            if name == "simulate":
+            if name == "roster":
+                from .llm.managed import CallService
+
+                config = load_extraction_config(args.config)
+                space = open_workspace(args.space)
+                handle = start_roster_extraction(
+                    space,
+                    configuration=config,
+                    preparation_execution_id=args.preparation,
+                    request_key=args.request_key,
+                )
+                result = resume_extraction(
+                    space,
+                    handle.execution_id,
+                    service=CallService(config.runtime, env_file=args.env_file),
+                ).to_dict()
+                result["implementation"] = "model-roster"
+            elif name == "simulate":
                 config = load_extraction_config(args.config)
                 check_extraction_config(config)
                 space = (
@@ -102,18 +129,35 @@ def run_extraction_command(args) -> int:
                 handle = get_execution(space, args.execution)
                 if handle.input_snapshot.options.get(
                     "extraction_config"
-                ) is None or not handle.flow_id.startswith("hvs-extraction-"):
-                    raise ValueError(
-                        "this command requires a configured synthetic-mock extraction"
+                ) is None or not handle.flow_id.startswith(
+                    ("hvs-extraction-", "hvs-direct-roster-")
+                ):
+                    raise ValueError("this command requires a configured extraction")
+                actual_roster = (
+                    handle.input_snapshot.options.get("extraction_scope") == "roster"
+                )
+                if actual_roster:
+                    from .llm.managed import CallService
+                    from .pipeline.configuration import stored_configuration
+
+                    service = CallService(
+                        stored_configuration(handle.input_snapshot).runtime,
+                        env_file=args.env_file,
                     )
+                else:
+                    service = PipelineMockService()
                 result = (
                     get_extraction(space, args.execution)
                     if name == "status"
                     else resume_extraction(
-                        space, args.execution, service=PipelineMockService()
+                        space, args.execution, service=service
                     ).to_dict()
                 )
-            result["implementation"] = "synthetic-mock"
+                result["implementation"] = (
+                    "model-roster" if actual_roster else "synthetic-mock"
+                )
+            if name == "simulate":
+                result["implementation"] = "synthetic-mock"
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return (
             1 if isinstance(result, dict) and result.get("outcome") == "failed" else 0

@@ -13,7 +13,7 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..records.common import RecordRef
+from ..records.common import ArtifactRef, RecordRef, canonical_json, sha256_of
 from ..records.runs import ModelSpec, RunRecord
 from ..review import ReviewService
 from ..review.service import QuestionView
@@ -198,6 +198,7 @@ def start_extraction(
     request_key: str,
     registry: PipelineRegistry | None = None,
     configuration=None,
+    prepared_input: ArtifactRef | None = None,
 ) -> ExtractionHandle:
     """Create/reuse extraction through strict requests.
 
@@ -224,12 +225,41 @@ def start_extraction(
         validated_models = [
             ModelSpec.model_validate(item.model_dump()) for item in request.models
         ]
-    problems = registration.check_request(space, request)
+    if prepared_input is not None:
+        from .roster import STEP, material_prompt, prepared_bundle
+
+        if (
+            configuration is None
+            or request.method != "direct"
+            or len(request.source_refs) != 1
+            or STEP not in registration.spec.model_steps
+        ):
+            raise PipelineRequestError(
+                "prepared roster requires a configured direct request with one source"
+            )
+        bundle, source = prepared_bundle(space, prepared_input, request.source_refs[0])
+        rendered = material_prompt(space, bundle, source).model_dump(mode="json")
+        problems = []
+    else:
+        problems = registration.check_request(space, request)
     if problems:
         raise PipelineRequestError("提取请求未通过运行前检查：" + "；".join(problems))
     if configuration is not None:
         with space.lock():
             frozen = freeze_configuration(space, configuration)
+    if prepared_input is not None:
+        with space.lock():
+            rendered_ref = space.publish_file(
+                f"runs/inputs/{sha256_of(rendered)}/roster-material.json",
+                canonical_json(rendered).encode(),
+            )
+        frozen["options"].update(
+            {
+                "prepared_input": prepared_input.model_dump_json(),
+                "prepared_prompt": rendered_ref.model_dump_json(),
+                "extraction_scope": "roster",
+            }
+        )
     snapshot = _build_input_snapshot(
         source_refs=list(request.source_refs),
         method=request.method,
@@ -238,7 +268,12 @@ def start_extraction(
         existing_decision_refs=list(request.existing_decision_refs),
         **frozen,
     )
-    flow = registration.build_flow(registration.spec, mode=request.mode)
+    if prepared_input is not None:
+        from .roster import DirectRosterFlow
+
+        flow = DirectRosterFlow(mode=request.mode)
+    else:
+        flow = registration.build_flow(registration.spec, mode=request.mode)
     handle, reused = _create_execution(
         space,
         request_key=request_key,
@@ -263,7 +298,7 @@ def resume_extraction(
     space: Workspace,
     execution_id: str,
     *,
-    service: Any,
+    service: Any = None,
     registry: PipelineRegistry | None = None,
 ) -> ExtractionReport:
     """Advance extraction with saved fixed configuration only.
@@ -277,7 +312,16 @@ def resume_extraction(
 
     if validate_configuration_snapshot(handle.input_snapshot) is None:
         _check_stored_model_specs(registration, handle.input_snapshot.models)
-    flow = registration.build_flow(registration.spec, mode=handle.mode)
+    if handle.input_snapshot.options.get("extraction_scope") == "roster":
+        from ..llm.managed import CallService
+        from .configuration import stored_configuration
+        from .roster import DirectRosterFlow
+
+        flow = DirectRosterFlow(mode=handle.mode)
+        if service is None:
+            service = CallService(stored_configuration(handle.input_snapshot).runtime)
+    else:
+        flow = registration.build_flow(registration.spec, mode=handle.mode)
     report = _resume_execution(space, execution_id, flow, service=service)
     return _build_report(space, handle, report)
 
@@ -364,13 +408,14 @@ def pending_questions(
 
 
 def list_methods(registry: PipelineRegistry | None = None) -> list[dict]:
-    """List registered methods, steps, and markers, currently synthetic-mock only."""
+    """List full-flow mock support and separately delivered real model steps."""
     return [
         {
             "method_id": registration.spec.method_id,
             "implementation": registration.spec.implementation,
             "real_extraction": registration.spec.real_extraction,
             "version": registration.spec.version,
+            "model_steps": list(registration.spec.model_steps),
             "steps": [
                 {
                     "step_id": step.step_id,
@@ -408,6 +453,7 @@ def _config_echo(handle: ExecutionHandle) -> dict:
     snapshot = handle.input_snapshot
     return {
         "method": snapshot.method,
+        "scope": snapshot.options.get("extraction_scope", "full"),
         "mode": handle.mode,
         "expert_adjudication": snapshot.expert_adjudication,
         "models": [item.model_dump(mode="json") for item in snapshot.models],

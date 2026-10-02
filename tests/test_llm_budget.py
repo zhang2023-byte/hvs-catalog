@@ -105,6 +105,11 @@ def test_bill_requires_exact_trace_and_official_provider(
 
     class Portal:
         def get(self, *args, **kwargs):
+            assert kwargs["params"] == {
+                "limit": 500,
+                "model_id": "model-1",
+                "window": "1h",
+            }
             return {
                 "items": [
                     {
