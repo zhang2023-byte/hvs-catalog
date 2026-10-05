@@ -1,6 +1,6 @@
 # 产品设计总览
 
-本文保留各任务共用的产品目标与科学边界，并提供按任务阅读的入口。主题正文位于 `docs/design/`，按当前任务选择相关文件和章节；当前可用能力见 [README](../README.md)，验收进度见 [progress](../.dev/progress.md)。
+本文及 `docs/design/` 描述项目的目标规格、科学边界和技术职责，提供按功能阅读的入口。已交付能力与当前用法见 [README](../README.md) 和 [操作说明](operations.md)；实施安排、验收与接续事项由 [开发进度](../.dev/progress.md) 维护。
 
 ## 产品目标与科学边界
 
@@ -19,9 +19,13 @@
 - 对象的标识、别名、关联依据，以及合并、拆分和科学修订的理由。
 - 外部资料的来源条目、版本或查询时间、匹配依据、观测与质量信息。
 
-首版论文提取只依据固定版本的 arXiv LaTeX 源码资料包，包括其中的正文、附录、表格及随包提供的附带资料。论文链接的包外资源暂不获取或处理；引用的其他论文或独立数据库不因被提及而成为本篇材料。期刊正式版与 PDF 提取留待后续扩展。跨论文对象关联与外部资料补全在本篇提取完成后进行。
+论文提取的目标输入为固定版本的PDF，可来自arXiv或期刊；模型提取与专家核对使用同一份原PDF。默认只下载PDF，LaTeX可手动下载存档，不作为提取输入或自动回退。成熟文档解析工具生成可读文本、表格及页面定位，解析结果是阅读辅助，原PDF仍是科学依据。附表按明确批准的材料范围单独登记；链接、引用论文和独立数据库不因被提及而自动成为本篇材料。跨论文对象关联与外部资料补全在本篇提取完成后进行。
 
-包内能够确认的结果照常提取；需要包外资源或当前无法解析的材料才能确定的部分，记录未处理范围及原文位置，不记成“论文未报告”或科学排除。缺口影响对象收录或身份时，相应判断保持未完成。没有可处理的 LaTeX 源码包时，记录材料不可用，保留以后补处理的入口。
+固定材料中能够确认的结果照常提取；需要未提供或无法可靠解析的材料才能确定的部分，记录未处理范围及原PDF位置，不记成“论文未报告”或科学排除。缺口影响对象收录或身份时，相应判断保持未完成。材料不可用时保留以后补处理的入口；是否有LaTeX源码包不再是目标流程的准入条件。
+
+提取流程分为名单提取和数值提取两个步骤，名单只有一种方法。简化不降低原值、误差、条件、来源及可回查证据的科学要求。
+
+专家辅助与全自动提取共用科学正文，仅在一个局部策略段区分解释歧义的处理：前者提交专家并暂停受影响的处理，后者依据原文自行选择最合理的解释并完成提取，不等待本轮专家。两版均须完整检查材料、保留作者原值及真实冲突；材料缺失和技术失败仍如实记录。具体规则来源、输入和运行边界见 [提取输入](design/extraction.md#科学规则的维护来源) 与 [裁决配置](design/review.md#专家裁决开关)。
 
 使用某份材料时，固定其版本，并把证据定位到页、表、行或段落。不能仅凭名称相同、某个标签、群体描述或阈值语句，就得出某个对象的科学结论；需要同时检查规则和原文依据。不同来源的测量，分别保存适用条件和出处。
 
@@ -29,22 +33,22 @@
 
 ## 按任务阅读
 
-完成 [基础入口](../AGENTS.md#progressive-reading) 后，从下表的具体章节开始；仅补读本次影响的依赖，不把文件内全部链接递归展开。关卡用于定位，交付与验收仍以 [计划](../.dev/plan.md) 为准；命令操作见 [操作说明](operations.md)，不在设计中另维护一套用法。
+完成 [基础入口](../AGENTS.md#progressive-reading) 后，从下表的功能主题开始；仅补读本次影响的依赖，不把文件内全部链接递归展开。命令操作见 [操作说明](operations.md)，不在设计中另维护一套用法。
 
 | 当前任务 | 先读的章节；按影响补读 |
 |---|---|
-| 模块、安装布局（R01、R27） | [业务架构](design/architecture.md#业务架构与依赖)、[文件职责](design/architecture.md#目录与文件职责) |
-| 工作空间、运行恢复（R02、R05） | [固定输入与保存](design/architecture.md#保存恢复与版本)、[共同接口](design/architecture.md#模块与共同入口)；锁、事务、备份只读本次涉及的后续章节 |
-| 规则、方法、模型与提示（R03、R12–R16） | [提取输入](design/extraction.md) 的对应章节；科学判断读 [规则主条目](science-rules.md#main-rules-in-order)，再查相关定义／例子 |
-| 数据模型、证据和填写（R04 及记录修订） | [记录职责](design/records.md#记录职责)及受影响结构；按需查 [逐量完成](design/records.md#各物理量的提取完成情况)、[填写转换](design/records.md#英文填写要求与生成范围)、[生成字段／模板](../contracts/generated/README.md) 和 [语言](design/extraction.md#审阅语言与发布语言)。运行／裁决字段另查其所属专题 |
-| 发现与获取（R10） | [文献检索与材料获取](design/workflow.md#文献检索与材料获取)；空间写入涉及 [串行锁](design/architecture.md#锁提交与恢复顺序) |
-| 来源解析（R11） | [材料准备](design/workflow.md#提取材料的准备)、[来源与证据](design/records.md#论文来源与证据)；材料范围以本页科学边界为准 |
-| 对象关联、资料补全（R18–R19） | [跨论文关联](design/workflow.md#跨论文对象关联)／[外部补全](design/workflow.md#外部资料补全)，以及 [对应记录](design/records.md#对象身份与外部记录) |
-| 星表、网站与发布（R22–R25） | [格式清理](design/workflow.md#星表格式清理与机器可读导出)、[星表维护](design/workflow.md#单轮处理与星表维护)、[发布记录](design/records.md#运行与发布清单)及 [文件归属](design/architecture.md#内容进入哪里) |
-| 裁决与判例（R05、R20–R21） | [判断边界](design/review.md#自动判断与专家裁决)、[配置](design/review.md#专家裁决开关)；接口或判例任务再读各自章节，恢复机制查架构 |
-| Gold（R06–R08、R28） | [审定与隔离](design/evaluation.md#评价gold-与持续改进)、[维护保存](design/evaluation.md#gold-的局部修正与-git-历史)；迁移查格式对应，字段／人工恢复查 [生成说明](../contracts/generated/gold/README.md) |
-| 评分与实验（R09、R17、R29） | [分层评分](design/evaluation.md#分层评分与匹配)、[比较与辅助模型](design/evaluation.md#排版等价与辅助评分模型)、[Gold 就绪核对](design/evaluation.md#正式评分前的-gold-核对)；集成／对照实验按任务再读相应章节 |
-| 全流程、指南和最终说明（R24、R26、R30） | 从本表选择实际覆盖的专题；跨模块验收再核对全部相关要求 |
+| 模块、安装布局 | [业务架构](design/architecture.md#业务架构与依赖)、[文件职责](design/architecture.md#目录与文件职责) |
+| 工作空间、运行恢复 | [固定输入与保存](design/architecture.md#保存恢复与版本)、[共同接口](design/architecture.md#模块与共同入口)；锁、事务、备份只读本次涉及的后续章节 |
+| 规则、方法、模型与提示 | [提取输入](design/extraction.md) 的对应章节；科学判断读 [规则主条目](science-rules.md#main-rules-in-order)，再查相关定义／例子 |
+| 数据模型、证据和填写 | [记录职责](design/records.md#记录职责)及受影响结构；按需查 [逐量完成](design/records.md#各物理量的提取完成情况)、[填写转换](design/records.md#英文填写要求与生成范围)、[生成字段／模板](../contracts/generated/README.md) 和 [语言](design/extraction.md#审阅语言与发布语言)。运行／裁决字段另查其所属专题 |
+| 发现与获取 | [文献检索与材料获取](design/workflow.md#文献检索与材料获取)；空间写入涉及 [串行锁](design/architecture.md#锁提交与恢复顺序) |
+| 来源解析 | [材料准备](design/workflow.md#提取材料的准备)、[来源与证据](design/records.md#论文来源与证据)；材料范围以本页科学边界为准 |
+| 对象关联、资料补全 | [跨论文关联](design/workflow.md#跨论文对象关联)／[外部补全](design/workflow.md#外部资料补全)，以及 [对应记录](design/records.md#对象身份与外部记录) |
+| 星表、网站与发布 | [格式清理](design/workflow.md#星表格式清理与机器可读导出)、[星表维护](design/workflow.md#单轮处理与星表维护)、[发布记录](design/records.md#运行与发布清单)及 [文件归属](design/architecture.md#内容进入哪里) |
+| 裁决与判例 | [判断边界](design/review.md#自动判断与专家裁决)、[配置](design/review.md#专家裁决开关)；接口或判例任务再读各自章节，恢复机制查架构 |
+| Gold | [审定与隔离](design/evaluation.md#评价gold-与持续改进)、[维护保存](design/evaluation.md#gold-的局部修正与-git-历史)；迁移查格式对应，字段／人工恢复查 [生成说明](../contracts/generated/gold/README.md) |
+| 评分与实验 | [分层评分](design/evaluation.md#分层评分与匹配)、[比较与辅助模型](design/evaluation.md#排版等价与辅助评分模型)、[Gold 就绪核对](design/evaluation.md#正式评分前的-gold-核对)；集成／对照实验按任务再读相应章节 |
+| 全流程、指南和最终说明 | 从本表选择实际覆盖的专题；跨模块验收再核对全部相关要求 |
 
 ## 文档维护
 

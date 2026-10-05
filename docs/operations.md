@@ -69,7 +69,7 @@ hvs-catalog acquisition material --space ./ws --id 2401.01234
 
 当前能力见 [README](../README.md#当前可用能力)，验收与验证范围见 [任务总表](../.dev/progress.md#任务总表)。仍须核对输入的已知缺口，工程准备完成不代表材料完整或科学判断已确认。
 
-从获取阶段已保存的源码包准备提取输入：安全展开成员、组织主稿正文／附录、转换常用表环境为 ECSV、确定性展开对象编号范围，并把已知缺口随输入一起交付。入口复用工作空间锁、runtime、事务与 R05 裁决接口；准备接口不接收 Gold。
+从获取阶段已保存的源码包准备提取输入：安全展开成员、组织主稿正文／附录、转换常用表环境为 ECSV、确定性展开对象编号范围，并把已知缺口随输入一起交付。入口复用工作空间锁、runtime、事务与共同裁决接口；准备接口不接收 Gold。
 
 ```bash
 hvs-catalog materials prepare --space ./ws --paper 2501.01111 --request-key rk-1 [--root-file main.tex] [--version N] [--encoding utf-8|latin-1] [--expert-adjudication] [--range "HVS1--HVS5|sec1.tex|1|1"] [--json]
@@ -94,7 +94,7 @@ Python 共用入口：`MaterialsService.prepare_materials`／`resume_preparation
 
 ## 模型配置与调用
 
-`hvs_catalog.llm` 提供 `CallRequest`、`ModelConfig`、`RuntimeConfig`、`start_call`／`resume_call`／`get_call`。当前接入 Token Dance 的 `deepseek-v4.1-flash`、`glm-5.3-flash`、`mimo-v2.6-flash` 和 `qwen3.8-flash`，固定各自官方上游，关闭回退。[direct 名单提取](#direct-名单提取) 已使用此接口；`models probe` 只执行英文合成对象 `SYN-1`、数值 `42` 的连通验证，不证明提取质量。
+`hvs_catalog.llm` 提供 `CallRequest`、`ModelConfig`、`RuntimeConfig`、`start_call`／`resume_call`／`get_call`。当前接入 Token Dance 的 `deepseek-v4.1-flash`、`glm-5.3-flash`、`mimo-v2.6-flash` 和 `qwen3.8-flash`，固定各自官方上游，关闭回退。[名单提取](#名单提取) 已使用此接口；`models probe` 只执行英文合成对象 `SYN-1`、数值 `42` 的连通验证，不证明提取质量。
 
 模型列表给出默认值、各模型允许的参数及官方依据；配置检查不联网：
 
@@ -178,7 +178,7 @@ hvs-catalog extract preview --config extraction.json --step direct_roster --inpu
 
 `targets` 提供本步必要的已有候选或名单对象；逐项 review 恰好一个带 `item_id` 的候选，数值步骤提供带 `object_id` 的名单对象，每项保留 `identifiers` 名称列表。`material_gaps` 是缺口列表，每项提供 `gap_id`、英文 `description` 和共同定义的 `affected_targets`，可带 `reason` 与 `file_id`。`open_questions` 每项提供 `question_id`、英文 `prompt`，可带 `category`、`target_ids`、`gap_ids` 和原文就地证据 `evidence`；不传记录修订或维护信息。原文、标识、数值和证据不翻译。完整预览同时输出 `request`（模型、两条消息和当前步骤工具 Schema）、`prepared`（模型适配器转换的实际协议参数）、内容摘要、选例及判例归档信息。步骤不存在、收尾配置模型、无关／重复例子、缺少必需英文内容或已有结果时拒绝，不生成模型调用。
 
-日常 `mode: daily` 开启专家裁决。后续纯 AI 对照配置显式指定 `mode: evaluation` 与 `expert_adjudication: false`；`synthetic` 可用来模拟两种裁决配置。提示只改变歧义处理要求，仍保留未决、缺口和科学范围。可显式传入带审定状态、版本、英文说明、条件及边界的 `precedents` 快照，必须声明 `approved: true`；省略或未审定时拒绝。当前只核对所提供的输入，不代替科学审批，实际判例制作、审批、查找与库复用由 R21 接入。
+日常 `mode: daily` 开启专家裁决。纯AI配置显式指定 `mode: evaluation` 与 `expert_adjudication: false`；`synthetic` 可用来模拟两种裁决配置。当前提示只改变歧义处理要求，仍允许保留解释未决，并保留缺口和科学范围。可显式传入带审定状态、版本、英文说明、条件及边界的 `precedents` 快照，必须声明 `approved: true`；省略或未审定时拒绝。当前只核对所提供的输入，不代替科学审批；判例制作、审批、查找与库复用尚未提供。
 
 以下命令使用固定的虚构论文与模拟服务，验证配置接入各步、请求归档及恢复，不代表真实论文提取：
 
@@ -190,7 +190,7 @@ hvs-catalog extract resume --space /tmp/hvs-config-demo --execution exec-000001
 
 模拟执行可在科学疑问处暂停，决定提交仍用现有 Python 裁决接口。恢复只读取原运行的配置、提示、选例与判例内容；编辑配置文件或提示资源不会改写原运行。新材料、实际英文提示或配置使用新的 `request-key`。归档损坏或缺失时拒绝恢复，不能用当前提示替换。`status` 可回查完整配置和提示／例子引用，以及每步调用次数和已知 tokens；模拟服务用量是固定合成值。日常与评测通过同一个 Python 配置／提取入口，实际名单操作见下一节。
 
-## direct 名单提取
+## 名单提取
 
 先按 [材料准备](#材料准备正文与表格) 获得已完成的准备执行编号，再在同一空间执行：
 
