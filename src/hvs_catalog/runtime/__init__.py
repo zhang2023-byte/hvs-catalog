@@ -1,7 +1,7 @@
 """Runtime execution creation, step results, and recovery.
 
 Public APIs include create_execution/get_execution/commit_step_result/resume_execution
-and context/adapter bases. See ../../../docs/design/architecture.md for constraints.
+and context/adapter bases. See ../../../.dev/plan.md for constraints.
 """
 
 from __future__ import annotations

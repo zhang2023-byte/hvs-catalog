@@ -3,7 +3,7 @@
 
 New answers and revisions use the same current-pair save. Organize the compact pair
 before review; use check_save / gold inspect-save for a read-only binding summary.
-This document is guidance, not approval. See the [Gold maintenance design](../../../../docs/design/evaluation.md).
+This document is guidance, not approval. See the [Gold maintenance requirements](../../../../.dev/plan.md#gold-维护与就绪).
 
 Review answer.json, metadata.json and all reported checks. Set scientific_review=true
 only after a human expert has reviewed this exact content. The binding hashes both

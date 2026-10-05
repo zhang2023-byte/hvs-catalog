@@ -27,11 +27,11 @@ def test_wheel_rejects_development_material():
         "hvs_catalog/cli.py",
         "tests/test_cli.py",
         ".dev/plan.md",
-        "docs/design.md",
+        "docs/science-rules.md",
     ]
     assert sorted(check_wheel(names)) == [
         ".dev/plan.md",
-        "docs/design.md",
+        "docs/science-rules.md",
         "tests/test_cli.py",
     ]
 

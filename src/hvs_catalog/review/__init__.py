@@ -1,6 +1,6 @@
 """Shared pending-question/decision interfaces.
 
-See ../../../docs/design/review.md for interface contracts; workspace/runtime provide
+See ../../../.dev/plan.md for shared requirements; workspace/runtime provide
 saving, locking, and recovery.
 """
 

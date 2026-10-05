@@ -2,7 +2,7 @@
 
 layout initializes/opens; locking provides exclusion; store handles
 records/transactions; backup handles backup/restore; errors defines failures. See
-../../../docs/design/architecture.md for usage/constraints.
+../../../.dev/plan.md for usage/constraints.
 """
 
 from __future__ import annotations
