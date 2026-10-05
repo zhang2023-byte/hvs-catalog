@@ -18,7 +18,7 @@ from ..pipeline import (
     start_extraction,
 )
 from ..pipeline.flow import ExtractionFlow
-from ..pipeline.methods import DIRECT_METHOD
+from ..pipeline.methods import ROSTER_METHOD
 from ..pipeline.mock import (
     PAPER_A,
     PipelineMockService,
@@ -59,11 +59,11 @@ def _registry(crash_after_response):
     registry = PipelineRegistry()
     registry.register(
         MethodRegistration(
-            spec=DIRECT_METHOD,
+            spec=ROSTER_METHOD,
             build_flow=lambda spec, mode: ExtractionFlow(
                 spec,
                 mode=mode,
-                fault_hooks={"after_response:direct_roster": crash}
+                fault_hooks={"after_response:roster": crash}
                 if crash_after_response
                 else {},
             ),
@@ -103,7 +103,7 @@ def run(root: Path, *, crash_after_response=False) -> dict:
                 space,
                 request=ExtractionRequest(
                     source_refs=[source],
-                    method="direct",
+                    method="roster",
                     mode="synthetic",
                     models=[StepModel(model="synthetic-mock")],
                     expert_adjudication=True,

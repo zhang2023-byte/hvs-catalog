@@ -115,7 +115,7 @@ def test_missing_item_and_unsupported_record_rejected():
         data={
             "paper_key": "SYNTHETIC-X",
             "source_ref": {"record_id": "src-x", "revision": 1},
-            "method": "direct",
+            "method": "roster",
             "coverage": {
                 "state": "complete",
                 "checked_file_ids": ["main"],
@@ -131,7 +131,7 @@ def test_missing_item_and_unsupported_record_rejected():
             roster,
             DecisionPatch(
                 target={"record_id": "roster-x", "revision": 1, "item_id": "a"},
-                changes=[PatchChange(field="method", value="direct")],
+                changes=[PatchChange(field="method", value="roster")],
             ),
         )
 

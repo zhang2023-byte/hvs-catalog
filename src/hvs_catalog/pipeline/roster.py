@@ -1,4 +1,4 @@
-"""Direct model roster extraction from frozen prepared source packages.
+"""Model roster extraction from frozen prepared source packages.
 
 The shared runtime, model-call ledger, submission conversion and review service
 own persistence. This flow ends at the roster boundary; quantities stay unchecked.
@@ -8,18 +8,20 @@ Stella HVS (MIT; see llm/STELLA_LICENSE.txt), adapted to current contracts.
 
 from __future__ import annotations
 
+import base64
 import copy
 import json
+import re
+from pathlib import Path
 from typing import TypedDict
 
-from jsonschema import Draft202012Validator
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
-from pydantic import ValidationError
 
 from ..llm.config import CallRequest, Message
 from ..llm.managed import CallFailure, CallService, execute_model_call
-from ..llm.prompts import PromptBlueprint, PromptGap, PromptInput
+from ..llm.prompts import PromptBlueprint, PromptGap, PromptImage, PromptInput
+from ..llm.transport import strict_json
 from ..records import StepContext, convert_roster_submission
 from ..records.common import (
     ArtifactRef,
@@ -31,6 +33,7 @@ from ..records.common import (
 from ..records.paper import PaperRecord
 from ..records.questions import QuestionRecord
 from ..records.roster import RosterRecord
+from ..records.roster_input import bind_roster_input
 from ..records.runs import ModelJudgment, RunRecord
 from ..records.source import SourcePackageRecord
 from ..records.submission import RosterSubmission, SubmissionError
@@ -40,49 +43,15 @@ from ..review.service import QuestionContent
 from ..runtime import DefaultFlowAdapter
 from ..runtime.execution import append_run_revision
 from .configuration import stored_configuration, validate_configuration_snapshot
+from .roster_repair import Repair, apply_repairs, repair_tool, schema_repairs
 
-STEP = "direct_roster"
+STEP = "roster"
 MAX_FORMAT_CORRECTIONS = 2
 MAX_CORRECTION_BYTES = 128 * 1024
 
 
-def _science_values(payload):
-    """Keep supplied contract fields, even when the submission is incomplete.
-
-    Correction may add omitted fields or remove unknown fields. It cannot replace
-    a supplied judgment, object, evidence coordinate or coverage claim. Invalid
-    JSON provides no safely recoverable structured baseline.
-    """
-    schema = RosterSubmission.model_json_schema()
-    values = {}
-
-    def walk(value, spec, path):
-        while "$ref" in spec:
-            spec = schema["$defs"][spec["$ref"].rsplit("/", 1)[1]]
-        if "anyOf" in spec and value is not None:
-            spec = next(s for s in spec["anyOf"] if s.get("type") != "null")
-            return walk(value, spec, path)
-        if isinstance(value, dict) and "properties" in spec:
-            # A misplaced source wrapper is a format error, but its already
-            # supplied source facts must also survive correction unchanged.
-            if "source" in spec["properties"] and "source" not in value:
-                misplaced = {
-                    k: value[k] for k in ("file_id", "locator", "excerpt") if k in value
-                }
-                if misplaced:
-                    walk(misplaced, spec["properties"]["source"], (*path, "source"))
-            for key, child in spec["properties"].items():
-                if key in value:
-                    walk(value[key], child, (*path, key))
-        elif isinstance(value, list) and "items" in spec:
-            values[(*path, "length")] = len(value)
-            for index, item in enumerate(value):
-                walk(item, spec["items"], (*path, index))
-        else:
-            values[path] = value
-
-    walk(payload, schema, ())
-    return values
+class EvidenceLocationError(SubmissionError):
+    """A bounded citation-format correction can locate unchanged scientific claims."""
 
 
 def _prior_submission(prior):
@@ -90,44 +59,100 @@ def _prior_submission(prior):
     if len(calls) != 1:
         return None
     try:
-        value = json.loads(calls[0]["function"]["arguments"])
+        value = strict_json(calls[0]["function"]["arguments"])
     except (ValueError, KeyError, TypeError):
         return None
     return value if isinstance(value, dict) else None
 
 
 def _format_details(prior, tool):
-    """Bounded English schema diagnostics without dumping scientific values."""
-    payload = _prior_submission(prior)
-    if payload is None:
-        return "Arguments must be one valid JSON object in the requested tool call."
-    details = []
+    """Give exact JSON syntax locations without guessing or rewriting arguments."""
+    calls = prior.get("tool_calls") or []
+    if len(calls) != 1:
+        return "Return exactly one call to the supplied tool."
+    try:
+        strict_json(calls[0]["function"]["arguments"])
+    except json.JSONDecodeError as exc:
+        return f"JSON syntax error at line {exc.lineno}, column {exc.colno} (character {exc.pos}): {exc.msg}."
+    except (KeyError, TypeError):
+        return "Tool arguments must be a JSON object."
+    except ValueError as exc:
+        return "Invalid JSON: " + str(exc)
+    return "Follow the supplied tool schema and repair IDs exactly."
 
-    def bounded():
-        return "\n".join(details).encode()[:4096].decode("utf-8", errors="ignore")
 
-    def leaves(error):
-        if error.context:
-            for child in error.context:
-                yield from leaves(child)
-        else:
-            yield error
+def _citation_repairs(payload, inputs, source, space):
+    """Locate only failing citations; successful readings remain untouched."""
+    from ..records.pdf import pdf_evidence_block
 
-    for error in Draft202012Validator(tool.parameters).iter_errors(payload):
-        for child in leaves(error):
-            path = ".".join(str(p) for p in child.absolute_path) or "root"
-            hint = child.validator
-            if hint == "required":
-                hint += "; required fields: " + ", ".join(child.validator_value)
-            elif hint == "additionalProperties" and isinstance(child.instance, dict):
-                unknown = set(child.instance) - set(child.schema.get("properties", {}))
-                hint += "; unknown fields: " + ", ".join(sorted(unknown))
-            detail = path + ": " + hint
-            if detail not in details:
-                details.append(detail)
-            if len(details) >= 24:
-                return bounded()
-    return bounded()
+    fixes = []
+
+    def walk(value, path):
+        if isinstance(value, dict):
+            if set(value) == {"location", "quote"}:
+                location = inputs.citation_locations.get(value["location"])
+                reason = None
+                if location is None:
+                    reason = "Select a location supplied in the fixed paper materials."
+                else:
+                    loc = location["locator"]
+                    block = pdf_evidence_block(
+                        source,
+                        space.root,
+                        location["file_id"],
+                        loc["page"],
+                        loc["block_id"],
+                        require_image=loc["kind"] == "pdf_image",
+                    )
+                    compact = lambda text: re.sub(r"\s+", " ", text).strip()
+                    if loc["kind"] == "pdf" and compact(value["quote"]) not in compact(
+                        block["text"]
+                    ):
+                        reason = "The quote is not verbatim at this location. Correct only this citation against the supplied paper; keep its supported scientific claim unchanged."
+                if reason:
+                    fixes.append(
+                        Repair(path, {"$ref": "#/$defs/InlineEvidence"}, reason)
+                    )
+                return
+            for key, child in value.items():
+                walk(child, (*path, key))
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                walk(child, (*path, index))
+
+    walk(payload, ())
+    return fixes
+
+
+def _gap_repairs(payload, source):
+    allowed = {gap.gap_id for gap in source.data.gaps}
+    fixes = []
+
+    def walk(value, path):
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if (
+                    key in {"gap_ids", "boundness_gap_ids"}
+                    and not set(child) <= allowed
+                ):
+                    fixes.append(
+                        Repair(
+                            (*path, key),
+                            {
+                                "type": "array",
+                                "items": {"type": "string", "enum": sorted(allowed)},
+                            },
+                            "Use only application-supplied gaps, or [] when none applies. Do not change coverage or scientific judgments.",
+                        )
+                    )
+                else:
+                    walk(child, (*path, key))
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                walk(child, (*path, index))
+
+    walk(payload, ())
+    return fixes
 
 
 def prepared_bundle(
@@ -151,109 +176,97 @@ def prepared_bundle(
 
 
 def material_prompt(space, bundle: dict, source: SourcePackageRecord) -> PromptInput:
-    """Present referenced manuscript files, attached text, tables and mappings.
-
-    Raw packages, images, diagnostic logs and unreferenced TeX drafts are not
-    decoded as manuscript. Conversion views keep their declared original links.
-    """
-    body_names = {f["name"] for f in bundle["body"].get("files", [])}
-    utf8_members = {
-        f.derived_from[0] for f in source.data.files if f.file_id.startswith("utf8:")
-    }
-    blocks = []
-    for file in source.data.files:
-        if file.read_state != "ready" or file.role not in {
-            "member",
-            "derived_text",
-            "derived_table",
-            "derived_mapping",
-        }:
-            continue
-        if file.file_id == "body-view" or file.file_id in utf8_members:
-            continue
-        name = file.file_id.removeprefix("member:").removeprefix("utf8:")
-        if name.lower().endswith(".tex") and name not in body_names:
-            continue
-        if not (
-            file.media_type.startswith("text/")
-            or file.media_type in {"application/json", "application/x-latex"}
-        ):
-            continue
-        text = space.read_file(ArtifactRef(path=file.path, sha256=file.sha256)).decode(
-            "utf-8"
+    """Present fixed PDF blocks without interpreting their object names."""
+    index_file = next(f for f in source.data.files if f.role == "pdf_index")
+    index = json.loads(
+        space.read_file(ArtifactRef(path=index_file.path, sha256=index_file.sha256))
+    )
+    pdf_id = index["pdf_file_id"]
+    if index.get("image_policy") != "original_images_without_generated_descriptions":
+        raise ValueError(
+            "Prepare this PDF again to remove generated descriptions and include original images"
         )
-        blocks.append(
-            f"FILE {file.file_id} (role={file.role}; derived_from={','.join(file.derived_from)})\n"
-            + "\n".join(f"{i}|{line}" for i, line in enumerate(text.splitlines(), 1))
-        )
-    if not blocks:
-        raise ValueError("prepared source has no supported readable model material")
-    gap_messages = {
-        "missing": "Referenced package material is missing.",
-        "unreadable": "Package material could not be read with a confirmed encoding.",
-        "unparsed": "Package material has not been parsed completely; inspect available original material and retain the affected scope as incomplete.",
-        "external_not_included": "Referenced external material is outside the supplied package and has not been processed.",
-    }
-    gaps = []
-    for gap in source.data.gaps:
-        # Preparation diagnostics are operator-facing Chinese. Model instructions
-        # use deterministic English facts from the reason, identity and scope;
-        # the complete original diagnostic remains in the frozen source record.
-        description = gap_messages[gap.reason]
-        if gap.gap_id == "gap-conversion-context":
-            description = "Conversion of the complete author context could not establish completeness. Check supplied original source; unresolved scope remains incomplete."
-        gaps.append(
-            PromptGap(
-                gap_id=gap.gap_id,
-                description=description,
-                reason=gap.reason,
-                file_id=gap.file_id,
-                affected_targets=gap.affected_targets,
-            )
-        )
-    ranges = [
-        {
-            k: v
-            for k, v in item.items()
-            if k
-            in {
-                "notation",
-                "file",
-                "start_line",
-                "end_line",
-                "state",
-                "status",
-                "identifiers",
-                "object_context",
-                "members",
-                "remainder",
-                "source_ref",
-                "evidence",
-            }
+    files = {file.file_id: file for file in source.data.files}
+    images = []
+    locations = {}
+    blocks = [f"FILE {pdf_id} (role=pdf; pages={index['page_count']})"]
+    for block in index["blocks"]:
+        text_location = "T:" + block["block_id"]
+        locations[text_location] = {
+            "file_id": pdf_id,
+            "locator": {
+                "kind": "pdf",
+                "page": block["page"],
+                "block_id": block["block_id"],
+            },
         }
-        for item in bundle.get("ranges", [])
-    ]
+        blocks.append(
+            f"LOCATION {text_location} PAGE {block['page']} BLOCK {block['block_id']} ({block['type']})\n"
+            + block["text"]
+        )
+        for image_id in block.get("image_files", []):
+            file = files[image_id]
+            if file.role != "pdf_image" or pdf_id not in file.derived_from:
+                raise ValueError("Image is not bound to the supplied PDF")
+            data = space.read_file(ArtifactRef(path=file.path, sha256=file.sha256))
+            image_location = "I:" + block["block_id"]
+            locations[image_location] = {
+                "file_id": pdf_id,
+                "locator": {
+                    "kind": "pdf_image",
+                    "page": block["page"],
+                    "block_id": block["block_id"],
+                },
+            }
+            images.append(
+                PromptImage(
+                    label=f"LOCATION {image_location} FILE {pdf_id} PAGE {block['page']} BLOCK {block['block_id']} IMAGE {image_id}",
+                    image_url={
+                        "url": f"data:{file.media_type};base64,"
+                        + base64.b64encode(data).decode("ascii")
+                    },
+                )
+            )
     return PromptInput(
-        manuscript='SOURCE COORDINATES: Each numbered line below is a physical source-file line. Every evidence item has this nested structure: {"source":{"file_id":"...","locator":{"kind":"text","start_line":1,"end_line":1},"excerpt":"..."},"parts":[],"context":true}. For text evidence, copy a contiguous verbatim substring from the stated line range, keeping original TeX syntax and whitespace. Do not insert ellipses, join separated fragments, paraphrase, or quote rendered prose instead of source. The program will attach the complete source lines.\n\n'
-        + "\n\n".join(blocks)
-        + "\n\nPREPARED RANGE OBSERVATIONS (parser suggestions, not author statements; unsupported observations may be single printed identifiers; check original evidence):\n"
-        + canonical_json(ranges),
-        material_gaps=gaps,
+        images=images,
+        citation_locations=locations,
+        manuscript=(
+            "The following blocks are parser transcriptions of the fixed PDF. Cite only a supplied location and quote. "
+            "For text, use its T: location and quote a verbatim substring of that block. "
+            "For an attached image, use its I: location and transcribe relevant printed text you can actually read. "
+            "Image transcriptions are model readings, not automatically verified text. Author captions remain text evidence. "
+            "Read the attached original figures and tables; parser-generated figure descriptions are omitted. "
+            "The application attaches the full block and its PDF bounding box for checking. "
+            "Parsed text is not independently verified original evidence; report suspected parsing errors.\n\n"
+            + "\n\n".join(blocks)
+        ),
+        material_gaps=[
+            PromptGap(
+                gap_id=g.gap_id,
+                description=g.description,
+                reason=g.reason,
+                file_id=g.file_id,
+                affected_targets=g.affected_targets,
+            )
+            for g in source.data.gaps
+        ],
     )
 
 
 def start_roster_extraction(
     space, *, preparation_execution_id: str, request_key: str, configuration=None
 ):
-    """Create a direct roster execution through the common extraction entry."""
+    """Create a roster execution through the common extraction entry."""
     from ..materials import MaterialsService
     from .configuration import ExtractionConfig
     from .entry import start_extraction
 
     config = configuration or ExtractionConfig()
     config = ExtractionConfig.model_validate(config.model_dump())
-    if config.method != "direct":
-        raise ValueError("model roster execution currently supports direct only")
+    if config.method != "roster":
+        raise ValueError(
+            "model roster execution currently supports the roster flow only"
+        )
     bundle = MaterialsService(space).get_prepared_input(preparation_execution_id)
     source_ref = RecordRef.model_validate(bundle["prepared_source_ref"])
     ref = ArtifactRef.model_validate(bundle["bundle_ref"])
@@ -269,13 +282,14 @@ def start_roster_extraction(
 def _hydrate_sources(
     payload: dict, space, source: SourcePackageRecord, supplied_file_ids: set[str]
 ) -> dict:
-    """Copy full source lines only after the submitted excerpt matches those lines.
+    """Bind text excerpts to full blocks; preserve image readings as image evidence.
 
     Scientific fields are unchanged. Short verbatim excerpts become the complete
-    physical-line evidence required by saved records; invented excerpts fail.
+    block evidence required by saved records; image text is not string-verified.
     """
     result = copy.deepcopy(payload)
     files = {f.file_id: f for f in source.data.files}
+    problems = set()
 
     def walk(value):
         if isinstance(value, dict):
@@ -290,24 +304,36 @@ def _hydrate_sources(
                         "evidence refers to material not supplied as paper evidence"
                     )
                 loc = value["locator"]
-                if loc["kind"] == "text":
-                    file = files[fid]
-                    lines = (
-                        space.read_file(ArtifactRef(path=file.path, sha256=file.sha256))
-                        .decode("utf-8")
-                        .splitlines()
+                if loc["kind"] not in {"pdf", "pdf_image"}:
+                    problems.add(
+                        "Use pdf or pdf_image page/block locators for every citation."
                     )
-                    start, stop = loc["start_line"], loc["end_line"]
-                    if not 1 <= start <= stop <= len(lines):
-                        raise SubmissionError(
-                            "evidence line coordinates are outside the fixed file"
-                        )
-                    actual = "\n".join(lines[start - 1 : stop])
-                    if not value["excerpt"] or value["excerpt"] not in actual:
-                        raise SubmissionError(
-                            "evidence excerpt does not occur verbatim at the submitted coordinates"
-                        )
-                    value["excerpt"] = actual
+                    return
+                from ..records.pdf import pdf_evidence_block
+
+                try:
+                    block = pdf_evidence_block(
+                        source,
+                        space.root,
+                        fid,
+                        loc["page"],
+                        loc["block_id"],
+                        require_image=loc["kind"] == "pdf_image",
+                    )
+                except ValueError as exc:
+                    problems.add(f"{fid} {loc}: {exc}")
+                    return
+                if loc["kind"] == "pdf_image":
+                    return
+                actual = block["text"]
+                compact = lambda text: re.sub(r"\s+", " ", text).strip()
+                if not value["excerpt"] or compact(value["excerpt"]) not in compact(
+                    actual
+                ):
+                    problems.add(
+                        f"{fid} page {loc['page']} block {loc['block_id']}: excerpt is not verbatim at this block. Quote starts: {value['excerpt'][:100]!r}"
+                    )
+                value["excerpt"] = actual
             for item in value.values():
                 walk(item)
         elif isinstance(value, list):
@@ -315,6 +341,8 @@ def _hydrate_sources(
                 walk(item)
 
     walk(result)
+    if problems:
+        raise EvidenceLocationError("\n".join(sorted(problems))[:6000])
     return result
 
 
@@ -355,22 +383,22 @@ class RosterState(TypedDict, total=False):
     result_refs: list[dict]
 
 
-class DirectRosterFlow(DefaultFlowAdapter):
+class RosterFlow(DefaultFlowAdapter):
     """One roster node with fixed input and durable correction calls."""
 
     flow_version = "1"
 
     def __init__(self, *, mode):
         self.mode = mode
-        self.flow_id = f"hvs-direct-roster-{mode}"
+        self.flow_id = f"hvs-roster-{mode}"
 
     def initial_state(self, ctx):
         return {"execution_id": ctx.execution.execution_id, "result_refs": []}
 
     def build_graph(self, ctx):
         config = validate_configuration_snapshot(ctx.execution.input_snapshot)
-        if config is None or config.method != "direct":
-            raise ValueError("direct roster requires a frozen direct configuration")
+        if config is None or config.method != "roster":
+            raise ValueError("roster requires a frozen roster configuration")
         if (
             not isinstance(ctx.service, CallService)
             or ctx.service.runtime != config.runtime
@@ -402,7 +430,7 @@ class DirectRosterFlow(DefaultFlowAdapter):
         return source, inputs, blueprint.request(config.model_for(STEP), inputs)
 
     def _records(self, ctx, source, inputs, payload):
-        prefix = f"direct-{ctx.execution.execution_id}"
+        prefix = f"roster-{ctx.execution.execution_id}"
         roster_ref = RecordRef(record_id=prefix + "-roster", revision=1)
         paper_ref = RecordRef(record_id=prefix + "-paper", revision=1)
         previous = ctx.store.read_record(roster_ref)
@@ -420,7 +448,12 @@ class DirectRosterFlow(DefaultFlowAdapter):
             for line in inputs.manuscript.splitlines()
             if line.startswith("FILE ")
         }
-        hydrated = _hydrate_sources(payload, ctx.space, source, supplied)
+        hydrated = _hydrate_sources(
+            bind_roster_input(payload, inputs.citation_locations),
+            ctx.space,
+            source,
+            supplied,
+        )
         if not set(hydrated["coverage"]["checked_file_ids"]) <= supplied:
             raise SubmissionError(
                 "roster coverage claims a file that was not supplied to the model"
@@ -429,9 +462,8 @@ class DirectRosterFlow(DefaultFlowAdapter):
             hydrated["coverage"]["state"] == "complete"
             and hydrated["unresolved_groups"]
         ):
-            raise SubmissionError(
-                "an unresolved membership group cannot be declared a complete roster"
-            )
+            # Completion bookkeeping cannot contradict an explicitly saved unresolved group.
+            hydrated["coverage"]["state"] = "partial"
         for entry in hydrated["entries"]:
             fields = entry.get("contribution")
             if (
@@ -442,6 +474,19 @@ class DirectRosterFlow(DefaultFlowAdapter):
                 raise SubmissionError(
                     "an explicitly bound object cannot be included as candidates_found"
                 )
+        if not ctx.execution.input_snapshot.expert_adjudication:
+            for entry in hydrated["entries"]:
+                fields = entry.get("contribution")
+                if entry.get("question") or (
+                    fields and fields["boundness"].get("question")
+                ):
+                    raise SubmissionError(
+                        "Automatic extraction must form a model judgment, not an expert question"
+                    )
+                if entry["disposition"] == "pending" and not entry.get("gap_ids"):
+                    raise SubmissionError(
+                        "Only missing material may leave an automatic roster entry pending"
+                    )
         conversion = convert_roster_submission(
             context, RosterSubmission.model_validate(hydrated)
         )
@@ -495,10 +540,42 @@ class DirectRosterFlow(DefaultFlowAdapter):
         digest = sha256_of(initial.model_dump(mode="json"))
         saved = ctx.reuse_step(STEP, digest)
         if saved is None:
-            request = initial
-            baselines = []
+            request = CallRequest.model_validate(initial.model_dump())
+            draft = None
+            fixes = []
             for round_number in range(MAX_FORMAT_CORRECTIONS + 1):
                 prepared = ctx.service.adapter.prepare(request)
+                if round_number:
+                    # A saved correction is immutable even when validation diagnostics
+                    # improve. Reuse it only within the same frozen original request.
+                    run = ctx.store.read_record_current(ctx.execution.run_ref.record_id)
+                    for step in run.data.steps:
+                        if step.step_id != STEP:
+                            continue
+                        for attempt in step.attempts:
+                            if attempt.request and Path(
+                                attempt.request.path
+                            ).name.startswith(f"roster-{round_number:02d}-"):
+                                archived = json.loads(
+                                    ctx.space.read_file(attempt.request)
+                                )
+                                frozen, rebuilt = (
+                                    copy.deepcopy(archived),
+                                    copy.deepcopy(prepared),
+                                )
+                                frozen["payload"]["messages"].pop()
+                                rebuilt["payload"]["messages"].pop()
+                                if frozen != rebuilt:
+                                    raise CallFailure(
+                                        "archived correction belongs to different fixed input"
+                                    )
+                                prepared = archived
+                                # Continue from the exact conversation already sent,
+                                # including feedback from every earlier correction.
+                                request.messages = [
+                                    Message.model_validate(message)
+                                    for message in archived["payload"]["messages"]
+                                ]
                 envelope = execute_model_call(
                     ctx,
                     ctx.service,
@@ -508,30 +585,85 @@ class DirectRosterFlow(DefaultFlowAdapter):
                     call_key=f"roster-{round_number:02d}",
                 )
                 error = envelope.get("error")
+                body = envelope.get("exchange", {}).get("body") or {}
+                prior = body.get("choices", [{}])[0].get("message", {})
+                prior = {
+                    k: v for k, v in prior.items() if k in {"content", "tool_calls"}
+                }
+                proposed = _prior_submission(prior)
+                if request.tool.name == "repair_roster":
+                    if error is None:
+                        draft = apply_repairs(draft, fixes, proposed)
+                elif (
+                    proposed is not None
+                    and prior["tool_calls"][0]["function"].get("name")
+                    == initial.tool.name
+                ):
+                    draft = proposed
+                if draft is not None and (
+                    request.tool.name != "repair_roster" or error is None
+                ):
+                    fixes = schema_repairs(draft, initial.tool.parameters)
+                    if not fixes:
+                        fixes = _citation_repairs(draft, inputs, source, ctx.space)
+                    error = (
+                        "Submission has fields requiring correction." if fixes else None
+                    )
+                payload = draft
                 if error is None:
-                    payload = envelope["result"]["parsed"]
-                    current = _science_values(payload)
-                    if any(
-                        current.get(path) != value or path not in current
-                        for baseline in baselines
-                        for path, value in baseline.items()
-                    ):
-                        raise SubmissionError(
-                            "format correction changed a supplied scientific field; inspect the archived submissions"
-                        )
                     try:
-                        # Pydantic semantic constraints supplement the tool JSON Schema.
-                        RosterSubmission.model_validate(payload)
-                    except ValidationError as exc:
-                        error = "submission_constraints_failed: " + "; ".join(
-                            ".".join(str(p) for p in item["loc"])
-                            + " ("
-                            + item["type"]
-                            + ")"
-                            for item in exc.errors(include_input=False)
-                        )
+                        records, questions = self._records(ctx, source, inputs, payload)
+                    except EvidenceLocationError as exc:
+                        error = "PDF citation validation: " + str(exc)
+                    except SubmissionError as exc:
+                        if "输入中不存在的材料缺口" in str(exc):
+                            fixes = _gap_repairs(payload, source)
+                            error = "Use only the supplied gap identifiers."
+                        elif "未列清范围的已明确成员" in str(exc):
+                            identifiers = {
+                                i["value"]
+                                for entry in payload["entries"]
+                                for i in entry["identifiers"]
+                            }
+                            missing = sorted(
+                                {
+                                    name
+                                    for group in payload["unresolved_groups"]
+                                    for name in group["member_identifier_values"]
+                                    if name not in identifiers
+                                }
+                            )
+                            entry_schema = {"$ref": "#/$defs/RosterEntrySubmission"}
+                            fixes = [
+                                Repair(
+                                    ("entries",),
+                                    {
+                                        "allOf": [
+                                            entry_schema,
+                                            {
+                                                "properties": {
+                                                    "identifiers": {
+                                                        "contains": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "value": {"const": name}
+                                                            },
+                                                            "required": ["value"],
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                        ]
+                                    },
+                                    f"Append the omitted entry for already named member {name!r}. Existing entries remain unchanged.",
+                                    "append",
+                                )
+                                for name in missing
+                            ]
+                            error = "Named members require their own entries."
+                        else:
+                            raise
                 if error is None:
-                    records, questions = self._records(ctx, source, inputs, payload)
                     if questions:
                         ReviewService(ctx.space).create_questions(
                             execution_id=ctx.execution.execution_id,
@@ -554,29 +686,43 @@ class DirectRosterFlow(DefaultFlowAdapter):
                     break
                 if round_number == MAX_FORMAT_CORRECTIONS:
                     raise CallFailure("roster format correction exhausted")
-                request = CallRequest.model_validate(initial.model_dump())
-                body = envelope.get("exchange", {}).get("body") or {}
-                prior = body.get("choices", [{}])[0].get("message", {})
-                prior = {
-                    k: v for k, v in prior.items() if k in {"content", "tool_calls"}
-                }
-                prior_payload = _prior_submission(prior)
-                if prior_payload is not None:
-                    baselines.append(_science_values(prior_payload))
                 prior_text = canonical_json(prior)
                 if len(prior_text.encode("utf-8")) > MAX_CORRECTION_BYTES:
                     raise CallFailure(
-                        "previous output exceeds the bounded format-correction input; inspect the archived output"
+                        "previous output exceeds the bounded correction input; inspect the archived output"
                     )
+                if draft is not None:
+                    if not fixes:
+                        raise CallFailure(
+                            "Submission violates a constraint without a safe local format repair: "
+                            + str(error)
+                        )
+                    request.tool = repair_tool(fixes, initial.tool.parameters)
+                    details = [
+                        {
+                            "id": f"R{i}",
+                            "path": list(fix.path),
+                            "instruction": fix.reason,
+                        }
+                        for i, fix in enumerate(fixes, 1)
+                    ]
+                    instruction = (
+                        "Use repair_roster to return only the requested R fields. The application retains every other field unchanged. Repairs do not authorize revising scientific judgments, names, conditions or membership.\nRequested repairs: "
+                        + canonical_json(details)
+                    )
+                else:
+                    request.tool = initial.tool
+                    instruction = "No valid JSON object could be read. Resubmit using the supplied submit_roster schema. "
                 request.messages.append(
                     Message(
                         role="user",
-                        content="The previous submission failed format validation ("
-                        + error
-                        + "). Correct only the requested output format and field constraints. Preserve all scientific judgments, identifiers and evidence; do not resolve scientific uncertainty to satisfy the schema. Return exactly one requested tool call. Previous output:\n"
-                        + prior_text
-                        + "\nValidation details:\n"
-                        + _format_details(prior, initial.tool),
+                        content=instruction
+                        + "\nValidation details: "
+                        + str(error)
+                        + "\n"
+                        + _format_details(prior, request.tool)
+                        + "\nPrevious output:\n"
+                        + prior_text,
                     )
                 )
         refs = list(saved.result_refs)

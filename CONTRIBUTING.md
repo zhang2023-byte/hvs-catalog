@@ -100,9 +100,9 @@ uv run pytest -q                       # Full suite; not required for every edit
 
 ### 科学规则维护
 
-[英文 TOML](src/hvs_catalog/resources/science/rules.toml) 是唯一来源，[工具](tools/render_science_rules.py) 只排版生成 [英文阅读版](docs/science-rules.md)，无需旧仓即可读取。`legacy`、`legacy_rules`、`legacy_path` 保存参考对应，规则版本与审定状态属维护信息，不发送给提取者。
+[英文 TOML](src/hvs_catalog/resources/science/rules.toml) 是唯一来源，[工具](tools/render_science_rules.py) 只排版生成 [专家辅助版](docs/science-rules.md)与[全自动版](docs/science-rules-automatic.md)，无需旧仓即可读取。`legacy`、`legacy_rules`、`legacy_path` 保存参考对应，规则版本与审定状态属维护信息，不发送给提取者。
 
-专家辅助版与全自动版的目标维护方式是共用科学正文，仅替换一个歧义处理策略段；不人工复制正文或靠提示字符串替换维持差异。具体设计见 [规则维护来源](docs/design/extraction.md#科学规则的维护来源)。生成工具、模型输入和阅读文档须与已审定的规则来源同步。
+专家辅助版与全自动版共用科学正文，仅替换一个歧义处理策略段；不人工复制正文或靠提示字符串替换维持差异。具体设计见 [规则维护来源](docs/design/extraction.md#科学规则的维护来源)。生成工具、模型输入和阅读文档须与已审定的规则来源同步。
 
 判断是否进入提取指令，以提取 AI 是否需要据此判断／填写为准；材料转换、版本、恢复、判例制作、实验及提取后维护由设计管理。规则／科学含义修改先说明目的与影响，交专家审定，用易混例子核对预期；提取策略另行评价。
 

@@ -44,18 +44,13 @@ def space(tmp_path):
     workspace.close()
 
 
-@pytest.mark.parametrize("method", ["direct", "candidate_review"])
 @pytest.mark.parametrize("expert", [True, False])
-def test_model_combinations_actual_requests_and_per_step_usage(space, method, expert):
+def test_model_combinations_actual_requests_and_per_step_usage(space, expert):
     config = ExtractionConfig(
-        method=method,
         mode="evaluation",
         expert_adjudication=expert,
         step_models={"quantities": ModelConfig(model="mimo-v2.6-flash")},
     )
-    if method == "candidate_review":
-        config.step_models["discover_candidates"] = ModelConfig(model="qwen3.8-flash")
-        config.step_models["review_candidates"] = ModelConfig(model="glm-5.3-flash")
     source = import_mock_source(space, PAPER_B)
     handle = start_configured_extraction(
         space, configuration=config, source_refs=[source], request_key="combination"
@@ -72,12 +67,6 @@ def test_model_combinations_actual_requests_and_per_step_usage(space, method, ex
         if request["step"] == "quantities":
             assert chosen["model"] == "mimo-v2.6-flash"
             assert "max_tokens" not in chosen["parameters"]
-        elif request["step"] == "review_candidates":
-            assert chosen["model"] == "glm-5.3-flash"
-            assert "reasoning_effort" in chosen["parameters"]
-        elif request["step"] == "discover_candidates":
-            assert chosen["model"] == "qwen3.8-flash"
-            assert "reasoning_effort" not in chosen["parameters"]
         else:
             assert chosen["model"] == "deepseek-v4.1-flash"
         payload = request["call_prepared"]["payload"]
@@ -89,7 +78,7 @@ def test_model_combinations_actual_requests_and_per_step_usage(space, method, ex
     tokens = {step["step_id"]: step["tokens"] for step in status["steps"]}
     assert tokens["quantities"] == 200
     assert tokens["finalize"] is None
-    assert status["usage"]["tokens"] == (320 if method == "direct" else 370)
+    assert status["usage"]["tokens"] == 320
     before = len(service.requests)
     assert (
         resume_extraction(space, handle.execution_id, service=service).outcome
@@ -98,35 +87,18 @@ def test_model_combinations_actual_requests_and_per_step_usage(space, method, ex
     assert len(service.requests) == before
 
 
-@pytest.mark.parametrize("method", ["direct", "candidate_review"])
-def test_ai_interpretation_is_recorded_without_expert_and_remains_pending(
-    space, method
-):
+def test_ai_interpretation_is_recorded_without_expert_and_remains_pending(space):
     source = import_mock_source(space, PAPER_C)
-    config = ExtractionConfig(
-        method=method, mode="evaluation", expert_adjudication=False
-    )
+    config = ExtractionConfig(mode="evaluation", expert_adjudication=False)
     handle = start_configured_extraction(
         space, configuration=config, source_refs=[source], request_key="unresolved-ai"
     )
     service = RequestsService()
     report = resume_extraction(space, handle.execution_id, service=service)
     assert report.outcome == "finished", report.errors
-    assert report.model_judgments >= 1 and report.open_questions >= 1
-    interpretations = [
-        r for r in service.requests if r["step"] == "interpret_ambiguity"
-    ]
-    assert interpretations
-    for request in interpretations:
-        assert (
-            "Do not request or wait for an expert"
-            in request["call_request"]["messages"][0]["content"]
-        )
-        context = request["call_request"]["messages"][1]["content"]
-        assert "open_questions" in context
-        assert request["question_ref"]["record_id"] in context
-        assert '"target_ids"' in context and '"evidence"' in context
-        assert "fingerprint" not in context and "rules_ref" not in context
+    assert report.model_judgments >= 1 and report.open_questions == 0
+    assert not any(r["step"] == "interpret_ambiguity" for r in service.requests)
+    assert get_extraction(space, handle.execution_id)["questions"] == []
 
 
 def test_paused_recovery_uses_archives_after_source_prompts_change(space, monkeypatch):
@@ -195,7 +167,7 @@ def test_configuration_or_actual_english_prompt_change_requires_new_execution(
     from hvs_catalog.llm import prompts
 
     data = prompts.prompt_resources()
-    data["steps"]["direct_roster"]["task"] += " Check every named table member."
+    data["steps"]["roster"]["task"] += " Check every named table member."
     monkeypatch.setattr(prompts, "prompt_resources", lambda: data)
     with pytest.raises(OperationKeyConflictError):
         start_configured_extraction(
@@ -211,7 +183,7 @@ def test_configuration_or_actual_english_prompt_change_requires_new_execution(
 
 
 def test_archived_response_reused_after_failure_before_result_commit(space):
-    from hvs_catalog.pipeline import DIRECT_METHOD, ExtractionFlow
+    from hvs_catalog.pipeline import ROSTER_METHOD, ExtractionFlow
     from hvs_catalog.runtime import resume_execution
 
     source = import_mock_source(space, PAPER_B)
@@ -230,9 +202,9 @@ def test_archived_response_reused_after_failure_before_result_commit(space):
         space,
         handle.execution_id,
         ExtractionFlow(
-            DIRECT_METHOD,
+            ROSTER_METHOD,
             mode="daily",
-            fault_hooks={"after_archive:direct_roster": fail},
+            fault_hooks={"after_archive:roster": fail},
         ),
         service=service,
     )
@@ -241,7 +213,7 @@ def test_archived_response_reused_after_failure_before_result_commit(space):
         resume_extraction(space, handle.execution_id, service=service).outcome
         == "finished"
     )
-    assert service.calls_for_step("direct_roster") == 1
+    assert service.calls_for_step("roster") == 1
 
 
 def test_missing_frozen_prompt_blocks_resume_without_service_calls(space):
@@ -279,18 +251,27 @@ def test_archives_and_complete_request_survive_workspace_reopen(space):
     try:
         frozen = get_execution(reopened, handle.execution_id).input_snapshot
         assert (
-            json.loads(reopened.read_file(frozen.example_refs[0]))["direct_roster"][0][
-                "id"
-            ]
+            json.loads(reopened.read_file(frozen.example_refs[0]))["roster"][0]["id"]
             == "E01"
         )
         run = reopened.store().read_record_current(
             get_execution(reopened, handle.execution_id).run_ref.record_id
         )
-        request = json.loads(reopened.read_file(run.data.steps[0].attempts[0].request))
-        assert request["call_request"]["tool"]["name"] == "submit_direct_roster"
+        request = json.loads(
+            reopened.read_file(
+                next(step for step in run.data.steps if step.step_id == "roster")
+                .attempts[0]
+                .request
+            )
+        )
+        assert request["call_request"]["tool"]["name"] == "submit_roster"
         assert (
-            get_extraction(reopened, handle.execution_id)["steps"][0]["tokens"] == 120
+            next(
+                step
+                for step in get_extraction(reopened, handle.execution_id)["steps"]
+                if step["step_id"] == "roster"
+            )["tokens"]
+            == 120
         )
     finally:
         reopened.close()

@@ -2,7 +2,7 @@
 scoring demo (C08).
 
 Cover help, success, invalid-input rejection, saved outputs, new-process rescoring, and
-fingerprint changes. Do not claim real direct/candidate_review extraction is runnable.
+fingerprint changes. These synthetic cases do not demonstrate real roster extraction quality.
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ from pathlib import Path
 import pytest
 
 from hvs_catalog.cli import main
-from hvs_catalog.pipeline import list_methods
 
 
 def _clean_env() -> dict[str, str]:
@@ -32,18 +31,9 @@ def _cli(args: list[object], cwd: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_methods_list_shows_only_registered_implementation(capsys):
-    assert main(["methods"]) == 0
-    out = capsys.readouterr().out
-    assert "synthetic-mock" in out
-    assert "candidate_review" in out and "direct" in out
-    # Do not claim real extraction is runnable.
-    assert "仅合成模拟" in out
-    assert "真实" in out
-    assert main(["methods", "list", "--json"]) == 0
-    payload = json.loads(capsys.readouterr().out)
-    assert payload == list_methods()
-    assert all(item["real_extraction"] is False for item in payload)
+def test_retired_method_selection_is_not_exposed():
+    with pytest.raises(SystemExit):
+        main(["methods"])
 
 
 def test_extract_demo_runs_pauses_decides_and_saves_outputs(tmp_path, capsys):
@@ -57,8 +47,6 @@ def test_extract_demo_runs_pauses_decides_and_saves_outputs(tmp_path, capsys):
             str(space),
             "--paper",
             "FIC-CANDIDATE-C",
-            "--method",
-            "candidate_review",
             "--mode",
             "evaluation",
             "--adjudication",
@@ -118,8 +106,6 @@ def _run_extract(tmp_path) -> Path:
             str(tmp_path / "space"),
             "--paper",
             "FIC-CANDIDATE-C",
-            "--method",
-            "candidate_review",
             "--mode",
             "evaluation",
             "--adjudication",
@@ -281,10 +267,8 @@ def test_extract_demo_rejects_invalid_inputs(tmp_path, capsys):
     assert caught.value.code == 2
 
 
-def test_extract_demo_off_group_daily_keeps_question_open(tmp_path, capsys):
-    """Ordinary expert-disabled runs request no expert and make no AI-only explanation
-    attempt; questions remain unresolved.
-    """
+def test_extract_demo_automatic_daily_records_model_judgment(tmp_path, capsys):
+    """Daily automatic runs use the same ambiguity policy as evaluation runs."""
     code = main(
         [
             "extract",
@@ -293,8 +277,6 @@ def test_extract_demo_off_group_daily_keeps_question_open(tmp_path, capsys):
             str(tmp_path / "space-daily-off"),
             "--paper",
             "FIC-R05-A",
-            "--method",
-            "direct",
             "--mode",
             "daily",
             "--adjudication",
@@ -305,23 +287,22 @@ def test_extract_demo_off_group_daily_keeps_question_open(tmp_path, capsys):
     )
     assert code == 0
     out = capsys.readouterr().out
-    assert "专家决定 0 次，模型判断 0 条" in out
+    assert "专家决定 0 次，模型判断 1 条" in out
     report = json.loads(
         (tmp_path / "out-daily-off" / "extraction-report.json").read_text(
             encoding="utf-8"
         )
     )
-    assert report["status"]["questions"][0]["status"] == "open"
+    assert report["status"]["questions"] == []
 
 
 @pytest.mark.integration
 def test_help_texts_state_real_extraction_not_available():
     extract_help = _cli(["extract", "--help"], Path.cwd())
     assert extract_help.returncode == 0
-    assert "真实 direct/candidate_review 提取留待后续关卡" in extract_help.stdout
+    assert "真实名单提取使用 roster 子命令" in extract_help.stdout
     score_help = _cli(["score", "--help"], Path.cwd())
     assert score_help.returncode == 0
     assert "正式评分需要获准的私有评分空间" in score_help.stdout
     methods_help = _cli(["methods", "--help"], Path.cwd())
-    assert methods_help.returncode == 0
-    assert "synthetic-mock" in methods_help.stdout
+    assert methods_help.returncode == 2

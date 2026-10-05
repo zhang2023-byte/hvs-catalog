@@ -16,7 +16,6 @@ from hvs_catalog.records.generate import (
     check_outputs,
 )
 from hvs_catalog.records.submission import (
-    CandidateSubmission,
     ObjectQuantitySubmission,
     QuantitySubmission,
     RosterSubmission,
@@ -68,8 +67,6 @@ def test_submission_schemas_do_not_leak_management_fields():
     outputs = build_outputs()
     for key in (
         "submission.roster",
-        "submission.candidate",
-        "submission.discovery",
         "submission.quantity",
     ):
         text = outputs[f"schemas/{key}.json"]
@@ -110,8 +107,6 @@ def test_all_templates_share_common_instructions():
     outputs = build_outputs()
     for name in (
         "roster-extraction",
-        "candidate-judgment",
-        "candidate-discovery",
         "quantity-extraction",
     ):
         assert COMMON_INSTRUCTIONS in outputs[f"templates/{name}.md"]
@@ -137,7 +132,10 @@ def test_omittable_fields_derived_from_submission_model():
 
 def test_generated_tables_keep_one_column_per_header():
     doc = build_outputs()["record-format.md"]
-    assert "| `origin` | `SyntheticOrigin` \\| `ArxivOrigin` | yes |" in doc
+    assert (
+        "| `origin` | `SyntheticOrigin` \\| `ArxivOrigin` \\| `LocalPdfOrigin` | yes |"
+        in doc
+    )
     assert "| `kind` | `arxiv` | yes |" in doc
     columns = None
     for line in doc.splitlines():
@@ -167,7 +165,6 @@ def test_quantity_template_field_levels_match_submission_schema():
 def test_common_instructions_are_step_independent():
     # Roster and candidate submissions cannot contain quantity coverage declarations.
     assert "quantities" not in RosterSubmission.model_fields
-    assert "quantities" not in CandidateSubmission.model_fields
     assert "all requested quantities" not in COMMON_INSTRUCTIONS
     assert "common coverage" not in COMMON_INSTRUCTIONS
     quantity = build_outputs()["templates/quantity-extraction.md"]

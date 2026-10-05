@@ -1,21 +1,8 @@
-"""Shared material-preparation entry points for creation, queries, recovery, and model-free
-consumption.
-
-Ordinary/evaluation callers share prepare_materials for exact-revision
-creation/reuse/advancement, resume_preparation after expert ambiguity decisions,
-read-only get_preparation, and get_prepared_input/consume_prepared_input for attachment
-verification through synthetic model-free consumers.
-
-Freeze source revisions, main/format options, parser code/dependencies, and actual
-converter versions. Changed input requires new request keys/executions; identical replay
-reuses saved results. Accept no Gold and never route real materials through mocks to
-claim real extraction.
-"""
+"""Fixed-PDF preparation using one local parser and the shared durable runtime."""
 
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -31,7 +18,7 @@ from ..runtime.execution import (
 )
 from ..workspace import Workspace, WorkspaceIntegrityError
 from .flow import FLOW_ID, FLOW_VERSION, MaterialsFlow, parser_fingerprint
-from .sandbox import ConverterRunner, SandboxedConverterRunner
+from .mineru import LocalMinerU
 
 __all__ = [
     "MaterialsPreparationError",
@@ -55,8 +42,6 @@ class PreparationHandle:
     request_key: str
     reused: bool
     source_ref: dict
-    root_file: str | None
-    expert_adjudication: bool
     input_digest: str
     flow_id: str
     flow_version: str
@@ -158,25 +143,12 @@ def _state_artifact_refs(state: dict) -> list[dict]:
     return list(walk_artifact_refs(state))
 
 
-def _frozen_converters(runner: ConverterRunner) -> dict[str, dict]:
-    return {
-        tool: {
-            "available": item.available,
-            "version": item.version,
-            "reason": item.reason,
-        }
-        for tool, item in (
-            (tool, runner.availability(tool)) for tool in ("latexmlc", "pandoc")
-        )
-    }
-
-
 class MaterialsService:
     """Material-preparation service for initialized workspaces."""
 
-    def __init__(self, space: Workspace, *, runner: ConverterRunner | None = None):
+    def __init__(self, space: Workspace, *, runner: LocalMinerU | None = None):
         self._space = space
-        self._runner = runner or SandboxedConverterRunner()
+        self._runner = runner or LocalMinerU()
 
     # ---- Creation and advancement ----
 
@@ -187,39 +159,25 @@ class MaterialsService:
         paper: str | None = None,
         version: int | None = None,
         source_ref: RecordRef | None = None,
-        root_file: str | None = None,
-        range_notations: Sequence[dict] = (),
-        expert_adjudication: bool = False,
-        encoding: str | None = None,
     ) -> tuple[PreparationHandle, PreparationReport]:
         """Create or reuse identical-request/input preparation execution and advance it.
 
-        Freeze source revision, main document, format options, range notation, member
-        encodings, and converter versions. Any changed input under the same key rejects;
+        Freeze the PDF source revision and local parser configuration. Any changed input under the same key rejects;
         changes require a new key. Accept no Gold or answer paths.
         """
-        if encoding is not None and encoding not in ("utf-8", "latin-1"):
-            raise MaterialsPreparationError(
-                f"未支持的成员编码 {encoding!r}；受支持：utf-8、latin-1，"
-                "未知编码保持未处理，不静默猜"
-            )
         source, record = _resolve_source(
             self._space, paper=paper, version=version, source_ref=source_ref
         )
         request_payload = {
             "source_ref": source.model_dump(mode="json"),
             "paper_key": record.data.paper_key,
-            "root_file": root_file,
-            "range_notations": [dict(item) for item in range_notations],
-            "expert_adjudication": bool(expert_adjudication),
-            "member_encoding": encoding,
-            "converters": _frozen_converters(self._runner),
+            "parser": self._runner.fingerprint(),
             "parser_fingerprint": parser_fingerprint(),
         }
         snapshot = build_input_snapshot(
             source_refs=[source],
             method="materials-prepare",
-            expert_adjudication=bool(expert_adjudication),
+            expert_adjudication=False,
             options={
                 "materials_request": json.dumps(
                     request_payload, ensure_ascii=False, sort_keys=True
@@ -238,8 +196,6 @@ class MaterialsService:
             request_key=request_key,
             reused=reused,
             source_ref=source.model_dump(mode="json"),
-            root_file=root_file,
-            expert_adjudication=bool(expert_adjudication),
             input_digest=handle.input_digest,
             flow_id=FLOW_ID,
             flow_version=FLOW_VERSION,
@@ -328,108 +284,20 @@ class MaterialsService:
         return bundle
 
     def consume_prepared_input(self, execution_id: str) -> dict:
-        """Model-free synthetic consumer verifying every attachment reference and rereading
-        tables.
-
-        Check body views, ECSV, excerpts, and derived path/hash references individually,
-        then use shared CSV/ECSV readers for each successful table. Every inconsistency
-        is an error, never usable material.
-        """
-        from ..records.tabular import TabularReadError, read_table_records
-
-        problems: list[str] = []
-        verified: list[str] = []
-        try:
-            bundle = self.get_prepared_input(execution_id)
-        except (MaterialsPreparationError, WorkspaceIntegrityError) as exc:
-            return {
-                "execution_id": execution_id,
-                "ok": False,
-                "problems": [f"准备输入附件不可读：{exc}"],
-                "verified_artifacts": [],
-                "tables": [],
-                "gaps": [],
-                "ranges": [],
-                "summary": {},
-            }
-        # Verify every checkpoint attachment reference, not just the bundle itself.
-        handle = get_execution(self._space, execution_id)
-        state = _latest_checkpoint_state(self._space, execution_id)
-        for ref in _state_artifact_refs(state or {}):
-            try:
-                self._space.read_file(
-                    ArtifactRef(path=ref["path"], sha256=ref["sha256"])
-                )
-            except WorkspaceIntegrityError as exc:
-                problems.append(f"检查点附件 {ref['path']}：{exc}")
-        _ = handle
-
-        def check(path: str | None, sha: str | None, label: str) -> None:
-            if not path or not sha:
-                problems.append(f"{label} 缺少路径或哈希")
-                return
-            try:
-                self._space.read_file(ArtifactRef(path=path, sha256=sha))
-            except WorkspaceIntegrityError as exc:
-                problems.append(f"{label}：{exc}")
-                return
-            verified.append(label)
-
-        body = bundle.get("body", {})
-        if body.get("status") == "organized":
-            for entry in body.get("files", []):
-                check(
-                    entry.get("cleaned_path"),
-                    entry.get("cleaned_sha256"),
-                    f"正文视图 {entry.get('name')}",
-                )
-            check(body.get("view_path"), body.get("view_sha256"), "正文总视图")
-        tables_read: list[dict] = []
-        for table in bundle.get("tables", []):
-            if table.get("status") != "success":
-                continue
-            check(
-                table.get("ecsv_path"),
-                table.get("ecsv_sha256"),
-                f"表 {table.get('table_id')} ECSV",
-            )
-            try:
-                data = self._space.read_file(
-                    ArtifactRef(path=table["ecsv_path"], sha256=table["ecsv_sha256"])
-                )
-                records = read_table_records(data, media_type="text/ecsv")
-                tables_read.append(
-                    {
-                        "table_id": table.get("table_id"),
-                        "columns": list(records.columns),
-                        "rows": len(records.rows),
-                    }
-                )
-                if (
-                    table.get("row_count") is not None
-                    and len(records.rows) != table["row_count"]
-                ):
-                    problems.append(f"表 {table.get('table_id')} 行数与附件声明不一致")
-            except (WorkspaceIntegrityError, TabularReadError, KeyError) as exc:
-                problems.append(f"表 {table.get('table_id')} 回读失败：{exc}")
-        for member in bundle.get("members", []):
-            if member.get("derived_path"):
-                check(
-                    member["derived_path"],
-                    member.get("derived_published_sha256"),
-                    f"派生文本 {member.get('name')}",
-                )
+        bundle = self.get_prepared_input(execution_id)
+        source = self._space.store().read_record(
+            RecordRef.model_validate(bundle["prepared_source_ref"])
+        )
+        for file in source.data.files:
+            self._space.read_file(ArtifactRef(path=file.path, sha256=file.sha256))
         return {
             "execution_id": execution_id,
-            "ok": not problems,
-            "materials_complete": not problems
-            and bundle.get("summary", {}).get("materials_complete", False),
-            "problems": problems,
-            "verified_artifacts": verified,
-            "tables": tables_read,
-            "gaps": bundle.get("gaps", []),
-            "ranges": bundle.get("ranges", []),
-            "summary": bundle.get("summary", {}),
+            "ok": True,
+            "materials_complete": bundle["summary"]["materials_complete"],
+            "summary": bundle["summary"],
+            "gaps": bundle["gaps"],
+            "problems": [],
+            "verified_artifacts": [f.path for f in source.data.files],
         }
 
     # ---- Internal helpers ----

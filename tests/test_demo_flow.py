@@ -10,7 +10,7 @@ from hvs_catalog.workspace import open_workspace
 def test_shared_author_judgment_preserves_values_conditions_evidence(tmp_path):
     root = tmp_path / "demo"
     paused = runner.run(root)
-    assert paused["config"]["method"] == "direct"
+    assert paused["config"]["method"] == "roster"
     assert paused["implementation"] == "synthetic-mock"
     done = runner.decide(root, choice="no_overall_conclusion")
     assert done["report"]["outcome"] == "finished"
@@ -60,7 +60,7 @@ def test_unsaved_response_recovery_uses_frozen_material(tmp_path, monkeypatch):
             raise RuntimeError("unsaved response")
 
         execution, flow, _ = start_execution(
-            space, paper="B", fault_hooks={"after_response:direct_roster": fail}
+            space, paper="B", fault_hooks={"after_response:roster": fail}
         )
         assert (
             resume_execution(

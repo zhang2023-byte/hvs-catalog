@@ -1,7 +1,7 @@
 """Shared extraction entry points: method registration, strict requests, and execution.
 
 Ordinary/evaluation callers share start_extraction/resume_extraction/get_extraction and
-trusted list_methods registration. Full-flow demos are synthetic; prepared direct
+trusted list_methods registration. Full-flow demos are synthetic; prepared PDF
 roster extraction uses the same entry/runtime and the real model-call service.
 Extraction depends on neither scoring nor Gold; requests contain no answer paths/free
 metadata.
@@ -30,16 +30,13 @@ from .entry import (
 )
 from .flow import FLOW_ID, FLOW_VERSION, ExtractionFlow
 from .methods import (
-    CANDIDATE_REVIEW_METHOD,
     DEFAULT_REGISTRY,
-    DIRECT_METHOD,
     MOCK_IMPLEMENTATION,
     MOCK_PARAMETER_POLICY,
-    STEP_DIRECT_ROSTER,
-    STEP_DISCOVER_CANDIDATES,
+    ROSTER_METHOD,
     STEP_FINALIZE,
     STEP_QUANTITIES,
-    STEP_REVIEW_CANDIDATES,
+    STEP_ROSTER,
     build_default_registry,
 )
 from .mock import (
@@ -75,9 +72,7 @@ from .request import ExtractionRequest, StepModel
 from .roster import start_roster_extraction
 
 __all__ = [
-    "CANDIDATE_REVIEW_METHOD",
     "DEFAULT_REGISTRY",
-    "DIRECT_METHOD",
     "EMPTY_PARAMETER_POLICY",
     "FLOW_ID",
     "FLOW_VERSION",
@@ -87,11 +82,10 @@ __all__ = [
     "PAPER_B",
     "PAPER_C",
     "PIPELINE_EXPERT_ID",
-    "STEP_DIRECT_ROSTER",
-    "STEP_DISCOVER_CANDIDATES",
+    "ROSTER_METHOD",
     "STEP_FINALIZE",
     "STEP_QUANTITIES",
-    "STEP_REVIEW_CANDIDATES",
+    "STEP_ROSTER",
     "SUPPORTED_PAPER_KEYS",
     "ExtractionConfig",
     "ExtractionFlow",

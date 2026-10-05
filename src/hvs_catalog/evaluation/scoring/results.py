@@ -149,7 +149,6 @@ class LimitationEffect(Config):
     prediction_refs: list[str] = Field(default_factory=list)
     observed_error_refs: list[str] = Field(default_factory=list)
     excluded_from_default: bool = False
-    excluded_from_reference: bool = False
 
 
 class ScoringReport(Config):
@@ -165,7 +164,4 @@ class ScoringReport(Config):
     notes: list[str] = Field(default_factory=list)
     limitation_effects: list[LimitationEffect] = Field(
         default_factory=list, exclude_if=lambda value: not value
-    )
-    reference_score: ScoringReport | None = Field(
-        default=None, exclude_if=lambda value: value is None
     )

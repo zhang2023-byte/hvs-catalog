@@ -333,7 +333,7 @@ def run_two_group_experiment(
     space: WorkspaceLike,
     paper_key: str,
     *,
-    method: str = "direct",
+    method: str = "roster",
     mode: str = "evaluation",
     journal_dir: Path | None = None,
     service_factory: Any = None,

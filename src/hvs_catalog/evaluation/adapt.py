@@ -41,6 +41,7 @@ from ..records.paper import (
     QuantileReport,
 )
 from ..records.roster import RosterRecord
+from ..records.rules import load_rules
 from ..records.source import SourcePackageRecord
 from ..runtime import get_execution as runtime_get_execution
 from ..workspace import Workspace
@@ -51,7 +52,7 @@ from .compact import (
     validate_compact_gold_pair,
 )
 from .errors import GoldIntegrityError
-from .models import GoldAnnotation
+from .models import GoldAnnotation, GoldRulesRef
 from .scoring import (
     ConfirmedRange,
     GoldObjectEntry,
@@ -373,6 +374,19 @@ def _pair_binding(pair: CompactGoldPair) -> dict:
     }
 
 
+def _rules_readiness_gaps(reference: GoldRulesRef) -> list[str]:
+    """Historical approvals remain readable but do not approve new scientific rules."""
+    rules = load_rules()
+    if (reference.version, reference.sha256) != (rules.version, rules.sha256):
+        return [
+            (
+                f"科学规则版本不符：Gold 保留 {reference.version}/{reference.sha256[:12]}，"
+                f"当前为 {rules.version}/{rules.sha256[:12]}；当前规则下评分须重新审定"
+            )
+        ]
+    return []
+
+
 def _preparation_gaps(
     pair: CompactGoldPair,
     *,
@@ -495,6 +509,7 @@ def adapt_compact_gold_pair(
     gaps = _preparation_gaps(
         pair, confirmed_ranges=confirmed_ranges, scoring_review=scoring_review
     )
+    gaps.extend(_rules_readiness_gaps(pair.metadata.rules))
     scoring_complete = (
         scoring_review is not None
         and scoring_review.complete_within_scoring_scope
@@ -604,8 +619,8 @@ def adapt_annotation(
             )
         ],
         binding=binding,
-        formal_readiness=True,
-        readiness_gaps=[],
+        formal_readiness=not _rules_readiness_gaps(annotation.rules),
+        readiness_gaps=_rules_readiness_gaps(annotation.rules),
     )
 
 

@@ -1,4 +1,4 @@
-"""Apply frozen scope limitations symmetrically and retain default/reference scores.
+"""Apply predeclared evaluation boundaries symmetrically to a single score.
 
 Only identifiers, quantities, and reviewed conditions select a scope. Never use
 observed values, correctness, array order, or internal labels to remove a prediction.
@@ -196,11 +196,11 @@ def _mark_unknown(report, unknown):
         report.micro.l2.precision = report.micro.l2.recall = report.micro.l2.f1 = None
     if identity_affected and report.micro.l1 is not None:
         report.micro.l1.precision = report.micro.l1.recall = report.micro.l1.f1 = None
-    report.notes.append("问题范围的条件对应无法确定；相关计数保留，参考率暂定")
+    report.notes.append("问题范围的条件对应无法确定；相关计数保留，指标暂定")
 
 
 def score_with_limitations(plan, gold, predictions, *, auxiliary, agent_adapter):
-    """Score the default scope and a second scope excluding PDF/source mismatches."""
+    """Score the predeclared scope without excusing parser omissions."""
     from .score import score_batch
 
     for item in plan.limitations:
@@ -209,21 +209,8 @@ def score_with_limitations(plan, gold, predictions, *, auxiliary, agent_adapter)
             if refs or unknown:
                 raise ScoringInputError(
                     "不支持解析的资料已有PDF-backed Gold时仍须默认评分；"
-                    "应声明PDF/源码表示限制，不能以不支持解析为由排除Gold"
+                    "不能以不支持解析为由排除固定PDF范围内的Gold"
                 )
-        if item.exclude_from_reference:
-            refs, unknown = _refs(gold, item)
-            if not refs or unknown:
-                raise ScoringInputError("参考排除范围未明确对应固定Gold条目")
-            objects = [
-                obj
-                for paper in gold
-                if paper.paper_key == item.paper_key
-                for obj in paper.objects
-                if _object_matches(item.scope, obj)
-            ]
-            if len(objects) != 1:
-                raise ScoringInputError("参考排除范围必须唯一对应一个Gold对象")
 
     exclusions = [item for item in plan.limitations if item.exclude_from_default]
     effective_gold, gold_unknown = _filter(gold, exclusions)
@@ -276,36 +263,8 @@ def score_with_limitations(plan, gold, predictions, *, auxiliary, agent_adapter)
                     & set(gold_refs + prediction_refs)
                 ),
                 excluded_from_default=item.exclude_from_default,
-                excluded_from_reference=item.exclude_from_reference,
             )
         )
-    reference_exclusions = exclusions + [
-        item for item in plan.limitations if item.exclude_from_reference
-    ]
-    if any(item.exclude_from_reference for item in plan.limitations):
-        reference_gold, gold_unknown = _filter(gold, reference_exclusions)
-        reference_predictions, prediction_unknown = _filter(
-            predictions,
-            _prediction_scopes(reference_exclusions, gold),
-            identity_gold=gold,
-        )
-        reference = score_batch(
-            _derived_plan(plan, reference_gold, "reference"),
-            reference_gold,
-            reference_predictions,
-            auxiliary=auxiliary,
-            agent_adapter=agent_adapter,
-        )
-        _mark_unknown(reference, gold_unknown + prediction_unknown)
-        default_papers = {paper.paper_key: paper for paper in effective_gold}
-        for paper in reference.papers:
-            if paper.correct_empty and default_papers[paper.paper_key].objects:
-                paper.correct_empty = False
-                reference.correct_empty_papers.remove(paper.paper_key)
-        reference.notes.append(
-            "按事先固定范围同步排除PDF/源码不对齐的Gold与预测，重算全部指标"
-        )
-        report.reference_score = reference
     report.notes.append(
         "已知材料/作者问题是错误的潜在解释；分类不自动证明原因或调整得分"
     )

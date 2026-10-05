@@ -28,11 +28,11 @@ that a reader must understand; they remain checked when files are read.
 
 | Version | Meaning |
 |---|---|
-| Metadata `schema.version = 2` | Current two-file format; the earlier working annotation format used 1 |
+| Metadata `schema.version = 3` | Current PDF-only metadata format; independent of the unchanged answer format v2 |
 | Old Stella `schema.version = 4` | A separate input format supported by the legacy reader |
 | Git commit | Authorized historical content; no new vN directories or version index |
 | Old saved `vN/` directories | Historical layout, rejected and not automatically migrated by the current writer |
-| Paper or source `version` | The version of the paper or source material |
+| Paper `version` | The version of the paper |
 | Rules `version` | The scientific rule set used for the annotation |
 
 These numbers advance independently. Moving contract files does not change a

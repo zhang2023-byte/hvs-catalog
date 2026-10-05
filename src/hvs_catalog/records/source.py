@@ -26,7 +26,15 @@ class ArxivOrigin(Config):
     )
 
 
-SourceOrigin = Annotated[SyntheticOrigin | ArxivOrigin, Field(discriminator="kind")]
+class LocalPdfOrigin(Config):
+    kind: Literal["local_pdf"]
+    provenance: str = Field(min_length=1)
+    doi: str | None = None
+
+
+SourceOrigin = Annotated[
+    SyntheticOrigin | ArxivOrigin | LocalPdfOrigin, Field(discriminator="kind")
+]
 
 
 class SourceFile(Config):
@@ -208,8 +216,23 @@ class DataElementLocator(Config):
     decoder: DataElementDecoder
 
 
+class PdfLocator(Config):
+    kind: Literal["pdf"]
+    page: int = Field(ge=1, description="One-based page in the original PDF.")
+    block_id: str = Field(
+        min_length=1, description="Supplied content block on that page."
+    )
+
+
+class PdfImageLocator(PdfLocator):
+    """An image-bound transcription; only the location and image bytes are validated."""
+
+    kind: Literal["pdf_image"]
+
+
 Locator = Annotated[
-    TextLocator | TableCellLocator | DataElementLocator, Field(discriminator="kind")
+    TextLocator | TableCellLocator | DataElementLocator | PdfLocator | PdfImageLocator,
+    Field(discriminator="kind"),
 ]
 
 

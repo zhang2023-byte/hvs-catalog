@@ -111,7 +111,7 @@ def scenario_resume_block(
         execution_id,
         paper,
         ledger,
-        hooks={"after_response:direct_roster": block_after_roster},
+        hooks={"after_response:roster": block_after_roster},
     )
     space.close()
     return result

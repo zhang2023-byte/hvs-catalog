@@ -69,7 +69,7 @@ def test_old_run_record_with_costs_still_parses():
             "input_snapshot": {
                 "source_refs": [],
                 "rules": {"version": "0.1.0", "sha256": "a" * 64},
-                "method": "direct",
+                "method": "roster",
                 "models": [],
                 "code_version": "legacy",
                 "dependency_versions": {},
@@ -130,7 +130,7 @@ def test_new_extraction_run_records_contain_no_money(tmp_path):
             space,
             request=ExtractionRequest(
                 mode="synthetic",
-                method="direct",
+                method="roster",
                 source_refs=[source],
                 models=[StepModel(model="mock-default")],
                 expert_adjudication=False,

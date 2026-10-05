@@ -12,23 +12,28 @@ from pydantic import Field, model_validator
 
 from ..records.common import Config
 from ..records.generate import (
-    render_candidate_template,
-    render_discovery_template,
     render_quantity_template,
     render_roster_template,
 )
 from ..records.paper import ContributionType
 from ..records.questions import QuestionCategory
+from ..records.roster_input import roster_input_schema
 from ..records.rules import AuthorStatus, rules_bytes
 from ..records.source import AffectedTargets, GapReason
 from ..records.submission import (
-    CandidateSubmission,
-    DiscoverySubmission,
     InlineSource,
     QuantitySubmission,
     RosterSubmission,
 )
-from .config import CallRequest, Message, ModelConfig, Tool
+from .config import (
+    CallRequest,
+    ImageContent,
+    ImageURL,
+    Message,
+    ModelConfig,
+    TextContent,
+    Tool,
+)
 
 
 def english_text(value: object, *, location: str) -> str:
@@ -111,10 +116,17 @@ class PromptQuestion(Config):
         return self
 
 
+class PromptImage(Config):
+    label: str = Field(min_length=1)
+    image_url: ImageURL
+
+
 class PromptInput(Config):
     """Prepared source view and necessary prior results; no answer or score channels."""
 
     manuscript: str = Field(min_length=1)
+    images: list[PromptImage] = Field(default_factory=list)
+    citation_locations: dict[str, dict] = Field(default_factory=dict)
     targets: list[PromptTarget] = Field(default_factory=list)
     material_gaps: list[PromptGap] = Field(default_factory=list)
     open_questions: list[PromptQuestion] = Field(default_factory=list)
@@ -135,25 +147,9 @@ class PromptInput(Config):
 
 
 FORMATS = {
-    "discovery": (DiscoverySubmission, render_discovery_template),
     "roster": (RosterSubmission, render_roster_template),
-    "candidate": (CandidateSubmission, render_candidate_template),
     "quantity": (QuantitySubmission, render_quantity_template),
 }
-
-DAILY_AMBIGUITY = (
-    "Handle clear evidence and rule applications directly. When author meaning, "
-    "object identity or precedent applicability remains ambiguous, submit the "
-    "original evidence, conditions and a brief question for an expert. Preserve "
-    "unresolved results; do not invent a conclusion or exclude a pending object."
-)
-AI_AMBIGUITY = (
-    "For interpretation ambiguities, attempt a reasoned judgment using the same "
-    "supplied paper evidence and scientific rules. Record the question, evidence "
-    "and your interpretation as a model judgment. If it remains unclear, keep it "
-    "unresolved. Do not request or wait for an expert. Missing materials and "
-    "technical failures remain incomplete; never force a scientific conclusion."
-)
 
 
 def prompt_resources() -> dict:
@@ -175,27 +171,6 @@ def science_content() -> dict:
     return data
 
 
-def _ai_text(text: str) -> str:
-    """Replace only adjudication instructions, including linked examples/templates."""
-    replacements = {
-        "In the daily workflow,": "For this task,",
-        "in the daily workflow.": "in this task.",
-        "refer the question to an expert": "attempt an evidence-based model interpretation; keep the question unresolved if unclear",
-        "Refer unclear author meaning or uncertain precedent applicability to an expert.": "Attempt an evidence-based model interpretation of unclear author meaning or uncertain precedent applicability; keep it unresolved if unclear.",
-        "Refer unclear or conflicting correspondences to an expert.": "Attempt an evidence-based model interpretation of unclear or conflicting correspondences; keep them unresolved if unclear.",
-        "If the type of distance is unclear, refer it to an expert.": "If the type of distance is unclear, attempt an evidence-based model interpretation; keep it unresolved if unclear.",
-        "expert judgment": "an evidence-based model interpretation, retaining unresolved cases",
-        "If the expert cannot resolve the discrepancy": "If the model cannot resolve the discrepancy",
-        "For an expert question": "For an unresolved interpretation question",
-        "Apply an expert decision received for this specific question to the affected content.": "Apply only a supported model interpretation for this specific question to the affected content; otherwise keep it unresolved.",
-        "ask an expert whether": "attempt to determine from the supplied evidence whether",
-        "submit a question instead of merging silently": "record the identity question and an evidence-based interpretation instead of merging silently",
-    }
-    for original, replacement in replacements.items():
-        text = text.replace(original, replacement)
-    return text
-
-
 def _filling_format(kind: str) -> tuple[str, dict]:
     model, render = FORMATS[kind]
     text = render().replace("<!-- Generated -->\n", "")
@@ -214,7 +189,9 @@ def _filling_format(kind: str) -> tuple[str, dict]:
             line = "| " + cells[1].strip() + " |"
         rows.append(line)
     text = "\n".join(rows)
-    return text.strip(), model.model_json_schema()
+    return text.strip(), (
+        roster_input_schema() if kind == "roster" else model.model_json_schema()
+    )
 
 
 class PromptBlueprint(Config):
@@ -230,12 +207,6 @@ class PromptBlueprint(Config):
 
     def request(self, model: ModelConfig, inputs: PromptInput) -> CallRequest:
         inputs = PromptInput.model_validate(inputs.model_dump())
-        if self.step_id == "review_candidates" and (
-            len(inputs.targets) != 1 or inputs.targets[0].item_id is None
-        ):
-            raise ValueError(
-                "per-candidate review requires exactly one supplied candidate"
-            )
         if self.step_id == "quantities" and (
             not inputs.targets or any(t.object_id is None for t in inputs.targets)
         ):
@@ -245,7 +216,10 @@ class PromptBlueprint(Config):
             + inputs.manuscript
             + "\n\n===== SUPPLIED CONTEXT =====\n"
             + json.dumps(
-                inputs.model_dump(exclude={"manuscript"}, exclude_none=True),
+                inputs.model_dump(
+                    exclude={"manuscript", "images", "citation_locations"},
+                    exclude_none=True,
+                ),
                 ensure_ascii=False,
                 indent=2,
             )
@@ -254,14 +228,40 @@ class PromptBlueprint(Config):
             user += "\n\n===== APPROVED PRECEDENTS =====\n" + json.dumps(
                 [p.visible() for p in self.precedents], ensure_ascii=False, indent=2
             )
+        content = user
+        if inputs.images:
+            content = [TextContent(text=user)]
+            for image in inputs.images:
+                content.extend(
+                    [
+                        TextContent(text=image.label),
+                        ImageContent(image_url=image.image_url),
+                    ]
+                )
         return CallRequest(
             model=model,
             messages=[
                 Message(role="system", content=self.system),
-                Message(role="user", content=user),
+                Message(role="user", content=content),
             ],
             tool=Tool(name="submit_" + self.step_id, parameters=self.schema_),
         )
+
+
+def bind_material_gaps(
+    blueprint: PromptBlueprint, inputs: PromptInput
+) -> PromptBlueprint:
+    """Expose only registered gap identifiers; store this schema with the request."""
+    bound = blueprint.model_copy(deep=True)
+    identifiers = [gap.gap_id for gap in inputs.material_gaps]
+    for definition in bound.schema_.get("$defs", {}).values():
+        field = definition.get("properties", {}).get("gap_ids")
+        if field is not None:
+            if identifiers:
+                field["items"]["enum"] = identifiers
+            else:
+                field["maxItems"] = 0
+    return bound
 
 
 def assemble_blueprint(
@@ -296,10 +296,13 @@ def assemble_blueprint(
             "Fill only the current step's scientific fields; other steps handle the remaining tasks."
         ),
         (
-            "Source views identify each file with its application-supplied file identifier. "
-            "In a numbered FILE block, N| labels the physical source line; this prefix is "
-            "not manuscript content. Use these identifiers and source positions for inline evidence. "
-            "Read converted tables together with their original captions, headings, notes and mappings."
+            "PDF blocks identify the source file, one-based page, and block_id. "
+            "Use the supplied evidence locations in the current filling format. Read each table together with its captions, "
+            "column headings, notes and surrounding paragraphs. Parsed content is a reading aid; "
+            "the original PDF remains authoritative. Quote block text verbatim. "
+            "For text read from an attached original image, select the supplied image location and transcribe only "
+            "what is printed; its location and image bytes are checked, but its reading is not "
+            "string-verified. Never invent a text quote to support an image reading."
         ),
         "# Main scientific rules\n"
         + "\n\n".join(
@@ -344,13 +347,19 @@ def assemble_blueprint(
             )
         )
     filling, schema = _filling_format(step["format"])
+    if not expert_adjudication:
+        for definition in schema.get("$defs", {}).values():
+            properties = definition.get("properties", {})
+            for key in ("question", "boundness_question"):
+                if key in properties:
+                    properties[key] = {"type": "null", "default": None}
+        if "questions" in schema.get("properties", {}):
+            schema["properties"]["questions"]["maxItems"] = 0
     blocks.append(english_text(filling, location=step_id + ".filling"))
     system = "\n\n".join(blocks)
-    if not expert_adjudication:
-        system = _ai_text(system)
-        selected = [{**e, "expected": _ai_text(e["expected"])} for e in selected]
-    system += "\n\n# Ambiguity handling\n" + (
-        DAILY_AMBIGUITY if expert_adjudication else AI_AMBIGUITY
+    policy = "expert_assisted" if expert_adjudication else "automatic"
+    system += "\n\n# Ambiguity handling\n" + english_text(
+        science["ambiguity_policies"][policy], location="ambiguity_policies." + policy
     )
     if use_model_supplements:
         supplement = sources.get("models", {}).get(model.model)
@@ -358,7 +367,7 @@ def assemble_blueprint(
             system += "\n\n# Model expression guidance\n" + english_text(
                 supplement.get("text"), location=model.model + ".supplement"
             )
-    system += f"\n\nCall submit_{step_id} exactly once with the scientific fields in its schema. Return no additional wrapper or commentary."
+    system += f"\n\nUse the tool supplied for this turn exactly once. Initially submit_{step_id} receives the scientific fields; a later repair_roster tool accepts only the requested replacements. Return no additional wrapper or commentary."
     return PromptBlueprint(
         step_id=step_id,
         system=system,

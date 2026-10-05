@@ -14,18 +14,20 @@ from ..llm.prompts import (
     PromptBlueprint,
     PromptGap,
     PromptInput,
-    PromptQuestion,
     PromptTarget,
     assemble_blueprint,
 )
-from ..records.common import ArtifactRef, Config, RecordRef, sha256_of
+from ..records.common import ArtifactRef, Config, sha256_of
 from .request import ExtractionRequest, StepModel
 
 
 class ExtractionConfig(Config):
     """Daily and evaluation settings; each step override is a complete model config."""
 
-    method: Literal["direct", "candidate_review"] = "direct"
+    @property
+    def method(self) -> str:
+        return "roster"
+
     mode: Literal["daily", "evaluation", "synthetic"] = "daily"
     expert_adjudication: bool = True
     default_model: ModelConfig = Field(
@@ -146,7 +148,9 @@ def preview_extraction_prompt(
 ) -> dict:
     config = ExtractionConfig.model_validate(config.model_dump())
     model = config.model_for(step_id)
-    blueprint = config.blueprints()[step_id]
+    from ..llm.prompts import bind_material_gaps
+
+    blueprint = bind_material_gaps(config.blueprints()[step_id], inputs)
     request = blueprint.request(model, inputs)
     # Reuse the provider conversion/checker without transport or credentials.
     prepared = TokenDanceAdapter().prepare(request)
@@ -160,11 +164,15 @@ def preview_extraction_prompt(
     }
 
 
-def freeze_configuration(space, config: ExtractionConfig) -> dict:
+def freeze_configuration(space, config: ExtractionConfig, *, inputs=None) -> dict:
     """Publish content-addressed inputs before execution creation, under its lock."""
     config = ExtractionConfig.model_validate(config.model_dump())
+    from ..llm.prompts import bind_material_gaps
+
     blueprints = {
-        step: b.model_dump(mode="json", by_alias=True)
+        step: (bind_material_gaps(b, inputs) if inputs is not None else b).model_dump(
+            mode="json", by_alias=True
+        )
         for step, b in config.blueprints().items()
     }
     examples = {step: b["examples"] for step, b in blueprints.items()}
@@ -227,61 +235,7 @@ def configured_request(ctx, step_id: str, request: dict, state: dict) -> dict:
             + "\n".join(f"{i}|{line}" for i, line in enumerate(text.splitlines(), 1))
         )
     targets = []
-    questions = []
-    question = None
-    if request.get("question_ref"):
-        question = ctx.store.read_record(
-            RecordRef.model_validate(request["question_ref"])
-        )
-        from ..records.submission import InlineSource
-
-        evidence = []
-        for ref in question.data.evidence_refs:
-            data = ctx.store.read_record(ref).data
-            evidence.append(
-                InlineSource(
-                    file_id=data.file_id, locator=data.locator, excerpt=data.excerpt
-                )
-            )
-        questions = [
-            PromptQuestion(
-                question_id=question.record_id,
-                prompt=question.data.prompt,
-                category=question.data.category,
-                target_ids=[t.item_id for t in question.data.target_refs if t.item_id],
-                gap_ids=[g.gap_id for g in question.data.gap_refs],
-                evidence=evidence,
-            )
-        ]
-    if step_id == "review_candidates":
-        if question is not None:
-            for target in question.data.target_refs:
-                record = ctx.store.read_record(
-                    RecordRef(record_id=target.record_id, revision=target.revision)
-                )
-                if record.RECORD_NAME == "roster":
-                    targets = [
-                        PromptTarget(
-                            item_id=e.item_id,
-                            identifiers=[i.value for i in e.identifiers],
-                        )
-                        for e in record.data.entries
-                        if e.item_id == target.item_id
-                    ]
-                    break
-        else:
-            candidate = next(
-                c
-                for c in state["candidates"]
-                if c["candidate_id"] == request["candidate_id"]
-            )
-            targets = [
-                PromptTarget(
-                    item_id=candidate["candidate_id"],
-                    identifiers=[candidate["identifier"]],
-                )
-            ]
-    elif step_id == "quantities":
+    if step_id == "quantities":
         roster = ctx.store.read_record_current(state["roster_id"])
         targets = [
             PromptTarget(
@@ -293,7 +247,6 @@ def configured_request(ctx, step_id: str, request: dict, state: dict) -> dict:
     inputs = PromptInput(
         manuscript="\n\n".join(blocks),
         targets=targets,
-        open_questions=questions,
         material_gaps=[
             PromptGap.model_validate(g.model_dump(exclude={"mention_evidence_refs"}))
             for g in source.data.gaps

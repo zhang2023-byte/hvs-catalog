@@ -3,7 +3,7 @@
 
 This compatibility document is generated from the typed definitions in `hvs_catalog.evaluation.models` for `evaluation.hvs_contribution_gold` v1 and the legacy v4 reader in `hvs_catalog.evaluation.legacy`. Do not edit it by hand; regenerate with `uv run python tools/render_record_contracts.py`.
 
-Current formal Gold uses the two-file v2 answer and metadata contract in [current Gold format](../gold-format.md). This v1 format remains readable for migration comparison and previously saved synthetic/historical records.
+Current formal Gold uses the answer v2 and metadata v3 contract in [current Gold format](../gold-format.md). This v1 format remains readable for migration comparison and previously saved synthetic/historical records.
 
 ## Scope
 
@@ -13,7 +13,7 @@ Evidence keeps the expert's PDF discipline: a registered file with its content h
 
 ## Vocabulary
 
-Quantities reuse the 18 approved science rule paths at rules version `0.1.0`; the author overall assessment states are the current rule states (`no_overall_conclusion`, `unbound`, `possibly_unbound`, `possibly_bound`, `bound`). The legacy status vocabulary is preserved verbatim on migration via `legacy_status` (`unbound`, `possibly_unbound`, `bound`, `no_overall_conclusion`, `not_assessed`); `not_assessed` no longer exists in the current rules and is reported for expert review instead of being converted.
+Quantities reuse the 18 approved science rule paths at rules version `0.2.1`; the author overall assessment states are the current rule states (`no_overall_conclusion`, `unbound`, `possibly_unbound`, `possibly_bound`, `bound`). The legacy status vocabulary is preserved verbatim on migration via `legacy_status` (`unbound`, `possibly_unbound`, `bound`, `no_overall_conclusion`, `not_assessed`); `not_assessed` no longer exists in the current rules and is reported for expert review instead of being converted.
 
 | Vocabulary | Values |
 |---|---|
@@ -38,7 +38,7 @@ Quantities reuse the 18 approved science rule paths at rules version `0.1.0`; th
 | `contributions` | array of GoldContribution | required | — | |
 | `reviewed_exclusions` | array of GoldExclusion | required | — | |
 | `provenance` | GoldProvenance | required | — | |
-| `material_correspondence` | GoldMaterialCorrespondence | optional | {"status": "pending", "pdf_file_ids": [], "latex": null, "checked_by": null, "checked_at": null, "basis": "", "differences": []} | |
+| `material_correspondence` | GoldMaterialCorrespondence | optional | {"status": "pending", "pdf_file_ids": [], "checked_by": null, "checked_at": null, "basis": "", "differences": []} | |
 | `pending` | array of GoldPendingItem | optional | [] | |
 
 ### Approval
@@ -111,29 +111,16 @@ Who prepared this particular draft or revision, and why.
 
 #### `GoldMaterialCorrespondence`
 
-Expert-declared PDF/source correspondence; hashing does not prove equivalence.
+Expert-declared fixed PDF scope; hashing does not prove scientific correctness.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
 | `status` | checked \| pending | optional | "pending" | |
 | `pdf_file_ids` | array of string | optional | [] | |
-| `latex` | GoldLatexSource \| null | optional | null | |
 | `checked_by` | GoldHuman \| null | optional | null | |
 | `checked_at` | AwareDatetime \| null | optional | null | |
 | `basis` | string | optional | "" | |
 | `differences` | array of string | optional | [] | |
-
-### LaTeX source
-
-#### `GoldLatexSource`
-
-A fixed source file or archive under the explicitly supplied material root.
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `name` | string | required | — |min length 1 |
-| `sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
-| `version` | string | required | — |min length 1; pattern `\S` |
 
 ### Provenance
 
@@ -195,7 +182,7 @@ Explicit unresolved draft items, forbidden in official answers.
 
 #### `GoldRulesRef`
 
-Scientific rule version used for annotation; legacy versions cannot substitute.
+Scientific rules used for the original annotation; current scoring checks compatibility.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|

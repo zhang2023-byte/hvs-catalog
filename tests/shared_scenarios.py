@@ -6,7 +6,7 @@ runtime adapters are in tiny_flow.py. Subprocess tests import this test helper.
 
 from hvs_catalog.pipeline import ExtractionRequest, StepModel, mock, start_extraction
 from hvs_catalog.pipeline.flow import ExtractionFlow
-from hvs_catalog.pipeline.methods import DIRECT_METHOD
+from hvs_catalog.pipeline.methods import ROSTER_METHOD
 from hvs_catalog.records.common import RecordRef
 from hvs_catalog.records.questions import Actor
 from hvs_catalog.review import DecisionSubmission, ReviewService
@@ -17,7 +17,7 @@ MODEL_NAME = "synthetic-mock"
 
 
 def direct_flow(*, fault_hooks=None):
-    return ExtractionFlow(DIRECT_METHOD, mode="synthetic", fault_hooks=fault_hooks)
+    return ExtractionFlow(ROSTER_METHOD, mode="synthetic", fault_hooks=fault_hooks)
 
 
 def import_materials(space, paper):
@@ -32,7 +32,7 @@ def start_execution(
         space,
         request=ExtractionRequest(
             source_refs=[source],
-            method="direct",
+            method="roster",
             mode="synthetic",
             models=[StepModel(model=MODEL_NAME)],
             expert_adjudication=expert_adjudication,

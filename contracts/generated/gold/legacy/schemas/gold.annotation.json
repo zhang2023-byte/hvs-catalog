@@ -396,35 +396,6 @@
       "title": "GoldIdentifier",
       "type": "object"
     },
-    "GoldLatexSource": {
-      "additionalProperties": false,
-      "description": "A fixed source file or archive under the explicitly supplied material root.",
-      "properties": {
-        "name": {
-          "minLength": 1,
-          "title": "Name",
-          "type": "string"
-        },
-        "sha256": {
-          "pattern": "^[0-9a-f]{64}$",
-          "title": "Sha256",
-          "type": "string"
-        },
-        "version": {
-          "minLength": 1,
-          "pattern": "\\S",
-          "title": "Version",
-          "type": "string"
-        }
-      },
-      "required": [
-        "name",
-        "sha256",
-        "version"
-      ],
-      "title": "GoldLatexSource",
-      "type": "object"
-    },
     "GoldLegacySource": {
       "additionalProperties": false,
       "description": "Migration provenance preserves original legacy annotation metadata verbatim without\nconstituting new approval.",
@@ -495,7 +466,7 @@
     },
     "GoldMaterialCorrespondence": {
       "additionalProperties": false,
-      "description": "Expert-declared PDF/source correspondence; hashing does not prove equivalence.",
+      "description": "Expert-declared fixed PDF scope; hashing does not prove scientific correctness.",
       "properties": {
         "status": {
           "default": "pending",
@@ -512,17 +483,6 @@
           },
           "title": "Pdf File Ids",
           "type": "array"
-        },
-        "latex": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/GoldLatexSource"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
         },
         "checked_by": {
           "anyOf": [
@@ -897,7 +857,7 @@
     },
     "GoldRulesRef": {
       "additionalProperties": false,
-      "description": "Scientific rule version used for annotation; legacy versions cannot substitute.",
+      "description": "Scientific rules used for the original annotation; current scoring checks compatibility.",
       "properties": {
         "version": {
           "minLength": 1,

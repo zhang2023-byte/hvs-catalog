@@ -6,7 +6,11 @@ import os
 import subprocess
 from pathlib import Path
 
-DRIVER = r"""
+from installed_pdf_fixture import PDF_FIXTURE
+
+DRIVER = (
+    PDF_FIXTURE
+    + r"""
 import io,json,sys,tarfile,threading,subprocess,os
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -27,7 +31,7 @@ class Handler(BaseHTTPRequestHandler):
         reason='stop'
         if req.get('tools'):
             name=req['tools'][0]['function']['name']
-            arguments=json.dumps(roster_payload) if name=='submit_direct_roster' else '{"id":"SYN-1","value":42}'
+            arguments=json.dumps(roster_payload) if name=='submit_roster' else '{"id":"SYN-1","value":42}'
             message={'content':None,'tool_calls':[{'id':'call-1','type':'function','function':{'name':name,'arguments':arguments}}]}
             reason='tool_calls'
         body={'id':'wheel-request','model':req['model'],'choices':[{'index':0,'message':message,'finish_reason':reason}],'usage':{'prompt_tokens':8,'completion_tokens':2,'total_tokens':10}}
@@ -70,20 +74,17 @@ try:
     from hvs_catalog.pipeline.acquisition.lifecycle import AcquisitionService
     from hvs_catalog.records.common import RecordRef
     from hvs_catalog.records.roster import RosterRecord
-    text=chr(92)+'documentclass{article}\n'+chr(92)+'begin{document}\nThis study selects SYN-A and explicitly concludes it is unbound from the Galaxy.\n'+chr(92)+'end{document}\n'
-    archive=io.BytesIO()
-    with tarfile.open(fileobj=archive,mode='w:gz') as tar:
-        data=text.encode();info=tarfile.TarInfo('main.tex');info.size=len(data);tar.addfile(info,io.BytesIO(data))
-    package=root/'roster-source.tar.gz';package.write_bytes(archive.getvalue())
+    text='This study selects SYN-A and explicitly concludes it is unbound from the Galaxy.'
+    package=root/'paper.pdf';package.write_bytes(make_pdf(text))
     space=initialize_workspace(root/'roster-space')
-    imported=AcquisitionService(space).import_local_package(package,arxiv_id='2501.03333',version=1,provenance='synthetic installed roster check')
-    preparation,report=MaterialsService(space).prepare_materials(request_key='roster-prepare',paper=imported.canonical_id,root_file='main.tex')
+    imported=AcquisitionService(space).import_local_pdf(package,arxiv_id='2501.03333',version=1,provenance='synthetic installed roster check')
+    preparation,report=MaterialsService(space,runner=FakeMinerU()).prepare_materials(request_key='roster-prepare',paper=imported.canonical_id)
     assert report.outcome=='finished',report.errors
     bundle=MaterialsService(space).get_prepared_input(preparation.execution_id)
     source=space.store().read_record(RecordRef.model_validate(bundle['prepared_source_ref']))
     gap_ids=[g.gap_id for g in source.data.gaps]
-    evidence={'source':{'file_id':'member:main.tex','locator':{'kind':'text','start_line':3,'end_line':3},'excerpt':text.splitlines()[2]},'parts':[],'context':True}
-    roster_payload={'coverage':{'state':'partial' if gap_ids else 'complete','checked_file_ids':['member:main.tex'],'gap_ids':gap_ids},'entries':[{'identifiers':[{'value':'SYN-A','evidence':[evidence]}],'disposition':'included','evidence':[evidence],'contribution':{'summary':{'text':'This paper discovers SYN-A.','evidence':[evidence]},'contribution_type':{'value':'candidates_found','evidence':[evidence]},'boundness':{'status':'unbound','evidence':[evidence]},'conditional_assessments':[]}}],'unresolved_groups':[]}
+    evidence={'location':'T:p1-b0','quote':text}
+    roster_payload={'coverage':{'state':'partial' if gap_ids else 'complete','checked_file_ids':['raw'],'gap_ids':gap_ids},'entries':[{'identifiers':[{'value':'SYN-A','evidence':[evidence]}],'disposition':'included','evidence':[evidence],'summary':'This paper discovers SYN-A.','summary_evidence':[evidence],'contribution_type':'candidates_found','type_evidence':[evidence],'boundness':'unbound','boundness_evidence':[evidence],'conditional_assessments':[]}],'unresolved_groups':[]}
     prep_id=preparation.execution_id
     config=root/'roster-config.json';config.write_text(ExtractionConfig(runtime=runtime).model_dump_json())
     space.close()
@@ -99,7 +100,7 @@ try:
     records=[space.store().read_record(RecordRef.model_validate(r)) for r in status['result_refs']]
     roster=next(r for r in records if isinstance(r,RosterRecord))
     assert roster.data.entries[0].identifiers[0].value=='SYN-A'
-    assert next(m for m in list_methods() if m['method_id']=='direct')['model_steps']==['direct_roster']
+    assert next(m for m in list_methods() if m['method_id']=='roster')['model_steps']==['roster']
     space.close()
     assert Path(llm.__file__).resolve().is_relative_to(Path(sys.prefix).resolve()),llm.__file__
     assert (Path(llm.__file__).parent/'STELLA_LICENSE.txt').is_file()
@@ -107,6 +108,7 @@ try:
 finally:
     server.shutdown();server.server_close();thread.join()
 """
+)
 
 
 def verify_installed_llm(venv_dir: Path, work_dir: Path, script: Path) -> list[str]:

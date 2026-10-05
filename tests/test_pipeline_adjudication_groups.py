@@ -25,7 +25,7 @@ from hvs_catalog.pipeline import (
 )
 from hvs_catalog.pipeline.mock import PipelineMockService
 from hvs_catalog.records.questions import DecisionRecord
-from hvs_catalog.workspace import AdjudicationNotAllowedError, initialize_workspace
+from hvs_catalog.workspace import WorkspaceIntegrityError, initialize_workspace
 
 
 @pytest.fixture()
@@ -43,7 +43,7 @@ def service():
 def _request(source, *, mode="daily", expert=True):
     return ExtractionRequest(
         mode=mode,
-        method="direct",
+        method="roster",
         source_refs=[source],
         models=[StepModel(model="mock-default")],
         expert_adjudication=expert,
@@ -60,7 +60,7 @@ def test_s11_two_groups_same_inputs_only_switch_differs(space, service):
         request_key="s11-off",
     )
     assert on.execution_id != off.execution_id
-    assert on.method == off.method == "direct"
+    assert on.method == off.method == "roster"
     assert on.models == off.models
     assert on.input_digest != off.input_digest
 
@@ -104,7 +104,7 @@ def test_s11_two_groups_same_inputs_only_switch_differs(space, service):
     assert off_report.pending_question is None
     off_status = get_extraction(space, off.execution_id)
     assert off_report.model_judgments == 1
-    assert off_status["questions"][0]["status"] == "open"
+    assert off_status["questions"] == []
     # Enabled-group decisions never revise the disabled-group paper; isolate outputs by execution.
     off_paper = f"paper-fic-r05-a-{off.execution_id}"
     assert space.store().current_revision(off_paper) == 1
@@ -135,12 +135,12 @@ def test_off_group_cannot_consume_on_group_decisions(space, service):
     )
     report = resume_extraction(space, off.execution_id, service=service)
     assert report.outcome == "finished"
-    question_off = pending_questions(space, off.execution_id)[0]
-    with pytest.raises(AdjudicationNotAllowedError):
+    assert pending_questions(space, off.execution_id) == []
+    with pytest.raises(WorkspaceIntegrityError):
         submit_expert_decision(
             space,
             execution_id=off.execution_id,
-            question_ref=question_off.question_ref,
+            question_ref=question_on.question_ref,
             request_key="iso-off-decision",
             choice="no_overall_conclusion",
         )
@@ -181,7 +181,7 @@ def test_existing_decision_allowlist_is_frozen_and_part_of_digest(space, service
         space,
         request=ExtractionRequest(
             mode="synthetic",
-            method="direct",
+            method="roster",
             source_refs=[source],
             models=[StepModel(model="mock-default")],
             expert_adjudication=False,
@@ -199,7 +199,7 @@ def test_existing_decision_allowlist_is_frozen_and_part_of_digest(space, service
         space,
         request=ExtractionRequest(
             mode="synthetic",
-            method="direct",
+            method="roster",
             source_refs=[source],
             models=[StepModel(model="mock-default")],
             expert_adjudication=False,
@@ -223,14 +223,14 @@ def test_e20_pure_ai_group_records_model_judgment_not_decision(space, service):
     )
     report = resume_extraction(space, pure_ai.execution_id, service=service)
     assert report.outcome == "finished"
-    assert service.calls_for_step("interpret_ambiguity") == 1
+    assert service.calls_for_step("interpret_ambiguity") == 0
     status = get_extraction(space, pure_ai.execution_id)
     judgments = status["model_judgments"]
     assert len(judgments) == 1
     assert judgments[0]["step_id"] == "quantities"
-    assert "remains unresolved" in judgments[0]["judgment"]
+    assert "most supported" in judgments[0]["judgment"]
     # The issue remains unresolved; no expert decision is created.
-    assert status["questions"][0]["status"] == "open"
+    assert status["questions"] == []
     decisions = [
         record
         for record in space.store().list_records()
@@ -249,8 +249,8 @@ def test_e20_pure_ai_group_records_model_judgment_not_decision(space, service):
     )
     assert isinstance(paper, PaperRecord)
     boundness = paper.data.object_contributions[0].paper_boundness
-    assert boundness.status is None
-    assert boundness.issue_refs
+    assert boundness.status == "possibly_unbound"
+    assert not boundness.issue_refs
 
 
 def test_daily_off_group_cannot_use_pure_ai_exception(space, service):
@@ -266,11 +266,11 @@ def test_daily_off_group_cannot_use_pure_ai_exception(space, service):
     report = resume_extraction(space, daily_off.execution_id, service=service)
     assert report.outcome == "finished"
     assert report.pending_question is None
-    assert report.model_judgments == 0
+    assert report.model_judgments == 1
     assert service.calls_for_step("interpret_ambiguity") == 0
     status = get_extraction(space, daily_off.execution_id)
-    assert status["questions"][0]["status"] == "open"
-    assert status["model_judgments"] == []
+    assert status["questions"] == []
+    assert len(status["model_judgments"]) == 1
 
 
 def test_expert_on_group_does_not_use_pure_ai_attempt(space, service):

@@ -230,15 +230,16 @@ def start_extraction(
 
         if (
             configuration is None
-            or request.method != "direct"
+            or request.method != "roster"
             or len(request.source_refs) != 1
             or STEP not in registration.spec.model_steps
         ):
             raise PipelineRequestError(
-                "prepared roster requires a configured direct request with one source"
+                "prepared roster requires a configured request with one source"
             )
         bundle, source = prepared_bundle(space, prepared_input, request.source_refs[0])
-        rendered = material_prompt(space, bundle, source).model_dump(mode="json")
+        inputs = material_prompt(space, bundle, source)
+        rendered = inputs.model_dump(mode="json")
         problems = []
     else:
         problems = registration.check_request(space, request)
@@ -246,7 +247,11 @@ def start_extraction(
         raise PipelineRequestError("提取请求未通过运行前检查：" + "；".join(problems))
     if configuration is not None:
         with space.lock():
-            frozen = freeze_configuration(space, configuration)
+            frozen = freeze_configuration(
+                space,
+                configuration,
+                inputs=inputs if prepared_input is not None else None,
+            )
     if prepared_input is not None:
         with space.lock():
             rendered_ref = space.publish_file(
@@ -269,9 +274,9 @@ def start_extraction(
         **frozen,
     )
     if prepared_input is not None:
-        from .roster import DirectRosterFlow
+        from .roster import RosterFlow
 
-        flow = DirectRosterFlow(mode=request.mode)
+        flow = RosterFlow(mode=request.mode)
     else:
         flow = registration.build_flow(registration.spec, mode=request.mode)
     handle, reused = _create_execution(
@@ -315,9 +320,9 @@ def resume_extraction(
     if handle.input_snapshot.options.get("extraction_scope") == "roster":
         from ..llm.managed import CallService
         from .configuration import stored_configuration
-        from .roster import DirectRosterFlow
+        from .roster import RosterFlow
 
-        flow = DirectRosterFlow(mode=handle.mode)
+        flow = RosterFlow(mode=handle.mode)
         if service is None:
             service = CallService(stored_configuration(handle.input_snapshot).runtime)
     else:

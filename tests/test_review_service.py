@@ -82,7 +82,7 @@ def test_cross_step_submission_rejected(space, waiting):
     with pytest.raises(WorkspaceIntegrityError, match="跨步骤"):
         ReviewService(space).submit_decision(
             execution_id=execution.execution_id,
-            step_id="direct_roster",
+            step_id="roster",
             submission=_submission_for(question),
             request_key="wrong-step",
         )

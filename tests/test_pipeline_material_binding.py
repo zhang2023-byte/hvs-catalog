@@ -27,7 +27,7 @@ from hvs_catalog.pipeline import (
     start_extraction,
 )
 from hvs_catalog.pipeline.flow import ExtractionFlow
-from hvs_catalog.pipeline.methods import CANDIDATE_REVIEW_METHOD, DIRECT_METHOD
+from hvs_catalog.pipeline.methods import ROSTER_METHOD
 from hvs_catalog.pipeline.mock import PipelineMockService
 from hvs_catalog.records.common import RecordRef, build_record
 from hvs_catalog.records.paper import PaperRecord
@@ -113,7 +113,7 @@ def _commit_new_revision(
     return RecordRef(record_id=source_id, revision=2)
 
 
-def _start(space, source_ref, *, request_key, method="direct", expert=False):
+def _start(space, source_ref, *, request_key, method="roster", expert=False):
     request = ExtractionRequest(
         mode="synthetic",
         method=method,
@@ -182,13 +182,13 @@ def test_identity_swap_direct_runtime_rejected_before_service(space):
         file_rel="r05/a/swapped.tex",
     )
     handle = _bypass_execution(
-        space, swapped, method_spec=DIRECT_METHOD, request_key="swap-rt"
+        space, swapped, method_spec=ROSTER_METHOD, request_key="swap-rt"
     )
     service = SpyService()
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="daily"),
+        ExtractionFlow(ROSTER_METHOD, mode="daily"),
         service=service,
     )
     assert report.outcome == "failed"
@@ -214,7 +214,7 @@ def test_identity_swap_entry_resume_rejected(space):
         file_rel="r05/a/swapped.tex",
     )
     handle = _bypass_execution(
-        space, swapped, method_spec=CANDIDATE_REVIEW_METHOD, request_key="swap-resume"
+        space, swapped, method_spec=ROSTER_METHOD, request_key="swap-resume"
     )
     service = SpyService()
     report = resume_extraction(space, handle.execution_id, service=service)
@@ -239,13 +239,13 @@ def test_same_paper_new_content_direct_runtime_rejected(space):
         file_rel="r05/b/revised.tex",
     )
     handle = _bypass_execution(
-        space, revised, method_spec=DIRECT_METHOD, request_key="content-rt"
+        space, revised, method_spec=ROSTER_METHOD, request_key="content-rt"
     )
     service = SpyService()
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="daily"),
+        ExtractionFlow(ROSTER_METHOD, mode="daily"),
         service=service,
     )
     assert report.outcome == "failed"
@@ -287,13 +287,13 @@ def test_unregistered_revision_identical_content_rejected(space):
         version="fictional-v1",
     )
     handle = _bypass_execution(
-        space, revised, method_spec=DIRECT_METHOD, request_key="identical-rt"
+        space, revised, method_spec=ROSTER_METHOD, request_key="identical-rt"
     )
     service = SpyService()
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="daily"),
+        ExtractionFlow(ROSTER_METHOD, mode="daily"),
         service=service,
     )
     assert report.outcome == "failed"
@@ -400,7 +400,7 @@ def test_legal_materials_bind_outputs_to_frozen_revision(space):
     assert paper.data.source_ref.model_dump(mode="json") == frozen
 
     source_c = import_mock_source(space, PAPER_C)
-    handle_c = _start(space, source_c, request_key="legal-c", method="candidate_review")
+    handle_c = _start(space, source_c, request_key="legal-c", method="roster")
     report_c = resume_extraction(
         space, handle_c.execution_id, service=PipelineMockService()
     )

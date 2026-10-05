@@ -37,7 +37,6 @@ from .models import (
     GoldErrorComponent,
     GoldEvidence,
     GoldExclusion,
-    GoldLatexSource,
     GoldPdfFile,
     GoldProbability,
     GoldQuantityGroup,
@@ -48,6 +47,7 @@ from .models import (
 COMPACT_SCHEMA_NAME = "evaluation.hvs_contribution_gold"
 COMPACT_METADATA_SCHEMA_NAME = "evaluation.hvs_contribution_gold_metadata"
 COMPACT_SCHEMA_VERSION = 2
+COMPACT_METADATA_SCHEMA_VERSION = 3
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _ARXIV_RE = re.compile(r"^\d{4}\.\d{4,5}$")
 
@@ -60,7 +60,12 @@ class CompactSchemaTag(Config):
     def supported(self) -> CompactSchemaTag:
         if self.name not in {COMPACT_SCHEMA_NAME, COMPACT_METADATA_SCHEMA_NAME}:
             raise GoldFormatError(f"Unknown compact Gold schema: {self.name}")
-        if self.version != COMPACT_SCHEMA_VERSION:
+        expected = (
+            COMPACT_METADATA_SCHEMA_VERSION
+            if self.name == COMPACT_METADATA_SCHEMA_NAME
+            else COMPACT_SCHEMA_VERSION
+        )
+        if self.version != expected:
             raise GoldFormatError(f"Unknown compact Gold version: {self.version}")
         return self
 
@@ -368,7 +373,6 @@ class CompactGoldMetadata(Config):
     paper: CompactPaper
     rules: GoldRulesRef
     files: list[GoldPdfFile] = Field(min_length=1)
-    source: GoldLatexSource | None = None
     annotation: CompactAnnotationActors
     review: CompactReview
     revision: CompactRevision | None = None
@@ -460,7 +464,7 @@ def validate_compact_gold_pair(pair: CompactGoldPair) -> None:
 def pair_preparation_problems(pair: CompactGoldPair) -> list[CheckProblem]:
     """Pair-only preparation gaps that need no material files.
 
-    Shared by :func:`check_compact_gold_pair` (merged with PDF/source hash,
+    Shared by :func:`check_compact_gold_pair` (merged with PDF hash,
     page and quote verification) and by in-memory scoring adaptation, which
     must not read PDFs.  Callers still run :func:`validate_compact_gold_pair`
     first: the structural binding checks are a precondition, not a
@@ -472,15 +476,6 @@ def pair_preparation_problems(pair: CompactGoldPair) -> list[CheckProblem]:
 
     validate_compact_gold_pair(pair)
     problems: list[CheckProblem] = []
-    if pair.metadata.source is None:
-        problems.append(
-            CheckProblem(
-                category="material",
-                code="source_missing",
-                subject="metadata/source",
-                message="Fixed source correspondence is required",
-            )
-        )
     for subject, evidence in iter_gold_evidence(pair.answer):
         if evidence.file_id is None:
             problems.append(
@@ -592,7 +587,7 @@ def pair_preparation_problems(pair: CompactGoldPair) -> list[CheckProblem]:
                 category="science_pending",
                 code="material_differences",
                 subject="metadata/review/material/differences",
-                message="Documented PDF/source differences must be covered by the applicable human review or decision",
+                message="Documented PDF differences must be covered by the applicable human review or decision",
             )
         )
     for index, item in enumerate(pair.answer.unresolved):
@@ -672,28 +667,6 @@ def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path)
                 notes=[] if analysis is None else list(analysis.notes),
             )
         )
-    source = pair.metadata.source
-    if source is not None:
-        # pair_preparation_problems uniformly reports the source=None preparation gap.
-        source_path = resolve_within(root, source.name)
-        if not source_path.is_file():
-            problems.append(
-                CheckProblem(
-                    category="material",
-                    code="source_missing",
-                    subject="metadata/source",
-                    message=f"Source missing: {source.name}",
-                )
-            )
-        elif _sha256(source_path.read_bytes()) != source.sha256:
-            problems.append(
-                CheckProblem(
-                    category="material",
-                    code="source_hash_mismatch",
-                    subject="metadata/source",
-                    message=f"Source hash mismatch: {source.name}",
-                )
-            )
     for subject, evidence in iter_gold_evidence(pair.answer):
         analysis = analysis_by_id.get(evidence.file_id)
         # pair_preparation_problems uniformly reports missing evidence.file_id.
@@ -738,7 +711,7 @@ def check_compact_gold_pair(pair: CompactGoldPair, *, material_root: str | Path)
         quotes=quotes,
         scope=[
             "Typed compact answer and metadata binding",
-            "Fixed PDF/source hashes and quote locations",
+            "Fixed PDF hashes and quote locations",
             "Scientific validity remains subject to human review",
         ],
     )
@@ -784,7 +757,7 @@ def compact_gold_annotation(
     if material.value != "checked" or scope.value not in {"complete", "partial"}:
         raise GoldFormatError("Explicit material and scope confirmations are required")
     if draft.material_correspondence.differences != material.differences:
-        raise GoldFormatError("Documented PDF/source differences must be preserved")
+        raise GoldFormatError("Documented PDF differences must be preserved")
     limitations = [
         CompactScopeLimitation.model_validate(item)
         for item in (scope_limitations or [])
@@ -875,7 +848,7 @@ def compact_gold_annotation(
         {
             "schema": {
                 "name": COMPACT_METADATA_SCHEMA_NAME,
-                "version": COMPACT_SCHEMA_VERSION,
+                "version": COMPACT_METADATA_SCHEMA_VERSION,
             },
             "paper": {
                 "arxiv_id": draft.paper.arxiv_id,
@@ -884,9 +857,6 @@ def compact_gold_annotation(
             },
             "rules": draft.rules.model_dump(mode="python"),
             "files": [item.model_dump(mode="python") for item in draft.files],
-            "source": draft.material_correspondence.latex.model_dump(mode="python")
-            if draft.material_correspondence.latex
-            else None,
             "annotation": {
                 "original_annotator": original_annotator,
                 "original_annotated_at": original_annotated_at,

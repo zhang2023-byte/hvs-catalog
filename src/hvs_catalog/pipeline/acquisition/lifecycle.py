@@ -13,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -33,12 +33,7 @@ from hvs_catalog.records.source import (
 )
 from hvs_catalog.workspace import CommitRequest, Workspace, WorkspaceConflictError
 
-from .archive import (
-    MAX_PACKAGE_BYTES,
-    PackageIntegrityError,
-    UnsupportedPackageError,
-    inspect_package,
-)
+from ...records.pdf import MAX_PDF_BYTES, pdf_page_count
 from .protocol import (
     MAX_ID_LIST_LENGTH,
     ArxivApiService,
@@ -121,6 +116,8 @@ class AcquisitionResult:
     raw_path: str | None
     raw_sha256: str | None
     replayed: bool
+    latex_archive: ArtifactRef | None = None
+    latex_error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -173,13 +170,6 @@ def _safe_segment(text: str) -> str:
 
 def _dump(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True)
-
-
-def _inventory_payload(inspection: Any) -> list[dict[str, Any]]:
-    return [
-        {"name": m.name, "size": m.size, "sha256": m.sha256, "media_type": m.media_type}
-        for m in inspection.members
-    ]
 
 
 def _request_basis(request: ArxivSearchRequest) -> dict:
@@ -360,7 +350,7 @@ class AcquisitionService:
             or record.data.origin.arxiv_id != ident.versioned_id
             or record.data.source_version != f"v{ident.version}"
             or len(record.data.files) != 1
-            or record.data.files[0].role != "raw_package"
+            or record.data.files[0].role != "pdf"
         ):
             raise AcquisitionError(
                 f"{ident.versioned_id} 材料记录缺失或身份不符；不自动修复"
@@ -416,10 +406,11 @@ class AcquisitionService:
             file = record.data.files[0]
             raw = {"path": file.path, "sha256": file.sha256}
             retrieval = record.data.origin.retrieval
-            inventory = tuple(
-                _inventory_payload(
-                    inspect_package(self._space.read_file(ArtifactRef(**raw)))
-                )
+            inventory = (
+                {
+                    "media_type": "application/pdf",
+                    "pages": pdf_page_count(self._space.read_file(ArtifactRef(**raw))),
+                },
             )
         else:
             attempt = self._download_record(fact)
@@ -510,7 +501,38 @@ class AcquisitionService:
             }
         return state["versions"][versioned]
 
-    def acquire(self, identifier: ArxivIdentifier | str) -> AcquisitionResult:
+    def acquire(
+        self, identifier: ArxivIdentifier | str, *, include_latex: bool = False
+    ) -> AcquisitionResult:
+        result = self._acquire_pdf(identifier)
+        if not include_latex:
+            return result
+        with self._space.lock():
+            state = self._load()
+            fact = state["versions"][result.versioned_id]
+            try:
+                if fact.get("latex_archive"):
+                    archive = ArtifactRef.model_validate(fact["latex_archive"])
+                    self._space.read_file(archive)
+                else:
+                    download = self._api.download_source(result.versioned_id)
+                    archive = self._publish_raw(download.payload)
+                    record = self._attempt_record(
+                        parse_arxiv_identifier(result.versioned_id),
+                        archive,
+                        download.fetched_at,
+                        download.final_url,
+                    )
+                    fact["latex_archive"] = archive.model_dump(mode="json")
+                    fact["latex_error"] = None
+                    self._save(state, [record])
+                return replace(result, latex_archive=archive)
+            except Exception as exc:  # noqa: BLE001 — optional archival must not fail PDF acquisition
+                fact["latex_error"] = str(exc)
+                self._save(state)
+                return replace(result, latex_error=str(exc))
+
+    def _acquire_pdf(self, identifier: ArxivIdentifier | str) -> AcquisitionResult:
         ident = (
             parse_arxiv_identifier(identifier)
             if isinstance(identifier, str)
@@ -572,7 +594,7 @@ class AcquisitionService:
             attempt = self._download_record(fact)
             if attempt is None:
                 try:
-                    download = self._api.download_source(ident.versioned_id)
+                    download = self._api.download_pdf(ident.versioned_id)
                 except ArxivSourceUnavailableError as exc:
                     fact.update(state="source_unavailable", error=str(exc))
                     self._save(state)
@@ -595,16 +617,12 @@ class AcquisitionService:
             raw = attempt.data.raw_response
             payload = self._space.read_file(raw)
             try:
-                inspect_package(payload)
-            except UnsupportedPackageError as exc:
-                fact.update(state="unsupported", error=str(exc))
-                self._save(state)
-                return self._acquisition_result(state, ident, replayed=False)
-            except PackageIntegrityError as exc:
+                pdf_page_count(payload)
+            except ValueError as exc:
                 fact.update(state="failed", error=str(exc))
                 self._save(state)
                 raise PackageRejectionError(
-                    f"{ident.versioned_id} 源码包未通过安全检查：{exc}"
+                    f"{ident.versioned_id} PDF未通过完整性检查：{exc}"
                 ) from exc
             retrieval = f"downloaded from {attempt.data.query['final_url']} at {attempt.data.query['fetched_at']}"
             record = self._new_source(ident, raw, retrieval)
@@ -678,8 +696,8 @@ class AcquisitionService:
                         file_id="raw",
                         path=raw.path,
                         sha256=raw.sha256,
-                        media_type="application/octet-stream",
-                        role="raw_package",
+                        media_type="application/pdf",
+                        role="pdf",
                         read_state="unparsed",
                         derived_from=[],
                     )
@@ -715,7 +733,7 @@ class AcquisitionService:
             },
         )
 
-    def import_local_package(
+    def import_local_pdf(
         self,
         path: str | Path,
         *,
@@ -744,20 +762,16 @@ class AcquisitionService:
                 raise AcquisitionError(f"导入文件不存在或不是常规文件：{file}")
             # Bounded reading covers growing files too; preserve the caller's original file.
             with file.open("rb") as stream:
-                payload = stream.read(MAX_PACKAGE_BYTES + 1)
-            if len(payload) > MAX_PACKAGE_BYTES:
+                payload = stream.read(MAX_PDF_BYTES + 1)
+            if len(payload) > MAX_PDF_BYTES:
                 raise PackageRejectionError(
-                    f"导入文件超过工程上限 {MAX_PACKAGE_BYTES}；未导入、未备份，原文件未改动"
+                    f"导入文件超过工程上限 {MAX_PDF_BYTES}；未导入、未备份，原文件未改动"
                 )
             try:
-                inspect_package(payload)
-            except PackageIntegrityError as exc:
+                pdf_page_count(payload)
+            except ValueError as exc:
                 raise PackageRejectionError(
                     f"导入文件未通过安全检查：{exc}；未导入、未备份，原文件未改动"
-                ) from exc
-            except UnsupportedPackageError as exc:
-                raise UnsupportedPackageError(
-                    f"本地导入文件是不支持的归档形态：{exc}；未导入工作空间（无选择、尝试记录或备份引用），原文件未改动"
                 ) from exc
             self._reject_conflict(state, ident, payload)
             self._declarations(
@@ -834,6 +848,86 @@ class AcquisitionService:
                 raw.sha256,
                 reused,
             )
+
+    def import_journal_pdf(
+        self,
+        path: str | Path,
+        *,
+        paper_key: str,
+        source_version: str,
+        provenance: str,
+        doi: str | None = None,
+    ) -> RecordRef:
+        """Import a declared fixed journal PDF without inventing arXiv identity."""
+        if not all(value.strip() for value in (paper_key, source_version, provenance)):
+            raise AcquisitionError("期刊PDF必须声明论文标识、版本及来源")
+        from ...records.pdf import MAX_PDF_BYTES
+
+        with Path(path).open("rb") as stream:
+            payload = stream.read(MAX_PDF_BYTES + 1)
+        try:
+            pdf_page_count(payload)
+        except ValueError as exc:
+            raise PackageRejectionError(str(exc)) from exc
+        key = hashlib.sha256(
+            canonical_json([paper_key, source_version]).encode()
+        ).hexdigest()[:24]
+        with self._space.lock():
+            existing = self._space.store().read_record_current("journal-pdf-" + key)
+            if existing is not None:
+                original = existing.data.files[0]
+                self._space.read_file(
+                    ArtifactRef(path=original.path, sha256=original.sha256)
+                )
+                if original.sha256 != hashlib.sha256(payload).hexdigest():
+                    raise WorkspaceConflictError(
+                        "同一论文版本已有不同字节的PDF；不能覆盖"
+                    )
+                if (
+                    existing.data.origin.provenance != provenance
+                    or existing.data.origin.doi != doi
+                ):
+                    raise WorkspaceConflictError(
+                        "已有来源声明不同；不能静默替换或丢弃声明"
+                    )
+                return existing.ref()
+            raw = self._publish_raw(payload)
+            record = build_record(
+                SourcePackageRecord,
+                record_id="journal-pdf-" + key,
+                created_at=datetime.fromisoformat(_now_iso(self._clock)),
+                execution_id=None,
+                data={
+                    "paper_key": paper_key,
+                    "source_version": source_version,
+                    "origin": {
+                        "kind": "local_pdf",
+                        "provenance": provenance,
+                        "doi": doi,
+                    },
+                    "files": [
+                        {
+                            "file_id": "pdf",
+                            "path": raw.path,
+                            "sha256": raw.sha256,
+                            "media_type": "application/pdf",
+                            "role": "pdf",
+                            "read_state": "unparsed",
+                            "derived_from": [],
+                        }
+                    ],
+                    "gaps": [],
+                },
+            )
+            self._space.store().commit(
+                CommitRequest(
+                    operation_key="journal-import:" + key,
+                    kind="journal_pdf",
+                    new_records=[record],
+                    result_refs=[record.ref()],
+                )
+            )
+            return record.ref()
 
     def run_discovery(
         self,

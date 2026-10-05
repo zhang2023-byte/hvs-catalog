@@ -9,7 +9,8 @@ from pydantic import Field, model_validator
 from .common import Config, GapRef, Record, RecordRef
 from .paper import CoverageState
 
-RosterMethod = Literal["direct", "candidate_review"]
+# Old values remain readable in preserved historical records only.
+RosterMethod = Literal["roster", "direct", "candidate_review"]
 Disposition = Literal["included", "excluded", "pending"]
 
 
@@ -41,6 +42,7 @@ class RosterEntry(Config):
     evidence_refs: list[RecordRef] = Field(min_length=0)
     issue_refs: list[RecordRef] = Field(min_length=0)
     contribution_id: str | None = None
+    gap_refs: list[GapRef] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _disposition_consistent(self) -> RosterEntry:
@@ -57,8 +59,8 @@ class RosterEntry(Config):
         else:
             if self.contribution_id is not None:
                 raise ValueError("待决条目不能伪造已收录贡献")
-            if not self.issue_refs:
-                raise ValueError("待决条目必须关联未决问题")
+            if not self.issue_refs and not self.gap_refs:
+                raise ValueError("待决条目必须关联未决问题或材料缺口")
         return self
 
 

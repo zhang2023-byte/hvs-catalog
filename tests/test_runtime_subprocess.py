@@ -150,7 +150,7 @@ def test_two_processes_race_same_execution(tmp_path, service):
         )
         assert code == 0
         assert payload == {"busy": True}
-        assert _ledger_calls(tmp_path, "direct_roster") == 1
+        assert _ledger_calls(tmp_path, "roster") == 1
         assert "decision_save" not in _receipt_kinds(space, execution.execution_id)
 
         release.write_text("go", encoding="utf-8")
@@ -493,11 +493,11 @@ def test_exit_after_response_calls_again_on_resume(tmp_path, service):
             execution.execution_id,
             "B",
             tmp_path / "calls.jsonl",
-            "direct_roster",
+            "roster",
         )
         assert code == 9
         # Independent logs retain call facts while the business database has no step results.
-        assert _ledger_calls(tmp_path, "direct_roster") == 1
+        assert _ledger_calls(tmp_path, "roster") == 1
 
         code, payload = run_scenario(
             "resume",
@@ -508,7 +508,7 @@ def test_exit_after_response_calls_again_on_resume(tmp_path, service):
         )
         assert payload["outcome"] == "finished"
         # Recovery calls the roster again: two external calls occurred, so never claim one.
-        assert _ledger_calls(tmp_path, "direct_roster") == 2
+        assert _ledger_calls(tmp_path, "roster") == 2
         assert (
             space.store().current_revision(
                 m.paper_record_id("B", execution.execution_id)

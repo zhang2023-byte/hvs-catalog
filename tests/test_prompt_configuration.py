@@ -25,11 +25,11 @@ def test_defaults_and_complete_step_override():
     config = ExtractionConfig(
         step_models={"quantities": ModelConfig(model="mimo-v2.6-flash")}
     )
-    assert config.method == "direct" and config.expert_adjudication
-    assert config.model_for("direct_roster").parameters == {
+    assert config.method == "roster" and config.expert_adjudication
+    assert config.model_for("roster").parameters == {
         "max_tokens": 393216,
         "thinking_type": "enabled",
-        "reasoning_effort": "high",
+        "reasoning_effort": "max",
     }
     quantity = config.model_for("quantities")
     assert quantity.provider == "xiaomi" and quantity.stream
@@ -37,7 +37,7 @@ def test_defaults_and_complete_step_override():
         "max_completion_tokens": 131072,
         "thinking_type": "enabled",
     }
-    assert config.model_steps() == ("direct_roster", "quantities")
+    assert config.model_steps() == ("roster", "quantities")
 
 
 @pytest.mark.parametrize("step", ["finalize", "review_candidates", "typo"])
@@ -71,13 +71,11 @@ def test_protocol_parameter_and_daily_ai_boundaries():
         )
     with pytest.raises(ValidationError, match="daily extraction"):
         ExtractionConfig(expert_adjudication=False)
-    for method in ("direct", "candidate_review"):
+    for method in ("roster",):
         assert (
             len(
                 check_extraction_config(
-                    ExtractionConfig(
-                        method=method, mode="evaluation", expert_adjudication=False
-                    )
+                    ExtractionConfig(mode="evaluation", expert_adjudication=False)
                 )["steps"]
             )
             >= 2
@@ -87,7 +85,7 @@ def test_protocol_parameter_and_daily_ai_boundaries():
 def test_science_briefs_full_explanations_and_selected_definitions():
     science = prompts.science_content()
     blueprints = ExtractionConfig().blueprints()
-    roster, quantity = blueprints["direct_roster"], blueprints["quantities"]
+    roster, quantity = blueprints["roster"], blueprints["quantities"]
     for row in science["rules"]:
         assert row["summary"] in roster.system and row["summary"] in quantity.system
     for row in science["rules"]:
@@ -113,7 +111,7 @@ def test_science_briefs_full_explanations_and_selected_definitions():
     assert "Return only the scientific fields requested for this step" in roster.system
     assert (
         "no_overall_conclusion"
-        in roster.schema_["$defs"]["BoundnessSubmission"]["properties"]["status"][
+        in roster.schema_["$defs"]["RosterEntrySubmission"]["properties"]["boundness"][
             "anyOf"
         ][0]["enum"]
     )
@@ -121,17 +119,15 @@ def test_science_briefs_full_explanations_and_selected_definitions():
 
 def test_fixed_related_examples_shared_across_steps():
     config = ExtractionConfig(
-        examples={"direct_roster": ["E13", "E19"], "quantities": ["E13", "E19"]}
+        examples={"roster": ["E13", "E19"], "quantities": ["E13", "E19"]}
     )
     plans = config.blueprints()
-    assert plans["direct_roster"].examples == plans["quantities"].examples
+    assert plans["roster"].examples == plans["quantities"].examples
     assert [e["id"] for e in plans["quantities"].examples] == ["E13", "E19"]
     for ids in (["unknown"], ["E01"], ["E13", "E13"]):
         with pytest.raises(ValueError, match="example"):
             ExtractionConfig(examples={"quantities": ids}).blueprints()
-    empty = ExtractionConfig(
-        examples={"direct_roster": [], "quantities": []}
-    ).blueprints()
+    empty = ExtractionConfig(examples={"roster": [], "quantities": []}).blueprints()
     for step, blueprint in empty.items():
         assert not blueprint.examples
         assert (
@@ -146,10 +142,8 @@ def test_optional_model_guidance_is_independent_of_science(monkeypatch):
         "text": "Use concise English phrasing in free-text explanations."
     }
     monkeypatch.setattr(prompts, "prompt_resources", lambda: source)
-    enabled = ExtractionConfig().blueprints()["direct_roster"]
-    disabled = ExtractionConfig(use_model_supplements=False).blueprints()[
-        "direct_roster"
-    ]
+    enabled = ExtractionConfig().blueprints()["roster"]
+    disabled = ExtractionConfig(use_model_supplements=False).blueprints()["roster"]
     assert "Use concise English phrasing" in enabled.system
     assert "Use concise English phrasing" not in disabled.system
     for row in prompts.science_content()["rules"]:
@@ -162,36 +156,46 @@ def test_missing_and_non_english_instruction_sources_fail(monkeypatch):
     source = copy.deepcopy(prompts.prompt_resources())
     monkeypatch.setattr(prompts, "prompt_resources", lambda: source)
     for value in ("", "请提取所有对象"):
-        source["steps"]["direct_roster"]["task"] = value
+        source["steps"]["roster"]["task"] = value
         with pytest.raises(ValueError, match="English"):
             check_extraction_config(ExtractionConfig())
-    del source["steps"]["direct_roster"]["task"]
-    with pytest.raises(ValueError, match="missing English content: direct_roster.task"):
+    del source["steps"]["roster"]["task"]
+    with pytest.raises(ValueError, match="missing English content: roster.task"):
         check_extraction_config(ExtractionConfig())
 
 
 @pytest.mark.parametrize(
     ("method", "step"),
     [
-        ("direct", "direct_roster"),
-        ("direct", "quantities"),
-        ("candidate_review", "discover_candidates"),
-        ("candidate_review", "review_candidates"),
+        ("roster", "roster"),
+        ("roster", "quantities"),
     ],
 )
 def test_ai_changes_adjudication_only_and_has_no_experiment_instructions(method, step):
-    daily = ExtractionConfig(method=method).blueprints()[step]
-    ai = ExtractionConfig(
-        method=method, mode="evaluation", expert_adjudication=False
-    ).blueprints()[step]
-    assert daily.schema_ == ai.schema_
+    daily = ExtractionConfig().blueprints()[step]
+    ai = ExtractionConfig(mode="evaluation", expert_adjudication=False).blueprints()[
+        step
+    ]
+    if step == "roster":
+        assert (
+            ai.schema_["$defs"]["RosterEntrySubmission"]["properties"][
+                "boundness_question"
+            ]["type"]
+            == "null"
+        )
+        assert (
+            daily.schema_["$defs"]["RosterEntrySubmission"]["properties"]["boundness"]
+            == ai.schema_["$defs"]["RosterEntrySubmission"]["properties"]["boundness"]
+        )
+    else:
+        assert ai.schema_["properties"]["questions"]["maxItems"] == 0
     assert daily.explanation_ids == ai.explanation_ids
     assert daily.definition_groups == ai.definition_groups
-    assert "refer the question to an expert" in daily.system
+    assert "submit the question to an expert" in daily.system
     assert "ask an expert whether" not in ai.system
     assert "refer the question to an expert" not in ai.system
     assert "refer it to an expert" not in ai.system
-    assert "Do not request or wait for an expert" in ai.system
+    assert "Do not create expert questions" in ai.system
     for text in (
         "Do not derive additional values or choose a best value",
         "Missing or unreadable material leaves the affected part incomplete",
@@ -262,7 +266,7 @@ def test_original_materials_preserved_and_precedent_maintenance_hidden():
     source = "FILE synthetic.tex\n1|原文：银河系候选；α = 10°"
     preview = preview_extraction_prompt(
         ExtractionConfig(precedents=[precedent]),
-        "direct_roster",
+        "roster",
         PromptInput(manuscript=source),
     )
     assert source in preview["request"]["messages"][1]["content"]
@@ -277,18 +281,41 @@ def test_original_materials_preserved_and_precedent_maintenance_hidden():
         PrecedentInput.model_validate(precedent.model_dump(exclude={"approved"}))
 
 
-def test_current_step_inputs_and_discovery_contract():
-    config = ExtractionConfig(method="candidate_review")
-    source = PromptInput(manuscript="FILE paper.tex\n1|A and B are discussed.")
-    discovery = preview_extraction_prompt(config, "discover_candidates", source)
-    props = discovery["request"]["tool"]["parameters"]["properties"]
-    assert set(props) == {"coverage", "candidates", "unresolved_groups", "questions"}
-    assert "contribution" not in props and "disposition" not in props
-    with pytest.raises(ValueError, match="exactly one"):
-        preview_extraction_prompt(config, "review_candidates", source)
+def test_single_roster_and_quantity_contract():
+    config = ExtractionConfig()
+    source = PromptInput(
+        manuscript="FILE pdf\nPAGE 1 BLOCK p1-b0\nA and B are discussed."
+    )
+    preview = preview_extraction_prompt(config, "roster", source)
+    assert set(preview["request"]["tool"]["parameters"]["properties"]) == {
+        "coverage",
+        "entries",
+        "unresolved_groups",
+        "model_judgments",
+    }
     with pytest.raises(ValueError, match="roster objects"):
         preview_extraction_prompt(config, "quantities", source)
-    source.targets = [PromptTarget(item_id="candidate-1", identifiers=["A"])]
-    review = preview_extraction_prompt(config, "review_candidates", source)
-    assert "candidate-1" in review["request"]["messages"][1]["content"]
-    assert set(review["request"]["tool"]["parameters"]["properties"]) == {"judgments"}
+    for retired in ("direct_roster", "discover_candidates", "review_candidates"):
+        with pytest.raises(ValueError, match="non-model step"):
+            preview_extraction_prompt(config, retired, source)
+
+
+def test_actual_prompt_science_differs_only_by_policy():
+    policies = prompts.science_content()["ambiguity_policies"]
+    expert = ExtractionConfig().blueprints()
+    automatic = ExtractionConfig(
+        mode="evaluation", expert_adjudication=False
+    ).blueprints()
+    for step in expert:
+        assert expert[step].system.replace(
+            policies["expert_assisted"], "POLICY"
+        ) == automatic[step].system.replace(policies["automatic"], "POLICY")
+        assert expert[step].examples == automatic[step].examples
+
+
+def test_schema_gap_ids_are_limited_to_supplied_materials():
+    empty = preview_extraction_prompt(
+        ExtractionConfig(), "roster", PromptInput(manuscript="PDF blocks")
+    )
+    defs = empty["request"]["tool"]["parameters"]["$defs"]
+    assert defs["RosterCoverageSubmission"]["properties"]["gap_ids"]["maxItems"] == 0

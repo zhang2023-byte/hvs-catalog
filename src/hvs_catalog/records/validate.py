@@ -951,7 +951,27 @@ def _check_locator(
         return
     locator = record.data.locator
     where = record.record_id
-    if locator.kind == "text":
+    if locator.kind in {"pdf", "pdf_image"}:
+        from .pdf import pdf_evidence_block
+
+        try:
+            block = pdf_evidence_block(
+                source,
+                materials_root,
+                file.file_id,
+                locator.page,
+                locator.block_id,
+                require_image=locator.kind == "pdf_image",
+            )
+            if locator.kind == "pdf" and record.data.excerpt != block["text"]:
+                issues.append(
+                    ValidationIssue(
+                        where, "PDF excerpt differs from the fixed parser block"
+                    )
+                )
+        except (ValueError, KeyError, OSError) as exc:
+            issues.append(ValidationIssue(where, str(exc)))
+    elif locator.kind == "text":
         text = path.read_text(encoding="utf-8")
         lines = text.splitlines()
         if not (1 <= locator.start_line <= locator.end_line <= len(lines)):

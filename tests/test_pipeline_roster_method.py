@@ -1,4 +1,4 @@
-"""Shared extraction entry point: mock direct execution and roster-to-value transfer
+"""Shared extraction entry point: mock roster execution and roster-to-value transfer
 (C02/C03).
 
 Roster outputs are isolated by execution. Values accept included entries only; excluded
@@ -23,7 +23,7 @@ from hvs_catalog.pipeline import (
     resume_extraction,
     start_extraction,
 )
-from hvs_catalog.pipeline.mock import PipelineMockService, material_spec
+from hvs_catalog.pipeline.mock import PipelineMockService
 from hvs_catalog.records.common import RecordRef
 from hvs_catalog.records.paper import PaperRecord
 from hvs_catalog.records.roster import RosterRecord
@@ -48,7 +48,7 @@ def service():
 def _start(space, source, *, request_key, mode="daily", expert=True, models=None):
     request = ExtractionRequest(
         mode=mode,
-        method="direct",
+        method="roster",
         source_refs=[source],
         models=models or [StepModel(model="mock-default")],
         expert_adjudication=expert,
@@ -79,7 +79,7 @@ def test_direct_clear_paper_finishes_without_pause(space, service):
     assert report.open_questions == 0
     roster = _record(space, f"roster-fic-r05-b-{handle.execution_id}")
     assert isinstance(roster, RosterRecord)
-    assert roster.data.method == "direct"
+    assert roster.data.method == "roster"
     assert [entry.disposition for entry in roster.data.entries] == ["included"]
     expected = MATERIALS["papers"]["FIC-R05-B"]["values"][0]
     paper = _record(space, f"paper-fic-r05-b-{handle.execution_id}")
@@ -118,25 +118,25 @@ def test_later_step_failure_preserves_roster_and_reuses_on_resume(space, service
     handle = _start(space, source, request_key="b-fail")
     flow_hooks = {"after_response:quantities": fail_quantities}
     from hvs_catalog.pipeline.flow import ExtractionFlow
-    from hvs_catalog.pipeline.methods import DIRECT_METHOD
+    from hvs_catalog.pipeline.methods import ROSTER_METHOD
     from hvs_catalog.runtime import resume_execution
 
     failed = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="daily", fault_hooks=flow_hooks),
+        ExtractionFlow(ROSTER_METHOD, mode="daily", fault_hooks=flow_hooks),
         service=service,
     )
     assert failed.outcome == "failed"
     assert any("simulated quantities failure" in error for error in failed.errors)
     roster_id = f"roster-fic-r05-b-{handle.execution_id}"
     assert space.store().current_revision(roster_id) == 1
-    assert service.calls_for_step("direct_roster") == 1
+    assert service.calls_for_step("roster") == 1
 
     report = resume_extraction(space, handle.execution_id, service=service)
     assert report.outcome == "finished"
     # Reuse the roster; the value step interrupted before archiving calls once more on recovery.
-    assert service.calls_for_step("direct_roster") == 1
+    assert service.calls_for_step("roster") == 1
     assert service.calls_for_step("quantities") == 2
     assert report.state == "finished"
 
@@ -149,7 +149,7 @@ def test_roster_step_failure_is_not_empty_success(space, service):
         raise RuntimeError("simulated roster failure")
 
     from hvs_catalog.pipeline.flow import ExtractionFlow
-    from hvs_catalog.pipeline.methods import DIRECT_METHOD
+    from hvs_catalog.pipeline.methods import ROSTER_METHOD
     from hvs_catalog.runtime import resume_execution
 
     handle = _start(space, source, request_key="b-roster-fail")
@@ -157,9 +157,9 @@ def test_roster_step_failure_is_not_empty_success(space, service):
         space,
         handle.execution_id,
         ExtractionFlow(
-            DIRECT_METHOD,
+            ROSTER_METHOD,
             mode="daily",
-            fault_hooks={"after_response:direct_roster": fail_roster},
+            fault_hooks={"after_response:roster": fail_roster},
         ),
         service=service,
     )
@@ -181,17 +181,9 @@ class RogueQuantityService(PipelineMockService):
     def call(self, *, step, request, material):
         response = super().call(step=step, request=request, material=material)
         if step == "quantities" and self.mode == "rogue":
-            spec = material_spec(material["paper_key"])
             response = dict(response)
-            response["contributions"] = [
-                *[item for item in response["contributions"]],
-                *[
-                    item
-                    for item in spec["contributions"]
-                    if item["roster_item_id"]
-                    not in {c["roster_item_id"] for c in response["contributions"]}
-                ],
-            ]
+            rogue = {**response["contributions"][0], "roster_item_id": "cand-c-2"}
+            response["contributions"] = [*response["contributions"], rogue]
         elif step == "quantities" and self.mode == "missing":
             response = dict(response)
             response["contributions"] = []
@@ -246,6 +238,6 @@ def test_step_specific_model_reaches_service(space, service):
     resume_extraction(space, handle.execution_id, service=service)
     used = {call["step"]: call["model"] for call in service.calls}
     assert used == {
-        "direct_roster": "mock-default",
+        "roster": "mock-default",
         "quantities": "mock-quantities",
     }

@@ -32,7 +32,7 @@ from hvs_catalog.pipeline import (
     start_extraction, submit_expert_decision, get_extraction,
 )
 from hvs_catalog.pipeline.flow import ExtractionFlow
-from hvs_catalog.pipeline.methods import DIRECT_METHOD
+from hvs_catalog.pipeline.methods import ROSTER_METHOD
 from hvs_catalog.runtime import resume_execution
 from hvs_catalog.workspace import initialize_workspace, open_workspace
 
@@ -50,7 +50,7 @@ if command == "run-to-pause":
     space = initialize_workspace(root)
     source = import_mock_source(space, PAPER_A)
     request = ExtractionRequest(
-        mode="daily", method="direct", source_refs=[source],
+        mode="daily", method="roster", source_refs=[source],
         models=[StepModel(model="mock-default")],
     )
     handle = start_extraction(space, request=request, request_key="proc-pause")
@@ -75,7 +75,7 @@ elif command == "crash-after-response":
     space = initialize_workspace(root)
     source = import_mock_source(space, PAPER_A)
     request = ExtractionRequest(
-        mode="synthetic", method="direct", source_refs=[source],
+        mode="synthetic", method="roster", source_refs=[source],
         models=[StepModel(model="mock-default")], expert_adjudication=False,
     )
     handle = start_extraction(space, request=request, request_key="proc-crash-resp")
@@ -83,8 +83,8 @@ elif command == "crash-after-response":
         os._exit(9)
     report = resume_execution(
         space, handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="synthetic",
-                       fault_hooks={"after_response:direct_roster": crash}),
+        ExtractionFlow(ROSTER_METHOD, mode="synthetic",
+                       fault_hooks={"after_response:roster": crash}),
         service=PipelineMockService(journal),
     )
     emit({"execution_id": handle.execution_id, "outcome": report.outcome})
@@ -92,7 +92,7 @@ elif command == "crash-after-archive":
     space = initialize_workspace(root)
     source = import_mock_source(space, PAPER_A)
     request = ExtractionRequest(
-        mode="synthetic", method="direct", source_refs=[source],
+        mode="synthetic", method="roster", source_refs=[source],
         models=[StepModel(model="mock-default")], expert_adjudication=False,
     )
     handle = start_extraction(space, request=request, request_key="proc-crash-arch")
@@ -100,8 +100,8 @@ elif command == "crash-after-archive":
         os._exit(9)
     resume_execution(
         space, handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="synthetic",
-                       fault_hooks={"after_archive:direct_roster": crash}),
+        ExtractionFlow(ROSTER_METHOD, mode="synthetic",
+                       fault_hooks={"after_archive:roster": crash}),
         service=PipelineMockService(journal),
     )
 elif command == "resume-fresh":
@@ -114,7 +114,7 @@ elif command == "resume-fresh":
     emit({"execution_id": execution_id, "outcome": report.outcome,
           "state": status["state"],
           "roster_calls": sum(
-              1 for step in status["steps"] if step["step_id"] == "direct_roster"
+              1 for step in status["steps"] if step["step_id"] == "roster"
               for _ in range(step["attempts"])
           )})
 elif command == "journal":
@@ -180,7 +180,7 @@ def test_pause_decide_resume_across_processes(tmp_path):
     assert payload["outcome"] == "finished"
     assert payload["errors"] == []
     counts = journal_counts(tmp_path)
-    assert counts["steps"]["direct_roster"] == 1
+    assert counts["steps"]["roster"] == 1
     assert counts["steps"]["quantities"] == 1
 
 
@@ -201,7 +201,7 @@ def test_crash_after_response_repeats_call(tmp_path):
     assert payload["outcome"] == "finished"
     counts = journal_counts(tmp_path)
     # The interrupted call plus the recovery call totals two roster calls.
-    assert counts["steps"]["direct_roster"] == 2
+    assert counts["steps"]["roster"] == 2
 
 
 def test_crash_after_archive_reuses_response(tmp_path):
@@ -221,4 +221,4 @@ def test_crash_after_archive_reuses_response(tmp_path):
     assert payload["outcome"] == "finished"
     assert payload["roster_calls"] == 1  # Only the original pre-archive call occurs.
     counts = journal_counts(tmp_path)
-    assert counts["steps"]["direct_roster"] == 1
+    assert counts["steps"]["roster"] == 1

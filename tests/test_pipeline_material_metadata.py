@@ -24,7 +24,7 @@ from hvs_catalog.pipeline import (
     start_extraction,
 )
 from hvs_catalog.pipeline.flow import ExtractionFlow
-from hvs_catalog.pipeline.methods import CANDIDATE_REVIEW_METHOD, DIRECT_METHOD
+from hvs_catalog.pipeline.methods import ROSTER_METHOD
 from hvs_catalog.pipeline.mock import PipelineMockService
 from hvs_catalog.records.common import RecordRef, build_record
 from hvs_catalog.records.runs import ModelSpec
@@ -142,7 +142,7 @@ def build_registered_like_b_source(
     return source.ref()
 
 
-def _start(space, source_ref, *, request_key, method="direct"):
+def _start(space, source_ref, *, request_key, method="roster"):
     request = ExtractionRequest(
         mode="synthetic",
         method=method,
@@ -195,13 +195,13 @@ def test_unreadable_file_direct_runtime_rejected_before_service(space):
     """
     source = build_registered_like_b_source(space, read_state="unreadable")
     handle = _bypass_execution(
-        space, source, method_spec=DIRECT_METHOD, request_key="unreadable-rt"
+        space, source, method_spec=ROSTER_METHOD, request_key="unreadable-rt"
     )
     service = SpyService()
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="synthetic"),
+        ExtractionFlow(ROSTER_METHOD, mode="synthetic"),
         service=service,
     )
     assert report.outcome == "failed"
@@ -221,7 +221,7 @@ def test_unreadable_file_entry_resume_rejected(space):
     handle = _bypass_execution(
         space,
         source,
-        method_spec=CANDIDATE_REVIEW_METHOD,
+        method_spec=ROSTER_METHOD,
         request_key="unreadable-resume",
     )
     service = SpyService()
@@ -237,13 +237,13 @@ def test_unparsed_read_state_also_rejected(space):
     with pytest.raises(PipelineRequestError, match="read_state"):
         _start(space, source, request_key="unparsed-entry")
     handle = _bypass_execution(
-        space, source, method_spec=DIRECT_METHOD, request_key="unparsed-rt"
+        space, source, method_spec=ROSTER_METHOD, request_key="unparsed-rt"
     )
     service = SpyService()
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="synthetic"),
+        ExtractionFlow(ROSTER_METHOD, mode="synthetic"),
         service=service,
     )
     assert report.outcome == "failed"
@@ -254,16 +254,16 @@ def test_unparsed_read_state_also_rejected(space):
 
 
 def test_roster_affecting_gap_rejected_before_service(space):
-    """Direct runtime rejects a valid roster-affecting gap before direct_roster."""
+    """Direct runtime rejects a valid roster-affecting gap before roster."""
     source = build_registered_like_b_source(space, gaps=[roster_gap()])
     handle = _bypass_execution(
-        space, source, method_spec=DIRECT_METHOD, request_key="gap-rt"
+        space, source, method_spec=ROSTER_METHOD, request_key="gap-rt"
     )
     service = SpyService()
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="synthetic"),
+        ExtractionFlow(ROSTER_METHOD, mode="synthetic"),
         service=service,
     )
     assert report.outcome == "failed"
@@ -285,13 +285,13 @@ def test_quantity_only_gap_also_rejected(space):
     with pytest.raises(PipelineRequestError, match="缺口"):
         _start(space, source, request_key="qgap-entry")
     handle = _bypass_execution(
-        space, source, method_spec=DIRECT_METHOD, request_key="qgap-rt"
+        space, source, method_spec=ROSTER_METHOD, request_key="qgap-rt"
     )
     service = SpyService()
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="synthetic"),
+        ExtractionFlow(ROSTER_METHOD, mode="synthetic"),
         service=service,
     )
     assert report.outcome == "failed"
@@ -307,13 +307,13 @@ def test_derived_from_mismatch_rejected(space):
     with pytest.raises(PipelineRequestError, match="derived_from"):
         _start(space, source, request_key="derived-entry")
     handle = _bypass_execution(
-        space, source, method_spec=DIRECT_METHOD, request_key="derived-rt"
+        space, source, method_spec=ROSTER_METHOD, request_key="derived-rt"
     )
     service = SpyService()
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="synthetic"),
+        ExtractionFlow(ROSTER_METHOD, mode="synthetic"),
         service=service,
     )
     assert report.outcome == "failed"
@@ -346,7 +346,7 @@ def test_registered_ready_material_still_runs(space):
     assert len(service.requests) == 2
 
     source_c = _import_c(space)
-    handle_c = _start(space, source_c, request_key="legal-c", method="candidate_review")
+    handle_c = _start(space, source_c, request_key="legal-c", method="roster")
     report_c = resume_extraction(space, handle_c.execution_id, service=SpyService())
     assert report_c.outcome == "finished", report_c.errors
 

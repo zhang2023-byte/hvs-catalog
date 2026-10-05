@@ -1,12 +1,4 @@
-"""Shared extraction adapter advances registered roster/value/finalization steps.
-
-Reuse runtime frozen inputs, locks, transactions, review, and recovery through
-DefaultFlowAdapter. Enabled review submits ambiguity and waits; disabled ordinary runs
-retain pending science, while evaluation/synthetic AI-only runs may save
-model_judgments, never expert decisions. Values accept actual included roster entries
-only. Later failures retain rosters. Archive calls/responses/usage before committing
-steps and prefer saved response reuse during recovery.
-"""
+"""Synthetic full-flow adapter exercising the shared runtime and policy switches."""
 
 from __future__ import annotations
 
@@ -39,8 +31,6 @@ from .registry import MethodSpec
 FLOW_ID = "hvs-extraction"
 FLOW_VERSION = "1"
 
-STEP_INTERPRET = "interpret_ambiguity"
-
 
 class ExtractionState(TypedDict, total=False):
     execution_id: str
@@ -50,7 +40,6 @@ class ExtractionState(TypedDict, total=False):
     material: dict
     expert_adjudication: bool
     rules_version: str
-    candidates: list[dict]
     roster_id: str
     roster_refs: list[dict]
     paper_id: str
@@ -121,7 +110,6 @@ class ExtractionFlow(DefaultFlowAdapter):
             "material": material,
             "expert_adjudication": snapshot.expert_adjudication,
             "rules_version": snapshot.rules.version,
-            "candidates": [],
             "roster_id": "",
             "roster_refs": [],
             "paper_id": "",
@@ -192,9 +180,7 @@ class ExtractionFlow(DefaultFlowAdapter):
 
     def _node_for(self, step_id: str):
         nodes = {
-            "direct_roster": self._direct_roster,
-            "discover_candidates": self._discover_candidates,
-            "review_candidates": self._review_candidates,
+            "roster": self._roster,
             "quantities": self._quantities,
             "finalize": self._finalize,
         }
@@ -229,6 +215,7 @@ class ExtractionFlow(DefaultFlowAdapter):
     def _op_input(self, ctx: RuntimeContext, step_id: str, state: dict) -> dict:
         result = {
             "execution_id": ctx.execution.execution_id,
+            "expert_adjudication": state["expert_adjudication"],
             "step": step_id,
             "paper_key": state["paper_key"],
             "material_sha256": sha256_of({"spec": state["material"]}),
@@ -368,12 +355,25 @@ class ExtractionFlow(DefaultFlowAdapter):
         from .configuration import configured_request
 
         request = configured_request(ctx, step_id, request, state)
-        stored = self._stored_response(ctx, step_id, request)
-        if stored is not None:
-            return stored
-        return self._call(
-            ctx, step_id=step_id, request=request, state=state, call_key=call_key
-        )
+        response = self._stored_response(ctx, step_id, request)
+        if response is None:
+            response = self._call(
+                ctx, step_id=step_id, request=request, state=state, call_key=call_key
+            )
+        for note in response.get("model_judgments", []):
+            run = ctx.store.read_record_current(ctx.execution.run_ref.record_id)
+            if not any(
+                j.step_id == step_id and j.judgment == note
+                for j in run.data.model_judgments
+            ):
+                append_run_revision(
+                    ctx.space,
+                    ctx.execution,
+                    model_judgment=ModelJudgment(
+                        step_id=step_id, judgment=note, created_at=ctx.now()
+                    ),
+                )
+        return response
 
     def _await_decisions(
         self, ctx: RuntimeContext, question_refs: list[dict], step_id: str
@@ -395,141 +395,31 @@ class ExtractionFlow(DefaultFlowAdapter):
                     }
                 )
 
-    def _pure_ai_allowed(self) -> bool:
-        """AI-only explanations apply only to expert-disabled evaluation/synthetic runs."""
-        return self.mode in ("evaluation", "synthetic")
-
-    def _attempt_interpretation(
-        self,
-        ctx: RuntimeContext,
-        *,
-        state: dict,
-        step_id: str,
-        question_ref: RecordRef,
-    ) -> None:
-        """AI-only explanations save model judgments, never expert decisions.
-
-        Fixed mock unresolved replies leave questions/entries pending and retain
-        attempts in model_judgments.
-        """
-        request = {
-            "step": STEP_INTERPRET,
-            "execution_id": ctx.execution.execution_id,
-            "question_ref": _ref_dict(question_ref),
-            "rules": ctx.execution.input_snapshot.rules.version,
-            "model": self._model_spec(ctx, step_id),
-        }
-        response = self._call_or_reuse(
-            ctx,
-            step_id=step_id,
-            request=request,
-            state=state,
-            call_key=f"{STEP_INTERPRET}-{question_ref.record_id}",
-        )
-        if response.get("attempt") != "unresolved":
-            raise ValueError(
-                f"模拟服务返回了未知的解释尝试结果：{response.get('attempt')!r}"
-            )
-        append_run_revision(
-            ctx.space,
-            ctx.execution,
-            model_judgment=ModelJudgment(
-                step_id=step_id,
-                judgment=str(response["note"]),
-                created_at=ctx.now(),
-            ),
-        )
-
     # ---- Roster steps ----
 
-    def _direct_roster(self, ctx: RuntimeContext, state: dict) -> dict:
-        op_input = self._op_input(ctx, "direct_roster", state)
+    def _roster(self, ctx: RuntimeContext, state: dict) -> dict:
+        op_input = self._op_input(ctx, "roster", state)
         digest = sha256_of(op_input)
-        saved = ctx.reuse_step("direct_roster", digest)
+        saved = ctx.reuse_step("roster", digest)
         if saved is not None:
             refs = [_ref_dict(ref) for ref in saved.result_refs]
         else:
             response = self._call_or_reuse(
                 ctx,
-                step_id="direct_roster",
-                request={"step": "direct_roster", **op_input},
+                step_id="roster",
+                request={"step": "roster", **op_input},
                 state=state,
-                call_key="direct_roster",
+                call_key="roster",
             )
             refs = self._commit_roster(
                 ctx,
                 state,
                 entries=response["entries"],
-                method="direct",
-                step_id="direct_roster",
+                method="roster",
+                step_id="roster",
                 digest=digest,
             )
-        return self._finish_roster_node(ctx, state, refs, "direct_roster")
-
-    def _discover_candidates(self, ctx: RuntimeContext, state: dict) -> dict:
-        op_input = self._op_input(ctx, "discover_candidates", state)
-        digest = sha256_of(op_input)
-        saved = ctx.reuse_step("discover_candidates", digest)
-        if saved is not None:
-            response = self._stored_response(
-                ctx,
-                "discover_candidates",
-                {"step": "discover_candidates", **op_input},
-                state,
-            )
-            if (
-                response is None
-            ):  # pragma: no cover - committed steps always have archives
-                response = {"candidates": state["material"]["candidates"]}
-        else:
-            response = self._call_or_reuse(
-                ctx,
-                step_id="discover_candidates",
-                request={"step": "discover_candidates", **op_input},
-                state=state,
-                call_key="discover_candidates",
-            )
-            ctx.commit_step(
-                step_id="discover_candidates",
-                input_digest=digest,
-                records=[],
-                result_refs=[],
-            )
-        return {"candidates": response["candidates"]}
-
-    def _review_candidates(self, ctx: RuntimeContext, state: dict) -> dict:
-        base = self._op_input(ctx, "review_candidates", state)
-        candidates = list(state["candidates"])
-        op_input = {**base, "candidates": [c["candidate_id"] for c in candidates]}
-        digest = sha256_of(op_input)
-        saved = ctx.reuse_step("review_candidates", digest)
-        if saved is not None:
-            refs = [_ref_dict(ref) for ref in saved.result_refs]
-        else:
-            entries = []
-            for candidate in candidates:
-                request = {
-                    "step": "review_candidates",
-                    **base,
-                    "candidate_id": candidate["candidate_id"],
-                }
-                response = self._call_or_reuse(
-                    ctx,
-                    step_id="review_candidates",
-                    request=request,
-                    state=state,
-                    call_key=f"review_candidates-{candidate['candidate_id']}",
-                )
-                entries.append(response["entry"])
-            refs = self._commit_roster(
-                ctx,
-                state,
-                entries=entries,
-                method="candidate_review",
-                step_id="review_candidates",
-                digest=digest,
-            )
-        return self._finish_roster_node(ctx, state, refs, "review_candidates")
+        return self._finish_roster_node(ctx, state, refs, "roster")
 
     def _finish_roster_node(
         self, ctx: RuntimeContext, state: dict, refs: list[dict], step_id: str
@@ -641,13 +531,6 @@ class ExtractionFlow(DefaultFlowAdapter):
             )
             self.hook("after_question_create")
             result_refs.append(view.question_ref)
-            if not state["expert_adjudication"] and self._pure_ai_allowed():
-                self._attempt_interpretation(
-                    ctx,
-                    state=state,
-                    step_id=step_id,
-                    question_ref=view.question_ref,
-                )
         ctx.commit_step(
             step_id=step_id,
             input_digest=digest,
@@ -784,13 +667,6 @@ class ExtractionFlow(DefaultFlowAdapter):
             )
             self.hook("after_question_create")
             result_refs.append(view.question_ref)
-            if not state["expert_adjudication"] and self._pure_ai_allowed():
-                self._attempt_interpretation(
-                    ctx,
-                    state=state,
-                    step_id="quantities",
-                    question_ref=view.question_ref,
-                )
         ctx.commit_step(
             step_id="quantities",
             input_digest=digest,
@@ -937,7 +813,14 @@ def build_paper_record(
                 "issue_refs": [],
                 "gap_refs": [],
             }
-            conditional = []
+            conditional = [
+                {
+                    "condition": entry["condition"],
+                    "statement": entry["statement"],
+                    "evidence_refs": [_ev(spec, entry["evidence_line"])],
+                }
+                for entry in boundness.get("conditionals", [])
+            ]
         groups: dict[str, list] = {}
         for value in item["values"]:
             groups.setdefault(value["quantity"], []).append(

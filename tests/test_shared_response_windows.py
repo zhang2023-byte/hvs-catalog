@@ -21,11 +21,11 @@ DRIVER = """
 import os, sys
 from hvs_catalog.pipeline import resume_extraction
 from hvs_catalog.pipeline.flow import ExtractionFlow
-from hvs_catalog.pipeline.methods import DIRECT_METHOD, CANDIDATE_REVIEW_METHOD
+from hvs_catalog.pipeline.methods import ROSTER_METHOD
 from hvs_catalog.pipeline.mock import PipelineMockService, mock_preflight
 from hvs_catalog.pipeline.registry import PipelineRegistry, MethodRegistration
 from hvs_catalog.workspace import open_workspace
-spec = DIRECT_METHOD if sys.argv[3] == 'direct' else CANDIDATE_REVIEW_METHOD
+spec = ROSTER_METHOD if sys.argv[3] == 'roster' else ROSTER_METHOD
 registry = PipelineRegistry()
 registry.register(MethodRegistration(spec=spec, preflight=mock_preflight,
     build_flow=lambda spec, mode: ExtractionFlow(spec, mode=mode,
@@ -36,7 +36,7 @@ raise AssertionError('expected death')
 """
 
 
-@pytest.mark.parametrize("method", ["direct", "candidate_review"])
+@pytest.mark.parametrize("method", ["roster"])
 @pytest.mark.parametrize("paper", ["FIC-R05-A", "FIC-CANDIDATE-C"])
 @pytest.mark.parametrize("window", ["after_archive", "after_question_create"])
 def test_shared_response_and_question_save_windows(tmp_path, method, paper, window):
@@ -54,11 +54,7 @@ def test_shared_response_and_question_save_windows(tmp_path, method, paper, wind
             ),
             request_key="windows",
         )
-        step = (
-            "quantities"
-            if paper == "FIC-R05-A"
-            else ("direct_roster" if method == "direct" else "review_candidates")
-        )
+        step = "quantities" if paper == "FIC-R05-A" else "roster"
         hook = window if window == "after_question_create" else f"{window}:{step}"
         driver = tmp_path / "die.py"
         driver.write_text(DRIVER)

@@ -46,7 +46,7 @@ def crash():
     (root / 'checkpoint-at-response.json').write_text(json.dumps({'saved': saved.is_set()}))
     os._exit(70)
 recovery.resume_execution(space, execution.execution_id,
-    direct_flow(fault_hooks={'after_response:direct_roster':crash}),
+    direct_flow(fault_hooks={'after_response:roster':crash}),
     service=open_service(root.parent / 'calls.jsonl'))
 raise AssertionError('hard exit expected')
 """

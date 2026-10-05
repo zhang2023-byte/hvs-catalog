@@ -2,7 +2,7 @@
 extraction configuration/previews, synthetic extraction and scoring, and arXiv
 discovery/fetch/revision/import/status.
 
-List implemented operations only. Real direct/candidate_review extraction and official
+List implemented operations only. Real numerical extraction and official
 scoring are not available; demos do not claim these capabilities. Add commands when
 their corresponding features ship.
 """
@@ -187,23 +187,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     command.add_argument("--target", required=True, type=Path)
 
-    methods = commands.add_parser(
-        "methods",
-        help="查询提取入口登记的方法与步骤（当前仅合成模拟实现）",
-        description=(
-            "列出共享提取入口当前实际可用的方法、步骤与实现标记。"
-            "当前只登记 synthetic-mock 模拟实现；真实 direct/"
-            "candidate_review 提取留待后续关卡，此处不会冒称可运行。"
-        ),
-    )
-    methods_commands = methods.add_subparsers(dest="methods_command")
-    methods_list = methods_commands.add_parser(
-        "list", help="列出登记的方法（默认操作）"
-    )
-    methods_list.add_argument(
-        "--json", action="store_true", help="以机器可读 JSON 输出"
-    )
-
     extract = commands.add_parser(
         "extract",
         help="提取配置、完整提示预览与合成模拟运行",
@@ -211,7 +194,7 @@ def build_parser() -> argparse.ArgumentParser:
             "日常与评测共用的提取配置及入口。支持离线配置检查、完整提示预览，"
             "以及用合成材料和模拟服务走名单→数值→收尾全链路、保存与恢复执行。"
             "不调用真实模型，不产生货币费用。"
-            "真实 direct/candidate_review 提取留待后续关卡。"
+            "真实名单提取使用 roster 子命令。"
         ),
     )
     extract_commands = extract.add_subparsers(dest="extract_command", required=True)
@@ -230,12 +213,6 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         choices=["FIC-R05-A", "FIC-R05-B", "FIC-CANDIDATE-C"],
         help="合成论文标识（虚构材料）",
-    )
-    extract_demo.add_argument(
-        "--method",
-        default="direct",
-        choices=["direct", "candidate_review"],
-        help="名单方法（均为 synthetic-mock 实现）；默认 direct",
     )
     extract_demo.add_argument(
         "--mode",
@@ -480,28 +457,6 @@ def _run_gold(args: argparse.Namespace) -> int:
         return 2
 
 
-def _run_methods(args: argparse.Namespace) -> int:
-    from hvs_catalog.pipeline import list_methods
-
-    methods = list_methods()
-    if getattr(args, "json", False):
-        print(json.dumps(methods, ensure_ascii=False, indent=2))
-        return 0
-    for method in methods:
-        realizable = "可运行" if method["real_extraction"] else "仅合成模拟"
-        print(
-            f"[方法] {method['method_id']}（{method['implementation']}，"
-            f"{realizable}，v{method['version']}）"
-        )
-        for step in method["steps"]:
-            print(f"  - {step['step_id']}［{step['kind']}］{step['title']}")
-    print(
-        "[说明] 当前只登记 synthetic-mock 模拟实现；"
-        "真实 direct/candidate_review 提取留待后续关卡，未在本入口冒称可运行。"
-    )
-    return 0
-
-
 def _run_extract_demo(args: argparse.Namespace) -> int:
     from hvs_catalog.evaluation.adapt import prediction_from_execution
     from hvs_catalog.evaluation.bundle import save_scoring_bundle
@@ -517,7 +472,6 @@ def _run_extract_demo(args: argparse.Namespace) -> int:
         StepModel,
         get_extraction,
         import_mock_source,
-        list_methods,
         resume_extraction,
         start_extraction,
         submit_expert_decision,
@@ -554,27 +508,18 @@ def _run_extract_demo(args: argparse.Namespace) -> int:
             space = open_workspace(args.space)
         else:
             space = initialize_workspace(args.space)
-        method_ids = [item["method_id"] for item in list_methods()]
-        if args.method not in method_ids:
-            print(
-                f"[拒绝] 方法 {args.method!r} 未登记；可用：{', '.join(method_ids)}",
-                file=sys.stderr,
-            )
-            return 2
         source = import_mock_source(space, args.paper)
         service = PipelineMockService(
             journal_path=args.output / "service-journal.jsonl"
         )
         request = ExtractionRequest(
             mode=args.mode,
-            method=args.method,
+            method="roster",
             source_refs=[source],
             models=[StepModel(model="mock-default")],
             expert_adjudication=expert,
         )
-        request_key = (
-            f"cli-demo:{args.paper}:{args.method}:{args.mode}:{args.adjudication}"
-        )
+        request_key = f"cli-demo:{args.paper}:roster:{args.mode}:{args.adjudication}"
         handle = start_extraction(space, request=request, request_key=request_key)
         print(
             f"[执行] {handle.execution_id}（方法 {handle.method}，模式 "
@@ -741,8 +686,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _run_demo(args)
     if args.command == "gold":
         return _run_gold(args)
-    if args.command == "methods":
-        return _run_methods(args)
     if args.command == "extract":
         if args.extract_command == "demo":
             return _run_extract_demo(args)

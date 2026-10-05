@@ -1,8 +1,8 @@
 format_version = 2
 title = "High-velocity star literature extraction rules"
-version = "0.1.0"
+version = "0.2.1"
 review_status = "approved"
-review_note = "2026-09-19，人类专家确认当前规则可接受；本次审定覆盖规则、定义、说明与合成例子。需要中文审阅时按当前英文内容临时翻译。"
+review_note = "2026-10-05，人类专家审定PDF共同科学正文、两种歧义策略、定义及25个合成例子；通过后接入正式规则；同日批准由模型理解明确编号范围并逐个提交对象，取消程序展开。"
 usage = "Follow the sequence below. Consult the explanations and examples when needed."
 instruction_language = "en"
 
@@ -17,22 +17,26 @@ rule_count = 26
 id = "S01"
 title = "Use only the paper materials provided for this task"
 summary = "Extract only from the paper materials provided for this task. Preserve the objects studied, the authors' claims, the reported values, their applicable conditions, and their sources as stated in the paper."
-explanation = """The materials for this task come from the arXiv LaTeX source package of a single paper, including its main text, appendices, tables, notes, and ancillary data. Other papers cited by this paper and resources linked outside the package are not evidence for this extraction and must not be used to fill gaps in this paper.
+explanation = """The materials for this task consist of a fixed PDF version of one paper and that paper's supplementary files explicitly listed and supplied for this task. They include the main text, appendices, tables, captions, notes, and supplied supplementary data. A cited paper, a different version, or an external resource not included in the supplied materials is not evidence for this extraction. LaTeX source files are not extraction evidence, including when they have been downloaded for archival use.
 
-Read table values together with the original captions, column headings, notes, and surrounding text. If the content you read differs from the corresponding original material, check the original and report the discrepancy; do not treat a reading error as an author result. If material is missing or unreadable, state what is missing or unreadable and which content is affected. Continue extracting what can be established; leave any part that depends on the unavailable material incomplete."""
+Parsed text, Markdown, and reconstructed tables are reading aids derived from the supplied originals, not additional scientific sources. Read table values together with the original captions, column headings, notes, and surrounding text. If a reading aid differs from the corresponding original PDF or supplied supplementary file, check the original and report the discrepancy; preserve what the original actually states. Do not treat a parsing error as an author result or as a contradiction within the paper. Retain evidence that can be located in the original PDF or supplementary file.
+
+If material is missing, unreadable, or cannot be reliably interpreted because of a parsing failure, state the affected material and content. Continue extracting what can be established; leave any part that depends on unavailable evidence incomplete. An external link does not establish that its contents have been supplied or processed."""
 legacy_rules = ["paper.claims.reported_not_truth", "hvs.contrib.source_authority"]
 
 [[rules]]
 id = "S02"
 title = "Identify the objects and the work done in this paper"
 summary = "Determine which object each record in the paper refers to. Preserve all names used for that object and their sources. Briefly describe in free text what this paper does with the object, with supporting evidence from the paper."
-explanation = """Preserve object names as printed. After establishing that occurrences refer to the same object, record an identical name once and retain every location where it appears; retain distinct names or spellings separately. Group different names under one object only when this paper's materials support the correspondence. Do not assume two names identify the same object merely because they become identical after removing spaces or hyphens, or ignoring case. Even identical strings require checking for different objects with the same name or conflicting object information. Refer unclear or conflicting correspondences to an expert. Do not add external aliases or supply catalog releases or name prefixes that are absent from the paper.
+explanation = """Preserve object names as printed. After establishing that occurrences refer to the same object, record an identical name once and retain every location where it appears; retain distinct names or spellings separately. Group different names under one object only when this paper's materials support the correspondence. Do not assume two names identify the same object merely because they become identical after removing spaces or hyphens, or ignoring case. Even identical strings require checking for different objects with the same name or conflicting object information. Handle unclear or conflicting correspondences under the active ambiguity policy. Do not add external aliases or supply catalog releases or name prefixes that are absent from the paper.
 
 Observations, measurements, data processing, reanalysis, modeling, or actual use of an object's data in an analysis can constitute a research contribution by this paper; a new numerical value is not required. A background mention, an unchanged retelling of earlier results, a table or figure displaying cited results, or only an initial data-quality screen is insufficient by itself. If the authors identify a measurement error through analysis and revise their interpretation of the object accordingly, record that research work.
 
 For each contribution, briefly describe in free text the work this paper does with the object and provide evidence from the paper. The summary describes the actual observation, analysis, or reassessment; record the contribution type separately under S03. The summary does not require an additional explanation of why the extractor included the object.
 
-A paper may use a numbered range such as 'stars 1–5' instead of naming every member. Preserve the original expression and its source; do not expand the range or add members yourself. If the supplied materials already list specific members, check their correspondence to the original range. If the members cannot yet be fully listed, state which range remains unresolved. Missing or unreadable material leaves the affected part incomplete; ambiguous wording requires expert judgment. An unresolved membership list does not mean there are no objects."""
+A paper may use a numbered range such as 'stars 1–5' instead of naming every member. When the numbering and object context identify the members, interpret the range and submit a separate object entry for every member, citing the original range expression and its source. For example, 'HVS4–6' identifies HVS4, HVS5, and HVS6. Preserve the prefix and numbering supported by the paper; do not invent names or members not specified by the range. If the members cannot yet be fully listed, state which range remains unresolved. Missing or unreadable material leaves the affected part incomplete; ambiguous wording is handled under the active ambiguity policy. An unresolved membership list does not mean there are no objects.
+
+A name containing digits or hyphens is not by itself a numbered group. The application does not expand object ranges or generate their members. Distinguish a numbered group from an individual name and from a physical numerical interval using the paper context. Do not invent unnamed members or omit explicitly identified members because another part of the group remains unprocessed."""
 legacy_rules = ["hvs.contrib.paper_visible_identity", "hvs.contrib.deterministic_range_groups", "hvs.contrib.substantive_object_work", "hvs.contrib.required_summary_evidence"]
 
 [[rules]]
@@ -53,10 +57,10 @@ legacy_rules = ["hvs.contrib.galactic_unbound_anchor", "hvs.contrib.no_proxy_anc
 [[rules]]
 id = "S04"
 title = "Record the authors' overall boundness assessment"
-summary = "Use one of the five states below to record the authors' overall assessment of the object's boundness. Record a clear conclusion or preference directly. Use no_overall_conclusion when the paper gives no overall assessment. If the extractor cannot determine the authors' meaning, refer the question to an expert. Retain the original conclusions under each set of conditions."
+summary = "Use one of the five states below to record the authors' overall assessment of the object's boundness. Record a clear conclusion or preference directly. Use no_overall_conclusion when the paper gives no overall assessment. If the authors' meaning is ambiguous, apply the active ambiguity policy. Retain the original conclusions under each set of conditions."
 explanation = """When the authors explicitly summarize results obtained under different conditions, record the conclusion or preference expressed in that summary. Do not count physical models favoring bound or unbound outcomes and use the majority as the authors' overall view. Do not select a probability or gravitational potential model to infer that view. An explicit statement that an object may be or is likely unbound can be recorded as possibly_unbound; discussion of multiple models is not required.
 
-No overall conclusion includes both no discussion of boundness and discussion without an overall conclusion or preference. Record it directly when the paper clearly supports that reading. If the extractor cannot determine what the authors mean, leave the question pending expert judgment. Pending adjudication describes unfinished processing; it is not a sixth author state. Missing material or a parsing failure must not be recorded as no_overall_conclusion either.
+No overall conclusion includes both no discussion of boundness and discussion without an overall conclusion or preference. Record it directly when the paper clearly supports that reading. If the authors' meaning is ambiguous, apply the active ambiguity policy. The extractor's own uncertainty is not evidence that the authors give no overall conclusion. Processing status is not a sixth author state. Missing material or a parsing failure must not be recorded as no_overall_conclusion either.
 
 An object explicitly concluded to be bound in this paper is not included as candidates_found. An object meeting the follow_up conditions may have the state bound. Neither possibly_bound nor no_overall_conclusion is sufficient grounds for inclusion by itself; S03 must still be satisfied.
 
@@ -83,29 +87,29 @@ legacy_rules = ["hvs.contrib.structured_quantity_scope", "hvs.contrib.all_values
 [[rules]]
 id = "S06"
 title = "Check object assignments, duplicates, and conflicting values"
-summary = "Check which object and physical quantity each value describes and under which conditions it applies. Preserve direct evidence from the paper. Merge repeated occurrences of the same result and retain different results separately. Preserve conflicting original values and their sources for expert judgment."
+summary = "Check which object and physical quantity each value describes and under which conditions it applies. Preserve direct evidence from the paper. Merge repeated occurrences of the same result and retain different results separately. Preserve conflicting original values, their sources, and the conflict."
 explanation = """Assign a value given for a group to individual objects only when it explicitly applies to every member and the members can be identified. Such values may be shared research results, numerical limits, or parameters adopted in the analysis. A sample maximum, minimum, typical value, or distribution range is not automatically a value for each object.
 
 Passing a selection or quality check does not make the selection threshold a measurement or upper or lower limit for the object. Record a result only if the authors separately report it for the object or explicitly for every member of the group.
 
-For every recorded number, including uncertainty values and interval endpoints, retain its location in the original material and the corresponding excerpt. Units, frames, and conditions may be supported by other relevant passages, headings, or notes. Check the object's row in a table; do not take values from a neighboring row. Multiple records may reference the same evidence passage without copying it repeatedly.
+For every recorded number, including uncertainty values and interval endpoints, retain its location in the original PDF or supplied supplementary file and the corresponding excerpt. PDF evidence must identify the source document and page; table evidence must also identify the relevant row and column context. A location in parsed Markdown alone is insufficient. Units, frames, and conditions may be supported by other relevant passages, headings, or notes. Check the object's row in a table; do not take values from a neighboring row. Multiple records may reference the same evidence passage without copying it repeatedly.
 
 The same result may appear more than once, for example in both the text and a table. Merge duplicates after confirming that their source, method, conditions, epoch, and numerical representation are the same. When different expressions are confirmed to be the authors' rounded or approximate restatements of the same result, retain the most complete and precise expression actually printed; do not calculate a replacement. Retain scientific results with different sources, methods, conditions, epochs, or representations separately.
 
-If the values or errors for the same result genuinely differ between locations, first check for an explicit author correction or a difference in conditions. If the discrepancy remains unexplained, preserve both original values and their evidence for expert judgment. Do not ignore a small discrepancy, automatically prefer the text or table, average the values, or relabel them as results from different models. If the expert cannot resolve the discrepancy, retain it as an unresolved numerical conflict. Other confirmed results may proceed if the conflict affects neither inclusion nor object identity."""
+If the values or errors for the same result genuinely differ between locations, first check for an explicit author correction or a difference in conditions. If the discrepancy remains unexplained, preserve both original values, their evidence, and the numerical conflict. Do not ignore a small discrepancy, automatically prefer the text or table, average the values, or relabel them as results from different models. Apply the active ambiguity policy to questions about the meaning of the conflicting passages. A judgment about their most plausible meaning does not erase an unexplained printed discrepancy or make either value an author-corrected result. An unexplained discrepancy may remain recorded after extraction has finished; it is not a license to omit other objects or values. Other confirmed results may proceed if the conflict affects neither inclusion nor object identity."""
 legacy_rules = ["hvs.contrib.group_level_values", "hvs.contrib.grouped_multivalue", "hvs.contrib.value_evidence"]
 
 [[rules]]
 id = "S07"
-title = "Check completeness and handle unresolved questions"
-summary = "Return every identifiable eligible object and value. State which questions remain undecided and which parts are incomplete because material is missing or unreadable. Handle clear evidence and rule applications directly. Refer unclear author meaning or uncertain precedent applicability to an expert."
+title = "Check completeness and apply the ambiguity policy"
+summary = "Return every identifiable eligible object and value. Distinguish interpretation questions and original numerical conflicts from missing materials and technical failures. Handle clear evidence and rule applications directly; apply the active ambiguity policy when interpretation remains uncertain."
 explanation = """Check all readable materials for eligible objects and values. Do not sample, impose an object-count limit, or select only representative objects. If some content is available only in external or unreadable materials, identify what remains unprocessed. Do not record it as unreported by the paper or as grounds for scientific exclusion.
 
 For objects or groups that could reasonably be mistaken for eligible entries but fail the inclusion conditions on inspection, record the exclusion and supporting evidence. There is no need to list every ordinary background object or reference.
 
-Direct application of the rules requires neither per-result rule identifiers nor an additional justification. Use only the approved precedents provided for this task; unapproved drafts must not be used. When relying on a precedent, briefly state which precedent you used and why it applies here. One note may cover several results. Precedents explain how to apply the main rules; they cannot change them. If a precedent still leaves the present case unclear, refer the question to an expert.
+Direct application of the rules requires neither per-result rule identifiers nor an additional justification. Use only the approved precedents provided for this task; unapproved drafts must not be used. When relying on a precedent, briefly state which precedent you used and why it applies here. One note may cover several results. Precedents explain how to apply the main rules; they cannot change them. If a precedent still leaves the present case unclear, apply the active ambiguity policy.
 
-For an expert question, provide the relevant original passages, conditions, and extracted results, and briefly state what needs to be decided. Apply an expert decision received for this specific question to the affected content. If no clear decision is available, keep the question unresolved."""
+For a material interpretation ambiguity, retain the relevant original passages, conditions, and extracted results and briefly identify the issue. The active ambiguity policy specifies how to reach or obtain the decision. Neither policy permits inventing missing evidence or numerical values, changing the inclusion criteria or quantity definitions, or concealing unprocessed material. Clear applications of the rules do not need an ambiguity record."""
 legacy_rules = ["hvs.contrib.complete_identifiable_set", "hvs.contrib.reviewed_exclusions"]
 
 [[states]]
@@ -196,7 +200,7 @@ legacy_path = "derived_kinematics.galactocentric_z"
 [[quantities]]
 id = "galactocentric_radius"
 name = "Three-dimensional Galactocentric distance"
-definition = "The three-dimensional distance r from the object to the Galactic center at the reference state. Do not enter cylindrical radius R here. If the type of distance is unclear, refer it to an expert."
+definition = "The three-dimensional distance r from the object to the Galactic center at the reference state. Do not enter cylindrical radius R here. If the type of distance is unclear, apply the active ambiguity policy."
 legacy_path = "derived_kinematics.galactocentric_radius"
 
 [[quantities]]
@@ -281,13 +285,13 @@ expected = "Include A as follow_up with overall state no_overall_conclusion. Ret
 id = "E07"
 rules = ["S03", "S04"]
 input = "This paper selects A. The authors accept two reasonable models giving bound and unbound results respectively and explicitly state that the available material does not support an overall assessment."
-expected = "Retain the candidate accepted by the authors and the results under each set of conditions. Record no_overall_conclusion. The meaning is clear; two models alone do not require expert judgment."
+expected = "Retain the candidate accepted by the authors and the results under each set of conditions. Record no_overall_conclusion. The meaning is clear; the existence of two models alone does not create an interpretation ambiguity."
 
 [[examples]]
 id = "E08"
 rules = ["S04", "S07"]
 input = "The authors' summaries in different passages appear inconsistent. The extractor cannot tell whether A is still considered an unbound candidate or what the authors' overall preference is."
-expected = "In the daily workflow, preserve the original passages and relevant results and ask an expert whether A should be included and which overall state applies. Do not automatically exclude A or enter no_overall_conclusion."
+expected = "Preserve the passages and relevant results and handle the ambiguity about A's inclusion and overall state under the active ambiguity policy. Do not automatically exclude A or enter no_overall_conclusion merely because the extractor is uncertain."
 
 [[examples]]
 id = "E09"
@@ -316,14 +320,14 @@ expected = "The shared statement for Table 2 can support each member's unbound c
 [[examples]]
 id = "E13"
 rules = ["S01", "S07"]
-input = "A and B can be identified within the package. The text also points to a complete object list on an external website, which is absent from the supplied materials."
-expected = "Process the objects that can be established within the package. Record that the external list remains unprocessed and retain the passage referencing it. Do not mark the paper fully processed or treat unprocessed external objects as ineligible."
+input = "A and B can be identified in the supplied PDF. The text also points to a complete object list on an external website, which is absent from the supplied materials."
+expected = "Process the objects that can be established in the supplied PDF. Record that the external list remains unprocessed and retain the passage referencing it. Do not mark the paper fully processed or treat unprocessed external objects as ineligible."
 
 [[examples]]
 id = "E14"
 rules = ["S05", "S06"]
 input = "For the same measurement, conditions, and source, the text prints a velocity of 100 ± 5 and a table prints 100 ± 8, with no correction or explanation of different conditions."
-expected = "Preserve both original values and their evidence for expert judgment. If the discrepancy remains unexplained, retain an unresolved numerical conflict. Do not average, choose one, or label them as results from different models."
+expected = "Preserve both original values, their evidence, and the unexplained numerical conflict. Do not average, choose one as the sole reported value, or label them as results from different models. Handle any question about the passages under the active ambiguity policy; recording the conflict is not itself a failure to extract its two sides."
 
 [[examples]]
 id = "E15"
@@ -353,4 +357,49 @@ expected = "Preserve the measurement conflict and allow other confirmed results 
 id = "E19"
 rules = ["S07"]
 input = "This paper's situation clearly meets the applicability conditions of an approved precedent. Another similar precedent is still an unapproved draft."
-expected = "The approved precedent may be used with a brief note identifying it and explaining why it applies. Do not use the unapproved draft. If applicability remains unclear, refer the question to an expert in the daily workflow."
+expected = "The approved precedent may be used with a brief note identifying it and explaining why it applies. Do not use the unapproved draft. If applicability remains unclear, apply the active ambiguity policy."
+
+[[examples]]
+id = "E20"
+rules = ["S01", "S06"]
+input = "A supplied PDF table clearly prints a parallax of −0.2 ± 0.1 mas for A. The parsed table loses the minus sign and displays +0.2 ± 0.1 mas."
+expected = "Use −0.2 ± 0.1 mas with the PDF page and row evidence, and report the parsing discrepancy. This is not a numerical conflict in the paper. If the original cannot be checked reliably, report the affected content as incomplete instead of guessing the sign."
+
+[[examples]]
+id = "E21"
+rules = ["S02", "S07"]
+input = "The PDF identifies one object as S5-HVS1. Another passage identifies the numbered objects 'HVS4–6 and others'."
+expected = "Treat S5-HVS1 as one printed name, not a numbered group. Submit separate entries for HVS4, HVS5, and HVS6 with the original range as evidence, applying the ordinary inclusion rules. Preserve the unnamed remainder as incomplete; do not invent names for 'others'."
+
+[[examples]]
+id = "E22"
+rules = ["S01", "S07"]
+input = "The PDF explicitly identifies eligible objects A and B and refers to an online supplementary table containing the remaining names. The table is not supplied."
+expected = "Process A and B, preserve the reference to the missing supplement, and report the remaining membership as incomplete. Neither ambiguity policy can invent the absent names or claim complete coverage."
+
+[[examples]]
+id = "E23"
+rules = ["S05"]
+input = "The paper reports a Galactocentric height z = 0.3 kpc at its stated reference epoch and z = 5 kpc at a later orbital event."
+expected = "Enter only the reference-state value in galactocentric_z. Do not substitute the later event value. Important out-of-scope orbital results may be described in the contribution summary."
+
+[[examples]]
+id = "E24"
+rules = ["S05", "S07"]
+input = "The paper reports a heliocentric distance and the distance between the Sun and the Galactic center, but gives no star-to-Galactic-center distance. The extractor could calculate one using other reported geometry."
+expected = "Do not derive galactocentric_radius. If all relevant materials have been processed and no value is reported or adopted, record it as unreported. Complete automatic extraction does not require filling every quantity with a number."
+
+[[examples]]
+id = "E25"
+rules = ["S02", "S07"]
+input = "Two object names differ only in spacing. Complete supplied materials explicitly discuss them as different objects."
+expected = "Keep the objects separate and retain both printed names. Neither normalization nor an ambiguity policy overrides explicit object identity evidence."
+
+[ambiguity_policies]
+expert_assisted = """Apply the common scientific rules directly whenever the evidence and its meaning are clear. When interpreting the supplied material still requires resolving uncertain author meaning, object identity or membership, inclusion, quantity assignment, or precedent applicability, submit the question to an expert. Provide the relevant original evidence, conditions, available results, and a concise statement of what needs to be decided. Do not guess a decision solely to finish the extraction.
+
+Pause only the results or processing that depend on this decision, retaining all other established results. An unresolved inclusion or identity question also pauses extraction that depends on that object's inclusion or identity. Apply a clear expert decision for this specific question to the affected content and resume it. If no clear decision is available, keep that question pending. An expert decision does not remove the obligation to preserve original evidence, missing-material gaps, or an unexplained printed numerical conflict."""
+
+automatic = """Apply the common scientific rules directly whenever the evidence and its meaning are clear. When interpreting the supplied material still requires resolving uncertain author meaning, object identity or membership, inclusion, quantity assignment, or precedent applicability, choose the most reasonable interpretation supported by the supplied paper and the common rules. Briefly record the chosen interpretation and its evidence as a model judgment, then complete all affected object and quantity processing. If competing interpretations remain plausible, select the best-supported one rather than deferring the decision.
+
+Do not ask for, wait for, or depend on an expert decision for this extraction. Do not create expert questions or leave interpretation pending for later adjudication. Interpretive uncertainty alone must not stop downstream extraction or cause eligible objects or reported values to be skipped. A model judgment does not permit inventing missing members or values, relaxing explicit inclusion criteria, inferring unreported quantities, or replacing an unexplained original numerical conflict with one chosen value. Preserve both sides of such a conflict and finish processing the available evidence; report genuine material gaps or technical failures separately."""

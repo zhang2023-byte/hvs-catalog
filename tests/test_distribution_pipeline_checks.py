@@ -27,18 +27,11 @@ from installed_pipeline_checks import (
 
 GOOD_METHODS = [
     {
-        "method_id": "direct",
+        "method_id": "roster",
         "implementation": "synthetic-mock",
         "real_extraction": False,
         "version": "1",
-        "steps": ["direct_roster", "quantities", "finalize"],
-    },
-    {
-        "method_id": "candidate_review",
-        "implementation": "synthetic-mock",
-        "real_extraction": False,
-        "version": "1",
-        "steps": ["discover_candidates", "review_candidates", "quantities", "finalize"],
+        "steps": ["roster", "quantities", "finalize"],
     },
 ]
 
@@ -68,8 +61,8 @@ def test_module_origin_problems_rejects_source_tree_or_site_injection():
 def test_methods_payload_problems_detects_wrong_payloads():
     assert methods_payload_problems(GOOD_METHODS) == []
     assert methods_payload_problems({"error": "x"}) != []
-    only_one = [GOOD_METHODS[0]]
-    assert any("2 个方法" in problem for problem in methods_payload_problems(only_one))
+    assert methods_payload_problems([])
+    assert methods_payload_problems([*GOOD_METHODS, *GOOD_METHODS])
     claiming_real = [dict(method, real_extraction=True) for method in GOOD_METHODS]
     assert any(
         "冒称真实提取" in problem for problem in methods_payload_problems(claiming_real)
@@ -95,12 +88,12 @@ def test_cross_process_problems_detects_wrong_outcomes_and_calls():
         "state": "finished",
         "execution_id": "exec-1",
     }
-    journal = {"steps": {"direct_roster": 1, "quantities": 1}}
+    journal = {"steps": {"roster": 1, "quantities": 1}}
     assert cross_process_problems(paused, resumed, journal) == []
 
     bad_paused = {**paused, "outcome": "failed"}
     bad_resumed = {**resumed, "outcome": "failed", "errors": ["x"], "state": "paused"}
-    bad_journal = {"steps": {"direct_roster": 2, "quantities": 1}}
+    bad_journal = {"steps": {"roster": 2, "quantities": 1}}
     problems = cross_process_problems(bad_paused, bad_resumed, bad_journal)
     assert len(problems) == 5
     assert any("应暂停" in problem for problem in problems)
@@ -121,7 +114,7 @@ def _experiment_report(**overrides):
     group_off = {
         "execution_id": "exec-off",
         "decisions": {"human": 0},
-        "science_completion": "pending",
+        "science_completion": "complete",
         "expert_time_seconds": None,
         "quality": {"l2": {"gold": 1}},
     }
@@ -146,7 +139,7 @@ def test_experiment_report_problems_detects_isolation_and_time_violations():
     leaking["isolation"]["expert_off_existing_decision_refs"] = ["dec-1"]
     leaking["groups"]["expert_off"]["decisions"]["human"] = 1
     leaking["groups"]["expert_on"]["expert_time_seconds"] = 3.5
-    leaking["groups"]["expert_off"]["science_completion"] = "complete"
+    leaking["groups"]["expert_off"]["science_completion"] = "pending"
     reports = [leaking, _experiment_report()]
     reports[0]["groups"]["expert_on"].update(shared)
     reports[0]["groups"]["expert_off"].update(shared)
@@ -155,7 +148,7 @@ def test_experiment_report_problems_detects_isolation_and_time_violations():
     assert any("不应有专家决定" in problem for problem in problems)
     assert any("专家用时应为 null" in problem for problem in problems)
     assert any("关闭组不应消费开启组的决定" in problem for problem in problems)
-    assert any("关闭组应保持 pending" in problem for problem in problems)
+    assert any("关闭组应完成" in problem for problem in problems)
 
 
 def test_experiment_report_problems_rejects_wrong_report_count():
@@ -210,7 +203,7 @@ def test_zero_exit_with_bad_artifact_reports_context(
     venv = tmp_path / "venv"
     script = venv / "bin" / "hvs-catalog"
     monkeypatch.setattr(checks, "CHECK_PAPERS", ("FIC-R05-A",))
-    monkeypatch.setattr(checks, "CHECK_METHODS", ("direct",))
+    monkeypatch.setattr(checks, "CHECK_METHODS", ("roster",))
     monkeypatch.setattr(checks, "CHECK_ADJUDICATION", ("off",))
 
     def write_output(path, payload):
@@ -228,7 +221,9 @@ def test_zero_exit_with_bad_artifact_reports_context(
 
     def fake_run(command, **kwargs):
         code, payload = 0, {}
-        if "-c" in command:
+        if "list_methods" in " ".join(command):
+            payload = GOOD_METHODS
+        elif "-c" in command:
             payload = [
                 str(venv / "lib/python3.12/site-packages/hvs_catalog/__init__.py")
             ]
@@ -251,7 +246,7 @@ def test_zero_exit_with_bad_artifact_reports_context(
         elif "decide-and-resume" in command:
             payload = {"outcome": "finished", "state": "finished", "errors": []}
         elif "journal" in command:
-            payload = {"steps": {"direct_roster": 1, "quantities": 1}}
+            payload = {"steps": {"roster": 1, "quantities": 1}}
         elif any(part.endswith("installed_experiment_check.py") for part in command):
             write_output(
                 tmp_path / "installed-experiment-reports.json",
@@ -263,15 +258,14 @@ def test_zero_exit_with_bad_artifact_reports_context(
                 "outcome": "finished",
                 "errors": [],
                 "summary": {
-                    "body_status": "organized",
-                    "table_count": 1,
-                    "table_success": 1,
+                    "pages": 1,
+                    "blocks": 1,
                 },
                 "consume_ok": True,
                 "consume_problems": [],
                 "observer_installed": True,
                 "parser_fingerprint": "a" * 64,
-                "flow_version": "2",
+                "flow_version": "1",
             }
         else:
             pytest.fail(f"unexpected command: {command}")
@@ -282,7 +276,7 @@ def test_zero_exit_with_bad_artifact_reports_context(
     assert len(problems) == 1, problems
     assert artifact in problems[0]
     if artifact.startswith("score"):
-        assert "FIC-R05-A/direct/off" in problems[0]
+        assert "FIC-R05-A/roster/off" in problems[0]
     elif artifact == "installed-experiment-reports.json":
         assert "two-group experiments" in problems[0]
     else:

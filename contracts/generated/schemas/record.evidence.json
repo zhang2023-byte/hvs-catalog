@@ -91,6 +91,8 @@
           "discriminator": {
             "mapping": {
               "data_element": "#/$defs/DataElementLocator",
+              "pdf": "#/$defs/PdfLocator",
+              "pdf_image": "#/$defs/PdfImageLocator",
               "table_cell": "#/$defs/TableCellLocator",
               "text": "#/$defs/TextLocator"
             },
@@ -105,6 +107,12 @@
             },
             {
               "$ref": "#/$defs/DataElementLocator"
+            },
+            {
+              "$ref": "#/$defs/PdfLocator"
+            },
+            {
+              "$ref": "#/$defs/PdfImageLocator"
             }
           ],
           "title": "Locator"
@@ -123,6 +131,65 @@
         "excerpt"
       ],
       "title": "EvidenceData",
+      "type": "object"
+    },
+    "PdfImageLocator": {
+      "additionalProperties": false,
+      "description": "An image-bound transcription; only the location and image bytes are validated.",
+      "properties": {
+        "kind": {
+          "const": "pdf_image",
+          "title": "Kind",
+          "type": "string"
+        },
+        "page": {
+          "description": "One-based page in the original PDF.",
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "block_id": {
+          "description": "Supplied content block on that page.",
+          "minLength": 1,
+          "title": "Block Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "page",
+        "block_id"
+      ],
+      "title": "PdfImageLocator",
+      "type": "object"
+    },
+    "PdfLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "pdf",
+          "title": "Kind",
+          "type": "string"
+        },
+        "page": {
+          "description": "One-based page in the original PDF.",
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "block_id": {
+          "description": "Supplied content block on that page.",
+          "minLength": 1,
+          "title": "Block Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "page",
+        "block_id"
+      ],
+      "title": "PdfLocator",
       "type": "object"
     },
     "RecordRef": {

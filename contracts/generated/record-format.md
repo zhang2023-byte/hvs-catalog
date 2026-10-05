@@ -45,7 +45,7 @@ The quantity code is the legacy path of the approved science rules; the definiti
 | `derived_kinematics.galactocentric_x` | Galactocentric x | Galactocentric Cartesian position x at the reference state. Preserve the authors' axis directions and frame description. |
 | `derived_kinematics.galactocentric_y` | Galactocentric y | Galactocentric Cartesian position y at the reference state. Preserve the authors' axis directions and frame description. |
 | `derived_kinematics.galactocentric_z` | Galactocentric z | Galactocentric Cartesian position z at the reference state. Preserve the authors' axis directions and frame description. |
-| `derived_kinematics.galactocentric_radius` | Three-dimensional Galactocentric distance | The three-dimensional distance r from the object to the Galactic center at the reference state. Do not enter cylindrical radius R here. If the type of distance is unclear, refer it to an expert. |
+| `derived_kinematics.galactocentric_radius` | Three-dimensional Galactocentric distance | The three-dimensional distance r from the object to the Galactic center at the reference state. Do not enter cylindrical radius R here. If the type of distance is unclear, apply the active ambiguity policy. |
 | `derived_kinematics.galactocentric_vx` | Galactocentric vx | Galactocentric Cartesian velocity component vx at the reference state. Preserve the frame convention. |
 | `derived_kinematics.galactocentric_vy` | Galactocentric vy | Galactocentric Cartesian velocity component vy at the reference state. Preserve the frame convention. |
 | `derived_kinematics.galactocentric_vz` | Galactocentric vz | Galactocentric Cartesian velocity component vz at the reference state. Preserve the frame convention. |
@@ -64,7 +64,7 @@ The quantity code is the legacy path of the approved science rules; the definiti
 | `possibly_bound` | The authors overall favor a Galactic bound interpretation while still considering an unbound interpretation possible. |
 | `bound` | The authors explicitly give an overall bound conclusion. Such an object is not included as candidates_found; an object eligible as follow_up of a historical candidate may have this state. |
 
-Rules version: `0.1.0` (sha256 `04faec79059d08f636aa91b4525a3cf10123d68673dec6b789d9b8c5c33377c4`).
+Rules version: `0.2.1` (sha256 `67ab32bb7bf16dd9c856830ed752084edddf137b8a25048e0387052e5e5efafc`).
 
 ## Field definitions
 
@@ -167,7 +167,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `paper_key` | `string` | yes | minLength 1 |  |
-| `origin` | `SyntheticOrigin` \| `ArxivOrigin` | yes |  |  |
+| `origin` | `SyntheticOrigin` \| `ArxivOrigin` \| `LocalPdfOrigin` | yes |  |  |
 | `source_version` | `string` | yes | minLength 1 |  |
 | `files` | list of `SourceFile` | yes | minItems 0 |  |
 | `gaps` | list of `Gap` | yes | minItems 0 |  |
@@ -218,7 +218,7 @@ Required nullable fields must be present with `null`; only fields marked optiona
 | `paper_key` | `string` | yes | minLength 1 |  |
 | `source_ref` | `RecordRef` | yes |  |  |
 | `file_id` | `string` | yes | minLength 1 |  |
-| `locator` | `TextLocator` \| `TableCellLocator` \| `DataElementLocator` | yes |  |  |
+| `locator` | `TextLocator` \| `TableCellLocator` \| `DataElementLocator` \| `PdfLocator` \| `PdfImageLocator` | yes |  |  |
 | `excerpt` | `string` | yes | minLength 1 |  |
 
 ### Paper and object contributions
@@ -445,6 +445,7 @@ printed form and direct evidence. Step filling uses ValueSubmission instead.
 | `evidence_refs` | list of `RecordRef` | yes | minItems 0 |  |
 | `issue_refs` | list of `RecordRef` | yes | minItems 0 |  |
 | `contribution_id` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `gap_refs` | list of `GapRef` | no |  |  |
 
 #### UnresolvedGroup
 
@@ -462,7 +463,7 @@ printed form and direct evidence. Step filling uses ValueSubmission instead.
 |---|---|---|---|---|
 | `paper_key` | `string` | yes | minLength 1 |  |
 | `source_ref` | `RecordRef` | yes |  |  |
-| `method` | `direct` / `candidate_review` | yes |  |  |
+| `method` | `roster` / `direct` / `candidate_review` | yes |  |  |
 | `coverage` | `RosterCoverage` | yes |  |  |
 | `entries` | list of `RosterEntry` | yes | minItems 0 |  |
 | `unresolved_groups` | list of `UnresolvedGroup` | yes | minItems 0 |  |
@@ -756,7 +757,7 @@ The checks below cannot be expressed as field constraints alone; they are implem
 
 - **Revision history**: Records of the same record_id must have strictly increasing unique revisions; existing revisions are never overwritten in place.
 
-- **Material integrity**: When a materials root is supplied, package file hashes, external raw responses and evidence locators (text line ranges and excerpts, table cells, JSON pointers) are verified against the actual material; a changed hash or a mismatched excerpt is rejected. A locator whose selector kind has no verifier is reported as unverified and fails validation — unsupported locators never silently count as verified.
+- **Material integrity**: When a materials root is supplied, package file hashes, external raw responses and evidence locators (text line ranges and excerpts, table cells, JSON pointers and PDF text blocks) are verified against the actual material; a changed hash or a mismatched excerpt is rejected. A locator whose selector kind has no verifier is reported as unverified and fails validation — unsupported locators never silently count as verified. For pdf_image evidence, only the PDF/page/block binding and image files are validated: the excerpt is the extractor's visual transcription, not automatically verified text.
 
 - **Release binding**: The manifest hash is recomputed from the actual release content (data version, content refs, artifacts, source runs, code version, change summary, channel targets) and must match the stored manifest_sha256. A non-null approval must bind the approver, time, the recomputed manifest hash and a declared channel target; a failed channel cannot be reported as succeeded and success requires a receipt reference.
 
@@ -766,14 +767,12 @@ Step submissions contain only the scientific fields of that step. The applicatio
 
 > Return only the scientific fields requested for this step. Write new summaries, questions and precedent notes in English; preserve the paper's printed identifiers, values, units, conditions and excerpts in their original form. Use only the supplied paper materials and fixed references. Provide every required list explicitly; an empty list does not establish that the paper reported nothing. Keep material gaps, unresolved scientific questions and the authors' assessment distinct. Supply the evidence required by this step; never invent missing content or silently resolve conflicting results. Use application-supplied identifiers where provided. The application creates persistent record identifiers, references and execution metadata; it does not supply scientific judgments or expert decisions.
 
-Candidate discovery is a provisional transport inventory, using the shared identifier/evidence, material coverage, unresolved group and question fields. It contains no disposition, contribution or author-assessment judgment; the application assigns candidate identifiers for subsequent review.
-
 Numeric filling rules:
 
 - Always provided by the extractor: `limit_kind`, `condition`, `source`, `evidence`.
 - Omittable when not applicable: `value`, `error`, `lower_error`, `upper_error`, `unit`, `range_lower`, `range_upper`, `lower_inclusive`, `upper_inclusive`, `interval_kind`, `coverage`, `lower_quantile`, `upper_quantile`, `error_components`, `frame`, `epoch`, `coordinate_format`, `representation`, `purpose`, `source_note`, `author_usage`. The application fills omitted fields with `null` (or an empty list for `error_components`); this only marks the field as not provided and implies no scientific conclusion.
 - Reported single-sided errors, zeros, negative values, percentages and statistical interpretations must be preserved; a pure interval carries endpoints and an `interval_kind` but never a computed central value.
-- Evidence is given inline as `{source, parts, context}`. The application validates each locator and excerpt, creates evidence records, assigns identifiers, and merges only evidence that is identical under the same fixed source version. Extractors never maintain evidence keys or persistent identifiers.
+- Evidence is given inline as `{source, parts, context}`. The application validates each locator and excerpt, creates evidence records, assigns identifiers, and merges only evidence that is identical under the same fixed source version. Extractors never maintain evidence keys or persistent identifiers. For pdf_image evidence, validation checks only the image binding and file integrity; the quoted visual transcription is not string-verified.
 - Coverage is declared once per object as `{scope: all_requested, common, exceptions}` and expanded deterministically to one entry per requested quantity. Missing declarations, unknown or duplicate exceptions, unknown files, gaps or questions, and complete declarations that contradict known material gaps are rejected. Gaps whose impact scope is unknown block complete declarations for every quantity.
 - Each explicit numeric conflict generates a question record of category `numeric_conflict` bound to the affected object; the application assigns identifiers and never answers or closes questions itself.
 - A technical failure produces no success-shaped result: the failed step keeps its error records and previously saved valid results, and no empty measurement, roster or coverage entry is fabricated.

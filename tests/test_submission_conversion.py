@@ -11,13 +11,11 @@ from records_helpers import STAMP, fixture_by_name, load_fixture
 
 from hvs_catalog.records import (
     StepContext,
-    convert_candidate_submission,
     convert_quantity_submission,
     convert_roster_submission,
     quantity_paths,
 )
 from hvs_catalog.records.submission import (
-    CandidateSubmission,
     QuantitySubmission,
     RosterSubmission,
 )
@@ -640,7 +638,7 @@ def test_roster_conversion(gap_source):
     assert len(contribution.quantity_coverage) == 18
     assert all(row.state == "not_checked" for row in contribution.quantity_coverage)
     assert contribution.quantities == []  # Roster steps create no empty value groups.
-    assert result.roster.method == "direct"
+    assert result.roster.method == "roster"
 
 
 def test_roster_pending_assessment_creates_question(gap_source):
@@ -704,47 +702,4 @@ def test_roster_unresolved_member_must_be_entry(gap_source):
     with pytest.raises(ValueError, match="不在名单条目中"):
         convert_roster_submission(
             roster_context(gap_source), RosterSubmission.model_validate(payload)
-        )
-
-
-def test_candidate_judgments_must_cover_given(gap_source):
-    judgment = {
-        "item_id": "cand-1",
-        "disposition": "excluded",
-        "evidence": [
-            inline_text(1, "Label only; no qualifying evidence.", [], context=False)
-        ],
-    }
-    submission = CandidateSubmission.model_validate({"judgments": [judgment]})
-    result = convert_candidate_submission(
-        roster_context(gap_source), ["cand-1"], submission
-    )
-    assert result.judgments[0].disposition == "excluded"
-    assert result.judgments[0].contribution_id is None
-
-    with pytest.raises(ValueError, match="缺|多"):
-        convert_candidate_submission(
-            roster_context(gap_source), ["cand-1", "cand-2"], submission
-        )
-
-    extra = CandidateSubmission.model_validate(
-        {
-            "judgments": [
-                judgment,
-                {
-                    "item_id": "cand-2",
-                    "disposition": "excluded",
-                    "evidence": judgment["evidence"],
-                },
-                {
-                    "item_id": "cand-3",
-                    "disposition": "excluded",
-                    "evidence": judgment["evidence"],
-                },
-            ]
-        }
-    )
-    with pytest.raises(ValueError, match="缺|多"):
-        convert_candidate_submission(
-            roster_context(gap_source), ["cand-1", "cand-2"], extra
         )

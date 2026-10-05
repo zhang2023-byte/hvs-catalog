@@ -66,7 +66,7 @@ class _FailingStepService(PipelineMockService):
         return super().call(step=step, request=request, material=material)
 
 
-def _start(space, source, *, method="direct", expert=False, key="probe"):
+def _start(space, source, *, method="roster", expert=False, key="probe"):
     return start_extraction(
         space,
         request=ExtractionRequest(
@@ -93,11 +93,11 @@ def _score(space, execution_id, paper_key):
 
 
 def test_direct_quantities_failure_preserves_roster_as_partial(space):
-    """A direct value-step failure retains the roster as partial output and includes all
+    """A roster value-step failure retains the roster as partial output and includes all
     Gold values in G.
     """
     source = import_mock_source(space, PAPER_B)
-    handle = _start(space, source, method="direct", key="direct-quantity-failure")
+    handle = _start(space, source, method="roster", key="roster-quantity-failure")
     failed = resume_extraction(
         space, handle.execution_id, service=_FailingStepService(("quantities",))
     )
@@ -123,14 +123,12 @@ def test_direct_quantities_failure_preserves_roster_as_partial(space):
     assert paper.l2.gold == 1  # Complete G denominator.
 
 
-def test_candidate_review_quantities_failure_preserves_roster_as_partial(space):
-    """candidate_review also retains its roster; unresolved entries are not confirmed L1
+def test_automatic_quantities_failure_preserves_roster_as_partial(space):
+    """Partial extraction also retains its roster; unresolved entries are not confirmed L1
     objects.
     """
     source = import_mock_source(space, PAPER_C)
-    handle = _start(
-        space, source, method="candidate_review", key="candidate-quantity-failure"
-    )
+    handle = _start(space, source, method="roster", key="candidate-quantity-failure")
     failed = resume_extraction(
         space, handle.execution_id, service=_FailingStepService(("quantities",))
     )
@@ -139,12 +137,10 @@ def test_candidate_review_quantities_failure_preserves_roster_as_partial(space):
     assert prediction.completion == "partial"
     assert prediction.delivered is True
     identifiers = [obj.identifiers for obj in prediction.objects]
-    assert identifiers == [
-        ["FIC-C-1"]
-    ]  # Unresolved entries are neither extra predictions nor confirmed objects.
+    assert identifiers == [["FIC-C-1"], ["FIC-C-3"]]
     report, _ = _score(space, handle.execution_id, PAPER_C)
     (paper,) = report.papers
-    assert paper.l1.tp == 1 and paper.l1.fn == 1
+    assert paper.l1.tp == 2 and paper.l1.fn == 0
     assert paper.l2.gold == 2 and paper.l2.predicted == 0
 
 
@@ -153,14 +149,14 @@ def test_quantities_failure_recovery_completes_and_reuses_roster(space):
     roster step.
     """
     source = import_mock_source(space, PAPER_B)
-    handle = _start(space, source, method="direct", key="quantity-failure-recovery")
+    handle = _start(space, source, method="roster", key="quantity-failure-recovery")
     resume_extraction(
         space, handle.execution_id, service=_FailingStepService(("quantities",))
     )
     healthy = PipelineMockService()
     finished = resume_extraction(space, handle.execution_id, service=healthy)
     assert finished.outcome == "finished"
-    assert healthy.calls_for_step("direct_roster") == 0  # Reuse the roster result.
+    assert healthy.calls_for_step("roster") == 0  # Reuse the roster result.
     prediction = prediction_from_execution(space, handle.execution_id)
     assert prediction.completion == "complete"
     (obj,) = prediction.objects
@@ -172,9 +168,9 @@ def test_roster_failure_is_failed_not_empty_success(space):
     successful empty output.
     """
     source = import_mock_source(space, PAPER_B)
-    handle = _start(space, source, method="direct", key="direct-roster-failure")
+    handle = _start(space, source, method="roster", key="roster-failure")
     failed = resume_extraction(
-        space, handle.execution_id, service=_FailingStepService(("direct_roster",))
+        space, handle.execution_id, service=_FailingStepService(("roster",))
     )
     assert failed.outcome == "failed"
     prediction = prediction_from_execution(space, handle.execution_id)
@@ -191,15 +187,13 @@ def test_roster_failure_is_failed_not_empty_success(space):
     assert paper.l2.gold == 1
 
 
-def test_candidate_review_roster_failure_is_failed(space):
+def test_roster_failure_keeps_full_denominator(space):
     source = import_mock_source(space, PAPER_C)
-    handle = _start(
-        space, source, method="candidate_review", key="candidate-roster-failure"
-    )
+    handle = _start(space, source, method="roster", key="candidate-roster-failure")
     failed = resume_extraction(
         space,
         handle.execution_id,
-        service=_FailingStepService(("review_candidates",)),
+        service=_FailingStepService(("roster",)),
     )
     assert failed.outcome == "failed"
     prediction = prediction_from_execution(space, handle.execution_id)
@@ -313,30 +307,26 @@ def test_science_completion_errors_and_unfinished_are_partial():
     assert state == "complete"
 
 
-def test_s11_off_group_not_complete_and_pending(space):
-    """S11 C with expert review disabled: a finished graph with unresolved science cannot
-    report complete.
-    """
-    report = run_two_group_experiment(space, PAPER_C, method="candidate_review")
+def test_automatic_inclusion_completes_without_expert(space):
+    """The automatic policy decides inclusion without requesting expert judgment."""
+    report = run_two_group_experiment(space, PAPER_C, method="roster")
     off = report["groups"]["expert_off"]
     on = report["groups"]["expert_on"]
     assert off["run_state"] == "finished"
-    assert off["quality"]["l0"]["completion_counts"] == {"partial": 1}
-    assert off["science_completion"] == "pending"
-    assert off["science_completion_reasons"]
+    assert off["quality"]["l0"]["completion_counts"] == {"complete": 1}
+    assert off["science_completion"] == "complete"
+    assert off["science_completion_reasons"] == []
     assert on["science_completion"] == "complete"
     assert on["quality"]["l0"]["completion_counts"] == {"complete": 1}
 
 
-def test_e20_off_group_not_complete_and_pending(space):
-    """E20 A with expert review disabled: unresolved questions after model judgment prevent
-    L0 complete.
-    """
-    report = run_two_group_experiment(space, PAPER_A, method="direct")
+def test_automatic_boundness_completes_without_expert(space):
+    """The automatic policy retains its interpretation as model judgment."""
+    report = run_two_group_experiment(space, PAPER_A, method="roster")
     off = report["groups"]["expert_off"]
     assert off["run_state"] == "finished"
-    assert off["quality"]["l0"]["completion_counts"] == {"partial": 1}
-    assert off["science_completion"] == "pending"
+    assert off["quality"]["l0"]["completion_counts"] == {"complete": 1}
+    assert off["science_completion"] == "complete"
     assert report["groups"]["expert_on"]["science_completion"] == "complete"
 
 
@@ -358,7 +348,7 @@ def test_experiment_off_group_failure_reports_both_groups(space):
     report = run_two_group_experiment(
         space,
         PAPER_C,
-        method="candidate_review",
+        method="roster",
         service_factory=_factory((), ("quantities",)),
     )
     on = report["groups"]["expert_on"]
@@ -368,14 +358,14 @@ def test_experiment_off_group_failure_reports_both_groups(space):
     assert off["run_state"] == "failed"
     assert any("quantities failure" in error for error in off["failures"])
     assert off["quality"]["l0"]["completion_counts"] == {"partial": 1}
-    assert off["quality"]["l1"]["tp"] == 1
-    assert off["quality"]["l1"]["fn"] == 1
+    assert off["quality"]["l1"]["tp"] == 2
+    assert off["quality"]["l1"]["fn"] == 0
     assert off["quality"]["l2"]["gold"] == 2
     assert off["quality"]["l2"]["predicted"] == 0
     assert isinstance(off["usage"]["tokens"], int)
     assert off["expert_time_seconds"] is None
-    # When unresolved science and failure coexist, pending takes precedence; retain failure separately.
-    assert off["science_completion"] == "pending"
+    # A failed quantity step retains the completed roster as partial output.
+    assert off["science_completion"] == "partial"
     assert off["failures"]
 
 
@@ -386,7 +376,7 @@ def test_experiment_on_group_failure_reports_both_groups(space):
     report = run_two_group_experiment(
         space,
         PAPER_C,
-        method="candidate_review",
+        method="roster",
         service_factory=_factory(("quantities",), ()),
     )
     on = report["groups"]["expert_on"]
@@ -408,8 +398,8 @@ def test_experiment_both_groups_early_failure_keeps_denominators(space):
     report = run_two_group_experiment(
         space,
         PAPER_C,
-        method="candidate_review",
-        service_factory=_factory(("review_candidates",), ("review_candidates",)),
+        method="roster",
+        service_factory=_factory(("roster",), ("roster",)),
     )
     for name, group in report["groups"].items():
         assert group["run_state"] == "failed", name
@@ -424,15 +414,13 @@ def test_experiment_both_groups_early_failure_keeps_denominators(space):
     assert report["groups"]["expert_on"]["decisions"]["human"] == 0
 
 
-def test_experiment_direct_method_failure_combination(space):
-    """Failed direct-method groups also produce complete reports, covering the second
-    method.
-    """
+def test_experiment_roster_failure_combination(space):
+    """Roster failures at different steps still produce complete group reports."""
     report = run_two_group_experiment(
         space,
         PAPER_B,
-        method="direct",
-        service_factory=_factory(("quantities",), ("direct_roster",)),
+        method="roster",
+        service_factory=_factory(("quantities",), ("roster",)),
     )
     on = report["groups"]["expert_on"]
     off = report["groups"]["expert_off"]
@@ -458,7 +446,7 @@ def test_group_summary_reports_blocked_reason_without_quality(space):
             "flow_id": "hvs-extraction-synthetic",
             "flow_version": "1",
             "mode": "synthetic",
-            "method": "direct",
+            "method": "roster",
             "models": [],
         },
         report={"outcome": "failed"},
@@ -495,7 +483,7 @@ def _healthy_records(space):
     from hvs_catalog.records.roster import RosterRecord
 
     source = import_mock_source(space, PAPER_B)
-    handle = _start(space, source, method="direct", key="bound-source-completion")
+    handle = _start(space, source, method="roster", key="bound-source-completion")
     finished = resume_extraction(
         space, handle.execution_id, service=PipelineMockService()
     )

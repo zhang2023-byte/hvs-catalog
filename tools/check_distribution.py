@@ -17,7 +17,7 @@ repository.
 8. Exercise Gold v4 migration, fresh drafts/conversion, simulated approvals, paired
    additions/revisions, CLI, stale-approval rejection, interrupted partial-read
    refusal/manual recovery, and lost-return retries without second versions.
-9. Exercise package provenance/method queries, 3 papers x 2 methods x 2 review modes (12
+9. Exercise package provenance/method queries, 3 papers x 2 review modes (6
    CLI cases), repeated scoring consistency, plan-tampering rejection, fresh-process
    pause/decision/recovery, and isolated comparison reports with unknown expert time.
 10. Exercise installed model interfaces/CLI against local synthetic HTTP/SSE: four
@@ -25,7 +25,7 @@ repository.
     paid models.
 11. Exercise extraction configuration, shared English prompt resources, CLI previews,
     four-model step overrides, and saved mock pause/decision/recovery across processes.
-12. Join installed source preparation to direct roster CLI/model calls over local HTTP,
+12. Join installed PDF preparation to roster CLI/model calls over local HTTP,
     inspect common records, and recover without a second service request.
 
 All materials are synthetic and independent of repository source paths. Usage: uv run
@@ -47,6 +47,7 @@ from pathlib import Path
 
 from installed_extraction_checks import verify_installed_extraction
 from installed_llm_checks import verify_installed_llm
+from installed_pdf_fixture import PDF_FIXTURE
 from installed_pipeline_checks import verify_pipeline_and_scoring
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -290,7 +291,7 @@ if step == "run":
             capture_output=True, text=True, check=False)
         assert probe.returncode == 3, probe.stderr
     handle = start_extraction(space, request=ExtractionRequest(
-        source_refs=[import_mock_source(space, PAPER_A)], method="direct", mode="synthetic",
+        source_refs=[import_mock_source(space, PAPER_A)], method="roster", mode="synthetic",
         models=[StepModel(model="synthetic-mock")], expert_adjudication=True), request_key="installed-workspace")
     report = resume_extraction(space, handle.execution_id, service=PipelineMockService(journal))
     assert report.outcome == "paused", report.errors
@@ -321,8 +322,8 @@ elif step in ("decide", "verify"):
         assert restored.store().current_revision(paper_record_id(PAPER_A, "exec-000001")) == 2
         # Client restore does not erase the service's extra call after its backup.
         service = PipelineMockService(journal)
-        service.call(step="interpret_ambiguity", request={"step": "interpret_ambiguity"},
-                     material={"paper_key": PAPER_A})
+        service.call(step="roster", request={"step": "roster"},
+                     material={"paper_key": PAPER_A, "roster_entries": []})
         second = restore_workspace(root / "backup", root / "restored-again")
         assert PipelineMockService(journal).summary()["calls"] == 3
         assert not (second.root / journal.name).exists()
@@ -446,7 +447,6 @@ def add_synthetic_metadata(document):
     }
     document["material_correspondence"] = {
         "status": "checked", "pdf_file_ids": [x["file_id"] for x in document["files"]],
-        "latex": {"name": "paper.tex", "sha256": hashlib.sha256(b"Synthetic source material.").hexdigest(), "version": "synthetic-v1"},
         "checked_by": {"actor_id": "synthetic-checker", "kind": "human"},
         "checked_at": "2026-09-22T00:00:00+00:00", "basis": "Synthetic matching materials.", "differences": [],
     }
@@ -462,7 +462,6 @@ def ensure_pdf():
             ["Section 5: conclusions"],
         ])
         (material / "paper.pdf").write_bytes(data)
-        (material / "paper.tex").write_bytes(b"Synthetic source material.")
         PDF_SHA256 = hashlib.sha256(data).hexdigest()
     return PDF_SHA256
 
@@ -835,7 +834,12 @@ else:
 '''
 
 
-ACQUISITION_DRIVER = '''
+ACQUISITION_DRIVER = (
+    PDF_FIXTURE
+    + "\nSYNTHETIC_PDF_HELPERS = "
+    + repr(PDF_FIXTURE)
+    + "\n"
+    + '''
 """External installed acquisition CLI checks using offline synthetic materials.
 
 Initialize via documented public Python commands, build synthetic tar.gz source packages, then use installed console scripts in independent subprocesses for import/status (human and JSON)/material/error codes. netflow verifies discovery/fetch/revision success and fresh-process recovery using installed Python, cleared PYTHONPATH, and test-side injected fake protocol services. The product exposes no rate-limit/offline bypass. Two subprocesses cover page-boundary interruption, complete recovery, fetch, pending revisions, and material output without real arXiv access.
@@ -862,7 +866,7 @@ DOCUMENTED_INIT = (
     "initialize_workspace(r'%s')" % space
 )
 
-NETCHILD_SOURCE = """import sys
+NETCHILD_SOURCE = SYNTHETIC_PDF_HELPERS + """import sys
 from pathlib import Path
 
 # Check acquisition network paths in subprocesses after installation (offline synthetic).
@@ -934,16 +938,7 @@ PACKAGE_BYTES = None
 def package_bytes():
     global PACKAGE_BYTES
     if PACKAGE_BYTES is None:
-        raw = io.BytesIO()
-        with tarfile.open(fileobj=raw, mode="w:gz") as archive:
-            for name, data in {
-                "main.tex": b"\\\\\\\\documentclass{article}netflow smoke",
-                "data/table.csv": b"a,b\\\\n1,2\\\\n",
-            }.items():
-                info = tarfile.TarInfo(name)
-                info.size = len(data)
-                archive.addfile(info, io.BytesIO(data))
-        PACKAGE_BYTES = raw.getvalue()
+        PACKAGE_BYTES = make_pdf("Synthetic netflow smoke")
     return PACKAGE_BYTES
 
 
@@ -983,7 +978,7 @@ class FakeApi:
             anomalies=(),
         )
 
-    def download_source(self, identifier):
+    def download_pdf(self, identifier):
         versioned = (
             identifier if isinstance(identifier, str) else identifier.versioned_id
         )
@@ -1084,16 +1079,7 @@ def run_child(*command: object) -> subprocess.CompletedProcess[str]:
 
 
 def make_package(path: Path) -> None:
-    raw = io.BytesIO()
-    with tarfile.open(fileobj=raw, mode="w:gz") as archive:
-        for name, data in {
-            "main.tex": b"\\\\documentclass{article}installed smoke",
-            "data/table.csv": b"a,b\\\\n1,2\\\\n",
-        }.items():
-            info = tarfile.TarInfo(name)
-            info.size = len(data)
-            archive.addfile(info, io.BytesIO(data))
-    path.write_bytes(raw.getvalue())
+    path.write_bytes(make_pdf("Synthetic installed PDF"))
 
 
 if step == "setup":
@@ -1210,6 +1196,7 @@ if step == "netflow":
 
 raise SystemExit(2)
 '''
+)
 
 
 def verify_gold(python: Path, work_dir: Path, script: Path) -> list[str]:
@@ -1427,10 +1414,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "Gold 工具走查通过（旧 v4 迁移与检查、显式转换、当前配对统一新增／修订、"
         "内容绑定人类批准、CLI、旧批准拒绝覆盖新修订、独立进程中断拒读／人工恢复、"
         "完成后丢失返回的重复核对）；合成提取与评分走查通过"
-        "（包来源与方法查询、3×2×2 提取×评分用例、重复评分一致与篡改"
+        "（包来源与方法查询、3×2 提取与评分用例、重复评分一致与篡改"
         "拒绝、跨进程暂停决定恢复、两组对照实验隔离与专家用时边界）；"
-        "材料准备走查通过（合成包导入、准备、无模型消费核对，转换器"
-        "按本机实际可用性工作）；"
+        "材料准备走查通过（合成PDF导入、本地解析器替身、准备、无模型消费核对）；"
         "模型接口与 CLI 走查通过（四模型 HTTP/SSE、工具输出、持久保存、恢复复用及许可随包）；"
         "提取配置与提示走查通过（英文资源、完整预览、逐步模型与跨进程模拟恢复）；"
         "获取子系统 CLI 走查通过（文档化公开初始化、导入/重放、"

@@ -188,6 +188,7 @@ class TokenDanceAdapter:
             )
 
     def prepare(self, request: CallRequest) -> dict:
+        request = CallRequest.model_validate(request.model_dump())
         config = request.model
         # Revalidate even if a mutable Pydantic instance was edited by a caller.
         config = type(config).model_validate(config.model_dump())
@@ -206,6 +207,11 @@ class TokenDanceAdapter:
         if thinking:
             payload["thinking"] = thinking
         payload.update(parameters)
+        has_images = any(isinstance(m.content, list) for m in request.messages)
+        if has_images and config.model != "deepseek-v4.1-flash":
+            raise ValueError(
+                "Image input is currently configured only for deepseek-v4.1-flash; images will not be discarded"
+            )
         if config.stream:
             payload["stream_options"] = {"include_usage": True}
         if request.tool is not None:
@@ -214,6 +220,20 @@ class TokenDanceAdapter:
             ]
             # Reasoning routes use auto; local validation still requires exactly one call.
             payload["tool_choice"] = "auto"
+        if has_images:
+            image_count = sum(
+                part.get("type") == "image_url"
+                for message in payload["messages"]
+                if isinstance(message.get("content"), list)
+                for part in message["content"]
+            )
+            if (
+                image_count > 600
+                or len(json.dumps(payload).encode()) > 48 * 1024 * 1024
+            ):
+                raise ValueError(
+                    "Image request exceeds the configured image count or body size limit"
+                )
         return {
             "payload": payload,
             "parameters": parameter_manifest(config),

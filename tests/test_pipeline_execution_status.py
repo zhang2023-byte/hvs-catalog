@@ -44,7 +44,7 @@ def service():
 def _start(space, source, *, request_key, expert=False, mode="synthetic"):
     request = ExtractionRequest(
         mode=mode,
-        method="direct",
+        method="roster",
         source_refs=[source],
         models=[StepModel(model="mock-default")],
         expert_adjudication=expert,
@@ -60,15 +60,15 @@ def test_status_contains_config_steps_questions_and_usage(space, service):
     status = get_extraction(space, handle.execution_id)
     assert status["execution_id"] == handle.execution_id
     assert status["state"] == "finished"
-    assert status["config"]["method"] == "direct"
+    assert status["config"]["method"] == "roster"
     assert status["config"]["mode"] == "synthetic"
     assert {s["step_id"] for s in status["steps"]} == {
-        "direct_roster",
+        "roster",
         "quantities",
         "finalize",
     }
     assert all(step["state"] == "finished" for step in status["steps"])
-    expected_tokens = STEP_TOKENS["direct_roster"] + STEP_TOKENS["quantities"]
+    expected_tokens = STEP_TOKENS["roster"] + STEP_TOKENS["quantities"]
     assert status["usage"] == {"attempts": 2, "tokens": expected_tokens}
     assert status["errors"] == []
     # Read back result references through the scoring-adaptation entry point.
@@ -138,14 +138,14 @@ def test_failure_report_keeps_raw_errors(space, service):
         raise ValueError("raw failure detail")
 
     from hvs_catalog.pipeline.flow import ExtractionFlow
-    from hvs_catalog.pipeline.methods import DIRECT_METHOD
+    from hvs_catalog.pipeline.methods import ROSTER_METHOD
     from hvs_catalog.runtime import resume_execution
 
     report = resume_execution(
         space,
         handle.execution_id,
         ExtractionFlow(
-            DIRECT_METHOD,
+            ROSTER_METHOD,
             mode="synthetic",
             fault_hooks={"after_response:quantities": boom},
         ),
@@ -164,6 +164,6 @@ def test_service_summary_reported_with_calls_and_tokens(space, service):
     report = resume_extraction(space, handle.execution_id, service=service)
     assert report.service_summary == {
         "calls": 2,
-        "steps": {"direct_roster": 1, "quantities": 1},
-        "tokens": STEP_TOKENS["direct_roster"] + STEP_TOKENS["quantities"],
+        "steps": {"roster": 1, "quantities": 1},
+        "tokens": STEP_TOKENS["roster"] + STEP_TOKENS["quantities"],
     }

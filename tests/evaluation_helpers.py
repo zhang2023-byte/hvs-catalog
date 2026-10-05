@@ -200,7 +200,6 @@ def write_synthetic_pdf(path: Path, pages: list[list[str]] | None = None) -> str
     data = build_synthetic_pdf(pages)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
-    (path.parent / "paper.tex").write_bytes(b"Synthetic source material.")
     import hashlib
 
     return hashlib.sha256(data).hexdigest()
@@ -208,8 +207,6 @@ def write_synthetic_pdf(path: Path, pages: list[list[str]] | None = None) -> str
 
 def add_synthetic_metadata(document):
     """Explicit synthetic attribution/material facts, never production defaults."""
-    import hashlib
-
     document["paper"]["version"] = "synthetic-v1"
     document["provenance"]["prepared_by"] = {
         "actor": {"actor_id": "synthetic-maker", "kind": "human", "model": None},
@@ -222,11 +219,6 @@ def add_synthetic_metadata(document):
     document["material_correspondence"] = {
         "status": "checked",
         "pdf_file_ids": [x["file_id"] for x in document["files"]],
-        "latex": {
-            "name": "paper.tex",
-            "sha256": hashlib.sha256(b"Synthetic source material.").hexdigest(),
-            "version": "synthetic-v1",
-        },
         "checked_by": {"actor_id": "synthetic-checker", "kind": "human"},
         "checked_at": "2026-09-22T00:00:00+00:00",
         "basis": "Synthetic matching materials.",

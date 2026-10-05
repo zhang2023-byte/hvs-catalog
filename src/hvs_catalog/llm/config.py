@@ -2,19 +2,22 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import re
 import shlex
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, TypedDict
+from typing import Annotated, Literal, TypedDict
 from urllib.parse import urlsplit
 
 from jsonschema import Draft202012Validator, SchemaError
 from pydantic import Field, SecretStr, model_validator
 
 from ..records.common import Config
+from ..records.pdf import image_media_type
 from .parameters import ParameterPolicy, ParameterSpec
 
 BASE_URL = "https://tokendance.space/gateway/v1"
@@ -90,7 +93,7 @@ PROFILES = {
             "deepseek-v4.1-flash",
             "deepseek",
             393216,
-            {"thinking_type": "enabled", "reasoning_effort": "high"},
+            {"thinking_type": "enabled", "reasoning_effort": "max"},
             (
                 _spec("thinking_type", (str,), choices=("enabled", "disabled")),
                 _spec(
@@ -262,15 +265,50 @@ class ToolCall(Config):
     arguments: str
 
 
+class ImageURL(Config):
+    url: str
+    detail: Literal["high"] = "high"
+
+    @model_validator(mode="after")
+    def _inline_image(self):
+        match = re.fullmatch(
+            r"data:(image/(?:png|jpeg|gif|webp));base64,(.+)", self.url
+        )
+        if not match or len(self.url) > 45 * 1024 * 1024:
+            raise ValueError("Images require a bounded inline base64 data URL")
+        try:
+            data = base64.b64decode(match[2], validate=True)
+        except (ValueError, binascii.Error) as exc:
+            raise ValueError("Invalid base64 image") from exc
+        if len(data) > 32 * 1024 * 1024 or image_media_type(data) != match[1]:
+            raise ValueError("Image size or MIME type is invalid")
+        return self
+
+
+class TextContent(Config):
+    type: Literal["text"] = "text"
+    text: str = Field(min_length=1)
+
+
+class ImageContent(Config):
+    type: Literal["image_url"] = "image_url"
+    image_url: ImageURL
+
+
+ContentPart = Annotated[TextContent | ImageContent, Field(discriminator="type")]
+
+
 class Message(Config):
     role: Literal["system", "user", "assistant", "tool"]
-    content: str | None = None
+    content: str | list[ContentPart] | None = None
     reasoning_content: str | None = None
     tool_calls: list[ToolCall] = Field(default_factory=list)
     tool_call_id: str | None = None
 
     @model_validator(mode="after")
     def _valid(self):
+        if isinstance(self.content, list) and (not self.content or self.role != "user"):
+            raise ValueError("Multimodal content requires a nonempty user message")
         if self.role == "tool" and not self.tool_call_id:
             raise ValueError("tool messages require tool_call_id")
         if (

@@ -1,18 +1,15 @@
 {
   "methods": [
     {
-      "method_id": "candidate_review",
+      "method_id": "roster",
       "implementation": "synthetic-mock",
       "real_extraction": false,
       "version": "1",
-      "steps": ["discover_candidates", "review_candidates", "quantities", "finalize"]
-    },
-    {
-      "method_id": "direct",
-      "implementation": "synthetic-mock",
-      "real_extraction": false,
-      "version": "1",
-      "steps": ["direct_roster", "quantities", "finalize"]
+      "steps": [
+        "roster",
+        "quantities",
+        "finalize"
+      ]
     }
   ]
 }

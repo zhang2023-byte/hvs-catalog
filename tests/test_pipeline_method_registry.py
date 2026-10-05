@@ -13,9 +13,8 @@ from pathlib import Path
 import pytest
 
 from hvs_catalog.pipeline import (
-    CANDIDATE_REVIEW_METHOD,
     DEFAULT_REGISTRY,
-    DIRECT_METHOD,
+    ROSTER_METHOD,
     MethodRegistration,
     MethodRegistrationError,
     MethodSpec,
@@ -46,31 +45,22 @@ def test_registered_methods_match_fixed_listing():
         }
         for method in actual
     ] == expected["methods"]
-    # Both methods share value/finalization step names and boundaries.
-    direct = next(m for m in actual if m["method_id"] == "direct")
-    review = next(m for m in actual if m["method_id"] == "candidate_review")
-    assert [s["step_id"] for s in direct["steps"]] == [
-        "direct_roster",
+    # The roster workflow retains value/finalization step boundaries.
+    roster = next(m for m in actual if m["method_id"] == "roster")
+    assert [s["step_id"] for s in roster["steps"]] == [
+        "roster",
         "quantities",
         "finalize",
     ]
-    assert [s["step_id"] for s in review["steps"]] == [
-        "discover_candidates",
-        "review_candidates",
-        "quantities",
-        "finalize",
-    ]
-    assert {s["step_id"]: s["kind"] for s in direct["steps"]} == {
-        "direct_roster": "roster",
+    assert {s["step_id"]: s["kind"] for s in roster["steps"]} == {
+        "roster": "roster",
         "quantities": "quantities",
         "finalize": "finalize",
     }
 
 
 def test_mock_only_registration_does_not_claim_real_extraction():
-    """Registration marks only synthetic/mock implementations; real direct/candidate_review
-    is absent.
-    """
+    """The demonstration registry does not claim to implement the real roster entry."""
     for registration in DEFAULT_REGISTRY.list_methods():
         assert registration.spec.implementation == "synthetic-mock"
         assert registration.spec.real_extraction is False
@@ -86,7 +76,7 @@ def test_duplicate_method_registration_rejected():
     with pytest.raises(MethodRegistrationError, match="不能重复"):
         registry.register(
             MethodRegistration(
-                spec=DIRECT_METHOD,
+                spec=ROSTER_METHOD,
                 build_flow=lambda spec, mode: ExtractionFlow(spec, mode=mode),
             )
         )
@@ -114,20 +104,12 @@ def test_registry_binds_trusted_objects_not_strings():
         built.append((spec.method_id, mode))
         return ExtractionFlow(spec, mode=mode)
 
-    registry.register(MethodRegistration(spec=DIRECT_METHOD, build_flow=builder))
-    registration = registry.get("direct")
+    registry.register(MethodRegistration(spec=ROSTER_METHOD, build_flow=builder))
+    registration = registry.get("roster")
     flow = registration.build_flow(registration.spec, mode="daily")
     assert isinstance(flow, ExtractionFlow)
-    assert flow.spec is DIRECT_METHOD
-    assert built == [("direct", "daily")]
+    assert flow.spec is ROSTER_METHOD
+    assert built == [("roster", "daily")]
     # Never import code from an unknown method's input string.
     with pytest.raises(UnknownMethodError):
         registry.get("import os")
-
-
-def test_candidate_review_spec_keeps_two_roster_steps():
-    kinds = [step.kind for step in CANDIDATE_REVIEW_METHOD.steps]
-    assert kinds == ["roster", "roster", "quantities", "finalize"]
-    assert DIRECT_METHOD.step_ids() == ("direct_roster", "quantities", "finalize")
-    assert DIRECT_METHOD.has_step("quantities")
-    assert not DIRECT_METHOD.has_step("discover_candidates")

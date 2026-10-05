@@ -216,4 +216,4 @@ def test_scope_reports_unchecked_areas(tmp_path):
     joined = "\n".join(report.scope)
     assert "引文匹配为辅助结果" in joined
     assert "未独立判定" in joined
-    assert "固定 PDF 与 LaTeX 文件哈希" in joined
+    assert "固定 PDF 文件哈希" in joined

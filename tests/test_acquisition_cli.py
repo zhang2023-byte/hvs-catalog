@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 import pytest
+from materials_helpers import make_pdf
 
 import hvs_catalog.cli_acquisition as cli_acq
 from hvs_catalog.cli import main
@@ -40,7 +41,7 @@ def make_tar_gz(members: dict[str, bytes]) -> bytes:
     return raw.getvalue()
 
 
-GOOD_PACKAGE = make_tar_gz({"main.tex": b"\\documentclass{article}cli"})
+GOOD_PACKAGE = make_pdf("Synthetic CLI")
 
 
 class FakeClock:
@@ -109,7 +110,7 @@ class FakeApi:
             anomalies=(),
         )
 
-    def download_source(self, identifier) -> ArxivSourceDownload:
+    def download_pdf(self, identifier) -> ArxivSourceDownload:
         versioned = (
             identifier if isinstance(identifier, str) else identifier.versioned_id
         )
@@ -280,9 +281,8 @@ def test_cli_fetch_lifecycle_and_exit_codes(
     code = main(
         ["acquisition", "fetch", "--space", str(workspace.root), "--id", "2401.09999v1"]
     )
-    assert code == 4
-    out = capsys.readouterr().out
-    assert "形态不支持" in out
+    assert code == 1
+    assert "完整性检查" in capsys.readouterr().err
 
     code = main(
         ["acquisition", "fetch", "--space", str(workspace.root), "--id", "not-an-id"]
@@ -482,17 +482,7 @@ def test_import_unsupported_local_file_message_and_no_side_effects(
     """Unsupported local formats return code 1 and explain that no import occurred and the
     original file is unchanged.
     """
-    import test_acquisition_archive as arch
-
-    records = arch._pax_record("GNU.sparse.map", "garbage")
-    sparse_pkg = b"".join(
-        [
-            arch._tar_header_raw("PaxHeader", len(records), b"x")
-            + arch._pad_data(records),
-            arch._tar_header_raw("main.tex", 2, b"0") + arch._pad_data(b"hi"),
-            b"\0" * 1024,
-        ]
-    )
+    sparse_pkg = b"not a PDF"
     package = tmp_path / "sparse-cli.tar.gz"
     package.write_bytes(sparse_pkg)
     argv = [
@@ -510,7 +500,7 @@ def test_import_unsupported_local_file_message_and_no_side_effects(
     code = main(argv)
     assert code == 1
     err = capsys.readouterr().err
-    assert "未导入工作空间" in err
+    assert "未导入" in err
     assert "原文件未改动" in err
     # No side effects: no selections or records in the workspace; the caller's file is unchanged.
     code = main(["acquisition", "status", "--space", str(workspace.root), "--json"])

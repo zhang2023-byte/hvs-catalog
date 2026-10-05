@@ -830,6 +830,54 @@ class ArxivApiService:
             fetched_at=self._clock.now(),
         )
 
+    def download_pdf(self, identifier: ArxivIdentifier | str) -> ArxivSourceDownload:
+        """Download only an explicitly frozen arXiv PDF version."""
+        from urllib.parse import unquote, urlsplit
+
+        from ...records.pdf import pdf_page_count
+
+        ident = (
+            parse_arxiv_identifier(identifier)
+            if isinstance(identifier, str)
+            else identifier
+        )
+        if ident.version is None:
+            raise ArxivIdentifierError("PDF download requires a fixed version")
+        url = "https://arxiv.org/pdf/" + ident.versioned_id
+        response = self._client.get(
+            url,
+            headers={"Accept": "application/pdf"},
+            timeout=SOURCE_TIMEOUT,
+            max_bytes=SOURCE_MAX_RESPONSE_BYTES,
+        )
+        final = urlsplit(response.final_url)
+        path = unquote(final.path).removesuffix(".pdf")
+        if (
+            final.scheme != "https"
+            or final.hostname not in {"arxiv.org", "export.arxiv.org"}
+            or final.port not in (None, 443)
+            or final.username
+            or final.password
+            or final.query
+            or final.fragment
+            or path != "/pdf/" + ident.versioned_id
+        ):
+            raise ArxivSourceError(
+                "PDF response does not match the fixed arXiv version"
+            )
+        try:
+            pdf_page_count(response.body)
+        except ValueError as exc:
+            raise ArxivSourceError(str(exc)) from exc
+        return ArxivSourceDownload(
+            identifier=ident,
+            final_url=response.final_url,
+            content_type="application/pdf",
+            payload=response.body,
+            byte_count=len(response.body),
+            fetched_at=self._clock.now(),
+        )
+
     def download_source(self, identifier: ArxivIdentifier | str) -> ArxivSourceDownload:
         """Download fixed-version source bytes without archive parsing.
 

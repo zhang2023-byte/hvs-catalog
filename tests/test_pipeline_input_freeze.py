@@ -28,7 +28,7 @@ from hvs_catalog.pipeline import (
     submit_expert_decision,
 )
 from hvs_catalog.pipeline.flow import ExtractionFlow
-from hvs_catalog.pipeline.methods import DIRECT_METHOD
+from hvs_catalog.pipeline.methods import ROSTER_METHOD
 from hvs_catalog.pipeline.mock import PipelineMockService
 from hvs_catalog.workspace import (
     OperationKeyConflictError,
@@ -51,7 +51,7 @@ def service():
 def _request(source, **overrides):
     payload = {
         "mode": "daily",
-        "method": "direct",
+        "method": "roster",
         "source_refs": [source],
         "models": [StepModel(model="mock-default")],
     }
@@ -77,12 +77,6 @@ def test_same_request_key_rejects_changed_model_or_method(space):
         start_extraction(
             space,
             request=_request(source, models=[StepModel(model="another-model")]),
-            request_key="frozen-2",
-        )
-    with pytest.raises(OperationKeyConflictError):
-        start_extraction(
-            space,
-            request=_request(source, method="candidate_review"),
             request_key="frozen-2",
         )
     with pytest.raises(OperationKeyConflictError):
@@ -130,7 +124,7 @@ def test_resume_uses_frozen_snapshot_config(space, service):
     )
     first = resume_extraction(space, handle.execution_id, service=service)
     assert first.outcome == "paused"
-    assert first.config["method"] == "direct"
+    assert first.config["method"] == "roster"
     assert first.config["mode"] == "evaluation"
     assert first.config["expert_adjudication"] is True
     assert first.config["models"][1]["model"] == "mock-quantities"
@@ -168,9 +162,9 @@ def test_archived_response_reused_after_interrupted_commit(space):
         space,
         handle.execution_id,
         ExtractionFlow(
-            DIRECT_METHOD,
+            ROSTER_METHOD,
             mode="daily",
-            fault_hooks={"after_archive:direct_roster": interrupt_after_archive},
+            fault_hooks={"after_archive:roster": interrupt_after_archive},
         ),
         service=PipelineMockService(),
     )
@@ -179,13 +173,11 @@ def test_archived_response_reused_after_interrupted_commit(space):
     fresh_service = PipelineMockService()
     report = resume_extraction(space, handle.execution_id, service=fresh_service)
     assert report.outcome == "finished"
-    assert fresh_service.calls_for_step("direct_roster") == 0
+    assert fresh_service.calls_for_step("roster") == 0
     assert fresh_service.calls_for_step("quantities") == 1
     status = get_extraction(space, handle.execution_id)
     roster_attempts = next(
-        step["attempts"]
-        for step in status["steps"]
-        if step["step_id"] == "direct_roster"
+        step["attempts"] for step in status["steps"] if step["step_id"] == "roster"
     )
     assert (
         roster_attempts == 1

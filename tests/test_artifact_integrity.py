@@ -58,7 +58,7 @@ def _add_attempt_with_response(space, execution, response_path, response_bytes):
     run_id = f"run-{execution.execution_id}"
     run = store.read_record_current(run_id)
     steps = list(run.data.steps)
-    target = next(i for i, s in enumerate(steps) if s.step_id == "direct_roster")
+    target = next(i for i, s in enumerate(steps) if s.step_id == "roster")
     attempt = Attempt(
         request=None,
         response=ref,
@@ -95,7 +95,7 @@ def test_commit_rejects_corrupt_response_reference(tmp_path, service):
     try:
         execution = _finished(space, service)
         ref = space.publish_run_file(
-            execution.execution_id, "responses/roster.json", b'{"ok": true}'
+            execution.execution_id, "responses/integrity-fixture.json", b'{"ok": true}'
         )
         # Corrupt the file before committing a record referencing it.
         (space.root / ref.path).write_bytes(b'{"evidence": "corrupt"}')
@@ -105,7 +105,7 @@ def test_commit_rejects_corrupt_response_reference(tmp_path, service):
         run_id = f"run-{execution.execution_id}"
         run = store.read_record_current(run_id)
         steps = list(run.data.steps)
-        target = next(i for i, s in enumerate(steps) if s.step_id == "direct_roster")
+        target = next(i for i, s in enumerate(steps) if s.step_id == "roster")
         attempt = Attempt(
             request=None,
             response=ref,
@@ -146,7 +146,10 @@ def test_post_commit_corruption_blocks_backup_and_finished_resume(tmp_path, serv
     try:
         execution = _finished(space, service)
         ref = _add_attempt_with_response(
-            space, execution, "responses/roster.json", b'{"evidence": "original"}'
+            space,
+            execution,
+            "responses/integrity-fixture.json",
+            b'{"evidence": "original"}',
         )
         # Corrupt committed file contents while retaining the record's original hash.
         (space.root / ref.path).write_bytes(b'{"evidence": "corrupt"}')
@@ -167,7 +170,10 @@ def test_missing_response_file_blocks_backup_and_resume(tmp_path, service):
     try:
         execution = _finished(space, service)
         ref = _add_attempt_with_response(
-            space, execution, "responses/roster.json", b'{"evidence": "original"}'
+            space,
+            execution,
+            "responses/integrity-fixture.json",
+            b'{"evidence": "original"}',
         )
         (space.root / ref.path).unlink()
         with pytest.raises(WorkspaceIntegrityError, match="缺失或不可读"):
@@ -322,9 +328,7 @@ def test_pending_decision_not_applied_when_checkpoint_corrupt(tmp_path, service)
 # ---- Completion requires both business and framework completion ----
 
 
-def _force_pending_framework_nodes(
-    space, execution_id, *, paper, as_node="direct_roster"
-):
+def _force_pending_framework_nodes(space, execution_id, *, paper, as_node="roster"):
     """Forge a checkpoint with valid bindings/references but pending framework nodes."""
     from langgraph.checkpoint.sqlite import SqliteSaver
 
@@ -402,7 +406,10 @@ def test_intact_space_still_backs_up_and_restores(tmp_path, service):
     try:
         execution = _finished(space, service)
         _add_attempt_with_response(
-            space, execution, "responses/roster.json", b'{"evidence": "original"}'
+            space,
+            execution,
+            "responses/integrity-fixture.json",
+            b'{"evidence": "original"}',
         )
         digest = hashlib.sha256(b'{"evidence": "original"}').hexdigest()
         backup_workspace(space, tmp_path / "backup")
@@ -412,7 +419,7 @@ def test_intact_space_still_backs_up_and_restores(tmp_path, service):
                 hashlib.sha256(
                     (
                         restored.root
-                        / f"runs/{execution.execution_id}/responses/roster.json"
+                        / f"runs/{execution.execution_id}/responses/integrity-fixture.json"
                     ).read_bytes()
                 ).hexdigest()
                 == digest

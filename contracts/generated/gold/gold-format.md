@@ -1,7 +1,7 @@
 <!-- Generated -->
 # Formal Gold format
 
-The formal scoring reference is `answer.json` together with `metadata.json`. The answer contains scientific targets, PDF evidence, explicit coverage and remaining uncertainty. Metadata binds that exact answer to the paper version, fixed PDF/source hashes, scientific rules and concise attribution. Optional empty fields are omitted; an empty `contributions` array remains explicit.
+The formal scoring reference is `answer.json` together with `metadata.json`. The answer contains scientific targets, PDF evidence, explicit coverage and remaining uncertainty. Metadata binds that exact answer to the paper version, fixed PDF hashes, scientific rules and concise attribution. Optional empty fields are omitted; an empty `contributions` array remains explicit.
 
 `contribution_id` has the form `arxiv_id:candNN`; it is a generated identifier and needs no paper citation. Scientific claims use `value` and their corresponding `evidence`. The old v1 draft, migration indices, old boundness status, pending tasks and full historical provenance stay outside the formal pair.
 
@@ -30,7 +30,6 @@ See [version meanings](README.md#what-the-version-numbers-mean) for the distinct
 | `paper` | CompactPaper | required | — | |
 | `rules` | GoldRulesRef | required | — | |
 | `files` | array of GoldPdfFile | required | — |≥ 1 items |
-| `source` | GoldLatexSource \| null | optional | null | |
 | `annotation` | CompactAnnotationActors | required | — | |
 | `review` | CompactReview | required | — | |
 | `revision` | CompactRevision \| null | optional | null | |
@@ -230,7 +229,7 @@ without writing them back.
 
 #### `GoldRulesRef`
 
-Scientific rule version used for annotation; legacy versions cannot substitute.
+Scientific rules used for the original annotation; current scoring checks compatibility.
 
 | Field | Type | Presence | Default | Constraints |
 |---|---|---|---|---|
@@ -246,13 +245,3 @@ One fixed PDF material; an unverified hash stays pending rather than fabricated.
 | `file_id` | string | required | — |min length 1 |
 | `name` | string | required | — |min length 1 |
 | `sha256` | null \| string | optional | null | |
-
-#### `GoldLatexSource`
-
-A fixed source file or archive under the explicitly supplied material root.
-
-| Field | Type | Presence | Default | Constraints |
-|---|---|---|---|---|
-| `name` | string | required | — |min length 1 |
-| `sha256` | string | required | — |pattern `^[0-9a-f]{64}$` |
-| `version` | string | required | — |min length 1; pattern `\S` |

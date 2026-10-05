@@ -25,7 +25,7 @@ from hvs_catalog.pipeline import (
     supported_parameters,
 )
 from hvs_catalog.pipeline.flow import ExtractionFlow
-from hvs_catalog.pipeline.methods import CANDIDATE_REVIEW_METHOD, DIRECT_METHOD
+from hvs_catalog.pipeline.methods import ROSTER_METHOD
 from hvs_catalog.pipeline.mock import PipelineMockService
 from hvs_catalog.pipeline.params import ParameterPolicy, ParameterPolicyError
 from hvs_catalog.records.runs import ModelSpec
@@ -43,7 +43,7 @@ def space(tmp_path):
 def _request(source, models, **overrides):
     payload = {
         "mode": "daily",
-        "method": "direct",
+        "method": "roster",
         "source_refs": [source],
         "models": models,
     }
@@ -174,7 +174,7 @@ def test_legal_parameters_pass_through_to_service_requests(space):
     report = resume_extraction(space, handle.execution_id, service=service)
     assert report.outcome == "finished"
     sent = {item["step"]: item["request"]["model"] for item in service.requests}
-    assert sent["direct_roster"]["parameters"] == {}
+    assert sent["roster"]["parameters"] == {}
     assert sent["quantities"]["parameters"] == {"temperature": 0.2, "seed": 7}
     # Snapshot model parameters match sent contents; validated content is exactly what is sent.
     assert report.config["models"][1]["parameters"] == {
@@ -215,10 +215,8 @@ def test_mutation_after_start_does_not_affect_frozen_execution(space, source):
 # ---- Recovery enforces the same policy for legacy/bypass snapshots ----
 
 
-def test_interpret_path_also_carries_only_declared_parameters(space):
-    """AI-only explanation requests likewise carry declared parameters only; review
-    identified leakage here.
-    """
+def test_automatic_path_carries_only_declared_parameters(space):
+    """Automatic extraction uses ordinary steps with declared model parameters."""
     from hvs_catalog.pipeline import PAPER_A
 
     source = import_mock_source(space, PAPER_A)
@@ -234,19 +232,17 @@ def test_interpret_path_also_carries_only_declared_parameters(space):
     )
     report = resume_extraction(space, handle.execution_id, service=service)
     assert report.outcome == "finished"
-    interpret = [
-        item for item in service.requests if item["step"] == "interpret_ambiguity"
-    ]
-    assert len(interpret) == 1
-    assert interpret[0]["request"]["model"]["parameters"] == {"seed": 3}
-    assert "gold_answer" not in str(interpret[0]["request"])
+    assert [item["step"] for item in service.requests] == ["roster", "quantities"]
+    for item in service.requests:
+        assert item["request"]["model"]["parameters"] == {"seed": 3}
+        assert "gold_answer" not in str(item["request"])
 
 
 def _legacy_execution_with_unsupported_params(space, source):
     """Simulate pre-fix/bypass execution whose snapshot contains nested answer parameters."""
     snapshot = build_input_snapshot(
         source_refs=[source],
-        method="direct",
+        method="roster",
         models=[
             ModelSpec(
                 step_id=None,
@@ -261,7 +257,7 @@ def _legacy_execution_with_unsupported_params(space, source):
         space,
         request_key="legacy-parameters",
         input_snapshot=snapshot,
-        flow=ExtractionFlow(DIRECT_METHOD, mode="daily"),
+        flow=ExtractionFlow(ROSTER_METHOD, mode="daily"),
     )
     return handle
 
@@ -291,7 +287,7 @@ def test_direct_runtime_resume_also_blocked_by_flow_defense(space, source):
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="daily"),
+        ExtractionFlow(ROSTER_METHOD, mode="daily"),
         service=service,
     )
     assert report.outcome == "failed"
@@ -317,12 +313,12 @@ def test_valid_legacy_empty_parameters_still_resume(space):
 
 
 def _undeclared_spec():
-    """Trusted MethodSpec without a declared parameter set, reusing direct steps to keep
+    """Trusted MethodSpec without a declared parameter set, reusing roster steps to keep
     flow runnable.
     """
     return MethodSpec(
-        method_id="undeclared-direct",
-        steps=DIRECT_METHOD.steps,
+        method_id="undeclared-roster",
+        steps=ROSTER_METHOD.steps,
         implementation="custom",
         real_extraction=False,
         version="1",
@@ -358,7 +354,7 @@ def _legacy_execution(space, source, *, spec, parameters):
 
 def test_undeclared_policy_direct_runtime_resume_blocked(space, source):
     """No declared policy plus legacy nested payload must send no service requests even
-    through direct runtime recovery.
+    through roster runtime recovery.
     """
     spec = _undeclared_spec()
     handle = _legacy_execution(
@@ -434,14 +430,14 @@ def test_undeclared_policy_with_legal_empty_parameters_still_runs(space, source)
 
 def test_supported_parameters_describe_declared_set():
     described = supported_parameters()
-    assert set(described) == {"direct", "candidate_review"}
-    by_name = {item["name"]: item for item in described["direct"]}
+    assert set(described) == {"roster"}
+    by_name = {item["name"]: item for item in described["roster"]}
     assert by_name["temperature"]["types"] == ["float", "int"]
     assert by_name["temperature"]["minimum"] == 0.0
     assert by_name["temperature"]["maximum"] == 2.0
     assert by_name["seed"]["types"] == ["int"]
     assert by_name["seed"]["minimum"] == 0
-    assert described["candidate_review"] == described["direct"]
+    assert described["roster"] == described["roster"]
 
 
 def test_policy_without_declaration_allows_no_parameters():
@@ -461,13 +457,13 @@ def test_custom_registration_default_policy_is_strictest(space, source):
     from hvs_catalog.pipeline import MethodRegistration, PipelineRegistry
     from hvs_catalog.pipeline.registry import StepSpec
 
-    spec_roster = StepSpec("direct_roster", "roster", "t", "d")
+    spec_roster = StepSpec("roster", "roster", "t", "d")
     spec_quantities = StepSpec("quantities", "quantities", "t", "d")
     spec_finalize = StepSpec("finalize", "finalize", "t", "d")
     from hvs_catalog.pipeline.registry import MethodSpec
 
     custom = MethodSpec(
-        "custom-direct",
+        "custom-roster",
         (spec_roster, spec_quantities, spec_finalize),
         "custom",
         False,
@@ -483,7 +479,7 @@ def test_custom_registration_default_policy_is_strictest(space, source):
     request = _request(
         source,
         models=[StepModel(model="m", parameters={"temperature": 0.2})],
-        method="custom-direct",
+        method="custom-roster",
     )
     with pytest.raises(PipelineRequestError, match="未声明模型参数支持集"):
         start_extraction(
@@ -492,5 +488,5 @@ def test_custom_registration_default_policy_is_strictest(space, source):
             request_key="custom-parameter-policy",
             registry=registry,
         )
-    assert DEFAULT_REGISTRY.get("direct").spec.parameter_policy is not None
-    assert CANDIDATE_REVIEW_METHOD.parameter_policy is not None
+    assert DEFAULT_REGISTRY.get("roster").spec.parameter_policy is not None
+    assert ROSTER_METHOD.parameter_policy is not None

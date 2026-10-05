@@ -1,4 +1,4 @@
-"""Hand-calculated default/reference scores and frozen scope decisions."""
+"""Hand-calculated single scores and frozen scope decisions."""
 
 import json
 
@@ -81,21 +81,25 @@ def _inputs():
     return plan, gold, predictions, auxiliary
 
 
-def _limitation(plan, *, category="pdf_source_mismatch", identifier="SYN-C", **kwargs):
+def _limitation(
+    plan, *, category="external_out_of_scope", identifier="SYN-C", **kwargs
+):
     return EvaluationLimitation(
         limitation_id="issue-c",
         paper_key=plan.paper_keys[0],
         category=category,
         scope=LimitationScope(object_identifiers=[identifier]),
         basis="Synthetic human-reviewed scope decision before predictions",
-        evidence=["synthetic PDF page 2; fixed source table inventory"],
+        evidence=["synthetic PDF page 2"],
         **kwargs,
     )
 
 
-def test_default_and_reference_recalculate_both_sides_without_mutation():
+def test_single_score_keeps_parser_omissions_and_does_not_mutate_inputs():
     plan, gold, predictions, auxiliary = _inputs()
-    plan.limitations = [_limitation(plan, exclude_from_reference=True)]
+    plan.limitations = [
+        _limitation(plan, category="unsupported_material", identifier="SYN-B")
+    ]
     original = [x.model_dump(mode="json") for x in gold + predictions]
     report = score_batch(plan, gold, predictions, auxiliary=auxiliary)
     assert (report.micro.l1.tp, report.micro.l1.fp, report.micro.l1.fn) == (2, 1, 1)
@@ -105,32 +109,21 @@ def test_default_and_reference_recalculate_both_sides_without_mutation():
         report.micro.l2.gold,
     ) == (2, 3, 3)
     assert report.micro.l2.f1 == pytest.approx(2 / 3)
-    reference = report.reference_score
-    assert (reference.micro.l1.tp, reference.micro.l1.fp, reference.micro.l1.fn) == (
-        1,
-        1,
-        1,
-    )
-    assert (
-        reference.micro.l2.correct,
-        reference.micro.l2.predicted,
-        reference.micro.l2.gold,
-    ) == (1, 2, 2)
-    assert reference.micro.l1.f1 == reference.micro.l2.f1 == 0.5
-    assert report.limitation_effects[0].observed_error_refs == []
+    assert "reference_score" not in report.model_dump(mode="json")
     assert original == [x.model_dump(mode="json") for x in gold + predictions]
     assert report.digests["input_gold"] == plan.gold_ref.fingerprint
+    assert any(p.diagnostics or p.pairings for p in report.papers)
 
 
-def test_quantity_exclusion_preserves_object_scoring_and_wrong_duplicates_are_removed():
+def test_quantity_scope_preserves_objects_and_removes_wrong_duplicates():
     plan, gold, predictions, auxiliary = _inputs()
-    issue = _limitation(plan, exclude_from_reference=True)
+    baseline = score_batch(plan, gold, predictions, auxiliary=auxiliary)
+    issue = _limitation(plan, exclude_from_default=True)
     issue.scope.quantity_path = DIST
     plan.limitations = [issue]
     duplicate = predictions[0].objects[1].model_copy(deep=True)
     duplicate.label = "pC-duplicate"
     duplicate.quantities[0].values[0].record_id = "pC-duplicate-value"
-    duplicate.quantities[0].values[0].value.value_id = "pC-duplicate-value"
     duplicate.quantities[0].values[0].value = build_measured_value(
         value_id="pC-duplicate-value", value="99.0", unit="kpc", condition="standard"
     )
@@ -140,24 +133,14 @@ def test_quantity_exclusion_preserves_object_scoring_and_wrong_duplicates_are_re
         report.micro.l2.correct,
         report.micro.l2.predicted,
         report.micro.l2.gold,
-    ) == (2, 4, 3)
-    assert (
-        report.reference_score.micro.l2.correct,
-        report.reference_score.micro.l2.predicted,
-        report.reference_score.micro.l2.gold,
     ) == (1, 2, 2)
-    assert report.reference_score.micro.l1 == report.micro.l1
+    assert report.micro.l1.tp == baseline.micro.l1.tp
 
 
-def test_external_exclusion_is_symmetric_and_does_not_create_reference_score():
+def test_external_scope_is_symmetric():
     plan, gold, predictions, auxiliary = _inputs()
     plan.limitations = [
-        _limitation(
-            plan,
-            category="external_out_of_scope",
-            identifier="SYN-D",
-            exclude_from_default=True,
-        )
+        _limitation(plan, identifier="SYN-D", exclude_from_default=True)
     ]
     report = score_batch(plan, gold, predictions, auxiliary=auxiliary)
     assert (report.micro.l1.tp, report.micro.l1.fp, report.micro.l1.fn) == (2, 0, 1)
@@ -166,11 +149,10 @@ def test_external_exclusion_is_symmetric_and_does_not_create_reference_score():
         report.micro.l2.predicted,
         report.micro.l2.gold,
     ) == (2, 2, 3)
-    assert report.reference_score is None
     assert report.limitation_effects[0].excluded_from_default
 
 
-def test_unsupported_parser_cannot_remove_existing_pdf_gold_from_default():
+def test_unsupported_parser_cannot_remove_existing_pdf_gold():
     plan, gold, predictions, auxiliary = _inputs()
     plan.limitations = [
         _limitation(plan, category="unsupported_material", exclude_from_default=True)
@@ -179,7 +161,7 @@ def test_unsupported_parser_cannot_remove_existing_pdf_gold_from_default():
         score_batch(plan, gold, predictions, auxiliary=auxiliary)
 
 
-def test_author_problem_is_context_without_score_change_or_causal_assertion():
+def test_author_problem_retains_scores_and_existing_difference_association():
     plan, gold, predictions, auxiliary = _inputs()
     predictions[0].objects[1].quantities[0].values[0].value = build_measured_value(
         value_id="pC-value", value="99.0", unit="kpc", condition="standard"
@@ -188,12 +170,10 @@ def test_author_problem_is_context_without_score_change_or_causal_assertion():
     plan.limitations = [_limitation(plan, category="author_issue")]
     report = score_batch(plan, gold, predictions, auxiliary=auxiliary)
     assert report.micro == expected.micro
-    effect = report.limitation_effects[0]
-    assert effect.category == "author_issue" and effect.observed_error_refs
-    assert report.reference_score is None
+    assert report.limitation_effects[0].observed_error_refs
 
 
-def test_unknown_condition_membership_keeps_prediction_and_reference_provisional():
+def test_unknown_scope_membership_keeps_prediction_and_marks_score_provisional():
     plan, gold, predictions, auxiliary = _inputs()
     gold[0].objects[2].quantities[0].values[
         0
@@ -202,21 +182,20 @@ def test_unknown_condition_membership_keeps_prediction_and_reference_provisional
         0
     ].value.condition = "under Galactic potential"
     plan.gold_ref.fingerprint = gold_input_digest(gold)
-    issue = _limitation(plan, exclude_from_reference=True)
+    issue = _limitation(plan, exclude_from_default=True)
     issue.scope.quantity_path = DIST
     issue.scope.conditions = ["under Galactic potential M1"]
     plan.limitations = [issue]
     report = score_batch(plan, gold, predictions, auxiliary=auxiliary)
-    reference = report.reference_score
-    assert reference.micro.l2.predicted == 3
-    assert reference.batch_provisional and reference.micro.l2.f1 is None
+    assert report.micro.l2.predicted == 3
+    assert report.batch_provisional and report.micro.l2.f1 is None
     assert any(
         item.startswith("scope_membership_unknown:")
-        for item in reference.provisional_reasons
+        for item in report.provisional_reasons
     )
 
 
-def test_reference_scope_distinguishes_historical_and_current_values():
+def test_predeclared_scope_distinguishes_historical_and_current_values():
     plan, gold, predictions, auxiliary = _inputs()
     for obj in (gold[0].objects[2], predictions[0].objects[1]):
         historical = obj.quantities[0].values[0].model_copy(deep=True)
@@ -225,7 +204,8 @@ def test_reference_scope_distinguishes_historical_and_current_values():
         historical.value.source = "prior_work"
         obj.quantities[0].values.append(historical)
     plan.gold_ref.fingerprint = gold_input_digest(gold)
-    issue = _limitation(plan, exclude_from_reference=True)
+    baseline = score_batch(plan, gold, predictions, auxiliary=auxiliary)
+    issue = _limitation(plan, exclude_from_default=True)
     issue.scope.quantity_path = DIST
     issue.scope.attribution = {"source": ["prior_work"]}
     plan.limitations = [issue]
@@ -234,62 +214,53 @@ def test_reference_scope_distinguishes_historical_and_current_values():
         report.micro.l2.correct,
         report.micro.l2.predicted,
         report.micro.l2.gold,
-    ) == (3, 4, 4)
-    reference = report.reference_score
-    assert (
-        reference.micro.l2.correct,
-        reference.micro.l2.predicted,
-        reference.micro.l2.gold,
     ) == (2, 3, 3)
-    assert reference.micro.l1 == report.micro.l1
+    assert report.micro.l1 == baseline.micro.l1
 
 
-def test_scope_is_validated_against_gold_and_cannot_select_by_predicted_values():
-    plan, gold, predictions, auxiliary = _inputs()
+def test_old_reference_interfaces_are_rejected():
+    plan, *_ = _inputs()
     with pytest.raises(ValidationError):
-        _limitation(plan, category="author_issue", exclude_from_reference=True)
-    plan.limitations = [
-        _limitation(plan, identifier="SYN-NOT-IN-GOLD", exclude_from_reference=True)
-    ]
-    with pytest.raises(ScoringInputError, match="固定Gold"):
-        score_batch(plan, gold, predictions, auxiliary=auxiliary)
+        _limitation(plan, exclude_from_reference=True)
+    with pytest.raises(ValidationError):
+        _limitation(plan, category="pdf_source_mismatch")
+    with pytest.raises(ValidationError):
+        _limitation(plan, category="author_issue", exclude_from_default=True)
 
 
-def test_reference_scope_uses_established_aliases_but_retains_ambiguous_identity():
+def test_scope_uses_aliases_and_keeps_ambiguous_identity():
     plan, gold, predictions, auxiliary = _inputs()
     gold[0].objects[2].identifiers.append("ALIAS-C")
     plan.gold_ref.fingerprint = gold_input_digest(gold)
     predictions[0].objects[1].identifiers = ["ALIAS-C"]
-    plan.limitations = [_limitation(plan, exclude_from_reference=True)]
+    plan.limitations = [_limitation(plan, exclude_from_default=True)]
     report = score_batch(plan, gold, predictions, auxiliary=auxiliary)
-    assert report.reference_score.micro.l2.predicted == 2
+    assert report.micro.l2.predicted == 2
     predictions[0].objects[1].identifiers.append("SYN-A")
     report = score_batch(plan, gold, predictions, auxiliary=auxiliary)
-    assert report.reference_score.micro.l2.predicted == 3
-    assert report.reference_score.batch_provisional
-    assert report.reference_score.micro.l1.f1 is None
+    assert report.micro.l2.predicted == 3
+    assert report.batch_provisional and report.micro.l1.f1 is None
 
 
-def test_failing_and_missing_predictions_keep_default_gold_denominator():
+def test_failing_and_missing_predictions_keep_gold_denominator():
     plan, gold, _, auxiliary = _inputs()
-    plan.limitations = [_limitation(plan, exclude_from_reference=True)]
+    plan.limitations = [_limitation(plan, category="unsupported_material")]
     report = score_batch(plan, gold, [], auxiliary=auxiliary)
     assert report.micro.l0.delivered == 0
     assert report.micro.l2.gold == 3 and report.micro.l2.recall == 0
-    assert report.reference_score.micro.l2.gold == 2
-    assert report.reference_score.micro.l2.recall == 0
 
 
-def test_bundle_freezes_limitations_and_rescores_both_variants(tmp_path):
+def test_bundle_freezes_scope_and_reproduces_single_score(tmp_path):
     plan, gold, predictions, auxiliary = _inputs()
-    plan.limitations = [_limitation(plan, exclude_from_reference=True)]
+    plan.limitations = [_limitation(plan, exclude_from_default=True)]
     path = tmp_path / "bundle.json"
     save_scoring_bundle(
         path, plan=plan, gold=gold, predictions=predictions, auxiliary=auxiliary
     )
     first = score_scoring_bundle(path)
     assert first == score_scoring_bundle(path)
-    assert first.reference_score.micro.l2.f1 == 0.5
+    assert first.micro.l2.f1 == 0.5
+    assert "reference_score" not in first.model_dump(mode="json")
     payload = json.loads(path.read_text())
     payload["plan"]["limitations"][0]["basis"] = "changed decision"
     path.write_text(json.dumps(payload))
@@ -297,7 +268,7 @@ def test_bundle_freezes_limitations_and_rescores_both_variants(tmp_path):
         load_scoring_bundle(path)
 
 
-def test_old_plan_and_report_serialization_do_not_gain_empty_fields():
+def test_unchanged_plans_do_not_gain_empty_fields():
     plan, gold, predictions, auxiliary = _inputs()
     assert "limitations" not in plan.model_dump(mode="json")
     report = score_batch(plan, gold, predictions, auxiliary=auxiliary)

@@ -39,7 +39,7 @@ def service(tmp_path):
     svc.close()
 
 
-def _snapshot(space, *, expert=True, model="synthetic-mock", method="direct"):
+def _snapshot(space, *, expert=True, model="synthetic-mock", method="roster"):
     from shared_scenarios import import_materials
 
     source = import_materials(space, "A")
@@ -214,16 +214,16 @@ def test_expert_and_pure_ai_groups_isolated(tmp_path):
         run_p = pure_space.store().read_record_current(f"run-{ex_p.execution_id}")
         assert run_p.data.model_judgments
         questions_p = pending_questions(pure_space, execution_id=ex_p.execution_id)
-        assert [q.status for q in questions_p] == ["open"]
+        assert questions_p == []
 
         # Reject expert submissions to the disabled group and transplantation of enabled-group decisions.
-        from hvs_catalog.workspace import AdjudicationNotAllowedError
+        from hvs_catalog.workspace import WorkspaceIntegrityError
 
-        with pytest.raises(AdjudicationNotAllowedError):
+        with pytest.raises(WorkspaceIntegrityError):
             submit_expert_decision(
                 pure_space,
                 execution_id=ex_p.execution_id,
-                question_ref=questions_p[0].question_ref,
+                question_ref=question.question_ref,
                 request_key="p-decision",
             )
     finally:

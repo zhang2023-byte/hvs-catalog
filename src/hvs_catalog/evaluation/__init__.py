@@ -46,6 +46,7 @@ from .checking import (
 )
 from .compact import (
     COMPACT_METADATA_SCHEMA_NAME,
+    COMPACT_METADATA_SCHEMA_VERSION,
     COMPACT_SCHEMA_VERSION,
     CompactGoldAnswer,
     CompactGoldMetadata,
@@ -99,7 +100,6 @@ from .models import (
     GoldEvidence,
     GoldExclusion,
     GoldHuman,
-    GoldLatexSource,
     GoldMaterialCorrespondence,
     GoldOriginalExpert,
     GoldPaper,
@@ -130,6 +130,7 @@ from .synthetic_gold import (
 
 __all__ = [
     "COMPACT_METADATA_SCHEMA_NAME",
+    "COMPACT_METADATA_SCHEMA_VERSION",
     "COMPACT_SCHEMA_VERSION",
     "DRAFT_FILENAME",
     "GOLD_SCHEMA_NAME",
@@ -162,7 +163,6 @@ __all__ = [
     "GoldFormatError",
     "GoldHuman",
     "GoldIntegrityError",
-    "GoldLatexSource",
     "GoldMaterialCorrespondence",
     "GoldOriginalExpert",
     "GoldOutputConflictError",

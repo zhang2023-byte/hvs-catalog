@@ -1,56 +1,5 @@
 {
   "$defs": {
-    "BoundnessSubmission": {
-      "additionalProperties": false,
-      "properties": {
-        "status": {
-          "anyOf": [
-            {
-              "enum": [
-                "no_overall_conclusion",
-                "unbound",
-                "possibly_unbound",
-                "possibly_bound",
-                "bound"
-              ],
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Status"
-        },
-        "evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
-          },
-          "title": "Evidence",
-          "type": "array"
-        },
-        "question": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/InlineQuestion"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "gap_ids": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Gap Ids",
-          "type": "array"
-        }
-      },
-      "title": "BoundnessSubmission",
-      "type": "object"
-    },
     "ConditionalAssessmentSubmission": {
       "additionalProperties": false,
       "properties": {
@@ -81,154 +30,23 @@
       "title": "ConditionalAssessmentSubmission",
       "type": "object"
     },
-    "ContributionFieldsSubmission": {
-      "additionalProperties": false,
-      "properties": {
-        "summary": {
-          "$ref": "#/$defs/SummarySubmission"
-        },
-        "contribution_type": {
-          "$ref": "#/$defs/TypeSubmission"
-        },
-        "boundness": {
-          "$ref": "#/$defs/BoundnessSubmission"
-        },
-        "conditional_assessments": {
-          "items": {
-            "$ref": "#/$defs/ConditionalAssessmentSubmission"
-          },
-          "title": "Conditional Assessments",
-          "type": "array"
-        }
-      },
-      "required": [
-        "summary",
-        "contribution_type",
-        "boundness",
-        "conditional_assessments"
-      ],
-      "title": "ContributionFieldsSubmission",
-      "type": "object"
-    },
-    "DataElementDecoder": {
-      "additionalProperties": false,
-      "properties": {
-        "name": {
-          "minLength": 1,
-          "title": "Name",
-          "type": "string"
-        },
-        "encoding": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "title": "Encoding"
-        }
-      },
-      "required": [
-        "name",
-        "encoding"
-      ],
-      "title": "DataElementDecoder",
-      "type": "object"
-    },
-    "DataElementLocator": {
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "const": "data_element",
-          "title": "Kind",
-          "type": "string"
-        },
-        "selector": {
-          "$ref": "#/$defs/DataElementSelector"
-        },
-        "decoder": {
-          "$ref": "#/$defs/DataElementDecoder"
-        }
-      },
-      "required": [
-        "kind",
-        "selector",
-        "decoder"
-      ],
-      "title": "DataElementLocator",
-      "type": "object"
-    },
-    "DataElementSelector": {
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "minLength": 1,
-          "title": "Kind",
-          "type": "string"
-        },
-        "value": {
-          "minLength": 1,
-          "title": "Value",
-          "type": "string"
-        }
-      },
-      "required": [
-        "kind",
-        "value"
-      ],
-      "title": "DataElementSelector",
-      "type": "object"
-    },
     "InlineEvidence": {
-      "additionalProperties": false,
+      "type": "object",
       "properties": {
-        "source": {
-          "$ref": "#/$defs/InlineSource"
+        "location": {
+          "type": "string",
+          "minLength": 1
         },
-        "parts": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidencePart"
-          },
-          "minItems": 0,
-          "title": "Parts",
-          "type": "array"
-        },
-        "context": {
-          "default": false,
-          "title": "Context",
-          "type": "boolean"
+        "quote": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "required": [
-        "source",
-        "parts"
+        "location",
+        "quote"
       ],
-      "title": "InlineEvidence",
-      "type": "object"
-    },
-    "InlineEvidencePart": {
-      "additionalProperties": false,
-      "properties": {
-        "part": {
-          "minLength": 1,
-          "title": "Part",
-          "type": "string"
-        },
-        "raw_fragment": {
-          "description": "The printed fragment of this component; must equal the filled numeric string of that component.",
-          "minLength": 1,
-          "title": "Raw Fragment",
-          "type": "string"
-        }
-      },
-      "required": [
-        "part",
-        "raw_fragment"
-      ],
-      "title": "InlineEvidencePart",
-      "type": "object"
+      "additionalProperties": false
     },
     "InlineIdentifier": {
       "additionalProperties": false,
@@ -294,50 +112,6 @@
         "prompt"
       ],
       "title": "InlineQuestion",
-      "type": "object"
-    },
-    "InlineSource": {
-      "additionalProperties": false,
-      "properties": {
-        "file_id": {
-          "minLength": 1,
-          "title": "File Id",
-          "type": "string"
-        },
-        "locator": {
-          "discriminator": {
-            "mapping": {
-              "data_element": "#/$defs/DataElementLocator",
-              "table_cell": "#/$defs/TableCellLocator",
-              "text": "#/$defs/TextLocator"
-            },
-            "propertyName": "kind"
-          },
-          "oneOf": [
-            {
-              "$ref": "#/$defs/TextLocator"
-            },
-            {
-              "$ref": "#/$defs/TableCellLocator"
-            },
-            {
-              "$ref": "#/$defs/DataElementLocator"
-            }
-          ],
-          "title": "Locator"
-        },
-        "excerpt": {
-          "minLength": 1,
-          "title": "Excerpt",
-          "type": "string"
-        }
-      },
-      "required": [
-        "file_id",
-        "locator",
-        "excerpt"
-      ],
-      "title": "InlineSource",
       "type": "object"
     },
     "RosterCoverageSubmission": {
@@ -413,10 +187,72 @@
           ],
           "default": null
         },
-        "contribution": {
+        "gap_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Gap Ids",
+          "type": "array"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "summary_evidence": {
+          "items": {
+            "$ref": "#/$defs/InlineEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "contribution_type": {
+          "enum": [
+            "candidates_found",
+            "follow_up"
+          ],
+          "title": "Value",
+          "type": "string"
+        },
+        "type_evidence": {
+          "items": {
+            "$ref": "#/$defs/InlineEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "boundness": {
           "anyOf": [
             {
-              "$ref": "#/$defs/ContributionFieldsSubmission"
+              "enum": [
+                "no_overall_conclusion",
+                "unbound",
+                "possibly_unbound",
+                "possibly_bound",
+                "bound"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
+        "boundness_evidence": {
+          "items": {
+            "$ref": "#/$defs/InlineEvidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "boundness_question": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InlineQuestion"
             },
             {
               "type": "null"
@@ -424,11 +260,18 @@
           ],
           "default": null
         },
-        "gap_ids": {
+        "boundness_gap_ids": {
           "items": {
             "type": "string"
           },
           "title": "Gap Ids",
+          "type": "array"
+        },
+        "conditional_assessments": {
+          "items": {
+            "$ref": "#/$defs/ConditionalAssessmentSubmission"
+          },
+          "title": "Conditional Assessments",
           "type": "array"
         }
       },
@@ -437,126 +280,134 @@
         "disposition"
       ],
       "title": "RosterEntrySubmission",
-      "type": "object"
-    },
-    "SummarySubmission": {
-      "additionalProperties": false,
-      "properties": {
-        "text": {
-          "minLength": 1,
-          "title": "Text",
-          "type": "string"
-        },
-        "evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
-          },
-          "minItems": 1,
-          "title": "Evidence",
-          "type": "array"
-        }
-      },
-      "required": [
-        "text",
-        "evidence"
-      ],
-      "title": "SummarySubmission",
-      "type": "object"
-    },
-    "TableCellLocator": {
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "const": "table_cell",
-          "title": "Kind",
-          "type": "string"
-        },
-        "row_key": {
-          "additionalProperties": true,
-          "minProperties": 1,
-          "title": "Row Key",
-          "type": "object"
-        },
-        "column": {
-          "minLength": 1,
-          "title": "Column",
-          "type": "string"
-        },
-        "row_number": {
-          "anyOf": [
-            {
-              "minimum": 1,
-              "type": "integer"
+      "type": "object",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "disposition": {
+                "const": "included"
+              }
             },
-            {
-              "type": "null"
-            }
-          ],
-          "title": "Row Number"
-        }
-      },
-      "required": [
-        "kind",
-        "row_key",
-        "column",
-        "row_number"
-      ],
-      "title": "TableCellLocator",
-      "type": "object"
-    },
-    "TextLocator": {
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "const": "text",
-          "title": "Kind",
-          "type": "string"
-        },
-        "start_line": {
-          "minimum": 1,
-          "title": "Start Line",
-          "type": "integer"
-        },
-        "end_line": {
-          "minimum": 1,
-          "title": "End Line",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "kind",
-        "start_line",
-        "end_line"
-      ],
-      "title": "TextLocator",
-      "type": "object"
-    },
-    "TypeSubmission": {
-      "additionalProperties": false,
-      "properties": {
-        "value": {
-          "enum": [
-            "candidates_found",
-            "follow_up"
-          ],
-          "title": "Value",
-          "type": "string"
-        },
-        "evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
+            "required": [
+              "disposition"
+            ]
           },
-          "minItems": 1,
-          "title": "Evidence",
-          "type": "array"
+          "then": {
+            "required": [
+              "summary",
+              "summary_evidence",
+              "contribution_type",
+              "type_evidence",
+              "boundness",
+              "conditional_assessments"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "summary"
+                  ]
+                },
+                {
+                  "required": [
+                    "summary_evidence"
+                  ]
+                },
+                {
+                  "required": [
+                    "contribution_type"
+                  ]
+                },
+                {
+                  "required": [
+                    "type_evidence"
+                  ]
+                },
+                {
+                  "required": [
+                    "boundness"
+                  ]
+                },
+                {
+                  "required": [
+                    "boundness_evidence"
+                  ]
+                },
+                {
+                  "required": [
+                    "boundness_question"
+                  ]
+                },
+                {
+                  "required": [
+                    "boundness_gap_ids"
+                  ]
+                },
+                {
+                  "required": [
+                    "conditional_assessments"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "disposition": {
+                "enum": [
+                  "included",
+                  "excluded"
+                ]
+              }
+            },
+            "required": [
+              "disposition"
+            ]
+          },
+          "then": {
+            "required": [
+              "evidence"
+            ],
+            "properties": {
+              "evidence": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "boundness": {
+                "enum": [
+                  "unbound",
+                  "possibly_unbound",
+                  "possibly_bound",
+                  "bound"
+                ]
+              }
+            },
+            "required": [
+              "boundness"
+            ]
+          },
+          "then": {
+            "required": [
+              "boundness_evidence"
+            ],
+            "properties": {
+              "boundness_evidence": {
+                "minItems": 1
+              }
+            }
+          }
         }
-      },
-      "required": [
-        "value",
-        "evidence"
-      ],
-      "title": "TypeSubmission",
-      "type": "object"
+      ]
     },
     "UnresolvedGroupSubmission": {
       "additionalProperties": false,
@@ -613,6 +464,14 @@
         "$ref": "#/$defs/UnresolvedGroupSubmission"
       },
       "title": "Unresolved Groups",
+      "type": "array"
+    },
+    "model_judgments": {
+      "description": "Brief evidence-based interpretations when the active policy calls for model judgment.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Model Judgments",
       "type": "array"
     }
   },

@@ -13,7 +13,7 @@ import json, os, sys
 from pathlib import Path
 from hvs_catalog.llm import ModelConfig
 from hvs_catalog.pipeline import (
-    PAPER_B, DIRECT_METHOD, ExtractionConfig, ExtractionFlow, PipelineMockService,
+    PAPER_B, ROSTER_METHOD, ExtractionConfig, ExtractionFlow, PipelineMockService,
     get_extraction, import_mock_source, resume_extraction, start_configured_extraction,
 )
 from hvs_catalog.runtime import resume_execution
@@ -27,7 +27,7 @@ if phase == "crash":
     config = ExtractionConfig(step_models={"quantities": ModelConfig(model="mimo-v2.6-flash")})
     handle = start_configured_extraction(space, configuration=config, source_refs=[source], request_key="process-inputs")
     (root.parent / "execution.json").write_text(json.dumps({"execution_id": handle.execution_id}))
-    flow = ExtractionFlow(DIRECT_METHOD, mode="daily", fault_hooks={"after_archive:direct_roster": lambda: os._exit(9)})
+    flow = ExtractionFlow(ROSTER_METHOD, mode="daily", fault_hooks={"after_archive:roster": lambda: os._exit(9)})
     resume_execution(space, handle.execution_id, flow, service=PipelineMockService(journal))
 else:
     space = open_workspace(root)
@@ -68,4 +68,4 @@ def test_new_process_recovers_original_configuration_and_single_archived_call(tm
         json.loads(line) for line in (tmp_path / "calls.jsonl").read_text().splitlines()
     ]
     assert len(calls) == 2
-    assert [row["step"] for row in calls] == ["direct_roster", "quantities"]
+    assert [row["step"] for row in calls] == ["roster", "quantities"]

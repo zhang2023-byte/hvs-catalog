@@ -66,7 +66,7 @@ class InlineQuestion(Config):
 
 
 # ---------------------------------------------------------------------------
-# Roster extraction with direct.
+# Roster extraction.
 # ---------------------------------------------------------------------------
 
 
@@ -135,8 +135,8 @@ class RosterEntrySubmission(Config):
             raise SubmissionError("排除或待决条目不能填写贡献字段")
         if self.disposition in {"included", "excluded"} and not self.evidence:
             raise SubmissionError("收录或排除条目必须给出依据")
-        if self.disposition == "pending" and self.question is None:
-            raise SubmissionError("待决条目必须提交问题")
+        if self.disposition == "pending" and self.question is None and not self.gap_ids:
+            raise SubmissionError("待决条目必须提交问题或引用材料缺口")
         return self
 
 
@@ -165,52 +165,10 @@ class RosterSubmission(Config):
     coverage: RosterCoverageSubmission
     entries: list[RosterEntrySubmission]
     unresolved_groups: list[UnresolvedGroupSubmission]
-
-
-class DiscoveryCandidate(Config):
-    identifiers: list[InlineIdentifier] = Field(min_length=1)
-
-
-class DiscoverySubmission(Config):
-    """Provisional inventory; scientific fields reuse the roster/evidence definitions."""
-
-    coverage: RosterCoverageSubmission
-    candidates: list[DiscoveryCandidate]
-    unresolved_groups: list[UnresolvedGroupSubmission]
-    questions: list[InlineQuestion]
-
-
-# ---------------------------------------------------------------------------
-# Per-candidate judgment with candidate_review.
-# ---------------------------------------------------------------------------
-
-
-class CandidateJudgmentSubmission(Config):
-    item_id: str = Field(min_length=1)
-    disposition: Literal["included", "excluded", "pending"]
-    evidence: list[InlineEvidence] = Field(default_factory=list)
-    question: InlineQuestion | None = None
-    contribution: ContributionFieldsSubmission | None = None
-    gap_ids: list[str] = Field(default_factory=list)
-
-    @model_validator(mode="after")
-    def _disposition_consistent(self) -> CandidateJudgmentSubmission:
-        if self.disposition == "included" and self.contribution is None:
-            raise SubmissionError("收录候选必须填写贡献字段")
-        if (
-            self.disposition in {"excluded", "pending"}
-            and self.contribution is not None
-        ):
-            raise SubmissionError("排除或待决候选不能填写贡献字段")
-        if self.disposition in {"included", "excluded"} and not self.evidence:
-            raise SubmissionError("收录或排除候选必须给出依据")
-        if self.disposition == "pending" and self.question is None:
-            raise SubmissionError("待决候选必须提交问题")
-        return self
-
-
-class CandidateSubmission(Config):
-    judgments: list[CandidateJudgmentSubmission]
+    model_judgments: list[str] = Field(
+        default_factory=list,
+        description="Brief evidence-based interpretations when the active policy calls for model judgment.",
+    )
 
 
 # ---------------------------------------------------------------------------

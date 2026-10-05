@@ -8,7 +8,7 @@ from hvs_catalog.cli import main
 def test_default_config_check_and_complete_preview(tmp_path, capsys):
     assert main(["extract", "config"]) == 0
     default = json.loads(capsys.readouterr().out)
-    assert default["method"] == "direct"
+    assert "method" not in default
     assert default["default_model"]["model"] == "deepseek-v4.1-flash"
     config = tmp_path / "config.json"
     config.write_text(
@@ -30,7 +30,7 @@ def test_default_config_check_and_complete_preview(tmp_path, capsys):
                 "--config",
                 str(config),
                 "--step",
-                "direct_roster",
+                "roster",
                 "--input",
                 str(inputs),
             ]
@@ -57,10 +57,7 @@ def test_bad_step_and_untrusted_metadata_are_actionable_errors(tmp_path, capsys)
     inputs.write_text(
         json.dumps({"manuscript": "Synthetic paper.", "gold_path": "/private/answer"})
     )
-    assert (
-        main(["extract", "preview", "--step", "direct_roster", "--input", str(inputs)])
-        == 2
-    )
+    assert main(["extract", "preview", "--step", "roster", "--input", str(inputs)]) == 2
     assert "gold_path" in capsys.readouterr().err
 
 
@@ -70,7 +67,6 @@ def test_simulate_status_resume_use_persisted_configuration(tmp_path, capsys):
     config.write_text(
         json.dumps(
             {
-                "method": "candidate_review",
                 "step_models": {"quantities": {"model": "mimo-v2.6-flash"}},
             }
         )
@@ -108,7 +104,7 @@ def test_simulate_status_resume_use_persisted_configuration(tmp_path, capsys):
             == 0
         )
         result = json.loads(capsys.readouterr().out)
-        assert result["config"]["method"] == "candidate_review"
+        assert result["config"]["method"] == "roster"
         assert (
             result["config"]["configuration"]["step_models"]["quantities"]["model"]
             == "mimo-v2.6-flash"

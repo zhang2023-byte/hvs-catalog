@@ -70,12 +70,12 @@ def test_s11_paper_c_two_groups_computed_by_scorer(space):
     """Complete S11 comparison: only the review switch differs; actual scoring determines
     quality differences.
     """
-    report = run_two_group_experiment(space, PAPER_C, method="candidate_review")
+    report = run_two_group_experiment(space, PAPER_C, method="roster")
     assert report["paper_key"] == PAPER_C
     on = report["groups"]["expert_on"]
     off = report["groups"]["expert_off"]
     # Identical material/method/model, different switch; groups have separate executions.
-    assert on["method"] == off["method"] == "candidate_review"
+    assert on["method"] == off["method"] == "roster"
     assert on["models"] == off["models"]
     assert on["input_digest"] != off["input_digest"]
     assert on["execution_id"] != off["execution_id"]
@@ -87,13 +87,13 @@ def test_s11_paper_c_two_groups_computed_by_scorer(space):
     assert on["quality"]["l1"]["tp"] == 2
     assert on["quality"]["l2"]["correct"] == 2
     # Disabled unresolved entries remain unresolved without automatic exclusion or enabled-group decisions.
-    assert off["questions"] == {"created": 1, "answered": 0, "open": 1}
+    assert off["questions"] == {"created": 0, "answered": 0, "open": 0}
     assert off["decisions"]["human"] == 0
-    assert off["roster"] == {"included": 1, "excluded": 1, "pending": 1}
-    assert off["quality"]["l1"]["tp"] == 1
-    assert off["quality"]["l1"]["fn"] == 1
+    assert off["roster"] == {"included": 2, "excluded": 1, "pending": 0}
+    assert off["quality"]["l1"]["tp"] == 2
+    assert off["quality"]["l1"]["fn"] == 0
     assert off["quality"]["l2"]["gold"] == 2
-    assert off["quality"]["l2"]["correct"] == 1
+    assert off["quality"]["l2"]["correct"] == 2
     # Isolate paper outputs by execution; disabled fixed input contains no current-round decisions.
     assert report["isolation"]["expert_off_existing_decision_refs"] == []
     assert (
@@ -107,14 +107,14 @@ def test_e20_paper_a_pure_ai_group_keeps_model_judgment(space):
     """E20 AI-only group records model judgments, unresolved questions, and no expert
     decisions.
     """
-    report = run_two_group_experiment(space, PAPER_A, method="direct")
+    report = run_two_group_experiment(space, PAPER_A, method="roster")
     on = report["groups"]["expert_on"]
     off = report["groups"]["expert_off"]
     assert on["questions"]["open"] == 0
     assert on["decisions"]["human"] == 1
     assert on["decisions"]["simulated_choices"] == ["no_overall_conclusion"]
     assert off["model_judgments"] == 1
-    assert off["questions"]["open"] == 1
+    assert off["questions"]["open"] == 0
     assert off["decisions"]["human"] == 0
     assert _decisions_of(space, off["execution_id"]) == []
     # Author assessments do not affect quality scores; the scorer computes equal value quality in both groups.
@@ -127,15 +127,15 @@ def test_e20_paper_a_pure_ai_group_keeps_model_judgment(space):
         if record.record_id == report["isolation"]["paper_record_ids"]["expert_off"]
     )
     boundness = off_paper.data.object_contributions[0].paper_boundness
-    assert boundness.status is None
-    assert boundness.issue_refs
+    assert boundness.status == "possibly_unbound"
+    assert not boundness.issue_refs
 
 
 def test_report_layers_and_nulls(space):
     """Reports separate quality layers; expert time stays null and unknown usage never
     becomes zero.
     """
-    report = run_two_group_experiment(space, PAPER_A, method="direct")
+    report = run_two_group_experiment(space, PAPER_A, method="roster")
     for group in report["groups"].values():
         # The mock knows its token usage, so reports use integers.
         assert isinstance(group["usage"]["tokens"], int)
@@ -155,7 +155,7 @@ def test_group_summary_preserves_null_tokens(space):
         space,
         request=ExtractionRequest(
             mode="synthetic",
-            method="direct",
+            method="roster",
             source_refs=[source],
             models=[StepModel(model="mock-default")],
             expert_adjudication=False,
@@ -206,7 +206,7 @@ def test_gold_never_fed_back_to_extraction(space):
         space,
         request=ExtractionRequest(
             mode="synthetic",
-            method="candidate_review",
+            method="roster",
             source_refs=[source],
             models=[StepModel(model="mock-default")],
             expert_adjudication=False,

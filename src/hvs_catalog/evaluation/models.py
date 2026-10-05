@@ -19,7 +19,7 @@ from typing import Literal
 from pydantic import AwareDatetime, ConfigDict, Field, model_validator
 
 from ..records.common import Config, canonical_json
-from ..records.rules import author_state_ids, load_rules, quantity_paths
+from ..records.rules import author_state_ids, quantity_paths
 from .errors import GoldFormatError
 from .legacy import LEGACY_AUTHOR_STATUSES
 from .numbers import (
@@ -72,21 +72,10 @@ class GoldSchemaTag(Config):
 
 
 class GoldRulesRef(Config):
-    """Scientific rule version used for annotation; legacy versions cannot substitute."""
+    """Scientific rules used for the original annotation; current scoring checks compatibility."""
 
     version: str = Field(min_length=1)
     sha256: str = Field(pattern=_SHA256_RE)
-
-    @model_validator(mode="after")
-    def matches_current_rules(self) -> GoldRulesRef:
-        rules = load_rules()
-        if (self.version, self.sha256) != (rules.version, rules.sha256):
-            raise GoldFormatError(
-                f"规则引用与当前科学规则不符：文档写 {self.version}"
-                f"/{self.sha256[:12]}…，当前为 {rules.version}"
-                f"/{rules.sha256[:12]}…；改用当前规则须重新审定"
-            )
-        return self
 
 
 class GoldPaper(Config):
@@ -144,26 +133,11 @@ class GoldPreparationAuthor(Config):
     description: str = Field(min_length=1, pattern=r"\S")
 
 
-class GoldLatexSource(Config):
-    """A fixed source file or archive under the explicitly supplied material root."""
-
-    name: str = Field(min_length=1)
-    sha256: str = Field(pattern=_SHA256_RE)
-    version: str = Field(min_length=1, pattern=r"\S")
-
-    @model_validator(mode="after")
-    def relative_name(self) -> GoldLatexSource:
-        # Reuse the same path rules as registered PDF material.
-        GoldPdfFile(file_id="source", name=self.name, sha256=self.sha256)
-        return self
-
-
 class GoldMaterialCorrespondence(Config):
-    """Expert-declared PDF/source correspondence; hashing does not prove equivalence."""
+    """Expert-declared fixed PDF scope; hashing does not prove scientific correctness."""
 
     status: Literal["pending", "checked"] = "pending"
     pdf_file_ids: list[str] = Field(default_factory=list)
-    latex: GoldLatexSource | None = None
     checked_by: GoldHuman | None = None
     checked_at: AwareDatetime | None = None
     basis: str = ""
@@ -173,7 +147,6 @@ class GoldMaterialCorrespondence(Config):
     def checked_requires_evidence(self) -> GoldMaterialCorrespondence:
         if self.status == "checked" and (
             not self.pdf_file_ids
-            or self.latex is None
             or self.checked_by is None
             or self.checked_at is None
             or not self.basis.strip()

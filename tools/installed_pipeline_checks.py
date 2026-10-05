@@ -17,99 +17,36 @@ from collections.abc import Sequence
 from pathlib import Path
 from subprocess import TimeoutExpired
 
+from installed_pdf_fixture import PDF_FIXTURE
+
 #: Synthetic papers/methods/review switches match CLI supported sets.
 CHECK_PAPERS = ("FIC-R05-A", "FIC-R05-B", "FIC-CANDIDATE-C")
-CHECK_METHODS = ("direct", "candidate_review")
+CHECK_METHODS = ("roster",)
 CHECK_ADJUDICATION = ("on", "off")
 
 #: Subprocess timeout in seconds; timed-out steps report failure rather than wait indefinitely.
 SUBPROCESS_TIMEOUT = 180
 
-MATERIALS_DRIVER = r'''
-"""External installed preparation checks through the shared public API.
-
-Import synthetic packages, prepare with default converters or internal-parser fallback when tools are unavailable, and verify consumption without models. Use installed entry points only.
-"""
-
-import io
-import json
+MATERIALS_DRIVER = (
+    PDF_FIXTURE
+    + r"""
 import sys
-import tarfile
-from pathlib import Path
-
-from hvs_catalog.materials import sandbox
+from hvs_catalog.materials import MaterialsService
 from hvs_catalog.materials.flow import parser_fingerprint
-from hvs_catalog.materials.service import MaterialsService
-from hvs_catalog.pipeline.acquisition.lifecycle import AcquisitionService
-from hvs_catalog.workspace import initialize_workspace, open_workspace
-
-ROW = chr(92) + chr(92)  # LaTeX row separator.
-MAIN_TEX = (
-    "\\" + "documentclass{article}" + "\n"
-    + "\\" + "newcommand{\\objname}[1]{#1}" + "\n"
-    + "\\" + "begin{document}" + "\n"
-    + "\\" + "begin{table}" + "\\" + "caption{RV table}"
-      + "\\" + "label{tab:rv}" + "\n"
-    + "\\" + "begin{tabular}{lcc}" + "\\" + "hline"
-      + " Object & RV & Err " + ROW + "\n"
-    + "\\" + "hline" + "\n"
-    + "\\" + "objname{FIC-A} & 525 & 10 " + ROW + "\n"
-    + "\\" + "hline" + "\\" + "end{tabular}"
-      + "\\" + "end{table}" + "\n"
-    + "\\" + "end{document}" + "\n"
+from hvs_catalog.pipeline.acquisition import AcquisitionService
+from hvs_catalog.workspace import initialize_workspace
+work=Path(sys.argv[1]);space=initialize_workspace(work/"space")
+pdf=work/"paper.pdf";pdf.write_bytes(make_pdf())
+ref=AcquisitionService(space).import_journal_pdf(pdf,paper_key="SYN-JOURNAL",source_version="v1",provenance="synthetic installed PDF")
+service=MaterialsService(space,runner=FakeMinerU())
+handle,report=service.prepare_materials(request_key="installed-pdf",source_ref=ref)
+consumed=service.consume_prepared_input(handle.execution_id)
+print(json.dumps({"outcome":report.outcome,"errors":report.errors,"summary":report.summary,
+                  "consume_ok":consumed["ok"],"consume_problems":consumed["problems"],
+                  "parser_fingerprint":parser_fingerprint(),"flow_version":handle.flow_version}))
+space.close()
+"""
 )
-
-
-def make_tar_gz(members):
-    raw = io.BytesIO()
-    with tarfile.open(fileobj=raw, mode="w:gz") as archive:
-        for name, data in members.items():
-            info = tarfile.TarInfo(name)
-            info.size = len(data)
-            archive.addfile(info, io.BytesIO(data))
-    return raw.getvalue()
-
-
-def main():
-    work = Path(sys.argv[1])
-    space_dir = work / "space"
-    initialize_workspace(space_dir)
-    space = open_workspace(space_dir)
-    package_path = work / "source.tar.gz"
-    package_path.write_bytes(make_tar_gz({"main.tex": MAIN_TEX.encode("utf-8")}))
-    AcquisitionService(space).import_local_package(
-        package_path, arxiv_id="2501.02222", version=1, provenance="installed check"
-    )
-    service = MaterialsService(space)
-    handle, report = service.prepare_materials(
-        request_key="installed-materials", paper="2501.02222"
-    )
-    consumed = service.consume_prepared_input(handle.execution_id)
-    print(
-        json.dumps(
-            {
-                "outcome": report.outcome,
-                "errors": report.errors,
-                "summary": report.summary,
-                "consume_ok": consumed["ok"],
-                "consume_problems": consumed["problems"],
-                "observer_installed": Path(sandbox.__file__).with_name("source_trace.ltxml").is_file(),
-                "parser_fingerprint": parser_fingerprint(),
-                "flow_version": handle.flow_version,
-                "materials_complete": consumed["materials_complete"],
-                "tables": [
-                    {"environment": t["environment"], "status": t["status"]}
-                    for t in service.get_prepared_input(handle.execution_id)["tables"]
-                ],
-            },
-            ensure_ascii=False,
-        )
-    )
-
-
-if __name__ == "__main__":
-    main()
-'''
 
 
 PIPELINE_DRIVER = '''
@@ -150,7 +87,7 @@ if command == "run-to-pause":
     space = initialize_workspace(root)
     source = import_mock_source(space, PAPER_A)
     request = ExtractionRequest(
-        mode="daily", method="direct", source_refs=[source],
+        mode="daily", method="roster", source_refs=[source],
         models=[StepModel(model="mock-default")],
     )
     handle = start_extraction(space, request=request, request_key="installed-pause")
@@ -201,8 +138,8 @@ from hvs_catalog.workspace import initialize_workspace
 
 reports = []
 for paper, method in [
-    ("FIC-R05-A", "direct"),
-    ("FIC-CANDIDATE-C", "candidate_review"),
+    ("FIC-R05-A", "roster"),
+    ("FIC-CANDIDATE-C", "roster"),
 ]:
     space = initialize_workspace(Path("experiment-" + paper.replace("-", "_")))
     try:
@@ -245,10 +182,10 @@ def methods_payload_problems(payload: object) -> list[str]:
     """Check method queries expose two synthetic-mock methods without real extraction
     claims.
     """
-    if not isinstance(payload, list) or len(payload) != 2:
-        return [f"方法查询应返回 2 个方法，实际：{payload!r}"]
+    if not isinstance(payload, list) or len(payload) != 1:
+        return [f"方法查询应返回 1 个方法，实际：{payload!r}"]
     problems = []
-    expected = {("direct",), ("candidate_review",)}
+    expected = {("roster",)}
     actual = {(method.get("method_id"),) for method in payload}
     if actual != expected:
         problems.append(f"方法集合不符：期望 {sorted(expected)}，实际 {sorted(actual)}")
@@ -288,7 +225,7 @@ def cross_process_problems(
     if resumed.get("state") != "finished":
         problems.append(f"执行状态应为 finished，实际 {resumed.get('state')!r}")
     steps = journal.get("steps", {})
-    if steps.get("direct_roster") != 1 or steps.get("quantities") != 1:
+    if steps.get("roster") != 1 or steps.get("quantities") != 1:
         problems.append(f"调用日志步骤计数异常：{steps!r}")
     return problems
 
@@ -316,10 +253,9 @@ def experiment_report_problems(reports: Sequence[object]) -> list[str]:
             problems.append(
                 f"{paper!r} 开启组科学完成状态异常：{on.get('science_completion')!r}"
             )
-        if off.get("science_completion") != "pending":
+        if off.get("science_completion") != "complete":
             problems.append(
-                f"{paper!r} 关闭组应保持 pending，实际 "
-                f"{off.get('science_completion')!r}"
+                f"{paper!r} 关闭组应完成，实际 {off.get('science_completion')!r}"
             )
         if not off.get("quality", {}).get("l2", {}).get("gold"):
             problems.append(f"{paper!r} 关闭组 Gold 分母丢失")
@@ -342,19 +278,13 @@ def materials_check_problems(payload: object) -> list[str]:
         )
         return problems
     summary = payload.get("summary") or {}
-    if payload.get("observer_installed") is not True:
-        problems.append("发行包缺少可信 source_trace.ltxml 观测绑定")
     fingerprint = payload.get("parser_fingerprint")
     if not isinstance(fingerprint, str) or len(fingerprint) != 64:
-        problems.append("安装后的解析实现没有有效冻结指纹")
-    if payload.get("flow_version") != "2":
-        problems.append("安装后的材料流程不是当前版本2")
-    if summary.get("body_status") != "organized":
-        problems.append(f"合成正文应组织成功，实际 {summary.get('body_status')!r}")
-    if int(summary.get("table_count") or 0) < 1:
-        problems.append("合成包至少应发现一张表")
-    if int(summary.get("table_success") or 0) < 1:
-        problems.append("至少一张表应转换成功（含内部解析器兜底）")
+        problems.append("安装后的PDF解析实现没有有效冻结指纹")
+    if payload.get("flow_version") != "1":
+        problems.append("安装后的PDF材料流程不是当前版本1")
+    if int(summary.get("pages") or 0) < 1 or int(summary.get("blocks") or 0) < 1:
+        problems.append("合成PDF应提供页与内容块")
     if payload.get("consume_ok") is not True:
         problems.append(f"无模型消费核对未通过：{payload.get('consume_problems')}")
     return problems
@@ -447,7 +377,14 @@ def verify_pipeline_and_scoring(
     problems.extend(module_origin_problems(origin, venv_dir))
 
     # 2) Method query: two synthetic-mock methods without real extraction claims.
-    payload = run_json([script, "methods", "list", "--json"])
+    payload = run_json(
+        [
+            python,
+            "-I",
+            "-c",
+            "import json; from hvs_catalog.pipeline import list_methods; print(json.dumps(list_methods()))",
+        ]
+    )
     if payload is None:
         return problems
     problems.extend(methods_payload_problems(payload))
@@ -467,8 +404,6 @@ def verify_pipeline_and_scoring(
                         case / "space",
                         "--paper",
                         paper,
-                        "--method",
-                        method,
                         "--mode",
                         "evaluation",
                         "--adjudication",

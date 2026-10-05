@@ -125,7 +125,7 @@ def test_missing_and_model_copy_ai_approval_rejected(tmp_path):
 
 @pytest.mark.parametrize(
     "change",
-    ["answer", "title", "reviewer", "rules", "source", "pdf", "scope", "original"],
+    ["answer", "title", "reviewer", "rules", "pdf", "scope", "original"],
 )
 def test_changed_pair_rejects_original_approval(tmp_path, change):
     args = flow(tmp_path)
@@ -142,8 +142,6 @@ def test_changed_pair_rejects_original_approval(tmp_path, change):
         metadata["annotation"]["reviewer"] = "another"
     elif change == "rules":
         metadata["rules"]["sha256"] = "b" * 64
-    elif change == "source":
-        metadata["source"]["version"] = "v2"
     elif change == "pdf":
         metadata["files"][0]["sha256"] = "b" * 64
     elif change == "scope":
@@ -194,7 +192,7 @@ def test_revision_needs_reason_and_predecessor_hash(tmp_path):
         approve_revision(edit_pair(changed, metadata=metadata))
 
 
-@pytest.mark.parametrize("name", ["paper.pdf", "paper.tex"])
+@pytest.mark.parametrize("name", ["paper.pdf"])
 def test_changed_material_refuses_and_preserves_current(tmp_path, name):
     args = flow(tmp_path)
     approved_save(**args)

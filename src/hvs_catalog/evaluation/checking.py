@@ -176,8 +176,8 @@ def check_gold_annotation(
         "材料对应：文件存在、哈希一致、可打开与页序号边界",
         "引文匹配为辅助结果，不用于证明科学内容正确",
         "科学待核查项由人类专家处理；本工具不进行科学审定",
-        "已检查：标注身份、材料版本及对应记录完整性，固定 PDF 与 LaTeX 文件哈希",
-        "未独立判定：引文语义、科学结论正确性、PDF 与 LaTeX 科学内容是否等价",
+        "已检查：标注身份、材料版本及对应记录完整性，固定 PDF 文件哈希",
+        "未独立判定：引文语义、科学结论正确性和参考答案完整性",
     ]
     report = GoldCheckReport(
         document_sha256=document_sha256,
@@ -217,7 +217,7 @@ def _check_metadata(annotation: GoldAnnotation, checker: _Checker) -> None:
             "material",
             "material_correspondence_pending",
             "material_correspondence",
-            "PDF 与 LaTeX 材料对应尚待专家核对",
+            "固定PDF材料范围尚待专家核对",
         )
         return
     if set(correspondence.pdf_file_ids) != {item.file_id for item in annotation.files}:
@@ -226,22 +226,6 @@ def _check_metadata(annotation: GoldAnnotation, checker: _Checker) -> None:
             "material_correspondence_incomplete",
             "material_correspondence/pdf_file_ids",
             "材料对应须覆盖本标注登记的全部 PDF",
-        )
-    source = correspondence.latex
-    path = _material_path(checker.material_root, source.name)
-    if not path.is_file():
-        checker.problem(
-            "material",
-            "source_missing",
-            "material_correspondence/latex",
-            "固定 LaTeX 源文件或资料包缺失",
-        )
-    elif hashlib.sha256(path.read_bytes()).hexdigest() != source.sha256:
-        checker.problem(
-            "material",
-            "source_hash_mismatch",
-            "material_correspondence/latex",
-            "LaTeX 材料哈希不符",
         )
     if correspondence.differences:
         checker.problem(

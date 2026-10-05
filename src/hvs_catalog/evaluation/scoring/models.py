@@ -115,7 +115,6 @@ class EvaluationLimitation(Config):
     limitation_id: str = Field(min_length=1)
     paper_key: str = Field(min_length=1)
     category: Literal[
-        "pdf_source_mismatch",
         "author_issue",
         "unsupported_material",
         "external_out_of_scope",
@@ -124,7 +123,6 @@ class EvaluationLimitation(Config):
     basis: str = Field(min_length=1)
     evidence: list[str] = Field(min_length=1)
     exclude_from_default: bool = False
-    exclude_from_reference: bool = False
 
     @model_validator(mode="after")
     def _allowed_exclusions(self) -> EvaluationLimitation:
@@ -132,9 +130,7 @@ class EvaluationLimitation(Config):
             "unsupported_material",
             "external_out_of_scope",
         }:
-            raise ValueError("PDF差异与作者问题仍保留在默认评分范围")
-        if self.exclude_from_reference and self.category != "pdf_source_mismatch":
-            raise ValueError("参考评分仅额外排除预声明的PDF/源码不对齐范围")
+            raise ValueError("作者问题仍保留在评分范围")
         return self
 
 

@@ -82,7 +82,7 @@ def test_same_space_rerun_with_new_request_key_completes(tmp_path, service):
             {r.operation_key for r in second_receipts}
         )
         # Both executions actually call services; step caches are execution-local.
-        assert service.calls_for_step("direct_roster") == 2
+        assert service.calls_for_step("roster") == 2
     finally:
         space.close()
 
@@ -122,11 +122,9 @@ def test_same_space_config_change_creates_isolated_execution(tmp_path, service):
         assert space.store().current_revision(expert_paper) == 2
         pure_object = m.object_record_id("A", pure.execution_id)
         assert space.store().current_revision(pure_object) == 1
-        # Save new unresolved questions without mixing enabled-group decisions.
+        # Automatic interpretation does not create expert questions.
         pure_questions = pending_questions(space, execution_id=pure.execution_id)
-        assert [q.status for q in pure_questions] == ["open"]
-        assert pure_questions[0].record.record_id != question.record.record_id
-        assert pure_questions[0].decisions == []
+        assert pure_questions == []
         # Save model judgments in the new run manifest, never as expert decisions.
         run_p = space.store().read_record_current(f"run-{pure.execution_id}")
         assert run_p.data.model_judgments

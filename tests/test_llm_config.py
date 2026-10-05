@@ -21,7 +21,7 @@ def test_profiles_have_distinct_wire_parameters_and_locked_routes():
         k: TokenDanceAdapter().prepare(synthetic_request(v))["payload"]
         for k, v in configs.items()
     }
-    assert wires["deepseek-v4.1-flash"]["reasoning_effort"] == "high"
+    assert wires["deepseek-v4.1-flash"]["reasoning_effort"] == "max"
     assert wires["glm-5.3-flash"]["reasoning_effort"] == "max"
     assert wires["mimo-v2.6-flash"]["max_completion_tokens"] == 131072
     assert "reasoning_effort" not in wires["mimo-v2.6-flash"]

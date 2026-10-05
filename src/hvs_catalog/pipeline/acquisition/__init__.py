@@ -10,17 +10,6 @@ point resets automatically.
 
 from __future__ import annotations
 
-from .archive import (
-    MAX_ARCHIVE_MEMBERS,
-    MAX_PACKAGE_BYTES,
-    MAX_TOTAL_DECOMPRESSED_BYTES,
-    PackageInspection,
-    PackageIntegrityError,
-    PackageMember,
-    UnsupportedPackageError,
-    inspect_package,
-    sniff_package_format,
-)
 from .lifecycle import (
     AcquisitionError,
     AcquisitionResult,
@@ -44,9 +33,6 @@ from .protocol import (
 )
 
 __all__ = [
-    "MAX_ARCHIVE_MEMBERS",
-    "MAX_PACKAGE_BYTES",
-    "MAX_TOTAL_DECOMPRESSED_BYTES",
     "AcquisitionError",
     "AcquisitionResult",
     "AcquisitionService",
@@ -56,18 +42,12 @@ __all__ = [
     "ArxivSearchRequest",
     "DiscoveryRoundStatus",
     "ImportResult",
-    "PackageInspection",
-    "PackageIntegrityError",
-    "PackageMember",
     "PackageRejectionError",
     "RevisionCheckResult",
     "RevisionStatus",
     "SelectedMaterial",
     "SelectionStatus",
     "SourceUnavailableError",
-    "UnsupportedPackageError",
     "discovery_round_id",
-    "inspect_package",
     "parse_arxiv_identifier",
-    "sniff_package_format",
 ]

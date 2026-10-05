@@ -15,7 +15,7 @@ For a new working draft, original_expert may remain null. Before current-format 
 
 ## Materials and technical fields
 
-Set paper.version explicitly. material_correspondence records the checked PDF file IDs, fixed LaTeX file/archive name, hash and version, human checker, checked_at, basis and known differences. Until correspondence is checked the draft cannot be saved formally. Hashes establish file identity, not scientific equivalence. Differences require explicit acceptance and later evaluation-scope review. PDF and LaTeX files are read from material_root.
+Set paper.version explicitly. material_correspondence records the checked PDF file IDs, human checker, checked_at, basis and known differences. Until correspondence is checked the draft cannot be saved formally. Hashes establish file identity, not scientific equivalence. Differences require explicit acceptance and later evaluation-scope review. Fixed PDFs are read from material_root.
 
 The JSON reader assigns omitted contribution_id, conflict_id, exclusion_id and item_id deterministically, preserving supplied IDs and rejecting duplicates. Supply document_id and registered file_id; record real file hashes. This draft is read-only to the formal writer; explicitly convert to the current pair before review/save. Git history, format versions, paper versions and rules versions are distinct.
 
@@ -56,8 +56,8 @@ The JSON reader assigns omitted contribution_id, conflict_id, exclusion_id and i
     "version": null
   },
   "rules": {
-    "version": "0.1.0",
-    "sha256": "04faec79059d08f636aa91b4525a3cf10123d68673dec6b789d9b8c5c33377c4"
+    "version": "0.2.1",
+    "sha256": "67ab32bb7bf16dd9c856830ed752084edddf137b8a25048e0387052e5e5efafc"
   },
   "files": [
     {
@@ -157,7 +157,6 @@ The JSON reader assigns omitted contribution_id, conflict_id, exclusion_id and i
   "material_correspondence": {
     "status": "pending",
     "pdf_file_ids": [],
-    "latex": null,
     "checked_by": null,
     "checked_at": null,
     "basis": "",

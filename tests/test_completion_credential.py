@@ -91,7 +91,7 @@ def test_new_checkpoint_after_completion_rejected(tmp_path, service):
             graph.update_state(
                 {"configurable": {"thread_id": execution.execution_id}},
                 {},
-                as_node="direct_roster",
+                as_node="roster",
             )
         finally:
             conn.close()

@@ -8,10 +8,8 @@ The [Gold contracts](gold/README.md) in `gold/` are generated from
 `--check`. Do not edit by hand.
 
 - `record-format.md` — full record format documentation
-- `schemas/submission.roster.json`, `schemas/submission.candidate.json`,
-  `schemas/submission.discovery.json`, `schemas/submission.quantity.json` — step filling formats
-- `templates/roster-extraction.md`, `templates/candidate-judgment.md`,
-  `templates/candidate-discovery.md`, `templates/quantity-extraction.md` — English step filling templates
+- `schemas/submission.roster.json`, `schemas/submission.quantity.json` — step filling formats
+- `templates/roster-extraction.md`, `templates/quantity-extraction.md` — English step filling templates
   covering extractor and application responsibilities. Prompt assembly sends only
   scientific filling sections and the corresponding submission schema.
 

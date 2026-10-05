@@ -47,7 +47,7 @@ def _pair(tmp_path, *, scope="complete"):
         reviewer="synthetic-reviewer",
         material_review={
             "value": "checked",
-            "basis": "Synthetic fixed PDF and source correspondence",
+            "basis": "Synthetic fixed PDF scope",
             "record_sha256": "a" * 64,
         },
         scope_review={
@@ -243,3 +243,17 @@ def test_generated_compact_pair_parses_and_round_trips(tmp_path):
     pair = CompactGoldPair(answer=answer, metadata=metadata)
     path, _ = write_compact_gold_pair(pair, tmp_path / "template")
     assert read_compact_gold_pair(path).answer == answer
+
+
+def test_metadata_version_is_independent_and_rejects_retired_source_field(tmp_path):
+    from pydantic import ValidationError
+
+    _, _, pair = _pair(tmp_path)
+    from hvs_catalog.evaluation import COMPACT_SCHEMA_VERSION
+
+    assert COMPACT_SCHEMA_VERSION == 2
+    assert pair.metadata.schema_tag.version == 3
+    raw = pair.metadata.model_dump(mode="json", by_alias=True)
+    raw["source"] = {"name": "paper.tex", "sha256": "a" * 64, "version": "v1"}
+    with pytest.raises(ValidationError):
+        CompactGoldMetadata.model_validate(raw)

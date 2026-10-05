@@ -20,8 +20,8 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+from materials_helpers import make_pdf
 
-from hvs_catalog.pipeline.acquisition.archive import UnsupportedPackageError
 from hvs_catalog.pipeline.acquisition.lifecycle import (
     AcquisitionError,
     AcquisitionService,
@@ -139,7 +139,7 @@ class FakeArxivService:
             anomalies=self.anomalies,
         )
 
-    def download_source(self, identifier):
+    def download_pdf(self, identifier):
         self.download_calls.append(identifier)
         outcome = self.downloads[identifier]
         if isinstance(outcome, Exception):
@@ -161,7 +161,7 @@ class RaisingService:
     def metadata_by_ids(self, identifiers):
         raise AssertionError("不应触网")
 
-    def download_source(self, identifier):
+    def download_pdf(self, identifier):
         raise AssertionError("不应触网")
 
 
@@ -189,8 +189,8 @@ def make_tar_gz(members):
     return gzip.compress(raw.getvalue(), mtime=0)
 
 
-GOOD_PACKAGE = make_tar_gz({"main.tex": b"\\documentclass{article}x"})
-OTHER_PACKAGE = make_tar_gz({"main.tex": b"\\documentclass{article}v2"})
+GOOD_PACKAGE = make_pdf("Synthetic v1")
+OTHER_PACKAGE = make_pdf("Synthetic v2")
 
 
 @pytest.fixture
@@ -417,7 +417,7 @@ def test_multiple_versions_reuse_same_raw_by_content(space):
 @pytest.mark.parametrize(
     "payload, expected",
     [
-        (b"%PDF-1.4 test", "unsupported"),
+        (b"%PDF-1.4 test", "failed"),
         (make_tar_gz({"../escape.tex": b"evil"}), "failed"),
     ],
 )
@@ -482,7 +482,7 @@ def test_import_alternating_versions_declarations_first_time_and_retrieval(
     path = tmp_path / "input.tar.gz"
     path.write_bytes(GOOD_PACKAGE)
     service = build_service(space, RaisingService(), clock)
-    first = service.import_local_package(path, arxiv_id="2305.01234v1", provenance="A")
+    first = service.import_local_pdf(path, arxiv_id="2305.01234v1", provenance="A")
     first_status = service.get_selection("2305.01234")
     first_time = first_status.provenance_log[0]["at"]
     for version, provenance in [
@@ -494,7 +494,7 @@ def test_import_alternating_versions_declarations_first_time_and_retrieval(
         (1, "A"),
     ]:
         clock._now += 60
-        service.import_local_package(
+        service.import_local_pdf(
             path, arxiv_id=f"2305.01234v{version}", provenance=provenance
         )
         assert service.get_selection("2305.01234").version == version
@@ -535,7 +535,7 @@ def test_cross_source_same_bytes_keeps_first_origin(space, clock, tmp_path):
     path = tmp_path / "mirror.tar.gz"
     path.write_bytes(GOOD_PACKAGE)
     clock._now += 60
-    imported = service.import_local_package(
+    imported = service.import_local_pdf(
         path, arxiv_id="2401.01234v1", provenance="mirror"
     )
     assert imported.replayed and imported.material_ref == downloaded.material_ref
@@ -559,9 +559,7 @@ def test_conflict_old_unselected_version_rejected_before_publish(space, tmp_path
     path = tmp_path / "conflict.tar.gz"
     path.write_bytes(OTHER_PACKAGE)
     with pytest.raises(WorkspaceConflictError, match="不同字节"):
-        service.import_local_package(
-            path, arxiv_id="2401.01234v1", provenance="conflict"
-        )
+        service.import_local_pdf(path, arxiv_id="2401.01234v1", provenance="conflict")
     assert snapshot(space) == before and set(space.root.rglob("*.bin")) == files
     assert service.get_selection("2401.01234").version == 2
 
@@ -575,7 +573,7 @@ def test_invalid_import_declaration_no_changes(space, tmp_path, version, provena
     path.write_bytes(GOOD_PACKAGE)
     before = snapshot(space)
     with pytest.raises(AcquisitionError):
-        AcquisitionService(space, RaisingService()).import_local_package(
+        AcquisitionService(space, RaisingService()).import_local_pdf(
             path, arxiv_id="2305.01234", version=version, provenance=provenance
         )
     assert snapshot(space) == before
@@ -590,10 +588,8 @@ def test_rejected_local_input_unchanged_not_imported(space, tmp_path, payload):
     path = tmp_path / "rejected"
     path.write_bytes(payload)
     before = snapshot(space)
-    with pytest.raises(
-        (PackageRejectionError, UnsupportedPackageError), match="未导入"
-    ):
-        AcquisitionService(space, RaisingService()).import_local_package(
+    with pytest.raises(PackageRejectionError, match="未导入"):
+        AcquisitionService(space, RaisingService()).import_local_pdf(
             path, arxiv_id="2305.01234v1", provenance="test"
         )
     assert snapshot(space) == before
@@ -689,7 +685,7 @@ space.close()
             elif operation == "fetch":
                 service.acquire("2401.01234v1")
             elif operation == "import":
-                service.import_local_package(
+                service.import_local_pdf(
                     path, arxiv_id="2401.01234v1", provenance="test"
                 )
             else:
@@ -733,7 +729,7 @@ else:
 if operation == 'fetch':
     service.acquire('2401.01234v1')
 elif operation == 'import':
-    service.import_local_package(sys.argv[5], arxiv_id='2401.01234v1', provenance='A')
+    service.import_local_pdf(sys.argv[5], arxiv_id='2401.01234v1', provenance='A')
 else:
     service.run_discovery(base_request())
 """
@@ -800,11 +796,11 @@ def test_precise_crash_windows_new_process_resume(tmp_path, operation, window):
             if window != "after_commit":
                 assert service.list_selections() == []
                 assert space.store().list_records() == []
-            result = service.import_local_package(
+            result = service.import_local_pdf(
                 path, arxiv_id="2401.01234v1", provenance="A"
             )
             first = service.get_selection("2401.01234")
-            assert service.import_local_package(
+            assert service.import_local_pdf(
                 path, arxiv_id="2401.01234v1", provenance="A"
             ).replayed
             assert (
@@ -885,34 +881,34 @@ space.close()
         else:
             service.check_revisions()
     elif stage == "download":
-        real = api.download_source
+        real = api.download_pdf
 
         def download(identifier):
             check()
             return real(identifier)
 
-        api.download_source = download
+        api.download_pdf = download
         service.acquire("2401.01234v1")
     else:
         from hvs_catalog.pipeline.acquisition import lifecycle
 
-        real = lifecycle.inspect_package
+        real = lifecycle.pdf_page_count
 
         def inspect(payload):
             check()
             return real(payload)
 
-        monkeypatch.setattr(lifecycle, "inspect_package", inspect)
+        monkeypatch.setattr(lifecycle, "pdf_page_count", inspect)
         path = tmp_path / "input.tar.gz"
         path.write_bytes(GOOD_PACKAGE)
-        service.import_local_package(path, arxiv_id="2401.01234v1", provenance="test")
+        service.import_local_pdf(path, arxiv_id="2401.01234v1", provenance="test")
 
 
 def test_new_declaration_failed_save_is_atomic(space, tmp_path, monkeypatch):
     path = tmp_path / "input.tar.gz"
     path.write_bytes(GOOD_PACKAGE)
     service = AcquisitionService(space, RaisingService(), clock=FakeClock())
-    service.import_local_package(path, arxiv_id="2401.01234v1", provenance="A")
+    service.import_local_pdf(path, arxiv_id="2401.01234v1", provenance="A")
     before = snapshot(space)
     real = space.store().commit
 
@@ -921,11 +917,11 @@ def test_new_declaration_failed_save_is_atomic(space, tmp_path, monkeypatch):
 
     monkeypatch.setattr(space.store(), "commit", fail)
     with pytest.raises(RuntimeError, match="injected"):
-        service.import_local_package(path, arxiv_id="2401.01234v2", provenance="B")
+        service.import_local_pdf(path, arxiv_id="2401.01234v2", provenance="B")
     assert snapshot(space) == before
     assert service.get_version("2401.01234v2") is None
     monkeypatch.setattr(space.store(), "commit", real)
-    service.import_local_package(path, arxiv_id="2401.01234v2", provenance="B")
+    service.import_local_pdf(path, arxiv_id="2401.01234v2", provenance="B")
     assert service.get_selection("2401.01234").version == 2
     assert service.get_version("2401.01234v1").provenance_log[0]["provenance"] == "A"
 
@@ -934,7 +930,7 @@ def test_missing_declaration_basis_not_silently_skipped(space, tmp_path):
     path = tmp_path / "input.tar.gz"
     path.write_bytes(GOOD_PACKAGE)
     service = AcquisitionService(space, RaisingService())
-    service.import_local_package(path, arxiv_id="2401.01234v1", provenance="A")
+    service.import_local_pdf(path, arxiv_id="2401.01234v1", provenance="A")
     declaration = next(
         r for r in space.store().list_records() if isinstance(r, ExternalRecord)
     )
@@ -953,7 +949,7 @@ def test_missing_declaration_basis_not_silently_skipped(space, tmp_path):
     with pytest.raises(AcquisitionError, match="声明记录损坏"):
         service.get_version("2401.01234v1")
     with pytest.raises(AcquisitionError, match="声明记录损坏"):
-        service.import_local_package(path, arxiv_id="2401.01234v1", provenance="B")
+        service.import_local_pdf(path, arxiv_id="2401.01234v1", provenance="B")
     assert snapshot(space) == before
 
 

@@ -15,11 +15,9 @@ import textwrap
 from datetime import date
 
 import pytest
+from materials_helpers import make_pdf
 
 import hvs_catalog.pipeline.acquisition.lifecycle as lifecycle_mod
-from hvs_catalog.pipeline.acquisition.archive import (
-    UnsupportedPackageError,
-)
 from hvs_catalog.pipeline.acquisition.lifecycle import (
     AcquisitionError,
     AcquisitionService,
@@ -63,10 +61,8 @@ def make_tar_gz(members: dict[str, bytes]) -> bytes:
     return raw.getvalue()
 
 
-PACKAGE_A = make_tar_gz(
-    {"main.tex": b"\\documentclass{article}A", "fig/datum.dat": b"1,2,3"}
-)
-PACKAGE_B = make_tar_gz({"main.tex": b"\\documentclass{article}B"})
+PACKAGE_A = make_pdf("Synthetic A")
+PACKAGE_B = make_pdf("Synthetic B")
 
 
 class ScriptedApi:
@@ -76,7 +72,7 @@ class ScriptedApi:
         self.downloads = downloads
         self.download_calls: list[str] = []
 
-    def download_source(self, identifier):
+    def download_pdf(self, identifier):
         versioned = (
             identifier if isinstance(identifier, str) else identifier.versioned_id
         )
@@ -115,7 +111,7 @@ def test_import_ok_with_declared_identity_and_provenance(space, tmp_path):
     package = tmp_path / "local-a.tar.gz"
     package.write_bytes(PACKAGE_A)
     service = make_service(space, ScriptedApi({}))
-    result = service.import_local_package(
+    result = service.import_local_pdf(
         package, arxiv_id="2305.01234v2", provenance="manually downloaded by expert X"
     )
     assert result.canonical_id == "2305.01234"
@@ -130,8 +126,9 @@ def test_import_ok_with_declared_identity_and_provenance(space, tmp_path):
     assert record is not None
     assert "local import" in record.data.origin.retrieval
     # Persist the manifest and member hashes; raw bytes remain readable.
-    inventory = {item["name"] for item in selection.package_inventory}
-    assert inventory == {"main.tex", "fig/datum.dat"}
+    assert selection.package_inventory == (
+        {"media_type": "application/pdf", "pages": 1},
+    )
     assert (
         space.read_file(ArtifactRef(path=result.raw_path, sha256=result.raw_sha256))
         == PACKAGE_A
@@ -145,11 +142,9 @@ def test_import_requires_explicit_version(space, tmp_path):
     package.write_bytes(PACKAGE_B)
     service = make_service(space, ScriptedApi({}))
     with pytest.raises(AcquisitionError, match="具体版本"):
-        service.import_local_package(
-            package, arxiv_id="2305.01234", provenance="test copy"
-        )
+        service.import_local_pdf(package, arxiv_id="2305.01234", provenance="test copy")
     with pytest.raises(AcquisitionError, match="具体版本"):
-        service.import_local_package(package, arxiv_id="2305.01234", provenance="x")
+        service.import_local_pdf(package, arxiv_id="2305.01234", provenance="x")
 
 
 def test_import_contradictory_version_declaration_rejected(space, tmp_path):
@@ -157,7 +152,7 @@ def test_import_contradictory_version_declaration_rejected(space, tmp_path):
     package.write_bytes(PACKAGE_B)
     service = make_service(space, ScriptedApi({}))
     with pytest.raises(AcquisitionError, match="矛盾"):
-        service.import_local_package(
+        service.import_local_pdf(
             package, arxiv_id="2305.01234v2", version=3, provenance="test copy"
         )
 
@@ -166,7 +161,7 @@ def test_import_legacy_identifier_supported(space, tmp_path):
     package = tmp_path / "legacy.tar.gz"
     package.write_bytes(PACKAGE_B)
     service = make_service(space, ScriptedApi({}))
-    result = service.import_local_package(
+    result = service.import_local_pdf(
         package, arxiv_id="math.AG/0309136v1", provenance="archive copy"
     )
     assert result.versioned_id == "math.AG/0309136v1"
@@ -178,13 +173,11 @@ def test_import_same_identity_version_different_bytes_rejected(space, tmp_path):
     first = tmp_path / "first.tar.gz"
     first.write_bytes(PACKAGE_A)
     service = make_service(space, ScriptedApi({}))
-    service.import_local_package(first, arxiv_id="2305.01234v2", provenance="one")
+    service.import_local_pdf(first, arxiv_id="2305.01234v2", provenance="one")
     conflicting = tmp_path / "conflicting.tar.gz"
     conflicting.write_bytes(PACKAGE_B)
     with pytest.raises(WorkspaceConflictError, match="不同字节"):
-        service.import_local_package(
-            conflicting, arxiv_id="2305.01234v2", provenance="two"
-        )
+        service.import_local_pdf(conflicting, arxiv_id="2305.01234v2", provenance="two")
     # Existing material is not overwritten.
     selection = service.get_selection("2305.01234")
     assert (
@@ -201,11 +194,11 @@ def test_import_identical_bytes_reusable_keeps_provenance(space, tmp_path):
     again = tmp_path / "b.tar.gz"
     again.write_bytes(PACKAGE_A)
     service = make_service(space, ScriptedApi({}))
-    first_result = service.import_local_package(
+    first_result = service.import_local_pdf(
         first, arxiv_id="2305.01234v2", provenance="first copy"
     )
     assert not first_result.replayed
-    repeat = service.import_local_package(
+    repeat = service.import_local_pdf(
         again, arxiv_id="2305.01234v2", provenance="second copy"
     )
     assert repeat.replayed
@@ -227,7 +220,7 @@ def test_import_unsafe_package_rejected_nothing_published(space, tmp_path):
     package.write_bytes(evil.getvalue())
     service = make_service(space, ScriptedApi({}))
     with pytest.raises(PackageRejectionError):
-        service.import_local_package(
+        service.import_local_pdf(
             package, arxiv_id="2305.01234v2", provenance="test copy"
         )
     assert not (space.root / "sources" / "papers").exists() or not any(
@@ -240,8 +233,8 @@ def test_import_pdf_rejected_as_unsupported(space, tmp_path):
     package = tmp_path / "paper.pdf"
     package.write_bytes(b"%PDF-1.5 not a source package")
     service = make_service(space, ScriptedApi({}))
-    with pytest.raises(UnsupportedPackageError, match="PDF"):
-        service.import_local_package(
+    with pytest.raises(PackageRejectionError, match="PDF"):
+        service.import_local_pdf(
             package, arxiv_id="2305.01234v2", provenance="test copy"
         )
 
@@ -249,7 +242,7 @@ def test_import_pdf_rejected_as_unsupported(space, tmp_path):
 def test_import_missing_file_rejected(space, tmp_path):
     service = make_service(space, ScriptedApi({}))
     with pytest.raises(AcquisitionError, match="不存在"):
-        service.import_local_package(
+        service.import_local_pdf(
             tmp_path / "nope.tar.gz",
             arxiv_id="2305.01234v2",
             provenance="test copy",
@@ -257,12 +250,12 @@ def test_import_missing_file_rejected(space, tmp_path):
 
 
 def test_import_size_cap(space, tmp_path, monkeypatch):
-    monkeypatch.setattr(lifecycle_mod, "MAX_PACKAGE_BYTES", 16)
+    monkeypatch.setattr(lifecycle_mod, "MAX_PDF_BYTES", 16)
     package = tmp_path / "big.tar.gz"
     package.write_bytes(PACKAGE_A)
     service = make_service(space, ScriptedApi({}))
     with pytest.raises(PackageRejectionError, match="上限"):
-        service.import_local_package(
+        service.import_local_pdf(
             package, arxiv_id="2305.01234v2", provenance="test copy"
         )
 
@@ -285,7 +278,7 @@ RESTORE_QUERY_SCRIPT = textwrap.dedent(
             raise AssertionError("恢复查询不应触网")
         def metadata_by_ids(self, identifiers):
             raise AssertionError("恢复查询不应触网")
-        def download_source(self, identifier):
+        def download_pdf(self, identifier):
             raise AssertionError("恢复查询不应触网")
 
     service = AcquisitionService(space, NoNetwork(), clock=None)
@@ -356,7 +349,7 @@ def test_backup_restore_then_subprocess_resume_query(tmp_path):
     package = tmp_path / "local.tar.gz"
     package.write_bytes(PACKAGE_B)
     service3 = AcquisitionService(space, ScriptedApi({}), clock=FakeClock())
-    import_result = service3.import_local_package(
+    import_result = service3.import_local_pdf(
         package, arxiv_id="2305.01234v1", provenance="restore test copy"
     )
     assert import_result.canonical_id == "2305.01234"
@@ -467,10 +460,8 @@ def test_import_replay_with_new_provenance_retained(space, tmp_path):
     again = tmp_path / "b.tar.gz"
     again.write_bytes(PACKAGE_A)
     service = make_service(space, ScriptedApi({}))
-    service.import_local_package(
-        first, arxiv_id="2305.01234v2", provenance="first copy"
-    )
-    repeat = service.import_local_package(
+    service.import_local_pdf(first, arxiv_id="2305.01234v2", provenance="first copy")
+    repeat = service.import_local_pdf(
         again, arxiv_id="2305.01234v2", provenance="mirror at other site"
     )
     assert repeat.replayed
@@ -483,7 +474,7 @@ def test_import_replay_with_new_provenance_retained(space, tmp_path):
     record = space.store().read_record_current(repeat.material_ref.record_id)
     assert "first copy" in record.data.origin.retrieval
     # Reimporting the same declaration is idempotent and adds no duplicate log entries.
-    third = service.import_local_package(
+    third = service.import_local_pdf(
         again, arxiv_id="2305.01234v2", provenance="mirror at other site"
     )
     assert third.replayed
@@ -506,8 +497,10 @@ def test_unsupported_retained_bytes_survive_backup_restore(tmp_path):
         service = AcquisitionService(
             space, ScriptedApi({"2401.00009v1": pdf_bytes}), clock=FakeClock()
         )
-        result = service.acquire("2401.00009v1")
-        assert result.state == "unsupported"
+        with pytest.raises(PackageRejectionError):
+            service.acquire("2401.00009v1")
+        result = service.get_selection("2401.00009")
+        assert result.state == "failed"
         attempt_id = f"arxiv-attempt-2401.00009v1-{result.raw_sha256[:16]}"
         record = space.store().read_record_current(attempt_id)
         assert record is not None

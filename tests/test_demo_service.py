@@ -15,8 +15,8 @@ def test_external_call_survives_reopen_and_client_rollback(tmp_path):
     client.execute("BEGIN")
     service = PipelineMockService(path)
     response = service.call(
-        step="direct_roster",
-        request={"step": "direct_roster"},
+        step="roster",
+        request={"step": "roster"},
         material=material_spec(PAPER_B),
     )
     client.execute("INSERT INTO results VALUES ('not committed')")
@@ -26,8 +26,8 @@ def test_external_call_survives_reopen_and_client_rollback(tmp_path):
     reopened = PipelineMockService(path)
     assert reopened.summary()["calls"] == 1
     reopened.call(
-        step="direct_roster",
-        request={"step": "direct_roster"},
+        step="roster",
+        request={"step": "roster"},
         material=material_spec(PAPER_B),
     )
     entries = [json.loads(line) for line in path.read_text().splitlines()]

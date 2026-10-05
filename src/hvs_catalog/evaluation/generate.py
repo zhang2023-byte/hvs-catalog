@@ -19,7 +19,7 @@ from ..records.rules import load_rules
 from . import models as models_module
 from .compact import (
     COMPACT_METADATA_SCHEMA_NAME,
-    COMPACT_SCHEMA_VERSION,
+    COMPACT_METADATA_SCHEMA_VERSION,
     CompactAnnotationActors,
     CompactBoundness,
     CompactClaim,
@@ -196,7 +196,7 @@ def render_gold_format_document() -> str:
         ),
         "",
         (
-            "Current formal Gold uses the two-file v2 answer and metadata contract in "
+            "Current formal Gold uses the answer v2 and metadata v3 contract in "
             "[current Gold format](../gold-format.md). This v1 format remains readable "
             "for migration comparison and previously saved synthetic/historical records."
         ),
@@ -257,7 +257,6 @@ def render_gold_format_document() -> str:
         ("Original human expert", models_module.GoldOriginalExpert),
         ("Draft authorship", models_module.GoldPreparationAuthor),
         ("Material correspondence", models_module.GoldMaterialCorrespondence),
-        ("LaTeX source", models_module.GoldLatexSource),
         ("Provenance", models_module.GoldProvenance),
         ("Legacy source", models_module.GoldLegacySource),
         ("Pending item", models_module.GoldPendingItem),
@@ -400,10 +399,10 @@ def render_annotation_template() -> str:
         "expert; these names are not defaults. This records declared identities, not authentication.\n\n"
         "## Materials and technical fields\n\n"
         "Set paper.version explicitly. material_correspondence records the checked PDF file IDs, "
-        "fixed LaTeX file/archive name, hash and version, human checker, checked_at, basis and "
+        "human checker, checked_at, basis and "
         "known differences. Until correspondence is checked the draft cannot be saved formally. "
         "Hashes establish file identity, not scientific equivalence. Differences require explicit "
-        "acceptance and later evaluation-scope review. PDF and LaTeX files are read from material_root.\n\n"
+        "acceptance and later evaluation-scope review. Fixed PDFs are read from material_root.\n\n"
         "The JSON reader assigns omitted contribution_id, conflict_id, exclusion_id and item_id "
         "deterministically, preserving supplied IDs and rejecting duplicates. Supply document_id "
         "and registered file_id; record real file hashes. This draft is read-only to the "
@@ -485,11 +484,11 @@ that a reader must understand; they remain checked when files are read.
 
 | Version | Meaning |
 |---|---|
-| Metadata `schema.version = 2` | Current two-file format; the earlier working annotation format used 1 |
+| Metadata `schema.version = 3` | Current PDF-only metadata format; independent of the unchanged answer format v2 |
 | Old Stella `schema.version = 4` | A separate input format supported by the legacy reader |
 | Git commit | Authorized historical content; no new vN directories or version index |
 | Old saved `vN/` directories | Historical layout, rejected and not automatically migrated by the current writer |
-| Paper or source `version` | The version of the paper or source material |
+| Paper `version` | The version of the paper |
 | Rules `version` | The scientific rule set used for the annotation |
 
 These numbers advance independently. Moving contract files does not change a
@@ -614,7 +613,7 @@ def _compact_example() -> tuple[CompactGoldAnswer, CompactGoldMetadata]:
         {
             "schema": {
                 "name": COMPACT_METADATA_SCHEMA_NAME,
-                "version": COMPACT_SCHEMA_VERSION,
+                "version": COMPACT_METADATA_SCHEMA_VERSION,
             },
             "paper": {
                 "arxiv_id": "0000.00000",
@@ -623,7 +622,6 @@ def _compact_example() -> tuple[CompactGoldAnswer, CompactGoldMetadata]:
             },
             "rules": {"version": rules.version, "sha256": rules.sha256},
             "files": [{"file_id": "pdf-1", "name": "paper.pdf", "sha256": "0" * 64}],
-            "source": {"name": "paper.tex", "sha256": "0" * 64, "version": "v1"},
             "annotation": {
                 "original_annotator": "synthetic-expert",
                 "reviewer": "synthetic-reviewer",
@@ -656,7 +654,7 @@ def render_compact_format_document() -> str:
             "The formal scoring reference is `answer.json` together with `metadata.json`. "
             "The answer contains scientific targets, PDF evidence, explicit coverage and "
             "remaining uncertainty. Metadata binds that exact answer to the paper version, "
-            "fixed PDF/source hashes, scientific rules and concise attribution. Optional "
+            "fixed PDF hashes, scientific rules and concise attribution. Optional "
             "empty fields are omitted; an empty `contributions` array remains explicit."
         ),
         "",
@@ -710,7 +708,6 @@ def render_compact_format_document() -> str:
         models_module.GoldProbability,
         models_module.GoldRulesRef,
         models_module.GoldPdfFile,
-        models_module.GoldLatexSource,
     ):
         lines += _model_table(model)
     return "\n".join(lines).rstrip() + "\n"

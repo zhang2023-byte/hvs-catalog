@@ -9,6 +9,7 @@ extraction is outside this milestone.
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 from datetime import UTC, datetime
@@ -32,18 +33,9 @@ BASE_LETTERS = {PAPER_A: "A", PAPER_B: "B"}
 
 #: Fixed known mock token usage, without monetary fees.
 STEP_TOKENS = {
-    "direct_roster": 120,
-    "discover_candidates": 80,
-    "review_candidates": 90,
+    "roster": 120,
     "quantities": 200,
-    "interpret_ambiguity": 60,
 }
-
-_MODEL_ATTEMPT_NOTE = (
-    "Model attempted to interpret the ambiguity against the paper evidence"
-    " and both model contexts; it could not determine the author's intent."
-    " The question remains unresolved."
-)
 
 C_LINES = [
     (
@@ -131,16 +123,6 @@ _MOCK_PAPERS: dict[str, dict[str, Any]] = {
                 "contribution_id": "contribution-a-1",
             }
         ],
-        "candidates": [
-            {
-                "candidate_id": "cand-a-1",
-                "identifier": m.OBJECT_NAMES["A"],
-                "item_id": "roster-a-1",
-                "disposition": "included",
-                "evidence_line": 0,
-                "contribution_id": "contribution-a-1",
-            }
-        ],
         "contributions": [
             {
                 "contribution_id": "contribution-a-1",
@@ -195,16 +177,6 @@ _MOCK_PAPERS: dict[str, dict[str, Any]] = {
                 "contribution_id": "contribution-b-1",
             }
         ],
-        "candidates": [
-            {
-                "candidate_id": "cand-b-1",
-                "identifier": m.OBJECT_NAMES["B"],
-                "item_id": "roster-b-1",
-                "disposition": "included",
-                "evidence_line": 0,
-                "contribution_id": "contribution-b-1",
-            }
-        ],
         "contributions": [
             {
                 "contribution_id": "contribution-b-1",
@@ -253,32 +225,6 @@ _MOCK_PAPERS: dict[str, dict[str, Any]] = {
             {
                 "item_id": "cand-c-3",
                 "identifier": "FIC-C-3",
-                "disposition": "pending",
-                "evidence_line": 3,
-                "contribution_id": "contribution-c-3",
-            },
-        ],
-        "candidates": [
-            {
-                "candidate_id": "cand-c-1",
-                "identifier": "FIC-C-1",
-                "item_id": "cand-c-1",
-                "disposition": "included",
-                "evidence_line": 1,
-                "contribution_id": "contribution-c-1",
-            },
-            {
-                "candidate_id": "cand-c-2",
-                "identifier": "FIC-C-2",
-                "item_id": "cand-c-2",
-                "disposition": "excluded",
-                "evidence_line": 2,
-                "contribution_id": None,
-            },
-            {
-                "candidate_id": "cand-c-3",
-                "identifier": "FIC-C-3",
-                "item_id": "cand-c-3",
                 "disposition": "pending",
                 "evidence_line": 3,
                 "contribution_id": "contribution-c-3",
@@ -762,38 +708,53 @@ def _respond(step: str, request: dict, material: dict) -> dict:
     # Reentry must not answer from a newly modified module-level fixture.
     spec = material
     tokens = STEP_TOKENS.get(step)
-    if step == "direct_roster":
-        return {"entries": _entry_responses(spec["roster_entries"]), "tokens": tokens}
-    if step == "discover_candidates":
-        return {"candidates": _entry_responses(spec["candidates"]), "tokens": tokens}
-    if step == "review_candidates":
-        candidate_id = request["candidate_id"]
-        entry = next(
-            (
-                item
-                for item in spec["candidates"]
-                if item["candidate_id"] == candidate_id
-            ),
-            None,
-        )
-        if entry is None:
-            raise ValueError(f"未知候选：{candidate_id}")
-        return {"entry": _entry_response(entry), "tokens": tokens}
+    if step == "roster":
+        entries = copy.deepcopy(spec["roster_entries"])
+        judgments = []
+        if not request.get("expert_adjudication", True):
+            for entry in entries:
+                if entry["disposition"] == "pending":
+                    entry["disposition"] = "included"
+                    judgments.append(
+                        "Synthetic model interprets the provisional membership evidence as supporting inclusion of "
+                        + entry["identifier"]
+                        + "; retains the stated conditions."
+                    )
+        return {
+            "entries": _entry_responses(entries),
+            "tokens": tokens,
+            "model_judgments": judgments,
+        }
     if step == "quantities":
         included = set(request["included_items"])
         contributions = [
-            item for item in spec["contributions"] if item["roster_item_id"] in included
+            copy.deepcopy(item)
+            for item in spec["contributions"]
+            if item["roster_item_id"] in included
         ]
+        judgments = []
+        if not request.get("expert_adjudication", True):
+            for item in contributions:
+                boundness = item["boundness"]
+                if boundness["kind"] == "needs_expert":
+                    item["boundness"] = {
+                        "kind": "fixed",
+                        "status": "possibly_unbound",
+                        "evidence_line": 2,
+                        "conditionals": boundness["conditionals"],
+                    }
+                    judgments.append(
+                        "Synthetic model selects possibly_unbound as the most supported author interpretation from the conditional evidence; preserves both conditions."
+                    )
         needs_expert = any(
             item["boundness"]["kind"] == "needs_expert" for item in contributions
         )
         return {
             "contributions": contributions,
             "needs_expert": needs_expert,
+            "model_judgments": judgments,
             "tokens": tokens,
         }
-    if step == "interpret_ambiguity":
-        return {"attempt": "unresolved", "note": _MODEL_ATTEMPT_NOTE, "tokens": tokens}
     raise ValueError(f"未知的服务步骤：{step}")
 
 
@@ -804,8 +765,6 @@ def _entry_response(entry: dict) -> dict:
         "disposition": entry["disposition"],
         "evidence": {"file_id": "paper", "line": entry["evidence_line"]},
     }
-    if entry.get("candidate_id"):
-        payload["candidate_id"] = entry["candidate_id"]
     if entry.get("contribution_id") and entry["disposition"] == "included":
         payload["contribution_id"] = entry["contribution_id"]
     return payload

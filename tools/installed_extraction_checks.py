@@ -27,13 +27,12 @@ if phase == "create":
         pass
     else:
         raise AssertionError("A precedent requires an explicit approved declaration.")
-    config = ExtractionConfig(method="candidate_review", step_models={
-        "discover_candidates": ModelConfig(model="qwen3.8-flash"),
-        "review_candidates": ModelConfig(model="glm-5.3-flash"),
+    config = ExtractionConfig(step_models={
+        "roster": ModelConfig(model="qwen3.8-flash"),
         "quantities": ModelConfig(model="mimo-v2.6-flash"),
     })
-    assert len(check_extraction_config(config)["steps"]) == 3
-    preview = preview_extraction_prompt(ExtractionConfig(), "direct_roster", PromptInput(manuscript="FILE synthetic.tex\n1|Synthetic A is unbound."))
+    assert len(check_extraction_config(config)["steps"]) == 2
+    preview = preview_extraction_prompt(ExtractionConfig(), "roster", PromptInput(manuscript="FILE synthetic.tex\n1|Synthetic A is unbound."))
     assert preview["prepared"]["payload"]["provider"]["only"] == ["deepseek"]
     assert "S07" in preview["request"]["messages"][0]["content"]
     (root.parent / "config.json").write_text(config.model_dump_json())
@@ -43,7 +42,7 @@ if phase == "create":
     handle = start_configured_extraction(space, configuration=config, source_refs=[source], request_key="installed-combination")
     assert resume_extraction(space, handle.execution_id, service=PipelineMockService()).outcome == "finished"
     status = get_extraction(space, handle.execution_id)
-    assert status["usage"]["tokens"] == 370
+    assert status["usage"]["tokens"] == 320
     source = import_mock_source(space, PAPER_A)
     pending = start_configured_extraction(space, configuration=ExtractionConfig(), source_refs=[source], request_key="installed-pause")
     assert resume_extraction(space, pending.execution_id, service=PipelineMockService()).outcome == "paused"
@@ -96,19 +95,19 @@ def verify_installed_extraction(venv_dir, work_dir, script) -> list[str]:
                 str(root.parent / "config.json"),
             ]
         )
-        assert checked["configuration"]["method"] == "candidate_review"
+        assert "method" not in checked["configuration"]
         preview = run(
             [
                 str(script),
                 "extract",
                 "preview",
                 "--step",
-                "direct_roster",
+                "roster",
                 "--input",
                 str(root.parent / "input.json"),
             ]
         )
-        assert preview["request"]["tool"]["name"] == "submit_direct_roster"
+        assert preview["request"]["tool"]["name"] == "submit_roster"
         assert "A is unbound" in preview["request"]["messages"][1]["content"]
     except (ValueError, AssertionError, subprocess.TimeoutExpired) as exc:
         return [f"Installed extraction configuration/preview/recovery failed: {exc}"]

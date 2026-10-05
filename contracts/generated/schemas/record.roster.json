@@ -90,6 +90,7 @@
         },
         "method": {
           "enum": [
+            "roster",
             "direct",
             "candidate_review"
           ],
@@ -188,6 +189,13 @@
           ],
           "default": null,
           "title": "Contribution Id"
+        },
+        "gap_refs": {
+          "items": {
+            "$ref": "#/$defs/GapRef"
+          },
+          "title": "Gap Refs",
+          "type": "array"
         }
       },
       "required": [

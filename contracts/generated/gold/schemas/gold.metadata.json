@@ -223,35 +223,6 @@
       "title": "CompactSchemaTag",
       "type": "object"
     },
-    "GoldLatexSource": {
-      "additionalProperties": false,
-      "description": "A fixed source file or archive under the explicitly supplied material root.",
-      "properties": {
-        "name": {
-          "minLength": 1,
-          "title": "Name",
-          "type": "string"
-        },
-        "sha256": {
-          "pattern": "^[0-9a-f]{64}$",
-          "title": "Sha256",
-          "type": "string"
-        },
-        "version": {
-          "minLength": 1,
-          "pattern": "\\S",
-          "title": "Version",
-          "type": "string"
-        }
-      },
-      "required": [
-        "name",
-        "sha256",
-        "version"
-      ],
-      "title": "GoldLatexSource",
-      "type": "object"
-    },
     "GoldPdfFile": {
       "additionalProperties": false,
       "description": "One fixed PDF material; an unverified hash stays pending rather than fabricated.",
@@ -289,7 +260,7 @@
     },
     "GoldRulesRef": {
       "additionalProperties": false,
-      "description": "Scientific rule version used for annotation; legacy versions cannot substitute.",
+      "description": "Scientific rules used for the original annotation; current scoring checks compatibility.",
       "properties": {
         "version": {
           "minLength": 1,
@@ -328,17 +299,6 @@
       "minItems": 1,
       "title": "Files",
       "type": "array"
-    },
-    "source": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/GoldLatexSource"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null
     },
     "annotation": {
       "$ref": "#/$defs/CompactAnnotationActors"

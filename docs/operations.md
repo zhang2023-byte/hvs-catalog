@@ -25,7 +25,7 @@ hvs-catalog acquisition discover --space ./ws --from 2024-01-01 --to 2024-01-31 
     --terms "dark matter" --category astro-ph.CO
 hvs-catalog acquisition fetch --space ./ws --id 2401.01234
 hvs-catalog acquisition revisions --space ./ws
-hvs-catalog acquisition import --space ./ws --file pkg.tar.gz \
+hvs-catalog acquisition import --space ./ws --file paper.pdf \
     --id 2401.01234v2 --provenance "从镜像站获得"
 hvs-catalog acquisition status --space ./ws --json
 hvs-catalog acquisition status --space ./ws --id 2401.01234v1 --json
@@ -46,8 +46,8 @@ hvs-catalog acquisition material --space ./ws --id 2401.01234
 | 1 | 工程错误、空间忙或本地导入拒绝；被拒绝的本地文件未导入 |
 | 2 | 命令参数错误 |
 | 3 | 发现未完，可恢复；不能当作完整覆盖 |
-| 4 | 远程材料形态不支持，收到的原始字节已保留 |
-| 5 | 源码不可用，保留待处理；不表示科学上无关 |
+| 4 | 保留给历史不支持形态；新PDF完整性错误返回1 |
+| 5 | PDF不可用，保留待处理；不表示科学上无关 |
 | 6 | 无可用材料 |
 | 7 | 修订检查未全部核实，状态为 unknown；不表示没有新版 |
 
@@ -55,42 +55,53 @@ hvs-catalog acquisition material --space ./ws --id 2401.01234
 
 页级溯源保存完整解析视图（含摘要等返回元数据），不是原始 Atom 线路响应。获取进度、页溯源和保留的原包均随空间备份恢复；HTTP 传输关闭底层自动重试／重定向，每一跳经过共享节流并有界读取。
 
-### 支持的包形态
+### PDF导入与可选源码存档
 
-只支持普通 tar、gzip 封装 tar、单个 TeX 与 gzip 单 TeX，并在解压前限制尺寸、成员数、路径及解压输出。
-
-- 每成员至多一个可完整切分的局部 PAX（`x`）或 GNU 长名（`L`）扩展头。PAX 只允许 `path`、`linkpath`、`mtime`、`ctime`、`atime`、`comment`、`uid`、`gid`、`uname`、`gname`、`hdrcharset`。
-- 拒绝其他 PAX 字段（包括 `size`、全部 `GNU.sparse.*`）、连续扩展头链、全局 PAX（`g`）、GNU 长链接（`K`）、链接／设备／管道成员、路径越界／别名冲突、截断及尾随数据。不把不支持的归档当普通文本处理；支持键的元数据解析错误也不静默回退。
-- **远程获取**：限额内已收到的原始字节保留在空间内，关联版本和获取记录，进入整体备份。**本地导入**：不支持的文件在发布前拒绝，原文件不改动，无空间选择、尝试记录或备份引用；不能误认为已保存到空间。
-
-实际特殊归档形态的出现率、全量检索覆盖、跨机协调和断电耐久尚未验证；明确的“不支持”不代表该形态罕见。
-
-## 材料准备（正文与表格）
-
-当前能力见 [README](../README.md#当前可用能力)，验收与验证范围见 [任务总表](../.dev/progress.md#任务总表)。仍须核对输入的已知缺口，工程准备完成不代表材料完整或科学判断已确认。
-
-从获取阶段已保存的源码包准备提取输入：安全展开成员、组织主稿正文／附录、转换常用表环境为 ECSV、确定性展开对象编号范围，并把已知缺口随输入一起交付。入口复用工作空间锁、runtime、事务与共同裁决接口；准备接口不接收 Gold。
+默认`fetch`只下载PDF。手动加`--latex`额外保存固定版本源码字节、来源和哈希；不解包、不交给模型，其失败通过`latex_error`单独报告，不使有效PDF失败。
 
 ```bash
-hvs-catalog materials prepare --space ./ws --paper 2501.01111 --request-key rk-1 [--root-file main.tex] [--version N] [--encoding utf-8|latin-1] [--expert-adjudication] [--range "HVS1--HVS5|sec1.tex|1|1"] [--json]
-hvs-catalog materials status --space ./ws [--execution exec-000001] [--json]
-hvs-catalog materials resume --space ./ws --execution exec-000001 [--json]
-hvs-catalog materials consume --space ./ws --execution exec-000001 [--json]
+hvs-catalog acquisition fetch --space ./ws --id 2401.01234v2 --latex
+hvs-catalog acquisition import-pdf --space ./ws --file journal.pdf \
+    --paper-key my-paper --source-version published-2026 \
+    --provenance "从期刊网页下载，固定本地原件" --doi 10.example/example
 ```
 
-Python 共用入口：`MaterialsService.prepare_materials`／`resume_preparation`／`get_preparation`／`get_prepared_input`／`consume_prepared_input`；纯函数 `expand_range_notation` 供编号范围展开。日常与评测消费同一份输入；无模型合成消费者 `consume_prepared_input` 核对全部附件引用与 ECSV 回读；`ok` 仅表示工程完整性，`materials_complete` 另表示是否存在材料缺口，不能混同科学验收。
+期刊导入返回固定的`source_ref`，准备时使用它；无需构造arXiv编号。相同论文键、来源版本及内容可复用，内容冲突拒绝覆盖。支持未加密、结构可读、至多256 MiB／2000页的PDF；HTML、损坏和加密文件拒绝。结构检查不证明科学内容或解析准确。
 
-行为要点：
+## 材料准备：正文与表格
 
-- 输入是获取阶段保存的准确来源修订与原包哈希，不重新下载；准备结果另存来源包新修订（成员、派生 UTF-8 文本与缺口），不覆盖旧修订。同请求同输入重放复用已保存结果；改输入（含主稿选择、范围记号、转换器版本、解析代码或观测绑定）须用新请求键；当前材料流程为版本2，不自动混用旧检查点。
-- 主稿唯一时自动确定；多个有效主稿必须 `--root-file` 显式选择，不按名称猜。`\input`／`\include` 只跟随字面路径；缺件、循环、越界、动态或不支持的包含形式逐项记入缺口，不使有效主稿整体失败；未引用草稿保留在清单中，不断言科学无关。
-- 正文去注释保持行位置，保护 verbatim。成员解码只按明确依据：UTF-8 直接解码；成员声明（`% !TeX encoding`）或操作者 `--encoding` 固定选择为 latin-1 时派生保留行数的 UTF-8 文本并登记映射；未声明且 UTF-8 失败的成员保持未处理，不猜编码。
-- 支持 `tabular`／`tabular*`、`longtable`、`deluxetable`／`deluxetable*` 及可证明的 `pgfplotstable` backing CSV。包内 CSV／ECSV 按逻辑记录读取，JSON／普通文本按实际结构定位；FITS、自定义 DAT、图片／PDF 表格保留材料与提及，不做 OCR／PDF 提取，包外链接不获取。具体转换与回退条件见 [支持格式和对应要求](design/workflow.md#表格转换与原件对应)。
-- 普通表在只读完整作者上下文中经一次沙箱 LaTeXML 转换，可以包含多张表；按原生来源位置和每次执行定位，不猜首表／表序。最低对应粒度为表块，不宣称每个单元格的精确 TeX 行号；无法证明对应的内容保留诊断和 Gap。联合核对进程、转换诊断、错误节点、表身份及完整网格，退出码为零不够，普通字面表不猜首行为表头。工具缺失或无法安全隔离时保留有效材料和缺口，不裸跑；实测隔离及系统依赖边界见 [技术职责](design/architecture.md#技术选择与责任)。
-- 转换表以字符串保留原表达：中性列名 `col_001`、多层表头、单位、标题、脚注与合并格结构；ECSV 写出后回读逐单元格核对。对象行定位按命中行键处理：零命中失败，唯一命中可不填序号，多命中必须补键或明确序号，不默取第一行（保存／备份／消费共用同一接口）。
-- 编号范围仅对含义明确的稳定前缀对象记法确定性有界展开（保留前导零、原写法、规则与成员）；物理量区间与坐标符号不参与展开。材料准备的 `--expert-adjudication` 默认关闭，独立于提取入口默认开启的裁决配置。语义不明的范围只有在开启此选项且明确提供候选解释时才经共同接口提问并等待专家；否则保留未决范围和缺口，不猜补成员。
-- CLI 可用 `--range "1--5|main.tex|10|10|candidates:objects=HVS"` 声明待专家核对的对象前缀解释；Python 使用 `range_notations[].candidates`。这些候选不构成已确认成员，决定通过 `ReviewService.submit_decision` 保存，再用 `materials resume` 接续，决定只应用一次；正式裁决 CLI／网页尚未提供。
-- 退出码：0 成功；1 工程错误；2 参数错误；3 暂停等待决定；4 无可用材料；5 已完成幂等重入（prepare 同请求同输入的重放与 resume 的已完成重入相同，均返回 5）。准备完成但存在缺口仍是成功，缺口在 `--json` 输出中如实呈现。
+使用本地MinerU 4解析固定PDF的全部页面。先在独立环境安装工具并下载模型；本地解析不会向解析服务上传论文，也不会在缺模型时自动切换服务；后续科学提取按配置将文字和图片发送给模型API。安装方式和硬件要求以 [MinerU官方说明](https://opendatalab.github.io/MinerU/quick_start/) 为准。例如在项目环境之外准备解析器：
+
+```bash
+uv venv --python 3.12 /path/to/mineru-env
+uv pip install --python /path/to/mineru-env/bin/python 'mineru==4.0.10'
+export HVS_MINERU_COMMAND=/path/to/mineru-env/bin/mineru-kit
+export MINERU_HOME=/path/to/mineru-data
+export MINERU_MODEL_SMALL_BACKEND=onnx
+export MINERU_MODEL_VLM_ENGINE=llama-cpp
+"$HVS_MINERU_COMMAND" models download --tier standard
+"$HVS_MINERU_COMMAND" models verify --tier standard
+```
+
+advanced与standard共用官方standard资源集；上述下载与校验命令因此仍使用standard。解析固定为`mineru-kit parse INPUT.pdf --tier advanced --pages all`，完整选项由适配器配置。当前固定安装版本为4.0.10。
+
+本地模型和解析器资源由操作者管理，未包含在项目wheel或业务空间备份中。适配器固定advanced、ONNX、llama-cpp及全部页面，并关闭可选远程LLM后处理；实测macOS Apple Silicon，其他平台未实测。准备与消费命令：
+
+```bash
+hvs-catalog materials prepare --space ./ws --paper 2401.01234 --version 2 --request-key pdf-example
+hvs-catalog materials prepare --space ./ws --source-ref SOURCE_ID@1 --request-key journal-example
+hvs-catalog materials status --space ./ws --execution PREPARATION_ID --json
+hvs-catalog materials consume --space ./ws --execution PREPARATION_ID --json
+hvs-catalog materials resume --space ./ws --execution PREPARATION_ID --json
+```
+
+保存原PDF、MinerU ZIP、原始Markdown、页／块索引、图片文件、版本配置及已知缺口。模型接收正文、表格文字、作者图注以及原始图片附件；MinerU自行生成的图片／图形描述不进入模型材料，原始解析产物仍完整保留。图片和表格截图按解析器提供的裁剪保存，使用内嵌base64图片传入API，本地文件链接不代替图片内容。当前图片请求接入DeepSeek Flash，其他模型在未配置图片能力时明确拒绝，不静默丢图；DeepSeek Flash的图片传输和图片证据保存已通过真实调用验证，具体读图内容仍须对照原PDF核对。
+
+名单模型以位置编号和原文提交证据，程序补齐PDF页／块；文字证据匹配引文；图片证据只验证PDF位置及图片文件完整性，模型读到的文字不算通过字符串核验。引用匹配不能证明解析忠实或科学归属正确。图片裁剪、表格、符号和误差仍可能遗漏或失真，原PDF是最终依据。`materials_complete`只表示没有程序已知的缺口；`consume`不认证科学准确性。旧准备结果须用新请求重新准备后用于新提取，已有实验记录保持不变。
+
+`prepare`冻结来源和解析器指纹，同请求同输入复用；配置或代码变化使用新请求。`resume`沿用原执行，版本不符明确拒绝，不替换固定输入。准备接口不接收Gold，不创建科学裁决任务。缺页或不可读页随成果记录；解析失败保存错误，保持可查询的失败执行。
+
+退出码：0成功；1工程错误；2参数错误；4无可用材料；5已完成幂等重入。准备完成但有缺口时返回0，须检查JSON中的缺口，不能仅凭退出码判断完整。
 
 ## 模型配置与调用
 
@@ -124,7 +135,7 @@ hvs-catalog models check --config model.json
 }
 ```
 
-省略 `parameters` 使用该模型完整默认配置，包括最大输出上限。显式提供 `parameters` 时，字典即完整发送参数，**不合并默认值**；`{}` 表示全部省略。修改默认配置时可从 `models list` 的 `default_parameters` 复制后调整，例如 DeepSeek 的 `{"max_tokens":4096,"thinking_type":"enabled","reasoning_effort":"high"}`。支持的字段、类型、取值范围、互斥规则分别校验，不接受任意 `extra_body`；嵌套思考字段由适配器转换。实际发送、省略、转换及公开默认依据都进入固定快照，未报告的服务端实际值保留未知。各模型的输出与思考计数方式由 `models list` 的 `output_accounting` 给出。
+省略 `parameters` 使用该模型完整默认配置，包括最大输出上限。显式提供 `parameters` 时，字典即完整发送参数，**不合并默认值**；`{}` 表示全部省略。修改默认配置时可从 `models list` 的 `default_parameters` 复制后调整，例如将 DeepSeek 推理改为 high，同时保留服务商最大输出上限：`{"max_tokens":393216,"thinking_type":"enabled","reasoning_effort":"high"}`。DeepSeek 的 `max_tokens` 同时包含推理和最终答案；提高 `reasoning_effort` 不会自动扩大显式设置的输出上限，耗尽上限仍报告截断。支持的字段、类型、取值范围、互斥规则分别校验，不接受任意 `extra_body`；嵌套思考字段由适配器转换。实际发送、省略、转换及公开默认依据都进入固定快照，未报告的服务端实际值保留未知。各模型的输出与思考计数方式由 `models list` 的 `output_accounting` 给出。
 
 API Key 由环境变量或显式 `--env-file` 指定文件读取，环境变量优先；文件不执行 shell。使用者可建立自己的本机 `.env`，只需 `TOKENDANCE_API_KEY=...`，保持 Git 忽略，不随包发行，也不将密钥写入 JSON。网关地址来自 JSON／运行配置；`.env` 中其他变量不自动改变配置。
 
@@ -147,21 +158,20 @@ hvs-catalog models resume --space MODEL_SPACE --execution EXECUTION_ID --env-fil
 
 ## 提取配置与提示预览
 
-默认配置选择 `direct`、`deepseek-v4.1-flash`、流式和该模型已定义的默认参数，并开启专家求助。以下操作离线检查与组装提示，不调用模型：
+默认配置选择 `deepseek-v4.1-flash`、流式和该模型已定义的默认参数（推理深度 `max`），并开启专家求助。以下操作离线检查与组装提示，不调用模型：
 
 ```bash
 hvs-catalog extract config > extraction.json
 hvs-catalog extract check --config extraction.json
-hvs-catalog extract preview --config extraction.json --step direct_roster --input step-input.json > request-preview.json
+hvs-catalog extract preview --config extraction.json --step roster --input step-input.json > request-preview.json
 ```
 
-配置文件可只填需要设置的选项。例如保持默认 DeepSeek，候选判断和数值分别指定 GLM 与 MiMo：
+配置文件可只填需要设置的选项。例如名单使用支持图片输入的DeepSeek Flash，数值提示指定MiMo（数值真实执行尚未提供）：
 
 ```json
 {
-  "method": "candidate_review",
   "step_models": {
-    "review_candidates": {"model": "glm-5.3-flash"},
+    "roster": {"model": "deepseek-v4.1-flash"},
     "quantities": {"model": "mimo-v2.6-flash"}
   },
   "examples": {"quantities": ["E13", "E14", "E16", "E19"]}
@@ -173,12 +183,12 @@ hvs-catalog extract preview --config extraction.json --step direct_roster --inpu
 `step-input.json` 提供 `manuscript` 字符串，包含准备好的原文块、表格及其文件／位置标识。例如名单预览的最小合成输入：
 
 ```json
-{"manuscript": "FILE paper\n1|Synthetic A was selected as a Galactic unbound candidate."}
+{"manuscript": "FILE raw\nPAGE 1 BLOCK p1-b0\nSynthetic A was selected as a Galactic unbound candidate."}
 ```
 
-`targets` 提供本步必要的已有候选或名单对象；逐项 review 恰好一个带 `item_id` 的候选，数值步骤提供带 `object_id` 的名单对象，每项保留 `identifiers` 名称列表。`material_gaps` 是缺口列表，每项提供 `gap_id`、英文 `description` 和共同定义的 `affected_targets`，可带 `reason` 与 `file_id`。`open_questions` 每项提供 `question_id`、英文 `prompt`，可带 `category`、`target_ids`、`gap_ids` 和原文就地证据 `evidence`；不传记录修订或维护信息。原文、标识、数值和证据不翻译。完整预览同时输出 `request`（模型、两条消息和当前步骤工具 Schema）、`prepared`（模型适配器转换的实际协议参数）、内容摘要、选例及判例归档信息。步骤不存在、收尾配置模型、无关／重复例子、缺少必需英文内容或已有结果时拒绝，不生成模型调用。
+`targets` 提供本步必要的名单对象；数值步骤提供带 `object_id` 的名单对象，每项保留 `identifiers` 名称列表。`material_gaps` 是缺口列表，每项提供 `gap_id`、英文 `description` 和共同定义的 `affected_targets`，可带 `reason` 与 `file_id`。`open_questions` 每项提供 `question_id`、英文 `prompt`，可带 `category`、`target_ids`、`gap_ids` 和原文就地证据 `evidence`；不传记录修订或维护信息。原文、标识、数值和证据不翻译。完整预览同时输出 `request`（模型、两条消息和当前步骤工具 Schema）、`prepared`（模型适配器转换的实际协议参数）、内容摘要、选例及判例归档信息。步骤不存在、收尾配置模型、无关／重复例子、缺少必需英文内容或已有结果时拒绝，不生成模型调用。
 
-日常 `mode: daily` 开启专家裁决。纯AI配置显式指定 `mode: evaluation` 与 `expert_adjudication: false`；`synthetic` 可用来模拟两种裁决配置。当前提示只改变歧义处理要求，仍允许保留解释未决，并保留缺口和科学范围。可显式传入带审定状态、版本、英文说明、条件及边界的 `precedents` 快照，必须声明 `approved: true`；省略或未审定时拒绝。当前只核对所提供的输入，不代替科学审批；判例制作、审批、查找与库复用尚未提供。
+日常 `mode: daily` 开启专家裁决。纯AI配置显式指定 `mode: evaluation` 与 `expert_adjudication: false`；`synthetic` 可用来模拟两种裁决配置。两种配置共用科学正文，仅切换歧义策略；全自动配置要求模型自行解释，不创建专家待办。真实材料缺口和原文冲突仍须保留。可显式传入带审定状态、版本、英文说明、条件及边界的 `precedents` 快照，必须声明 `approved: true`；省略或未审定时拒绝。当前只核对所提供的输入，不代替科学审批；判例制作、审批、查找与库复用尚未提供。
 
 以下命令使用固定的虚构论文与模拟服务，验证配置接入各步、请求归档及恢复，不代表真实论文提取：
 
@@ -200,13 +210,13 @@ hvs-catalog extract status --space SPACE --execution EXTRACTION_ID
 hvs-catalog extract resume --space SPACE --execution EXTRACTION_ID --env-file /path/to/.env
 ```
 
-`roster` 创建并运行名单步骤，返回提取执行编号；这会调用真实 Token Dance 模型，凭据及参数规则见 [模型调用](#模型配置与调用)。省略 `--config` 使用默认 direct 与 DeepSeek Flash。Python 对应 `start_roster_extraction(space, preparation_execution_id=..., request_key=..., configuration=...)`，再用共同的 `resume_extraction`、`get_extraction`；`CallService` 可指定凭据文件。
+`roster` 创建并运行名单步骤，返回提取执行编号；这会调用真实 Token Dance 模型，凭据及参数规则见 [模型调用](#模型配置与调用)。省略 `--config` 使用专家辅助与DeepSeek Flash。Python 对应 `start_roster_extraction(space, preparation_execution_id=..., request_key=..., configuration=...)`，再用共同的 `resume_extraction`、`get_extraction`；`CallService` 可指定凭据文件。
 
-输入固定为准备完成的来源修订、呈现给模型的材料、规则、提示与配置；恢复校验所有附件指纹。提示包含引用的源码正文、可读附属文本、派生表格／映射，以及准备阶段的编号范围观察和缺口；不把未引用的 TeX 草稿或图片二进制当正文。编号范围观察只辅助定位，不能代替作者结论或直接决定对象资格。表格转换失败时仍呈现可读原源码并保留缺口；缺口不得凭模型回复抹去。
+输入固定为准备完成的来源修订、PDF页／块文本及原始图片、已知缺口、科学规则、提示及配置；恢复校验附件指纹。模型收到正文、表格文字、作者图注和base64图片附件，解析器生成的读图描述不进入输入，不直接发送PDF二进制。当前图片请求只为DeepSeek Flash配置；选择其他模型时明确拒绝，不静默丢弃图片。明确编号范围由模型理解并逐个提交对象，多个成员可以引用同一原范围证据；程序不展开成员。填写结构只允许引用输入中已登记的材料缺口，已知缺口不得凭模型回复抹去。
 
-输出使用共同 `RosterRecord`、`PaperRecord`、证据与问题记录，保存排除项、待决项、未列清群体及条件判断；18 种物理量保持 `not_checked`。启用专家裁决时遇未决科学问题暂停，通过 [共同 Python 裁决接口](design/review.md#裁决共同接口方案) 保存决定后恢复；关闭时将模型提交及解释记录为 `model_judgments`，链接原响应和科学结果，保留问题和待决成果，图结束不表示科学完成。
+输出保存名单、贡献、作者判断、条件、排除项、未列清群体及PDF证据；18种物理量保持`not_checked`。专家辅助版先保存本轮有效结果与全部问题，结束调用后暂停；无专家答复时部分结果仍可查询、备份，恢复不会空转调用模型。通过 [共同Python裁决接口](design/review.md#裁决共同接口方案) 保存决定后恢复相关处理。全自动版将解释保存为`model_judgments`，不创建专家问题、不等待专家；真实材料缺口仍可使结果partial。运行结束不等于科学提取完整或正确。
 
-格式纠正最多两轮，原响应和每次请求均保存。已有可解析的科学字段不得在纠正中改变；证据须对应输入中的文件、位置与原文，不能编造。截断、调用失败、无有效工具提交或无效证据不能保存为成功空名单。已归档响应恢复时复用；发出后完成状态不明时拒绝重发，须检查记录后另建请求，可能有已发生而未确认的服务计费。实际科学覆盖与准确率由后续真实评价检验，小范围接通检查不构成质量结论。
+格式纠正最多两轮，原响应和每次请求均保存。每个补正请求保留完整补正历史：原始指令、论文文字和图片只放一次，之后按轮次追加此前的模型提交与校验反馈。恢复时复用实际已发送的请求历史。首次JSON无法解析时返回具体行列位置并要求重交；一旦可解析，改用`repair_roster`，只接收程序指出的缺失／无效字段或引用，其他内容由程序原样合并保留，不要求重交名单。已有可解析且格式有效的科学判断、对象及收录内容不得在纠正中改变；已在群体中明确列名却缺少对应条目的成员可补齐，不能添加其他对象或重写既有判断。引文定位、摘录及无效缺口编号可对照同一材料修正，证据须对应输入中的文件、位置与原文，不能编造。截断、调用失败、无有效工具提交或无效证据不能保存为成功空名单。已归档响应恢复时复用；发出后完成状态不明时拒绝重发，须检查记录后另建请求，可能有已发生而未确认的服务计费。实际科学覆盖与准确率由后续真实评价检验，小范围接通检查不构成质量结论。
 
 ## 持久化与恢复演示
 
@@ -248,11 +258,11 @@ hvs-catalog demo decide --space CRASH_SPACE --choice no_overall_conclusion
 ```bash
 hvs-catalog methods list --json
 hvs-catalog extract demo --space EXTRACT_SPACE --paper FIC-R05-A \
-    --method direct --adjudication on --output EXTRACT_OUTPUT
+    --adjudication on --output EXTRACT_OUTPUT
 hvs-catalog score demo --inputs EXTRACT_OUTPUT/evaluation-inputs.json
 ```
 
-`extract demo` 还支持 `candidate_review`、专家开／关、B／C 合成材料和 `--decision keep_pending` 的未决输出。`score demo` 可在新进程反复重评，输入改动后拒绝按旧指纹评分。Gold 与人工评分预期只由评分侧使用，不进入提取请求。
+`extract demo` 支持专家开／关、B／C 合成材料和 `--decision keep_pending` 的未决输出。`score demo` 可在新进程反复重评，输入改动后拒绝按旧指纹评分。Gold 与人工评分预期只由评分侧使用，不进入提取请求。
 
 科学完成与运行图终止分别报告；未知用量和专家用时为 `null`，不合成质量总分。模拟评分辅助仅验证协议，不是正式评分模型能力验证。完整就绪／隔离要求见 [评分集成](design/evaluation.md#提取与评分的集成入口)。
 
@@ -260,6 +270,6 @@ hvs-catalog score demo --inputs EXTRACT_OUTPUT/evaluation-inputs.json
 
 评分前已确认的范围及问题通过评分侧 Python 接口固定：`GoldReadinessReview` 与 `gold_readiness_fingerprint(pair)` 绑定当前完整配对，把每个已裁定缺口的代码、位置、处理和依据交给 `gold_entries_from_compact_pair(pair, scoring_review=review)`。该入口不重写 Gold、不核验真实 PDF，也不授权保存；完整材料核对及具体专家决定须先完成。字段和处理边界见 [Gold 评分就绪](design/evaluation.md#gold-适配与就绪门禁)。
 
-`ScoringPlan.limitations` 接收已审定的 `EvaluationLimitation`，用 `LimitationScope` 明确论文内对象标识、可选物理量、条件和科学归属。默认评分保留 PDF/源码差异和作者问题；包外及既无 Gold 又不提供模型输入的解析范围可显式设置 `exclude_from_default`。已有 PDF Gold 的范围不能以不支持解析为由排除默认分。PDF/源码不对齐的范围设置 `exclude_from_reference` 后，`score_batch` 和保存输入集的重评入口同时返回原默认结果与 `reference_score`，后者同步排除两侧对应条目并重算。`limitation_effects` 保存证据、受影响记录及观察到的错误，是潜在原因清单；条件或身份归属不明时受影响指标保持暂定。问题清单进入完整计划指纹，修改后不能按旧指纹重评。未提供清单的已有合成输入及其指纹保持原样。
+`ScoringPlan.limitations`接收已审定的范围声明，用`LimitationScope`限定对象、物理量、条件和科学归属。评分只输出一套L0/L1/L2结果及逐论文、逐字段的结构化差异；固定PDF范围内的解析遗漏、失败和未完成结果照常计分。事先确定的范围外材料可设置`exclude_from_default`，已有PDF Gold不能因解析器不支持而被排除。作者矛盾及原有范围记录保留；`limitation_effects`仅关联已登记事项和观察到的差异，不判断错误根因。无法确定身份或条件是否属于排除范围时，保留预测及计数，受影响指标暂定。范围声明进入计划指纹，变更后须生成新输入集。
 
 当前格式、Python／CLI 参数、内容绑定批准和中断后的完整人工恢复步骤由 [生成 Gold 说明](../contracts/generated/gold/README.md#current-save-and-manual-recovery) 维护。工作副本、材料根和单篇正式目标须分别指定；工具不执行 Git，也不自动接管旧逐版目标。科学审定、保存授权及评价快照见 [Gold 维护约定](design/evaluation.md#gold-的局部修正与-git-历史)。

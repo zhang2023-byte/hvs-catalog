@@ -44,7 +44,6 @@ from .source import (
     gaps_affecting_roster,
 )
 from .submission import (
-    CandidateSubmission,
     ConflictSubmission,
     ContributionFieldsSubmission,
     CoverageDeclaration,
@@ -508,7 +507,7 @@ def _inline_question(
 
 
 # ---------------------------------------------------------------------------
-# Roster extraction with direct.
+# Roster extraction.
 # ---------------------------------------------------------------------------
 
 
@@ -586,7 +585,7 @@ def convert_roster_submission(
         ]
         context.require_gap_ids(entry_sub.gap_ids, f"名单条目 {item_id}")
         entry_issue_refs: list[RecordRef] = []
-        if entry_sub.disposition == "pending":
+        if entry_sub.disposition == "pending" and entry_sub.question is not None:
             entry_issue_refs = [
                 _inline_question(
                     entry_sub.question,
@@ -626,6 +625,10 @@ def convert_roster_submission(
                     evidence_refs=_refs(entry_sub.evidence, pool),
                     issue_refs=entry_issue_refs,
                     contribution_id=contribution_id,
+                    gap_refs=[
+                        GapRef(source_ref=source_ref, gap_id=g)
+                        for g in entry_sub.gap_ids
+                    ],
                 )
             )
         except ValueError as exc:
@@ -655,7 +658,7 @@ def convert_roster_submission(
         roster = RosterData(
             paper_key=context.source.data.paper_key,
             source_ref=source_ref,
-            method="direct",
+            method="roster",
             coverage={
                 "state": submission.coverage.state,
                 "checked_file_ids": list(submission.coverage.checked_file_ids),
@@ -760,96 +763,6 @@ def _assemble_contribution(
         )
     except ValueError as exc:
         raise SubmissionError(f"对象贡献 {draft.contribution_id}：{exc}") from exc
-
-
-# ---------------------------------------------------------------------------
-# Per-candidate judgment with candidate_review.
-# ---------------------------------------------------------------------------
-
-
-@dataclass
-class EntryJudgment:
-    item_id: str
-    disposition: str
-    evidence_refs: list[RecordRef]
-    issue_refs: list[RecordRef]
-    contribution_id: str | None
-
-
-@dataclass
-class CandidateConversionResult:
-    judgments: list[EntryJudgment]
-    contribution_drafts: list[ContributionDraft]
-    evidence: list[EvidenceRecord]
-    questions: list[QuestionRecord]
-
-
-def convert_candidate_submission(
-    context: StepContext,
-    candidate_ids: list[str],
-    submission: CandidateSubmission,
-) -> CandidateConversionResult:
-    """Convert individual judgments without adding/removing supplied candidates."""
-    if len(candidate_ids) != len(set(candidate_ids)):
-        raise SubmissionError("给定候选编号重复")
-    judged = [judgment.item_id for judgment in submission.judgments]
-    if sorted(judged) != sorted(candidate_ids):
-        missing = sorted(set(candidate_ids) - set(judged))
-        extra = sorted(set(judged) - set(candidate_ids))
-        raise SubmissionError(f"判定必须恰好覆盖给定候选；缺 {missing}，多 {extra}")
-
-    numbering = _Numbering(context.id_prefix)
-    pool = _EvidencePool(context, numbering)
-    questions = _QuestionFactory(context, numbering)
-
-    judgments: list[EntryJudgment] = []
-    drafts: list[ContributionDraft] = []
-    for judgment in submission.judgments:
-        context.require_gap_ids(judgment.gap_ids, f"候选判定 {judgment.item_id}")
-        issue_refs: list[RecordRef] = []
-        if judgment.question is not None:
-            issue_refs = [
-                _inline_question(
-                    judgment.question,
-                    context,
-                    pool,
-                    questions,
-                    [
-                        ItemRef(
-                            record_id=context.paper_ref.record_id,
-                            revision=context.paper_ref.revision,
-                            item_id=judgment.item_id,
-                        )
-                    ],
-                )
-            ]
-        contribution_id: str | None = None
-        if judgment.disposition == "included":
-            contribution_id = numbering.next_id("contribution")
-            drafts.append(
-                _contribution_fields(
-                    context,
-                    pool,
-                    questions,
-                    contribution_id=contribution_id,
-                    fields=judgment.contribution,
-                )
-            )
-        judgments.append(
-            EntryJudgment(
-                item_id=judgment.item_id,
-                disposition=judgment.disposition,
-                evidence_refs=_refs(judgment.evidence, pool),
-                issue_refs=issue_refs,
-                contribution_id=contribution_id,
-            )
-        )
-    return CandidateConversionResult(
-        judgments=judgments,
-        contribution_drafts=drafts,
-        evidence=pool.records,
-        questions=questions.records,
-    )
 
 
 # ---------------------------------------------------------------------------

@@ -25,7 +25,6 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from hvs_catalog.pipeline.acquisition.archive import UnsupportedPackageError
 from hvs_catalog.pipeline.acquisition.lifecycle import (
     AcquisitionError,
     AcquisitionService,
@@ -59,7 +58,7 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
         "acquisition",
         help="arXiv 获取：发现/获取/修订检查/本地导入与状态查询",
         description=(
-            "arXiv 源码包获取生命周期。发现轮次显式受限并持久化"
+            "arXiv PDF获取生命周期。发现轮次显式受限并持久化"
             "溯源；获取先冻结版本再下载；状态查询不触网。限流状态为本机"
             "全局（跨工作空间共享），出现未确认在途状态时需人工协调恢"
             "复，CLI 不提供重置入口。首次使用前需用 Python 公共接口初始"
@@ -114,7 +113,7 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
 
     fetch = sub.add_parser(
         "fetch",
-        help="按标识获取固定版本的源码包（或恢复既有目标）",
+        help="按标识获取固定版本的PDF（或恢复既有目标）",
         description=(
             "未带版本时先查元数据选定当时最新版本并在下载前持久化冻结；"
             "恢复绝不悄悄改选更新版本。已完成目标只做哈希核对。"
@@ -125,6 +124,9 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
         "--id",
         required=True,
         help="arXiv 标识（2401.01234 或 2401.01234v2，旧式亦支持）",
+    )
+    fetch.add_argument(
+        "--latex", action="store_true", help="额外下载LaTeX仅作存档；失败不影响PDF"
     )
     fetch.set_defaults(handler=_run_fetch)
 
@@ -148,7 +150,7 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
 
     local_import = sub.add_parser(
         "import",
-        help="导入本地已下载的同类源码包（身份与版本必须显式声明）",
+        help="导入本地已下载的同类PDF（身份与版本必须显式声明）",
         description=(
             "不从归档内容猜测论文身份；同论文同版本不同字节拒绝覆盖，"
             "相同字节重复导入复用材料并保留全部来源声明。"
@@ -157,7 +159,7 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
     local_import.add_argument(
         "--space", required=True, type=Path, help="工作空间根目录"
     )
-    local_import.add_argument("--file", required=True, type=Path, help="本地包文件路径")
+    local_import.add_argument("--file", required=True, type=Path, help="本地PDF路径")
     local_import.add_argument(
         "--id", required=True, help="arXiv 标识（不带版本时必须给 --version）"
     )
@@ -168,6 +170,15 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
         help="来源声明（必填且非空白：从何处获得该文件，可审计的依据）",
     )
     local_import.set_defaults(handler=_run_import)
+
+    journal = sub.add_parser("import-pdf", help="导入固定期刊PDF，不要求arXiv标识")
+    journal.add_argument("--space", required=True, type=Path)
+    journal.add_argument("--file", required=True, type=Path)
+    journal.add_argument("--paper-key", required=True)
+    journal.add_argument("--source-version", required=True)
+    journal.add_argument("--provenance", required=True)
+    journal.add_argument("--doi")
+    journal.set_defaults(handler=_run_journal_import)
 
     status = sub.add_parser(
         "status",
@@ -188,9 +199,7 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
     material = sub.add_parser(
         "material",
         help="输出选定版本的材料引用，供后续解析使用（不触网）",
-        description=(
-            "打印选定版本的源码包记录引用与原始包字节位置；未就绪时退出码 6。"
-        ),
+        description=("打印选定版本的PDF记录引用与原始包字节位置；未就绪时退出码 6。"),
     )
     material.add_argument("--space", required=True, type=Path, help="工作空间根目录")
     material.add_argument("--id", required=True, help="论文规范标识（不带版本）")
@@ -342,7 +351,7 @@ def _run_fetch(args: argparse.Namespace) -> int:
         return EXIT_ERROR
     try:
         service = _build_acquisition_service(space)
-        result = service.acquire(args.id)
+        result = service.acquire(args.id, include_latex=args.latex)
     except ArxivIdentifierError as exc:
         print(f"[错误] 标识畸形：{exc}", file=sys.stderr)
         return EXIT_ERROR
@@ -447,7 +456,7 @@ def _run_import(args: argparse.Namespace) -> int:
         return EXIT_ERROR
     try:
         service = _build_acquisition_service(space)
-        result = service.import_local_package(
+        result = service.import_local_pdf(
             args.file,
             arxiv_id=args.id,
             version=args.version,
@@ -456,8 +465,8 @@ def _run_import(args: argparse.Namespace) -> int:
     except ArxivIdentifierError as exc:
         print(f"[错误] 标识畸形：{exc}", file=sys.stderr)
         return EXIT_ERROR
-    except (PackageRejectionError, UnsupportedPackageError) as exc:
-        print(f"[拒绝] 导入文件不是可用的源码包形态：{exc}", file=sys.stderr)
+    except PackageRejectionError as exc:
+        print(f"[拒绝] 导入文件不是可用的PDF形态：{exc}", file=sys.stderr)
         return EXIT_ERROR
     except WorkspaceError as exc:
         print(f"[错误] 工作空间错误：{exc}", file=sys.stderr)
@@ -589,3 +598,23 @@ def _run_material(args: argparse.Namespace) -> int:
     print(f"  [原始包] {material.raw_path} sha256={material.raw_sha256}")
     print(f"  [溯源] {material.origin_retrieval}")
     return EXIT_OK
+
+
+def _run_journal_import(args):
+    try:
+        space = _open_space(args.space)
+        ref = AcquisitionService(space).import_journal_pdf(
+            args.file,
+            paper_key=args.paper_key,
+            source_version=args.source_version,
+            provenance=args.provenance,
+            doi=args.doi,
+        )
+        print(f"[来源] {ref.record_id}@{ref.revision}")
+        return EXIT_OK
+    except (OSError, ValueError, AcquisitionError, WorkspaceError) as exc:
+        print(f"[错误] {exc}", file=sys.stderr)
+        return EXIT_ERROR
+    finally:
+        if "space" in locals():
+            space.close()

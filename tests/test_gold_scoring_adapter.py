@@ -54,7 +54,7 @@ def _pair(tmp_path, *, scope="complete", draft=None):
         reviewer="synthetic-reviewer",
         material_review={
             "value": "checked",
-            "basis": "Synthetic fixed PDF and source correspondence",
+            "basis": "Synthetic fixed PDF scope",
             "record_sha256": "a" * 64,
         },
         scope_review={
@@ -247,7 +247,7 @@ def _review_payloads():
     return (
         {
             "value": "checked",
-            "basis": "Synthetic fixed PDF and source correspondence",
+            "basis": "Synthetic fixed PDF scope",
             "record_sha256": "a" * 64,
         },
         {
@@ -352,7 +352,7 @@ def _pair_from_draft(
     if material_review is None:
         material_review = {
             "value": "checked",
-            "basis": "Synthetic fixed PDF and source correspondence",
+            "basis": "Synthetic fixed PDF scope",
             "record_sha256": "a" * 64,
         }
     if scope_review is None:
@@ -372,38 +372,32 @@ def _pair_from_draft(
     )
 
 
-def test_source_missing_is_a_preparation_gap(tmp_path):
-    """source=None is a material-preparation gap, not ready scoring input."""
+def test_pdf_only_material_can_be_reviewed_and_scored(tmp_path):
+    """A fixed, reviewed PDF needs no LaTeX counterpart."""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
-    # Without corresponding LaTeX source, a v1 draft remains pending with an actual material gap.
-    payload["material_correspondence"]["latex"] = None
-    payload["material_correspondence"]["status"] = "pending"
     draft = parse_gold_annotation(payload)
     pair = _pair_from_draft(draft)
     adaptation = adapt_compact_gold_pair(pair)
-    assert adaptation.binding is not None  # Binding structure remains verifiable.
-    assert adaptation.formal_readiness is False
-    assert any("source_missing" in gap for gap in adaptation.readiness_gaps)
-    with pytest.raises(GoldAdaptationError, match="准备缺口"):
-        gold_entries_from_compact_pair(pair)
+    assert adaptation.binding is not None
+    assert adaptation.formal_readiness is True
+    assert adaptation.readiness_gaps == []
+    assert gold_entries_from_compact_pair(pair)
 
 
 def test_material_differences_is_a_preparation_gap(tmp_path):
-    """Approved PDF/source differences still represent a scientific-preparation gap."""
+    """Approved scientific differences within the fixed PDF still represent a scientific-preparation gap."""
     digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["material_correspondence"]["differences"] = [
-        "Table numbering differs between the PDF and the LaTeX source."
+        "Table 1 and the main text report conflicting uncertainties."
     ]
     draft = parse_gold_annotation(payload)
     material_review = {
         "value": "checked",
-        "basis": "Synthetic fixed PDF and source correspondence",
+        "basis": "Synthetic fixed PDF scope",
         "record_sha256": "a" * 64,
-        "differences": [
-            "Table numbering differs between the PDF and the LaTeX source."
-        ],
+        "differences": ["Table 1 and the main text report conflicting uncertainties."],
     }
     pair = _pair_from_draft(draft, material_review=material_review)
     adaptation = adapt_compact_gold_pair(pair)
@@ -572,7 +566,6 @@ def test_full_checker_reports_material_gaps_and_unresolved(tmp_path):
 
     material = tmp_path / "materials"
     digest = write_synthetic_pdf(material / "paper.pdf")
-    (material / "paper.tex").write_bytes(b"Synthetic source material.")
     payload = build_fresh_draft(pdf_sha256=digest)
     payload["contributions"][0]["quantities"][0]["values"][0]["evidence"] = []
     payload["contributions"][0]["identifiers"][0]["evidence"] = []
@@ -634,3 +627,22 @@ def test_strict_entries_still_reject_gaps_and_keep_legit_pair_ready(tmp_path):
     gapped = _pair_from_draft(draft)
     with pytest.raises(GoldAdaptationError, match="准备缺口"):
         gold_entries_from_compact_pair(gapped)
+
+
+def test_historical_rules_remain_readable_but_cannot_approve_current_scoring(tmp_path):
+    from hvs_catalog.evaluation import CompactGoldMetadata, CompactGoldPair
+
+    digest = write_synthetic_pdf(tmp_path / "materials" / "paper.pdf")
+    pair = _pair_from_draft(parse_gold_annotation(build_fresh_draft(pdf_sha256=digest)))
+    metadata = pair.metadata.model_dump(mode="json", by_alias=True)
+    metadata["rules"] = {"version": "historical-rules", "sha256": "b" * 64}
+    historical = CompactGoldPair(
+        pair.answer, CompactGoldMetadata.model_validate(metadata)
+    )
+    adaptation = adapt_compact_gold_pair(historical)
+    assert adaptation.entries
+    assert not adaptation.formal_readiness
+    assert any("科学规则版本不符" in gap for gap in adaptation.readiness_gaps)
+    assert adaptation.binding["rules"] == metadata["rules"]
+    with pytest.raises(GoldAdaptationError, match="科学规则版本不符"):
+        gold_entries_from_compact_pair(historical)

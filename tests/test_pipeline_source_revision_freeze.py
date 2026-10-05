@@ -31,7 +31,7 @@ from hvs_catalog.pipeline import (
     submit_expert_decision,
 )
 from hvs_catalog.pipeline.flow import ExtractionFlow
-from hvs_catalog.pipeline.methods import DIRECT_METHOD
+from hvs_catalog.pipeline.methods import ROSTER_METHOD
 from hvs_catalog.pipeline.mock import PipelineMockService, material_spec
 from hvs_catalog.records.common import RecordRef, build_record
 from hvs_catalog.records.paper import PaperRecord
@@ -112,7 +112,7 @@ def _upgrade_source_to_other_paper(space, paper_key_from: str) -> RecordRef:
     return upgraded.ref()
 
 
-def _start(space, source, *, request_key, method="direct", expert=False, mode="daily"):
+def _start(space, source, *, request_key, method="roster", expert=False, mode="daily"):
     request = ExtractionRequest(
         mode=mode,
         method=method,
@@ -170,11 +170,9 @@ def test_frozen_b_v1_used_after_same_id_upgraded_to_a(space):
 
 
 def test_frozen_c_v1_pause_resume_after_same_id_upgraded_to_a(space):
-    """Paused candidate_review recovery still uses frozen C v1."""
+    """Paused roster recovery still uses frozen C v1."""
     source = import_mock_source(space, PAPER_C)
-    handle = _start(
-        space, source, request_key="freeze-c", method="candidate_review", expert=True
-    )
+    handle = _start(space, source, request_key="freeze-c", method="roster", expert=True)
     first = resume_extraction(space, handle.execution_id, service=SpyService())
     assert first.outcome == "paused"
     _upgrade_source_to_other_paper(space, PAPER_C)
@@ -209,7 +207,7 @@ def test_frozen_c_v1_pause_resume_after_same_id_upgraded_to_a(space):
     assert all(
         item["request"]["paper_key"] == "FIC-CANDIDATE-C"
         for item in service.requests
-        if item["step"] in ("review_candidates", "quantities")
+        if item["step"] in ("roster", "quantities")
     )
 
 
@@ -240,7 +238,7 @@ if command == "run-to-pause":
     space = open_workspace(root)
     source = space.store().read_record_current("src-candidate-c")
     request = ExtractionRequest(
-        mode="daily", method="candidate_review",
+        mode="daily", method="roster",
         source_refs=[source.ref()],
         models=[StepModel(model="mock-default")],
     )
@@ -335,7 +333,7 @@ def test_new_process_recovery_uses_frozen_source_revision(tmp_path):
 # ---- Reject mismatches and missing exact revisions before service calls ----
 
 
-def _bypass_execution(space, source_ref, *, method_spec=DIRECT_METHOD, request_key):
+def _bypass_execution(space, source_ref, *, method_spec=ROSTER_METHOD, request_key):
     snapshot = build_input_snapshot(
         source_refs=[source_ref],
         method=method_spec.method_id,
@@ -366,7 +364,7 @@ def test_missing_exact_source_revision_rejected_before_service(space):
         resume_execution(
             space,
             handle.execution_id,
-            ExtractionFlow(DIRECT_METHOD, mode="daily"),
+            ExtractionFlow(ROSTER_METHOD, mode="daily"),
             service=service,
         )
     assert service.requests == []
@@ -421,7 +419,7 @@ def test_identity_mismatch_with_registered_mock_rejected(space):
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="daily"),
+        ExtractionFlow(ROSTER_METHOD, mode="daily"),
         service=service,
     )
     assert report.outcome == "failed"
@@ -442,7 +440,7 @@ def test_stale_revision_pointer_rejected_even_though_current_valid(space):
     report = resume_execution(
         space,
         handle.execution_id,
-        ExtractionFlow(DIRECT_METHOD, mode="daily"),
+        ExtractionFlow(ROSTER_METHOD, mode="daily"),
         service=service,
     )
     assert report.outcome == "finished", report.errors
@@ -468,7 +466,7 @@ def test_non_source_record_at_frozen_revision_rejected(space):
         resume_execution(
             space,
             handle.execution_id,
-            ExtractionFlow(DIRECT_METHOD, mode="daily"),
+            ExtractionFlow(ROSTER_METHOD, mode="daily"),
             service=service,
         )
     assert service.requests == []

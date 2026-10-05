@@ -1,9 +1,4 @@
-"""Registered full-flow demos and separately delivered model steps.
-
-direct produces a roster; candidate_review discovers then judges candidates. Both share
-quantities for values/contributions and finalize in full-flow demos. Only the direct
-roster model step is delivered; remaining model steps await later work.
-"""
+"""Single roster flow and its synthetic full-pipeline fixture registration."""
 
 from __future__ import annotations
 
@@ -17,17 +12,15 @@ from .registry import (
     StepSpec,
 )
 
-STEP_DIRECT_ROSTER = "direct_roster"
-STEP_DISCOVER_CANDIDATES = "discover_candidates"
-STEP_REVIEW_CANDIDATES = "review_candidates"
+STEP_ROSTER = "roster"
 STEP_QUANTITIES = "quantities"
 STEP_FINALIZE = "finalize"
 
-DIRECT_STEPS = (
+ROSTER_STEPS = (
     StepSpec(
-        step_id=STEP_DIRECT_ROSTER,
+        step_id=STEP_ROSTER,
         kind="roster",
-        title="Direct roster extraction",
+        title="Roster extraction",
         description=(
             "Extract the object roster directly from the fixed material"
             " according to the inclusion rules."
@@ -48,25 +41,6 @@ DIRECT_STEPS = (
         title="Finalize objects",
         description="Link contributions to object records and close the run.",
     ),
-)
-
-CANDIDATE_REVIEW_STEPS = (
-    StepSpec(
-        step_id=STEP_DISCOVER_CANDIDATES,
-        kind="roster",
-        title="Candidate discovery",
-        description="Discover candidate objects from the fixed material.",
-    ),
-    StepSpec(
-        step_id=STEP_REVIEW_CANDIDATES,
-        kind="roster",
-        title="Per-candidate review",
-        description=(
-            "Judge each discovered candidate for inclusion, exclusion or a"
-            " pending disposition, producing the roster."
-        ),
-    ),
-    *DIRECT_STEPS[1:],
 )
 
 MOCK_IMPLEMENTATION = "synthetic-mock"
@@ -98,30 +72,21 @@ MOCK_PARAMETER_POLICY = ParameterPolicy(
     )
 )
 
-DIRECT_METHOD = MethodSpec(
-    method_id="direct",
-    steps=DIRECT_STEPS,
+ROSTER_METHOD = MethodSpec(
+    method_id="roster",
+    steps=ROSTER_STEPS,
     implementation=MOCK_IMPLEMENTATION,
     real_extraction=False,
     version="1",
     parameter_policy=MOCK_PARAMETER_POLICY,
-    model_steps=(STEP_DIRECT_ROSTER,),
-)
-
-CANDIDATE_REVIEW_METHOD = MethodSpec(
-    method_id="candidate_review",
-    steps=CANDIDATE_REVIEW_STEPS,
-    implementation=MOCK_IMPLEMENTATION,
-    real_extraction=False,
-    version="1",
-    parameter_policy=MOCK_PARAMETER_POLICY,
+    model_steps=(STEP_ROSTER,),
 )
 
 
 def build_default_registry() -> PipelineRegistry:
-    """Build a fresh trusted registry for both mock methods."""
+    """Build a fresh trusted registry for the synthetic flow."""
     registry = PipelineRegistry()
-    for spec in (DIRECT_METHOD, CANDIDATE_REVIEW_METHOD):
+    for spec in (ROSTER_METHOD,):
         registry.register(
             MethodRegistration(
                 spec=spec,

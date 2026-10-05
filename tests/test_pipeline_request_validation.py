@@ -39,7 +39,7 @@ def source(space):
 def _request(source_ref, **overrides):
     payload = {
         "mode": "daily",
-        "method": "direct",
+        "method": "roster",
         "source_refs": [source_ref],
         "models": [StepModel(model="mock-default")],
     }
@@ -230,8 +230,8 @@ def test_daily_and_evaluation_share_one_entry_and_snapshot_has_no_answer_channel
     finally:
         entry_module._create_execution = original
     assert seen == [
-        ("spy-daily", "direct", "daily"),
-        ("spy-eval", "direct", "evaluation"),
+        ("spy-daily", "roster", "daily"),
+        ("spy-eval", "roster", "evaluation"),
     ]
     assert daily.mode == "daily"
     assert evaluation.mode == "evaluation"

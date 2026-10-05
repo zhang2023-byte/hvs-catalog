@@ -1,17 +1,4 @@
-"""hvs-catalog materials commands manage material preparation.
-
-Status queries neither access networks nor initialize implicitly; the workspace must
-exist. prepare creates or reuses same-request execution from an exact acquired source
-revision. Multiple valid main documents require explicit --root-file selection, never
-filename guessing. resume continues after expert decisions for ambiguous identifier
-ranges; submit decisions through the shared ReviewService Python interface, not these
-commands. The formal review CLI and web interface are not yet available.
-
-Exit codes: 0 success; 1 engineering error; 2 argument error; 3 waiting for decision; 4
-no usable material; 5 already complete/idempotent reentry. Completed preparation with
-gaps is still success; --json reports gaps accurately, never as unreported science or a
-successful empty roster.
-"""
+"""Prepare a fixed PDF locally, inspect saved status, or resume technical work."""
 
 from __future__ import annotations
 
@@ -28,7 +15,6 @@ from hvs_catalog.workspace import WorkspaceError, open_workspace
 
 EXIT_OK = 0
 EXIT_ERROR = 1
-EXIT_PAUSED = 3
 EXIT_NO_MATERIAL = 4
 EXIT_ALREADY_FINISHED = 5
 
@@ -37,7 +23,7 @@ def build_materials_parser(commands: argparse._SubParsersAction) -> None:
     """Register materials subcommands."""
     group = commands.add_parser(
         "materials",
-        help="材料准备：来源包展开、正文／表格解析与准备输入交付",
+        help="材料准备：本地 MinerU 全文解析 PDF 与证据定位",
     )
     sub = group.add_subparsers(dest="materials_command", required=True)
 
@@ -49,28 +35,7 @@ def build_materials_parser(commands: argparse._SubParsersAction) -> None:
     )
     prepare.add_argument("--request-key", required=True, help="请求键（同输入复用）")
     prepare.add_argument(
-        "--root-file",
-        help="多个有效主稿时的显式选择（包内相对路径）",
-    )
-    prepare.add_argument(
-        "--expert-adjudication",
-        action="store_true",
-        help="歧义编号范围经 R05 接口提问并等待专家",
-    )
-    prepare.add_argument(
-        "--encoding",
-        choices=["utf-8", "latin-1"],
-        help="非 UTF-8 成员的操作者固定解码选择（进入固定输入；"
-        "未指定且未声明时保持未处理，不猜编码）",
-    )
-    prepare.add_argument(
-        "--range",
-        action="append",
-        default=[],
-        metavar="NOTATION|FILE|START|END",
-        help="编号范围记号及其出处（可重复）：记法|文件|起始行|结束行；"
-        "歧义记号可再加 |candidates:代码=前缀 形式的候选解释"
-        "（如 |candidates:A=HVS）",
+        "--source-ref", help="固定来源引用（record_id@revision，与 --paper 互斥）"
     )
     prepare.add_argument("--json", action="store_true", help="以 JSON 输出结果")
 
@@ -79,7 +44,7 @@ def build_materials_parser(commands: argparse._SubParsersAction) -> None:
     status.add_argument("--execution", help="具体执行标识；缺省列出全部")
     status.add_argument("--json", action="store_true", help="以 JSON 输出结果")
 
-    resume = sub.add_parser("resume", help="继续暂停的准备执行")
+    resume = sub.add_parser("resume", help="恢复未完成的准备执行")
     resume.add_argument("--space", required=True, help="工作空间路径")
     resume.add_argument("--execution", required=True, help="执行标识")
     resume.add_argument("--json", action="store_true", help="以 JSON 输出结果")
@@ -90,35 +55,13 @@ def build_materials_parser(commands: argparse._SubParsersAction) -> None:
     consume.add_argument("--json", action="store_true", help="以 JSON 输出结果")
 
 
-def _parse_range(value: str) -> dict:
-    parts = value.split("|")
-    if len(parts) < 4:
-        raise ValueError(f"--range 需要 记法|文件|起始行|结束行 四段：{value!r}")
-    notation, file, start, end = parts[:4]
-    entry = {
-        "notation": notation,
-        "file": file,
-        "start_line": int(start),
-        "end_line": int(end),
-    }
-    for extra in parts[4:]:
-        if not extra.startswith("candidates:"):
-            raise ValueError(f"--range 的附加段必须是 candidates: 前缀：{extra!r}")
-        candidates = []
-        for item in extra[len("candidates:") :].split(","):
-            if not item:
-                continue
-            code, _, prefix = item.partition("=")
-            candidates.append(
-                {
-                    "code": code,
-                    "kind": "object_range",
-                    "prefix": prefix,
-                    "description": f"对象编号区间，前缀 {prefix}",
-                }
-            )
-        entry["candidates"] = candidates
-    return entry
+def _parse_source_ref(value):
+    if value is None:
+        return None
+    from .records import RecordRef
+
+    identifier, revision = value.rsplit("@", 1)
+    return RecordRef(record_id=identifier, revision=int(revision))
 
 
 def _open_space(path: str):
@@ -133,23 +76,15 @@ def _run_prepare(args: argparse.Namespace) -> int:
         )
         return 2
     try:
-        ranges = [_parse_range(item) for item in args.range]
-    except ValueError as exc:
-        print(f"参数错误：{exc}", file=sys.stderr)
-        return 2
-    try:
         space = _open_space(args.space)
         service = MaterialsService(space)
         handle, report = service.prepare_materials(
             request_key=args.request_key,
             paper=args.paper,
             version=args.version,
-            root_file=args.root_file,
-            range_notations=ranges,
-            expert_adjudication=args.expert_adjudication,
-            encoding=args.encoding,
+            source_ref=_parse_source_ref(args.source_ref),
         )
-    except MaterialsPreparationError as exc:
+    except (MaterialsPreparationError, ValueError) as exc:
         print(f"材料不可用：{exc}", file=sys.stderr)
         return EXIT_NO_MATERIAL
     except WorkspaceError as exc:
@@ -180,16 +115,8 @@ def _run_prepare(args: argparse.Namespace) -> int:
         print(f"结果：{report.outcome} / {report.state}")
         if report.summary:
             print(f"汇总：{json.dumps(report.summary, ensure_ascii=False)}")
-        if report.pending_question:
-            print(
-                "等待专家决定（经 R05 接口提交后 resume）："
-                f"{report.pending_question['question_ref']['record_id']}"
-            )
-    if report.outcome == "paused":
-        return EXIT_PAUSED
     if report.mode == "already-finished":
-        # Completed same-request/input prepare replay uses the same exit code as idempotent resume,
-        # aligning documented semantics for second-review finding 24.
+        # Completed replay uses the same exit code as idempotent resume.
         return EXIT_ALREADY_FINISHED
     if report.outcome == "failed":
         for error in report.errors:
@@ -217,7 +144,7 @@ def _run_status(args: argparse.Namespace) -> int:
                         "request_key": row.request_key,
                     }
                     for row in space.store().list_executions()
-                    if row.flow_id == "hvs-materials-prepare"
+                    if row.flow_id == "hvs-pdf-prepare"
                 ]
             }
     except (WorkspaceError, MaterialsPreparationError) as exc:
@@ -249,8 +176,6 @@ def _run_resume(args: argparse.Namespace) -> int:
         print(f"执行 {report.execution_id}：{report.outcome} / {report.state}")
         if report.summary:
             print(f"汇总：{json.dumps(report.summary, ensure_ascii=False)}")
-    if report.outcome == "paused":
-        return EXIT_PAUSED
     if report.mode == "already-finished":
         return EXIT_ALREADY_FINISHED
     if report.outcome == "failed":
