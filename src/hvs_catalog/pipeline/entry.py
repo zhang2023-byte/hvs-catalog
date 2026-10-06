@@ -378,7 +378,7 @@ def get_extraction(
         for usage in usages
         if usage is not None and usage.tokens is not None
     ]
-    return {
+    status = {
         "execution_id": execution_id,
         "state": run.data.state,
         "config": _config_echo(handle),
@@ -436,6 +436,59 @@ def get_extraction(
         },
         "input_digest": handle.input_digest,
     }
+
+    from ..records.paper import PaperRecord
+    from ..records.roster import RosterRecord
+    from .completion import science_completion
+
+    records = [
+        space.store().read_record(ref)
+        for ref in execution_result_refs(space, execution_id)
+    ]
+    paper = next((r for r in records if isinstance(r, PaperRecord)), None)
+    roster = next((r for r in records if isinstance(r, RosterRecord)), None)
+    if paper is not None and roster is None:
+        roster = space.store().read_record(paper.data.roster_ref)
+    diagnostics = []
+
+    def retain(record, item_id, kind, field, diagnostic):
+        diagnostics.append(
+            {
+                "kind": kind,
+                "field": field,
+                "record_ref": record.ref().model_dump(mode="json"),
+                "item_id": item_id,
+                "source_ref": record.data.source_ref.model_dump(mode="json"),
+                **diagnostic.model_dump(mode="json"),
+            }
+        )
+
+    if roster is not None:
+        for entry in roster.data.entries:
+            for error in entry.author_errors:
+                retain(roster, entry.item_id, "author_error", "entries", error)
+    if paper is not None:
+        for contribution in paper.data.object_contributions:
+            for field, errors in (
+                ("quantities", contribution.author_errors),
+                ("paper_boundness", contribution.paper_boundness.author_errors),
+            ):
+                for error in errors:
+                    retain(paper, contribution.item_id, "author_error", field, error)
+            for conflict in contribution.quantity_conflicts:
+                if conflict.issue_ref is None:
+                    retain(
+                        paper,
+                        contribution.item_id,
+                        "numeric_conflict",
+                        "quantities",
+                        conflict,
+                    )
+    state, reasons = science_completion(status, roster, paper)
+    status.update(
+        diagnostics=diagnostics, science_completion={"state": state, "reasons": reasons}
+    )
+    return status
 
 
 def pending_questions(

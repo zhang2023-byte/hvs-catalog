@@ -203,9 +203,8 @@ class PDFExtractionFlow(RosterFlow):
     def _convert(self, ctx, source, inputs, payload, item_id, digest):
         if "measurements" in payload:
             payload = expand_object_quantity_input(payload, item_id)
-        if (
-            not ctx.execution.input_snapshot.expert_adjudication
-            and payload["questions"]
+        if not ctx.execution.input_snapshot.expert_adjudication and payload.get(
+            "questions", []
         ):
             raise SubmissionError(
                 "Automatic extraction must record a model judgment, not request expert interpretation"
@@ -293,6 +292,7 @@ class PDFExtractionFlow(RosterFlow):
                     update={
                         "quantities": obj.quantities,
                         "quantity_conflicts": obj.quantity_conflicts,
+                        "author_errors": obj.author_errors,
                         "quantity_coverage": obj.quantity_coverage,
                         "precedent_uses": obj.precedent_uses,
                     }
@@ -575,6 +575,7 @@ class PDFExtractionFlow(RosterFlow):
                     "object_id": item_id,
                     "quantities": [],
                     "quantity_conflicts": [],
+                    "author_errors": [],
                     "coverage": {
                         "common": {
                             "state": "partial" if checked else "not_checked",
@@ -586,9 +587,54 @@ class PDFExtractionFlow(RosterFlow):
             "questions": [],
         }
         obj = payload["objects"][0]
+
+        def raw_scope_matches(diagnostic, value):
+            for field in ("condition", "source", "frame", "epoch"):
+                expected = diagnostic.get(field)
+                if field == "source" and expected not in (
+                    "this_paper",
+                    "prior_work",
+                    "unclear",
+                ):
+                    continue
+                if isinstance(expected, str) and expected != value.get(field):
+                    return False
+            return True
+
+        def blocked(quantity, value):
+            for field in ("author_errors", "quantity_conflicts"):
+                diagnostics = original.get(field, [])
+                if not isinstance(diagnostics, list):
+                    return True
+                for diagnostic in diagnostics:
+                    if (
+                        not isinstance(diagnostic, dict)
+                        or diagnostic.get("quantity") not in quantity_paths()
+                    ):
+                        return True
+                    if diagnostic["quantity"] != quantity:
+                        continue
+                    if field == "author_errors":
+                        if raw_scope_matches(diagnostic, value):
+                            return True
+                    else:
+                        alternatives = diagnostic.get("alternatives")
+                        if not isinstance(alternatives, list) or not alternatives:
+                            return True
+                        if any(
+                            not isinstance(alt, dict) or raw_scope_matches(alt, value)
+                            for alt in alternatives
+                        ):
+                            return True
+            return False
+
         for group in original.get("quantities", []):
             valid = []
             for value in group.get("values", []):
+                # Even malformed diagnostics prevent affected values from leaking
+                # through independent partial-value recovery.
+                if blocked(group.get("quantity"), value):
+                    continue
                 candidate = copy.deepcopy(payload)
                 candidate["objects"][0]["quantities"] = [
                     {"quantity": group.get("quantity"), "values": [value]}
@@ -614,29 +660,19 @@ class PDFExtractionFlow(RosterFlow):
             except ValueError:
                 continue
             obj["quantity_conflicts"].append(conflict)
-        # A failed measurement does not erase an independently valid scientific
-        # question. Validate each complete question against the partial snapshot.
-        seen_questions = set()
-        for question in (
-            draft["questions"] if isinstance(draft.get("questions"), list) else []
-        ):
-            key = canonical_json(question)
-            if key in seen_questions:
-                continue
+        for diagnostic in original.get("author_errors", []):
             candidate = copy.deepcopy(payload)
-            candidate["questions"] = [question]
+            candidate["objects"][0]["author_errors"] = [diagnostic]
             try:
                 self._convert(
                     ctx, source, inputs, candidate, item_id, digest + "-partial"
                 )
             except ValueError:
                 continue
-            payload["questions"].append(question)
-            seen_questions.add(key)
-        if (
-            not obj["quantities"]
-            and not obj["quantity_conflicts"]
-            and not payload["questions"]
+            obj["author_errors"].append(diagnostic)
+        if not any(
+            obj[field]
+            for field in ("quantities", "quantity_conflicts", "author_errors")
         ):
             return
         records, questions = self._convert(
@@ -703,6 +739,7 @@ class PDFExtractionFlow(RosterFlow):
                         update={
                             "quantities": approved.quantities,
                             "quantity_conflicts": approved.quantity_conflicts,
+                            "author_errors": approved.author_errors,
                             "quantity_coverage": approved.quantity_coverage,
                             "precedent_uses": approved.precedent_uses,
                         }

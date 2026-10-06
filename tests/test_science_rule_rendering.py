@@ -60,14 +60,11 @@ def test_output_cannot_overwrite_source(tmp_path):
     assert not (tmp_path / "extractor.md").exists()
 
 
-def test_two_policies_have_identical_common_science():
+def test_one_rule_set_without_policy_switch_or_precedents():
     data = read_source(SOURCE)
-    expert = render(data, "expert_assisted")
-    automatic = render(data, "automatic")
-    policies = data["ambiguity_policies"]
-    assert policies["expert_assisted"] in expert
-    assert policies["automatic"] in automatic
-    assert expert.replace(policies["expert_assisted"], "POLICY") == automatic.replace(
-        policies["automatic"], "POLICY"
-    )
+    output = render(data)
+    assert "ambiguity_policies" not in data
+    assert "expert" not in output.lower()
+    assert "precedent" not in output.lower()
     assert len(data["examples"]) == 25
+    assert "same" in data["rules"][5]["explanation"]

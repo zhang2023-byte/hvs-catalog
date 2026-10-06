@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, ValidationInfo, model_validator
 
 from ..llm import ModelConfig, RuntimeConfig, TokenDanceAdapter
 from ..llm.prompts import (
@@ -29,7 +29,7 @@ class ExtractionConfig(Config):
         return "roster"
 
     mode: Literal["daily", "evaluation", "synthetic"] = "daily"
-    expert_adjudication: bool = True
+    expert_adjudication: bool = False
     parallelism: int = Field(default=100, ge=1, strict=True)
     default_model: ModelConfig = Field(
         default_factory=lambda: ModelConfig(model="deepseek-v4.1-flash")
@@ -41,12 +41,15 @@ class ExtractionConfig(Config):
     runtime: RuntimeConfig = Field(default_factory=RuntimeConfig)
 
     @model_validator(mode="after")
-    def _supported(self):
+    def _supported(self, info: ValidationInfo):
         TokenDanceAdapter().validate_runtime(self.runtime)
-        if self.mode == "daily" and not self.expert_adjudication:
+        historical = bool(info.context and info.context.get("historical"))
+        if self.expert_adjudication and not historical:
             raise ValueError(
-                "daily extraction requires expert adjudication; AI-only settings belong to evaluation or synthetic runs"
+                "expert adjudication is retired; extraction uses one automatic scientific rule set"
             )
+        if self.precedents and not historical:
+            raise ValueError("precedent input is retired")
         from .methods import DEFAULT_REGISTRY
 
         steps = DEFAULT_REGISTRY.get(self.method).spec.step_ids()
@@ -197,13 +200,27 @@ def freeze_configuration(space, config: ExtractionConfig, *, inputs=None) -> dic
 
 def stored_configuration(snapshot) -> ExtractionConfig | None:
     raw = snapshot.options.get("extraction_config")
-    return ExtractionConfig.model_validate_json(raw) if raw else None
+    return (
+        ExtractionConfig.model_validate_json(raw, context={"historical": True})
+        if raw
+        else None
+    )
 
 
 def validate_configuration_snapshot(snapshot) -> ExtractionConfig | None:
     config = stored_configuration(snapshot)
     if config is None:
         return None
+    from ..records.rules import current_rules_ref
+
+    if (
+        snapshot.expert_adjudication
+        or config.precedents
+        or snapshot.rules.model_dump() != current_rules_ref()
+    ):
+        raise ValueError(
+            "historical extraction is read-only; create a new automatic execution with current rules"
+        )
     expected = config.request(snapshot.source_refs)
     if (
         expected.method != snapshot.method

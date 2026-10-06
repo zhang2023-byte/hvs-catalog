@@ -24,10 +24,7 @@ from hvs_catalog.pipeline import (
 )
 from hvs_catalog.records.common import RecordRef
 from hvs_catalog.records.paper import PaperRecord
-from hvs_catalog.records.questions import Actor, DecisionPatch, PatchChange
 from hvs_catalog.records.roster import RosterRecord
-from hvs_catalog.review import ReviewService
-from hvs_catalog.review.service import DecisionSubmission
 from hvs_catalog.runtime import get_execution
 from hvs_catalog.workspace import (
     OperationKeyConflictError,
@@ -47,8 +44,8 @@ This paper selects G, accepts bound and unbound models, and explicitly gives no 
 H occurs only in a table labeled HVS; that label is not defined as Galactic unbound here.
 This paper independently rediscovers previously named I and still accepts I as unbound.
 This paper selects J and follows it up spectroscopically within this discovery study; J remains unbound.
-The author summaries for K contradict one another and leave K's eligibility ambiguous.
-The authors accept L as an unbound candidate, but their overall preference for L is ambiguous.
+The author summaries for K explicitly accept and withdraw the same candidacy, with no explanation or temporal distinction.
+The authors accept L as an unbound candidate, but their summaries say both bound and unbound under the same condition, without reconciliation.
 The authors say some members of stars 1--5 are unbound but do not identify them.
 \\end{document}
 """
@@ -85,11 +82,13 @@ def entry(
         )
     else:
         if disposition == "pending":
-            result["question"] = {
-                "category": "inclusion",
-                "prompt": "Is K still an eligible unbound candidate?",
-                "evidence": [ev],
-            }
+            result["author_errors"] = [
+                {
+                    "reason": "The original summaries explicitly accept and withdraw the same candidacy without reconciliation.",
+                    "raw_values": [ev["quote"]],
+                    "evidence": [ev],
+                }
+            ]
     return result
 
 
@@ -413,67 +412,56 @@ def test_archived_response_reused_after_interruption(prepared):
     assert len(adapter.seen) == 1
 
 
-def test_two_questions_are_bound_and_pending_preserved(prepared):
+def test_roster_source_errors_bound_and_preserved_without_tasks(prepared):
     pending = entry("K", 13, disposition="pending")
     included = entry("L", 14, "unbound", "follow_up")
     included["boundness"] = None
-    included["boundness_question"] = {
-        "category": "author_assessment",
-        "prompt": "What is the overall assessment for L?",
-        "evidence": [evidence(14)],
-    }
+    included["boundness_author_errors"] = [
+        {
+            "reason": "The same-condition author summaries give contradictory overall assessments without reconciliation.",
+            "raw_values": [evidence(14)["quote"]],
+            "evidence": [evidence(14)],
+        }
+    ]
     handle, report, adapter, service = run(prepared, [submission([pending, included])])
-    assert report.outcome == "paused", report.errors
-    review = ReviewService(prepared[0])
-    questions = review.list_questions(execution_id=handle.execution_id)
-    assert len(questions) == 2
-    assert all(q.step_id == "roster" for q in questions)
+    assert report.outcome == "finished", report.errors
     roster, paper = results(prepared[0], handle.execution_id)
-    assert roster.data.entries[0].disposition == "pending"
-    assert paper.data.object_contributions[0].paper_boundness.status is None
-    q = questions[0]
-    review.submit_decision(
-        execution_id=handle.execution_id,
-        step_id=q.step_id,
-        request_key="unresolved",
-        submission=DecisionSubmission(
-            question_ref=q.question_ref,
-            fingerprint=q.record.data.fingerprint,
-            actor=Actor(kind="human", id="synthetic-expert"),
-            outcome="unresolved",
-            answer_original="Keep pending",
-            answer_en="Keep pending",
-            reason="The evidence remains ambiguous.",
-        ),
+    assert (
+        roster.data.entries[0].author_errors and roster.data.coverage.state == "partial"
     )
+    assert paper.data.object_contributions[0].paper_boundness.status is None
+    status = get_extraction(prepared[0], handle.execution_id)
+    assert len(status["diagnostics"]) == 2 and status["questions"] == []
+    assert status["science_completion"]["state"] == "partial"
     assert (
         resume_extraction(prepared[0], handle.execution_id, service=service).outcome
-        == "paused"
+        == "finished"
     )
     assert len(adapter.seen) == 1
 
 
-def test_question_batch_saved_before_step_interruption_is_reused(prepared, monkeypatch):
-    original = ReviewService.create_questions
+def test_diagnostic_batch_saved_before_interruption_is_reused(prepared, monkeypatch):
+    from hvs_catalog.runtime.execution import RuntimeContext
+
+    original = RuntimeContext.commit_step
 
     def save_then_fail(self, **kwargs):
-        original(self, **kwargs)
-        raise RuntimeError("synthetic interruption after atomic question batch")
+        result = original(self, **kwargs)
+        if kwargs["step_id"] == "roster":
+            raise RuntimeError("synthetic interruption after atomic diagnostic batch")
+        return result
 
-    monkeypatch.setattr(ReviewService, "create_questions", save_then_fail)
-    payload = submission(
-        [entry("K", 13, disposition="pending"), entry("L", 14, disposition="pending")]
-    )
+    monkeypatch.setattr(RuntimeContext, "commit_step", save_then_fail)
+    payload = submission([entry("K", 13, disposition="pending")])
     handle, report, adapter, service = run(prepared, [payload])
     assert report.outcome == "failed"
-    review = ReviewService(prepared[0])
-    assert len(review.list_questions(execution_id=handle.execution_id)) == 2
-    monkeypatch.setattr(ReviewService, "create_questions", original)
+    roster, _ = results(prepared[0], handle.execution_id)
+    assert roster.data.entries[0].author_errors
+    monkeypatch.setattr(RuntimeContext, "commit_step", original)
     assert (
         resume_extraction(prepared[0], handle.execution_id, service=service).outcome
-        == "paused"
+        == "finished"
     )
-    assert len(review.list_questions(execution_id=handle.execution_id)) == 2
     assert len(adapter.seen) == 1
 
 
@@ -565,61 +553,19 @@ def test_partial_group_and_conditional_judgment_preserved_without_expert(prepare
     assert len(adapter.seen) == 1
 
 
-def test_resolved_assessment_applies_once_and_resumes_without_model(prepared):
-    selected = entry("L", 14, "unbound", "follow_up")
-    selected["boundness"] = None
-    selected["boundness_question"] = {
-        "category": "author_assessment",
-        "prompt": "What is the author preference for L?",
-        "evidence": [evidence(14)],
-    }
-    handle, report, adapter, service = run(prepared, [submission([selected])])
-    assert report.outcome == "paused", report.errors
-    review = ReviewService(prepared[0])
-    question = review.list_questions(execution_id=handle.execution_id)[0]
-    target = question.record.data.target_refs[0]
-    decision = DecisionSubmission(
-        question_ref=question.question_ref,
-        fingerprint=question.record.data.fingerprint,
-        actor=Actor(kind="human", id="synthetic-expert"),
-        outcome="resolved",
-        answer_original="无总体倾向。",
-        answer_en="No overall preference.",
-        reason="Synthetic expert confirmation of the ambiguous author statement.",
-        patch=DecisionPatch(
-            target=target,
-            changes=[
-                PatchChange(
-                    field="paper_boundness",
-                    value={
-                        "status": "no_overall_conclusion",
-                        "evidence_refs": question.record.data.evidence_refs,
-                        "issue_refs": [],
-                        "gap_refs": [],
-                    },
-                )
-            ],
-        ),
-    )
-    review.submit_decision(
-        execution_id=handle.execution_id,
-        step_id=question.step_id,
-        request_key="decide",
-        submission=decision,
-    )
+def test_model_interpretation_preserved_on_reentry_without_human_answer(prepared):
+    selected = entry("G", 9, "no_overall_conclusion", "candidates_found")
+    payload = submission([selected])
+    payload["model_judgments"] = [
+        "The author explicitly gives no overall preference for G in T:p1-b8; retain no_overall_conclusion under S04."
+    ]
+    handle, report, adapter, service = run(prepared, [payload])
+    assert report.outcome == "finished", report.errors
+    assert get_extraction(prepared[0], handle.execution_id)["questions"] == []
+    assert report.model_judgments == 1
     assert (
         resume_extraction(prepared[0], handle.execution_id, service=service).outcome
         == "finished"
-    )
-    assert (
-        resume_extraction(prepared[0], handle.execution_id, service=service).outcome
-        == "finished"
-    )
-    current = prepared[0].store().read_record_current(target.record_id)
-    assert current.revision == 2
-    assert (
-        current.data.object_contributions[0].paper_boundness.status
-        == "no_overall_conclusion"
     )
     assert len(adapter.seen) == 1
 
@@ -824,9 +770,9 @@ def test_format_correction_cannot_append_an_unrequested_scientific_object(prepar
     assert "Use repair_roster" in adapter.seen[2]["messages"][-1]["content"]
 
 
-@pytest.mark.parametrize("expert", [True, False])
+@pytest.mark.parametrize("mode", ["daily", "evaluation"])
 def test_model_submits_each_range_member_with_shared_original_evidence(
-    tmp_path, monkeypatch, expert
+    tmp_path, monkeypatch, mode
 ):
     text = "This paper selects HVS4–6 and S5-HVS1 as unbound candidates, and mentions others without naming them."
     monkeypatch.setitem(evidence.__globals__, "TEXT", text)
@@ -837,8 +783,7 @@ def test_model_submits_each_range_member_with_shared_original_evidence(
         )
         config = ExtractionConfig(
             runtime=RuntimeConfig(quota_store=tmp_path / "quota.sqlite"),
-            mode="evaluation",
-            expert_adjudication=expert,
+            mode=mode,
         )
         payload = submission(
             [entry(name, 1, "unbound") for name in ("HVS4", "HVS5", "HVS6", "S5-HVS1")]

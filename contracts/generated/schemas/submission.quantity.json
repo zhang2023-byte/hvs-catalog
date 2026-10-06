@@ -213,51 +213,34 @@
         "quote"
       ]
     },
-    "ObjectQuestionSubmission": {
+    "QuantityAuthorErrorSubmission": {
       "additionalProperties": false,
       "properties": {
-        "category": {
-          "enum": [
-            "inclusion",
-            "identity",
-            "author_assessment",
-            "numeric_conflict",
-            "quantity_attribution",
-            "interpretation"
-          ],
-          "title": "Category",
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
           "type": "string"
         },
-        "prompt": {
-          "minLength": 1,
-          "title": "Prompt",
-          "type": "string"
+        "raw_values": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Raw Values",
+          "type": "array"
         },
         "evidence": {
           "items": {
             "$ref": "#/$defs/InlineEvidence"
           },
+          "minItems": 1,
           "title": "Evidence",
           "type": "array"
         },
-        "gap_ids": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Gap Ids",
-          "type": "array"
-        },
         "quantity": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
+          "minLength": 1,
           "title": "Quantity",
+          "type": "string",
           "enum": [
             "observed_phase_space.ra",
             "observed_phase_space.dec",
@@ -276,37 +259,57 @@
             "derived_kinematics.tangential_velocity",
             "derived_kinematics.galactic_rest_frame_velocity",
             "bound_assessment.bound_probability",
-            "bound_assessment.unbound_probability",
-            null
+            "bound_assessment.unbound_probability"
           ]
-        }
-      },
-      "required": [
-        "category",
-        "prompt"
-      ],
-      "title": "ObjectQuestionSubmission",
-      "type": "object"
-    },
-    "PrecedentUseSubmission": {
-      "additionalProperties": false,
-      "properties": {
-        "precedent_id": {
+        },
+        "condition": {
           "minLength": 1,
-          "title": "Precedent Id",
+          "title": "Condition",
           "type": "string"
         },
-        "explanation": {
-          "minLength": 1,
-          "title": "Explanation",
+        "source": {
+          "enum": [
+            "this_paper",
+            "prior_work",
+            "unclear"
+          ],
+          "title": "Source",
           "type": "string"
+        },
+        "frame": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frame"
+        },
+        "epoch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Epoch"
         }
       },
       "required": [
-        "precedent_id",
-        "explanation"
+        "reason",
+        "raw_values",
+        "evidence",
+        "quantity",
+        "condition",
+        "source"
       ],
-      "title": "PrecedentUseSubmission",
+      "title": "QuantityAuthorErrorSubmission",
       "type": "object"
     },
     "ReportedNumberSubmission": {
@@ -984,18 +987,11 @@
     "coverage": {
       "$ref": "#/$defs/CoverageDeclaration"
     },
-    "precedent_uses": {
+    "author_errors": {
       "items": {
-        "$ref": "#/$defs/PrecedentUseSubmission"
+        "$ref": "#/$defs/QuantityAuthorErrorSubmission"
       },
-      "title": "Precedent Uses",
-      "type": "array"
-    },
-    "questions": {
-      "items": {
-        "$ref": "#/$defs/ObjectQuestionSubmission"
-      },
-      "title": "Questions",
+      "title": "Author Errors",
       "type": "array"
     },
     "model_judgments": {
@@ -1009,8 +1005,7 @@
   "required": [
     "measurements",
     "quantity_conflicts",
-    "coverage",
-    "questions"
+    "coverage"
   ],
   "title": "ObjectQuantityInput",
   "type": "object"

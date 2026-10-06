@@ -5,7 +5,6 @@ import json
 import pytest
 
 from hvs_catalog.llm import ModelConfig
-from hvs_catalog.llm.prompts import PrecedentInput
 from hvs_catalog.pipeline import (
     PAPER_A,
     PAPER_B,
@@ -16,7 +15,6 @@ from hvs_catalog.pipeline import (
     import_mock_source,
     resume_extraction,
     start_configured_extraction,
-    submit_expert_decision,
 )
 from hvs_catalog.runtime import get_execution
 from hvs_catalog.workspace import (
@@ -44,11 +42,10 @@ def space(tmp_path):
     workspace.close()
 
 
-@pytest.mark.parametrize("expert", [True, False])
-def test_model_combinations_actual_requests_and_per_step_usage(space, expert):
+@pytest.mark.parametrize("mode", ["daily", "evaluation"])
+def test_model_combinations_actual_requests_and_per_step_usage(space, mode):
     config = ExtractionConfig(
-        mode="evaluation",
-        expert_adjudication=expert,
+        mode=mode,
         step_models={"quantities": ModelConfig(model="mimo-v2.6-flash")},
     )
     source = import_mock_source(space, PAPER_B)
@@ -111,56 +108,34 @@ def test_ai_interpretation_is_recorded_without_expert_and_remains_pending(space)
         assert "measurements" in call["tool"]["parameters"]["properties"]
 
 
-def test_paused_recovery_uses_archives_after_source_prompts_change(space, monkeypatch):
+def test_completed_reentry_uses_archives_after_prompt_sources_change(
+    space, monkeypatch
+):
     source = import_mock_source(space, PAPER_A)
-    precedent = PrecedentInput(
-        precedent_id="SYN-P1",
-        version="synthetic-v1",
-        approved=True,
-        explanation="Record an explicit author synthesis.",
-        conditions="An explicit synthesis is present.",
-        boundaries="Do not infer a synthesis from counts of models.",
-    )
-    config = ExtractionConfig(precedents=[precedent])
+    config = ExtractionConfig()
     handle = start_configured_extraction(
         space, configuration=config, source_refs=[source], request_key="fixed"
     )
     service = RequestsService()
-    report = resume_extraction(space, handle.execution_id, service=service)
-    assert report.outcome == "paused", report.errors
-    original_prompt = service.requests[0]["call_request"]["messages"][0]["content"]
+    assert (
+        resume_extraction(space, handle.execution_id, service=service).outcome
+        == "finished"
+    )
+    before = len(service.requests)
     config.default_model = ModelConfig(model="qwen3.8-flash")
     config.examples["quantities"] = []
-    precedent.explanation = "An unrelated later library revision."
     from hvs_catalog.llm import prompts
 
     def changed():
-        raise AssertionError("recovery must not rebuild current prompt/science sources")
+        raise AssertionError("recovery must not rebuild current prompt sources")
 
     monkeypatch.setattr(prompts, "science_content", changed)
     monkeypatch.setattr(prompts, "prompt_resources", changed)
-    from hvs_catalog.records.common import RecordRef
-
-    submit_expert_decision(
-        space,
-        execution_id=handle.execution_id,
-        question_ref=RecordRef.model_validate(report.pending_question["question_ref"]),
-        request_key="fixed-decision",
-        choice="no_overall_conclusion",
-    )
-    report = resume_extraction(space, handle.execution_id, service=service)
-    assert report.outcome == "finished", report.errors
     assert (
-        service.requests[0]["call_request"]["messages"][0]["content"] == original_prompt
+        resume_extraction(space, handle.execution_id, service=service).outcome
+        == "finished"
     )
-    assert all(
-        r["call_request"]["model"]["model"] == "deepseek-v4.1-flash"
-        for r in service.requests
-    )
-    assert (
-        "Record an explicit author synthesis"
-        in service.requests[-1]["call_request"]["messages"][1]["content"]
-    )
+    assert len(service.requests) == before
 
 
 def test_configuration_or_actual_english_prompt_change_requires_new_execution(

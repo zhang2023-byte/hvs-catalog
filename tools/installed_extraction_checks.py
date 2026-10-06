@@ -15,7 +15,7 @@ from pydantic import ValidationError
 from hvs_catalog.pipeline import (
     PAPER_A, PAPER_B, ExtractionConfig, PipelineMockService, check_extraction_config,
     get_extraction, import_mock_source, preview_extraction_prompt, resume_extraction,
-    start_configured_extraction, submit_expert_decision,
+    start_configured_extraction,
 )
 from hvs_catalog.workspace import initialize_workspace, open_workspace
 
@@ -45,15 +45,13 @@ if phase == "create":
     assert status["usage"]["tokens"] == 320
     source = import_mock_source(space, PAPER_A)
     pending = start_configured_extraction(space, configuration=ExtractionConfig(), source_refs=[source], request_key="installed-pause")
-    assert resume_extraction(space, pending.execution_id, service=PipelineMockService()).outcome == "paused"
+    assert resume_extraction(space, pending.execution_id, service=PipelineMockService()).outcome == "finished"
     print(json.dumps({"execution_id": pending.execution_id}))
     space.close()
 else:
     space = open_workspace(root)
     eid = sys.argv[3]
-    from hvs_catalog.pipeline import pending_questions
-    question = pending_questions(space, eid)[0]
-    submit_expert_decision(space, execution_id=eid, question_ref=question.question_ref, request_key="installed-decision", choice="no_overall_conclusion")
+    assert get_extraction(space, eid)["questions"] == []
     assert resume_extraction(space, eid, service=PipelineMockService()).outcome == "finished"
     assert get_extraction(space, eid)["usage"]["tokens"] == 320
     space.close()
@@ -162,7 +160,7 @@ class Adapter(TokenDanceAdapter):
         if tool['name']=='submit_roster':
             result={'coverage':{'state':'complete','checked_file_ids':['raw']},'entries':[{'identifiers':[{'value':'A','evidence':[quote]}],'disposition':'included','evidence':[quote],'summary':'This paper selects A.','summary_evidence':[quote],'contribution_type':'candidates_found','type_evidence':[quote],'boundness':'unbound','boundness_evidence':[quote],'conditional_assessments':[]}],'unresolved_groups':[]}
         else:
-            result={'measurements':[{'quantity':'observed_phase_space.radial_velocity','value':'-430','error':'12','unit':'km/s','limit_kind':'none','condition':'Reported heliocentric measurement','source':'this_paper','evidence':[quote]}],'quantity_conflicts':[],'coverage':{'common':{'state':'complete'},'exceptions':[]},'questions':[]}
+            result={'measurements':[{'quantity':'observed_phase_space.radial_velocity','value':'-430','error':'12','unit':'km/s','limit_kind':'none','condition':'Reported heliocentric measurement','source':'this_paper','evidence':[quote]}],'quantity_conflicts':[],'coverage':{'common':{'state':'complete'},'exceptions':[]}}
         if parallel and tool['name']=='submit_roster':
             import copy
             other=copy.deepcopy(result['entries'][0]);other['identifiers'][0]['value']='B';other['summary']='This paper selects B.';result['entries'].append(other)
@@ -210,7 +208,7 @@ else:
     space=open_workspace(root if phase=='crash' else root.parent/'restored')
     def crash():
         if phase=='crash' and len((root.parent/'pdf-calls.jsonl').read_text().splitlines())==expected_calls:os._exit(73)
-    service=CallService(config.runtime,credential=SecretStr('synthetic'),adapter=Adapter(),hooks={'after_archive':crash})
+    service=CallService(config.runtime,credential=SecretStr('fixture-api-secret-6ab3b39c'),adapter=Adapter(),hooks={'after_archive':crash})
     report=resume_extraction(space,saved['execution'],service=service)
     assert report.outcome==('failed' if parallel else 'finished'),report.errors
     if parallel:assert any('completion_unknown' in e for e in report.errors)

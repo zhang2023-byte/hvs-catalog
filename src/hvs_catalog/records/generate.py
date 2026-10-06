@@ -94,15 +94,18 @@ from .submission import (
 
 COMMON_INSTRUCTIONS = (
     "Return only the scientific fields requested for this step. Write new summaries, "
-    "questions and precedent notes in English; preserve the paper's printed identifiers, "
-    "values, units, conditions and excerpts in their original form. Use only the supplied "
-    "paper materials and fixed references. Provide every required list explicitly; an "
-    "empty list does not establish that the paper reported nothing. Keep material gaps, "
-    "unresolved scientific questions and the authors' assessment distinct. Supply the "
-    "evidence required by this step; never invent missing content or silently resolve "
-    "conflicting results. Use application-supplied identifiers where provided. The "
-    "application creates persistent record identifiers, references and execution "
-    "metadata; it does not supply scientific judgments or expert decisions."
+    "interpretation rationales and diagnostic reasons in English; preserve printed identifiers, "
+    "values, units, conditions and excerpts in their original form. Use only supplied "
+    "paper materials. Provide required lists explicitly; an empty list does not establish "
+    "that the paper reported nothing. Keep material gaps, parser errors, source errors, "
+    "conflicting measurements and the authors' assessment distinct. Choose the "
+    "best-supported interpretation under S07 and briefly record its evidence-based rationale. "
+    "Source errors require original-paper evidence, definitions or explicit logical "
+    "contradictions; unusual but possible values are not errors. Preserve errors and "
+    "unexplained same-condition conflicts as diagnostics, omit affected claims, and "
+    "continue independent results. Never invent a replacement value. Supply required "
+    "evidence and use application-supplied identifiers. The application assigns "
+    "persistent record identifiers, references and execution metadata."
 )
 
 CROSS_RECORD_RULES = (
@@ -161,7 +164,8 @@ CROSS_RECORD_RULES = (
             "for known objects; such gaps keep the roster coverage unfinished (a "
             "complete roster claim is rejected, a partial one must reference the gap) "
             "while quantity-only known gaps leave the roster unaffected. not_checked "
-            "honestly lists no checked files."
+            "honestly lists no checked files. Current source-error and same-condition "
+            "conflict diagnostics prevent complete coverage for the affected quantity."
         ),
     ),
     (
@@ -179,7 +183,9 @@ CROSS_RECORD_RULES = (
     (
         "Conflict exclusivity",
         (
-            "A measurement pending in a quantity_conflict cannot also be saved as a "
+            "A current passive conflict or source error blocks confirmed measurements "
+            "of that quantity under the affected condition, while other conditions "
+            "continue. In historical question-backed conflicts, a measurement cannot also be saved as a "
             "confirmed value of the same quantity, not even under a new value_id or "
             "with the order of any evidence collection permuted — including the "
             "evidence inside named error components and interval reports: identity "
@@ -518,9 +524,10 @@ def _expansion_section() -> list[str]:
             "complete declarations for every quantity."
         ),
         (
-            "- Each explicit numeric conflict generates a question record of category "
-            "`numeric_conflict` bound to the affected object; the application assigns "
-            "identifiers and never answers or closes questions itself."
+            "- Current numeric conflicts and source errors are passive diagnostics bound "
+            "to the affected object and quantity. Their values never become formal "
+            "measurements and their quantity coverage stays partial. Historical "
+            "question-backed conflicts remain readable in their original format."
         ),
         (
             "- A technical failure produces no success-shaped result: the failed step "
@@ -604,8 +611,7 @@ def render_roster_template() -> str:
             "",
             (
                 "Fixed paper and source context (paper key, source package files with "
-                "identifiers, known material gaps with their identifiers, existing open "
-                "questions with their identifiers), and all record "
+                "identifiers and known material gaps with their identifiers), and all record "
                 "identifiers, numbering, revisions and execution metadata."
             ),
             "",
@@ -616,7 +622,7 @@ def render_roster_template() -> str:
             [
                 (
                     "Roster material coverage: state, checked file identifiers, known gap identifiers",
-                    "File identifiers, gap identifiers, question identifiers, record references",
+                    "File identifiers, gap identifiers, record references",
                 ),
                 (
                     (
@@ -632,7 +638,7 @@ def render_roster_template() -> str:
                         f"assessment (one of {len(rules.states)} states or `null`), "
                         "conditional assessments, each with inline evidence"
                     ),
-                    "Question records for pending items and undetermined assessments",
+                    "Bound diagnostic identifiers; no human tasks",
                 ),
                 (
                     (
@@ -647,7 +653,7 @@ def render_roster_template() -> str:
             "## Citation and entry shape",
             "",
             "Each citation is `{location, quote}`: select a supplied T: text location or I: image location and transcribe the original text. Do not supply file IDs, pages, locator wrappers, parts, or context flags inside citations. The application binds them to the fixed PDF.",
-            "Write summary, summary_evidence, contribution_type, type_evidence, boundness, boundness_evidence, conditional_assessments directly on an included entry. There is no contribution wrapper. When needed, use boundness_question or boundness_gap_ids for an unresolved assessment.",
+            "Write summary, summary_evidence, contribution_type, type_evidence, boundness, boundness_evidence, conditional_assessments directly on an included entry. There is no contribution wrapper. Use boundness_author_errors or boundness_gap_ids for an assessment blocked by source errors or missing material.",
             "In a correction turn, use only the supplied repair_roster fields R1, R2, etc. They refer to application-selected fields, not names of objects. All other content is retained automatically. Do not resubmit the roster.",
             "",
             "## Required behavior",
@@ -655,11 +661,11 @@ def render_roster_template() -> str:
             (
                 "- `included` entries require inclusion evidence and full contribution "
                 "fields; `excluded` entries require exclusion evidence; `pending` entries "
-                "require a submitted question or a known material gap. Excluded and pending entries never carry "
+                "require source-error diagnostics or a known material gap. Excluded and pending entries never carry "
                 "contribution fields."
             ),
             (
-                "- An assessment with status `null` must submit a question or reference a "
+                "- An assessment with status `null` must report source-error diagnostics or reference a "
                 "known material gap; it must not be filled as "
                 "`no_overall_conclusion`."
             ),
@@ -682,7 +688,7 @@ def render_roster_template() -> str:
             ),
             (
                 "- Every identifier must appear in exactly one entry; if two printed "
-                "names may denote the same object, apply the active ambiguity policy instead of merging "
+                "names may denote the same object, choose the best-supported interpretation under S07 rather than merging "
                 "silently."
             ),
             "",
@@ -714,8 +720,7 @@ def render_quantity_template() -> str:
             (
                 "Fixed paper and source context, the object identifiers of the current "
                 "roster, the requested quantity scope, known material gaps with "
-                "identifiers and affected targets, existing open questions with "
-                "identifiers, approved precedent snapshots, and all record identifiers, "
+                "identifiers and affected targets, and all record identifiers, "
                 "value numbering, revisions, call states and usage."
             ),
             "",
@@ -730,35 +735,33 @@ def render_quantity_template() -> str:
                         "printed form (value, errors, unit, condition, frame, source), "
                         "citations using supplied location identifiers and verbatim quotes"
                     ),
-                    "Value, conflict, question, evidence and record identifiers",
+                    "Value, conflict, diagnostic, evidence and record identifiers",
                 ),
                 (
                     (
                         "Numeric conflicts: both alternatives in full with evidence and "
                         "the unresolved reason"
                     ),
-                    "A `numeric_conflict` question bound to the object and quantity",
+                    "Passive conflict diagnostics bound to the object and quantity",
                 ),
                 (
                     (
                         "Coverage declaration: common state, plus quantity and state "
-                        "for each exception. Do not fill technical file, gap or question IDs."
+                        "for each exception. Do not fill technical file or gap IDs."
                     ),
-                    "Fixed supplied file binding, material gaps and inline scientific question references; expansion to all 18 requested quantities",
+                    "Fixed supplied file binding, material gaps and diagnostic coverage; expansion to all 18 requested quantities",
                 ),
                 (
                     (
-                        "Other scientific questions inline: affected quantity, "
-                        "category, content, evidence"
+                        "Source errors: affected quantity, condition and source; frame or epoch when applicable; original raw_values, reason and evidence"
                     ),
-                    "Question records; the application never answers them",
+                    "Passive source-error diagnostics",
                 ),
                 (
                     (
-                        "Precedent use: the given precedent identifier and a short "
-                        "applicability note"
+                        "Interpretation rationale in model_judgments, citing supplied locations"
                     ),
-                    "Precedent snapshot references and version checks",
+                    "Run judgment records",
                 ),
             ]
         )
@@ -771,7 +774,7 @@ def render_quantity_template() -> str:
             "",
             (
                 "- Exactly one application-supplied object is processed per call. "
-                "Provide top-level `measurements`, `quantity_conflicts`, and `questions` "
+                "Provide top-level `measurements` and `quantity_conflicts` "
                 "lists even when empty, plus a `coverage` declaration object. "
                 "Each measurements entry contains `quantity` and one complete numeric "
                 "expression directly (e.g. value, error, condition, source, evidence). "
@@ -803,7 +806,7 @@ def render_quantity_template() -> str:
                 "Use {common: {state: ...}, exceptions: [{quantity: ..., state: ...}]}. "
                 "The scope is all requested quantities. The application assigns checked files "
                 "from the supplied PDF whenever the state indicates checking, and binds known "
-                "material gaps and inline questions using their affected quantities. Do not "
+                "material gaps and diagnostics using their affected quantities. Do not "
                 "supply scope, checked_file_ids, gap_ids or issue_ids in coverage. "
                 "Declarations contradicting known material gaps are rejected, and gaps "
                 "with unknown impact scope block complete declarations everywhere."
@@ -819,16 +822,19 @@ def render_quantity_template() -> str:
                 "exactly as printed; do not rewrite them into decimal approximations."
             ),
             (
-                "- Conflicting printings of one result are reported as a conflict with "
+                "- Unexplained conflicting printings of one result under the same condition are reported as a conflict with "
                 "at least two distinct complete alternatives; the alternatives are not "
-                "simultaneously reported as confirmed values. Other confirmed results "
+                "simultaneously reported as confirmed values. Different conditions are separate "
+                "measurements, not conflicts. Report clear source errors in author_errors with "
+                "quantity, condition, source, frame/epoch when applicable, raw_values, evidence and reason; never guess a correction. "
+                "Affected coverage is partial, not unreported. Other confirmed results "
                 "of the paper continue unaffected when the conflict affects neither "
                 "inclusion nor identity."
             ),
             (
-                "- All measurements, conflicts and scientific questions belong to the "
+                "- All measurements, conflicts and source-error diagnostics belong to the "
                 "single supplied target. The application assigns its identifier; "
-                "do not repeat object_id in the submission or questions."
+                "do not repeat object_id in the submission."
             ),
             "",
             "## Common instructions",

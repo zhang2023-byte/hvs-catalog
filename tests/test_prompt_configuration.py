@@ -25,7 +25,7 @@ def test_defaults_and_complete_step_override():
     config = ExtractionConfig(
         step_models={"quantities": ModelConfig(model="mimo-v2.6-flash")}
     )
-    assert config.method == "roster" and config.expert_adjudication
+    assert config.method == "roster" and not config.expert_adjudication
     assert config.model_for("roster").parameters == {
         "max_tokens": 393216,
         "thinking_type": "enabled",
@@ -69,8 +69,8 @@ def test_protocol_parameter_and_daily_ai_boundaries():
                 }
             }
         )
-    with pytest.raises(ValidationError, match="daily extraction"):
-        ExtractionConfig(expert_adjudication=False)
+    with pytest.raises(ValidationError, match="retired"):
+        ExtractionConfig(expert_adjudication=True)
     for method in ("roster",):
         assert (
             len(
@@ -171,39 +171,15 @@ def test_missing_and_non_english_instruction_sources_fail(monkeypatch):
         ("roster", "quantities"),
     ],
 )
-def test_ai_changes_adjudication_only_and_has_no_experiment_instructions(method, step):
+def test_daily_and_evaluation_share_automatic_input(method, step):
     daily = ExtractionConfig().blueprints()[step]
-    ai = ExtractionConfig(mode="evaluation", expert_adjudication=False).blueprints()[
-        step
-    ]
-    if step == "roster":
-        assert (
-            ai.schema_["$defs"]["RosterEntrySubmission"]["properties"][
-                "boundness_question"
-            ]["type"]
-            == "null"
-        )
-        assert (
-            daily.schema_["$defs"]["RosterEntrySubmission"]["properties"]["boundness"]
-            == ai.schema_["$defs"]["RosterEntrySubmission"]["properties"]["boundness"]
-        )
-    else:
-        assert ai.schema_["properties"]["questions"]["maxItems"] == 0
-    assert daily.explanation_ids == ai.explanation_ids
-    assert daily.definition_groups == ai.definition_groups
-    assert "submit the question to an expert" in daily.system
-    assert "ask an expert whether" not in ai.system
-    assert "refer the question to an expert" not in ai.system
-    assert "refer it to an expert" not in ai.system
-    assert "Do not create expert questions" in ai.system
-    for text in (
-        "Do not derive additional values or choose a best value",
-        "Missing or unreadable material leaves the affected part incomplete",
-    ):
-        assert text in daily.system and text in ai.system
-    assert "budget" not in ai.system and "benchmark" not in ai.system
-    assert "gold" not in ai.system.lower()
-    assert "version checks" not in daily.system and "version checks" not in ai.system
+    evaluation = ExtractionConfig(mode="evaluation").blueprints()[step]
+    assert daily == evaluation
+    serialized = json.dumps(daily.schema_).lower()
+    assert "question" not in serialized and "precedent" not in serialized
+    for text in ("expert", "precedent", "gold", "benchmark", "budget"):
+        assert text not in daily.system.lower()
+    assert "Source errors require" in daily.system
     assert "Provided or assigned by the application" not in daily.system
 
 
@@ -243,9 +219,15 @@ def test_supplied_gap_scope_and_question_evidence_are_preserved():
         material_gaps=[gap],
         open_questions=[question],
     )
-    preview = preview_extraction_prompt(ExtractionConfig(), "quantities", inputs)
+    with pytest.raises(ValueError, match="retired"):
+        preview_extraction_prompt(ExtractionConfig(), "quantities", inputs)
+    preview = preview_extraction_prompt(
+        ExtractionConfig(),
+        "quantities",
+        inputs.model_copy(update={"open_questions": []}),
+    )
     context = preview["request"]["messages"][1]["content"]
-    assert "gap-supplement" in context and "question-distance" in context
+    assert "gap-supplement" in context and "question-distance" not in context
     assert '"quantity": "observed_phase_space.distance"' in context
     assert "原文：distance = 10 kpc" in context
     with pytest.raises(ValidationError, match="English"):
@@ -264,31 +246,16 @@ def test_original_materials_preserved_and_precedent_maintenance_hidden():
         boundaries="Do not transfer a sample maximum to every member.",
     )
     source = "FILE synthetic.tex\n1|原文：银河系候选；α = 10°"
+    with pytest.raises(ValidationError, match="retired"):
+        ExtractionConfig(precedents=[precedent])
     preview = preview_extraction_prompt(
-        ExtractionConfig(precedents=[precedent]),
-        "roster",
-        PromptInput(manuscript=source),
+        ExtractionConfig(), "roster", PromptInput(manuscript=source)
     )
     assert source in preview["request"]["messages"][1]["content"]
-    assert precedent.explanation in preview["request"]["messages"][1]["content"]
-    assert precedent.version not in json.dumps(preview["request"], ensure_ascii=False)
-    assert preview["precedents"][0]["version"] == precedent.version
     assert preview["prepared"]["payload"]["model"] == "deepseek-v4.1-flash"
-    quantities = preview_extraction_prompt(
-        ExtractionConfig(precedents=[precedent]),
-        "quantities",
-        PromptInput(
-            manuscript=source, targets=[PromptTarget(object_id="A", identifiers=["A"])]
-        ),
-    )["request"]["tool"]["parameters"]
-    assert quantities["$defs"]["PrecedentUseSubmission"]["properties"]["precedent_id"][
-        "enum"
-    ] == ["SYN-P1"]
     for bad in ({"approved": False}, {"explanation": ""}, {"language": "zh"}):
         with pytest.raises(ValidationError):
             PrecedentInput.model_validate({**precedent.model_dump(), **bad})
-    with pytest.raises(ValidationError, match="approved"):
-        PrecedentInput.model_validate(precedent.model_dump(exclude={"approved"}))
 
 
 def test_single_roster_and_quantity_contract():
@@ -320,17 +287,12 @@ def test_single_roster_and_quantity_contract():
             preview_extraction_prompt(config, retired, source)
 
 
-def test_actual_prompt_science_differs_only_by_policy():
-    policies = prompts.science_content()["ambiguity_policies"]
-    expert = ExtractionConfig().blueprints()
-    automatic = ExtractionConfig(
-        mode="evaluation", expert_adjudication=False
-    ).blueprints()
-    for step in expert:
-        assert expert[step].system.replace(
-            policies["expert_assisted"], "POLICY"
-        ) == automatic[step].system.replace(policies["automatic"], "POLICY")
-        assert expert[step].examples == automatic[step].examples
+def test_actual_prompt_has_one_scientific_rule_set():
+    assert "ambiguity_policies" not in prompts.science_content()
+    assert (
+        ExtractionConfig().blueprints()
+        == ExtractionConfig(mode="evaluation").blueprints()
+    )
 
 
 def test_schema_gap_ids_are_limited_to_supplied_materials():

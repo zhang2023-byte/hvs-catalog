@@ -31,6 +31,7 @@ def make_context(source, object_ids=("contribution-A",)):
     from hvs_catalog.records import RecordRef
 
     return StepContext(
+        legacy_questions=True,
         source=source,
         paper_ref=RecordRef(record_id=paper.record_id, revision=1),
         created_at=STAMP,
@@ -618,6 +619,7 @@ def roster_submission():
 
 def roster_context(source):
     return StepContext(
+        legacy_questions=True,
         source=source,
         paper_ref=fixture_by_name(load_fixture("gap-conflict"), "paper").ref(),
         created_at=STAMP,

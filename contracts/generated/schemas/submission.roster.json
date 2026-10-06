@@ -1,5 +1,38 @@
 {
   "$defs": {
+    "AuthorErrorSubmission": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "raw_values": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Raw Values",
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/InlineEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "reason",
+        "raw_values",
+        "evidence"
+      ],
+      "title": "AuthorErrorSubmission",
+      "type": "object"
+    },
     "ConditionalAssessmentSubmission": {
       "additionalProperties": false,
       "properties": {
@@ -72,48 +105,6 @@
       "title": "InlineIdentifier",
       "type": "object"
     },
-    "InlineQuestion": {
-      "additionalProperties": false,
-      "properties": {
-        "category": {
-          "enum": [
-            "inclusion",
-            "identity",
-            "author_assessment",
-            "numeric_conflict",
-            "quantity_attribution",
-            "interpretation"
-          ],
-          "title": "Category",
-          "type": "string"
-        },
-        "prompt": {
-          "minLength": 1,
-          "title": "Prompt",
-          "type": "string"
-        },
-        "evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
-          },
-          "title": "Evidence",
-          "type": "array"
-        },
-        "gap_ids": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Gap Ids",
-          "type": "array"
-        }
-      },
-      "required": [
-        "category",
-        "prompt"
-      ],
-      "title": "InlineQuestion",
-      "type": "object"
-    },
     "RosterCoverageSubmission": {
       "additionalProperties": false,
       "properties": {
@@ -176,22 +167,18 @@
           "title": "Evidence",
           "type": "array"
         },
-        "question": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/InlineQuestion"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
         "gap_ids": {
           "items": {
             "type": "string"
           },
           "title": "Gap Ids",
+          "type": "array"
+        },
+        "author_errors": {
+          "items": {
+            "$ref": "#/$defs/AuthorErrorSubmission"
+          },
+          "title": "Author Errors",
           "type": "array"
         },
         "summary": {
@@ -249,16 +236,12 @@
           "title": "Evidence",
           "type": "array"
         },
-        "boundness_question": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/InlineQuestion"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+        "boundness_author_errors": {
+          "items": {
+            "$ref": "#/$defs/AuthorErrorSubmission"
+          },
+          "title": "Author Errors",
+          "type": "array"
         },
         "boundness_gap_ids": {
           "items": {
@@ -338,7 +321,7 @@
                 },
                 {
                   "required": [
-                    "boundness_question"
+                    "boundness_author_errors"
                   ]
                 },
                 {
@@ -467,7 +450,7 @@
       "type": "array"
     },
     "model_judgments": {
-      "description": "Brief evidence-based interpretations when the active policy calls for model judgment.",
+      "description": "Brief chosen interpretations with their supporting original evidence.",
       "items": {
         "type": "string"
       },

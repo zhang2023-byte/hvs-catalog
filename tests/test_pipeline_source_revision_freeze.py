@@ -238,9 +238,9 @@ if command == "run-to-pause":
     space = open_workspace(root)
     source = space.store().read_record_current("src-candidate-c")
     request = ExtractionRequest(
-        mode="daily", method="roster",
+        mode="synthetic", method="roster",
         source_refs=[source.ref()],
-        models=[StepModel(model="mock-default")],
+        models=[StepModel(model="mock-default")], expert_adjudication=True,
     )
     handle = start_extraction(space, request=request, request_key="cross-freeze")
     report = resume_extraction(

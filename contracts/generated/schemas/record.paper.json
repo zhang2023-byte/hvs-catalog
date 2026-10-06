@@ -21,6 +21,46 @@
       "title": "ArtifactRef",
       "type": "object"
     },
+    "AuthorError": {
+      "additionalProperties": false,
+      "description": "A source error retained for diagnosis, never a corrected scientific claim.",
+      "properties": {
+        "error_id": {
+          "minLength": 1,
+          "title": "Error Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "raw_values": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Raw Values",
+          "type": "array"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "error_id",
+        "reason",
+        "raw_values",
+        "evidence_refs"
+      ],
+      "title": "AuthorError",
+      "type": "object"
+    },
     "ConditionalAssessment": {
       "additionalProperties": false,
       "properties": {
@@ -678,6 +718,13 @@
           "minItems": 0,
           "title": "Precedent Uses",
           "type": "array"
+        },
+        "author_errors": {
+          "items": {
+            "$ref": "#/$defs/QuantityAuthorError"
+          },
+          "title": "Author Errors",
+          "type": "array"
         }
       },
       "required": [
@@ -740,6 +787,13 @@
           },
           "minItems": 0,
           "title": "Gap Refs",
+          "type": "array"
+        },
+        "author_errors": {
+          "items": {
+            "$ref": "#/$defs/AuthorError"
+          },
+          "title": "Author Errors",
           "type": "array"
         }
       },
@@ -949,6 +1003,92 @@
       "title": "QuantileReport",
       "type": "object"
     },
+    "QuantityAuthorError": {
+      "additionalProperties": false,
+      "properties": {
+        "error_id": {
+          "minLength": 1,
+          "title": "Error Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "raw_values": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Raw Values",
+          "type": "array"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "quantity": {
+          "minLength": 1,
+          "title": "Quantity",
+          "type": "string"
+        },
+        "condition": {
+          "description": "Affected conditions, including method or source identity where needed to distinguish independent results.",
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "this_paper",
+            "prior_work",
+            "unclear"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "frame": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frame"
+        },
+        "epoch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Epoch"
+        }
+      },
+      "required": [
+        "error_id",
+        "reason",
+        "raw_values",
+        "evidence_refs",
+        "quantity",
+        "condition",
+        "source"
+      ],
+      "title": "QuantityAuthorError",
+      "type": "object"
+    },
     "QuantityConflict": {
       "additionalProperties": false,
       "properties": {
@@ -976,15 +1116,22 @@
           "type": "array"
         },
         "issue_ref": {
-          "$ref": "#/$defs/RecordRef"
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecordRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
         "conflict_id",
         "quantity",
         "reason",
-        "alternatives",
-        "issue_ref"
+        "alternatives"
       ],
       "title": "QuantityConflict",
       "type": "object"

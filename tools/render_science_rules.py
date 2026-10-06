@@ -11,7 +11,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src/hvs_catalog/resources/science/rules.toml"
 OUTPUT = ROOT / "docs/science-rules.md"
-AUTOMATIC_OUTPUT = ROOT / "docs/science-rules-automatic.md"
 
 
 def check_text(row: dict, fields: tuple[str, ...]) -> None:
@@ -22,12 +21,11 @@ def check_text(row: dict, fields: tuple[str, ...]) -> None:
 
 def read_source(path: Path) -> dict:
     data = tomllib.loads(path.read_text(encoding="utf-8"))
-    if data["format_version"] != 2:
+    if data["format_version"] != 3:
         raise ValueError("不支持的规则材料格式版本")
     if data["instruction_language"] != "en":
         raise ValueError("提取指令必须使用英文")
     check_text(data, ("title", "usage"))
-    check_text(data["ambiguity_policies"], ("expert_assisted", "automatic"))
     if data["review_status"] not in {"draft", "approved"}:
         raise ValueError("review_status 必须是 draft 或 approved")
 
@@ -69,7 +67,7 @@ def cell(value: str) -> str:
     return value.replace("|", r"\|").replace("\n", "<br>")
 
 
-def render(data: dict, policy: str = "expert_assisted") -> str:
+def render(data: dict) -> str:
     lines = [
         "<!-- Generated -->",
         f"# {data['title']}",
@@ -110,7 +108,7 @@ def render(data: dict, policy: str = "expert_assisted") -> str:
             "",
             (
                 "These fictional examples illustrate the rules. They are neither "
-                "evidence for the current paper nor approved precedents."
+                "evidence for the current paper."
             ),
             "",
         ]
@@ -129,7 +127,6 @@ def render(data: dict, policy: str = "expert_assisted") -> str:
             ]
         )
 
-    lines.extend(["## Ambiguity policy", "", data["ambiguity_policies"][policy], ""])
     return "\n".join(lines)
 
 
@@ -137,7 +134,6 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=SOURCE)
     parser.add_argument("--output", type=Path, default=OUTPUT)
-    parser.add_argument("--policy", choices=("expert_assisted", "automatic"))
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
     try:
@@ -145,11 +141,8 @@ def main(argv: list[str] | None = None) -> int:
         if source == output:
             raise ValueError("阅读版输出不能覆盖规则来源")
         data = read_source(source)
-        outputs = [(output, args.policy or "expert_assisted")]
-        if args.policy is None and output == OUTPUT:
-            outputs.append((AUTOMATIC_OUTPUT, "automatic"))
-        for destination, policy in outputs:
-            rendered = render(data, policy)
+        for destination in [output]:
+            rendered = render(data)
             if args.check:
                 if (
                     not destination.exists()

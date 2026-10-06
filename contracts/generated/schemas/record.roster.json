@@ -1,5 +1,45 @@
 {
   "$defs": {
+    "AuthorError": {
+      "additionalProperties": false,
+      "description": "A source error retained for diagnosis, never a corrected scientific claim.",
+      "properties": {
+        "error_id": {
+          "minLength": 1,
+          "title": "Error Id",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "raw_values": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Raw Values",
+          "type": "array"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 1,
+          "title": "Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "error_id",
+        "reason",
+        "raw_values",
+        "evidence_refs"
+      ],
+      "title": "AuthorError",
+      "type": "object"
+    },
     "GapRef": {
       "additionalProperties": false,
       "properties": {
@@ -195,6 +235,13 @@
             "$ref": "#/$defs/GapRef"
           },
           "title": "Gap Refs",
+          "type": "array"
+        },
+        "author_errors": {
+          "items": {
+            "$ref": "#/$defs/AuthorError"
+          },
+          "title": "Author Errors",
           "type": "array"
         }
       },

@@ -11,13 +11,13 @@ Follow the sequence below. Consult the explanations and examples when needed.
 
 3. **Check the inclusion evidence and contribution type (S03)**: Include two kinds of research: Galactic unbound candidates found by this paper's selection or analysis and still accepted as candidates by its authors at the end of the study; and observations, analyses, or other substantive follow-up of previously identified unbound candidates. Both require evidence in this paper. Determine the contribution type from why the authors selected the object for study.
 
-4. **Record the authors' overall boundness assessment (S04)**: Use one of the five states below to record the authors' overall assessment of the object's boundness. Record a clear conclusion or preference directly. Use no_overall_conclusion when the paper gives no overall assessment. If the authors' meaning is ambiguous, apply the active ambiguity policy. Retain the original conclusions under each set of conditions.
+4. **Record the authors' overall boundness assessment (S04)**: Use one of the five states below to record the authors' overall assessment of the object's boundness. Record a clear conclusion or preference directly. Use no_overall_conclusion when the paper gives no overall assessment. If the authors' meaning is ambiguous, apply S07. Retain the original conclusions under each set of conditions.
 
 5. **Collect all reported values within the quantity scope (S05)**: For each eligible object, extract all values reported or adopted by this paper for the 18 quantities below, with their conditions. Include cited historical values and values obtained in this paper using different models, changing input data within the same model, or correcting measurements. Preserve the original units, precision, uncertainties, and numerical representations. Do not derive additional values or choose a best value.
 
-6. **Check object assignments, duplicates, and conflicting values (S06)**: Check which object and physical quantity each value describes and under which conditions it applies. Preserve direct evidence from the paper. Merge repeated occurrences of the same result and retain different results separately. Preserve conflicting original values, their sources, and the conflict.
+6. **Check object assignments, duplicates, and conflicting values (S06)**: Check which object and physical quantity each value describes and under which conditions it applies. Preserve direct evidence from the paper. Merge repeated occurrences of the same result and retain different valid results separately. Isolate unexplained conflicting values and clear source errors as diagnostics rather than confirmed measurements.
 
-7. **Check completeness and apply the ambiguity policy (S07)**: Return every identifiable eligible object and value. Distinguish interpretation questions and original numerical conflicts from missing materials and technical failures. Handle clear evidence and rule applications directly; apply the active ambiguity policy when interpretation remains uncertain.
+7. **Interpret ambiguities and report completeness (S07)**: Return every identifiable eligible object and valid reported value. Resolve interpretation ambiguities using the supplied paper and these rules, briefly recording the evidence for the chosen interpretation. Distinguish source-error and numerical-conflict diagnostics from missing materials, technical failures and genuinely unreported quantities.
 
 ## Explanations to consult as needed
 
@@ -31,13 +31,13 @@ If material is missing, unreadable, or cannot be reliably interpreted because of
 
 ### S02 Identify the objects and the work done in this paper
 
-Preserve object names as printed. After establishing that occurrences refer to the same object, record an identical name once and retain every location where it appears; retain distinct names or spellings separately. Group different names under one object only when this paper's materials support the correspondence. Do not assume two names identify the same object merely because they become identical after removing spaces or hyphens, or ignoring case. Even identical strings require checking for different objects with the same name or conflicting object information. Handle unclear or conflicting correspondences under the active ambiguity policy. Do not add external aliases or supply catalog releases or name prefixes that are absent from the paper.
+Preserve object names as printed. After establishing that occurrences refer to the same object, record an identical name once and retain every location where it appears; retain distinct names or spellings separately. Group different names under one object only when this paper's materials support the correspondence. Do not assume two names identify the same object merely because they become identical after removing spaces or hyphens, or ignoring case. Even identical strings require checking for different objects with the same name or conflicting object information. Handle unclear or conflicting correspondences according to S07. Do not add external aliases or supply catalog releases or name prefixes that are absent from the paper.
 
 Observations, measurements, data processing, reanalysis, modeling, or actual use of an object's data in an analysis can constitute a research contribution by this paper; a new numerical value is not required. A background mention, an unchanged retelling of earlier results, a table or figure displaying cited results, or only an initial data-quality screen is insufficient by itself. If the authors identify a measurement error through analysis and revise their interpretation of the object accordingly, record that research work.
 
 For each contribution, briefly describe in free text the work this paper does with the object and provide evidence from the paper. The summary describes the actual observation, analysis, or reassessment; record the contribution type separately under S03. The summary does not require an additional explanation of why the extractor included the object.
 
-A paper may use a numbered range such as 'stars 1–5' instead of naming every member. When the numbering and object context identify the members, interpret the range and submit a separate object entry for every member, citing the original range expression and its source. For example, 'HVS4–6' identifies HVS4, HVS5, and HVS6. Preserve the prefix and numbering supported by the paper; do not invent names or members not specified by the range. If the members cannot yet be fully listed, state which range remains unresolved. Missing or unreadable material leaves the affected part incomplete; ambiguous wording is handled under the active ambiguity policy. An unresolved membership list does not mean there are no objects.
+A paper may use a numbered range such as 'stars 1–5' instead of naming every member. When the numbering and object context identify the members, interpret the range and submit a separate object entry for every member, citing the original range expression and its source. For example, 'HVS4–6' identifies HVS4, HVS5, and HVS6. Preserve the prefix and numbering supported by the paper; do not invent names or members not specified by the range. If the members cannot yet be fully listed, state which range remains unresolved. Missing or unreadable material leaves the affected part incomplete; ambiguous wording is handled according to S07. An unresolved membership list does not mean there are no objects.
 
 A name containing digits or hyphens is not by itself a numbered group. The application does not expand object ranges or generate their members. Distinguish a numbered group from an individual name and from a physical numerical interval using the paper context. Do not invent unnamed members or omit explicitly identified members because another part of the group remains unprocessed.
 
@@ -57,7 +57,7 @@ Assign a group conclusion to individual objects only when it explicitly applies 
 
 When the authors explicitly summarize results obtained under different conditions, record the conclusion or preference expressed in that summary. Do not count physical models favoring bound or unbound outcomes and use the majority as the authors' overall view. Do not select a probability or gravitational potential model to infer that view. An explicit statement that an object may be or is likely unbound can be recorded as possibly_unbound; discussion of multiple models is not required.
 
-No overall conclusion includes both no discussion of boundness and discussion without an overall conclusion or preference. Record it directly when the paper clearly supports that reading. If the authors' meaning is ambiguous, apply the active ambiguity policy. The extractor's own uncertainty is not evidence that the authors give no overall conclusion. Processing status is not a sixth author state. Missing material or a parsing failure must not be recorded as no_overall_conclusion either.
+No overall conclusion includes both no discussion of boundness and discussion without an overall conclusion or preference. Record it directly when the paper clearly supports that reading. If the authors' meaning is ambiguous, apply S07. The extractor's own uncertainty is not evidence that the authors give no overall conclusion. Processing status is not a sixth author state. Missing material or a parsing failure must not be recorded as no_overall_conclusion either.
 
 An object explicitly concluded to be bound in this paper is not included as candidates_found. An object meeting the follow_up conditions may have the state bound. Neither possibly_bound nor no_overall_conclusion is sufficient grounds for inclusion by itself; S03 must still be satisfied.
 
@@ -87,17 +87,21 @@ For every recorded number, including uncertainty values and interval endpoints, 
 
 The same result may appear more than once, for example in both the text and a table. Merge duplicates after confirming that their source, method, conditions, epoch, and numerical representation are the same. When different expressions are confirmed to be the authors' rounded or approximate restatements of the same result, retain the most complete and precise expression actually printed; do not calculate a replacement. Retain scientific results with different sources, methods, conditions, epochs, or representations separately.
 
-If the values or errors for the same result genuinely differ between locations, first check for an explicit author correction or a difference in conditions. If the discrepancy remains unexplained, preserve both original values, their evidence, and the numerical conflict. Do not ignore a small discrepancy, automatically prefer the text or table, average the values, or relabel them as results from different models. Apply the active ambiguity policy to questions about the meaning of the conflicting passages. A judgment about their most plausible meaning does not erase an unexplained printed discrepancy or make either value an author-corrected result. An unexplained discrepancy may remain recorded after extraction has finished; it is not a license to omit other objects or values. Other confirmed results may proceed if the conflict affects neither inclusion nor object identity.
+If the values or errors for the same object, result and conditions genuinely differ between locations, first check for an explicit author correction or a difference in conditions. If the discrepancy remains unexplained, retain both complete original expressions, their evidence and the reason in a numerical-conflict diagnostic. Do not submit either alternative as a confirmed measurement. Do not ignore a small discrepancy, automatically prefer the text or table, average the values, or relabel them as results from different models. A plausible interpretation does not erase an unexplained printed discrepancy or make either value an author-corrected result.
 
-### S07 Check completeness and apply the ambiguity policy
+Identify a clear author error only when the original paper, an explicit definition, or a direct logical contradiction supports that diagnosis. An unusual or physically surprising value alone is insufficient. Preserve the erroneous printed fragments, original evidence and reason in an author-error diagnostic; do not guess a corrected value. Negative parallaxes, results under different conditions, and errors introduced by the parser are not automatically author errors. Stop only the affected content and its dependencies. Continue other established objects and quantities, and retain valid results under other conditions separately.
+
+### S07 Interpret ambiguities and report completeness
 
 Check all readable materials for eligible objects and values. Do not sample, impose an object-count limit, or select only representative objects. If some content is available only in external or unreadable materials, identify what remains unprocessed. Do not record it as unreported by the paper or as grounds for scientific exclusion.
 
 For objects or groups that could reasonably be mistaken for eligible entries but fail the inclusion conditions on inspection, record the exclusion and supporting evidence. There is no need to list every ordinary background object or reference.
 
-Direct application of the rules requires neither per-result rule identifiers nor an additional justification. Use only the approved precedents provided for this task; unapproved drafts must not be used. When relying on a precedent, briefly state which precedent you used and why it applies here. One note may cover several results. Precedents explain how to apply the main rules; they cannot change them. If a precedent still leaves the present case unclear, apply the active ambiguity policy.
+Direct application of the rules requires neither per-result rule identifiers nor an additional justification.
 
-For a material interpretation ambiguity, retain the relevant original passages, conditions, and extracted results and briefly identify the issue. The active ambiguity policy specifies how to reach or obtain the decision. Neither policy permits inventing missing evidence or numerical values, changing the inclusion criteria or quantity definitions, or concealing unprocessed material. Clear applications of the rules do not need an ambiguity record.
+When author meaning, object correspondence, inclusion or quantity assignment has more than one plausible interpretation, choose the interpretation best supported by the supplied paper and these rules. Briefly record the chosen interpretation and its original evidence as a model judgment, then continue the affected extraction. Interpretation uncertainty alone is not a reason to skip eligible objects or reported values. This does not permit inventing evidence or missing members, changing inclusion criteria or quantity definitions, deriving unreported quantities, or selecting one unexplained conflicting number as a confirmed value.
+
+For a source error or numerical conflict under S06, retain the diagnostic and leave the affected content incomplete, without waiting for another decision. Continue independent content. Missing materials and parsing failures remain material gaps, not author errors. Record a quantity as unreported only after its relevant materials have been checked and no reported value or affecting gap, error or conflict remains. A finished run is not a claim of complete or scientifically correct extraction.
 
 ## Authors' overall assessment
 
@@ -123,7 +127,7 @@ For a material interpretation ambiguity, retain the relevant original passages, 
 | Galactocentric x | Galactocentric Cartesian position x at the reference state. Preserve the authors' axis directions and frame description. |
 | Galactocentric y | Galactocentric Cartesian position y at the reference state. Preserve the authors' axis directions and frame description. |
 | Galactocentric z | Galactocentric Cartesian position z at the reference state. Preserve the authors' axis directions and frame description. |
-| Three-dimensional Galactocentric distance | The three-dimensional distance r from the object to the Galactic center at the reference state. Do not enter cylindrical radius R here. If the type of distance is unclear, apply the active ambiguity policy. |
+| Three-dimensional Galactocentric distance | The three-dimensional distance r from the object to the Galactic center at the reference state. Do not enter cylindrical radius R here. If the type of distance is unclear, apply S07. |
 | Galactocentric vx | Galactocentric Cartesian velocity component vx at the reference state. Preserve the frame convention. |
 | Galactocentric vy | Galactocentric Cartesian velocity component vy at the reference state. Preserve the frame convention. |
 | Galactocentric vz | Galactocentric Cartesian velocity component vz at the reference state. Preserve the frame convention. |
@@ -134,7 +138,7 @@ For a material interpretation ambiguity, retain the relevant original passages, 
 
 ## Synthetic examples
 
-These fictional examples illustrate the rules. They are neither evidence for the current paper nor approved precedents.
+These fictional examples illustrate the rules. They are neither evidence for the current paper.
 
 ### E01
 
@@ -196,7 +200,7 @@ See rules: S03, S04.
 
 **Input:** The authors' summaries in different passages appear inconsistent. The extractor cannot tell whether A is still considered an unbound candidate or what the authors' overall preference is.
 
-**Expected:** Preserve the passages and relevant results and handle the ambiguity about A's inclusion and overall state under the active ambiguity policy. Do not automatically exclude A or enter no_overall_conclusion merely because the extractor is uncertain.
+**Expected:** Choose the interpretation of A's inclusion and overall state best supported by the paper and rules. Briefly retain the chosen interpretation and its original evidence, and continue extraction. Do not automatically exclude A or enter no_overall_conclusion merely because the extractor is uncertain.
 
 See rules: S04, S07.
 
@@ -244,7 +248,7 @@ See rules: S01, S07.
 
 **Input:** For the same measurement, conditions, and source, the text prints a velocity of 100 ± 5 and a table prints 100 ± 8, with no correction or explanation of different conditions.
 
-**Expected:** Preserve both original values, their evidence, and the unexplained numerical conflict. Do not average, choose one as the sole reported value, or label them as results from different models. Handle any question about the passages under the active ambiguity policy; recording the conflict is not itself a failure to extract its two sides.
+**Expected:** Preserve both full original expressions, their evidence and the unexplained numerical conflict as a diagnostic. Do not include either alternative as a confirmed measurement; mark the affected quantity incomplete. Do not average, select one, or label them as results from different models. Continue independent valid results.
 
 See rules: S05, S06.
 
@@ -276,15 +280,15 @@ See rules: S05.
 
 **Input:** One velocity measurement of A has an unresolved numerical conflict in this paper. Other values are confirmed, and the conflict affects neither A's eligibility nor its identity.
 
-**Expected:** Preserve the measurement conflict and allow other confirmed results to proceed. Do not discard all results from the paper or mark the conflicting value as confirmed.
+**Expected:** Keep the conflicting measurement only in a diagnostic and leave its affected coverage incomplete. Allow other confirmed results to proceed. Do not discard all results from the paper or mark either conflicting value as confirmed.
 
 See rules: S06, S07.
 
 ### E19
 
-**Input:** This paper's situation clearly meets the applicability conditions of an approved precedent. Another similar precedent is still an unapproved draft.
+**Input:** The authors explicitly state that the printed distance for A is a typographical error and supply no replacement. A's identity, eligibility and other reported measurements remain established.
 
-**Expected:** The approved precedent may be used with a brief note identifying it and explaining why it applies. Do not use the unapproved draft. If applicability remains unclear, apply the active ambiguity policy.
+**Expected:** Record the printed distance, the author's correction statement and the reason in an author-error diagnostic. Do not include the erroneous distance as a confirmed measurement or invent a replacement. Leave that content incomplete and continue A's independent valid quantities.
 
 See rules: S07.
 
@@ -308,7 +312,7 @@ See rules: S02, S07.
 
 **Input:** The PDF explicitly identifies eligible objects A and B and refers to an online supplementary table containing the remaining names. The table is not supplied.
 
-**Expected:** Process A and B, preserve the reference to the missing supplement, and report the remaining membership as incomplete. Neither ambiguity policy can invent the absent names or claim complete coverage.
+**Expected:** Process A and B, preserve the reference to the missing supplement, and report the remaining membership as incomplete. Do not invent the absent names or claim complete coverage.
 
 See rules: S01, S07.
 
@@ -332,12 +336,6 @@ See rules: S05, S07.
 
 **Input:** Two object names differ only in spacing. Complete supplied materials explicitly discuss them as different objects.
 
-**Expected:** Keep the objects separate and retain both printed names. Neither normalization nor an ambiguity policy overrides explicit object identity evidence.
+**Expected:** Keep the objects separate and retain both printed names. Normalization and interpretation choices cannot override explicit object identity evidence.
 
 See rules: S02, S07.
-
-## Ambiguity policy
-
-Apply the common scientific rules directly whenever the evidence and its meaning are clear. When interpreting the supplied material still requires resolving uncertain author meaning, object identity or membership, inclusion, quantity assignment, or precedent applicability, submit the question to an expert. Provide the relevant original evidence, conditions, available results, and a concise statement of what needs to be decided. Do not guess a decision solely to finish the extraction.
-
-Pause only the results or processing that depend on this decision, retaining all other established results. An unresolved inclusion or identity question also pauses extraction that depends on that object's inclusion or identity. Apply a clear expert decision for this specific question to the affected content and resume it. If no clear decision is available, keep that question pending. An expert decision does not remove the obligation to preserve original evidence, missing-material gaps, or an unexplained printed numerical conflict.

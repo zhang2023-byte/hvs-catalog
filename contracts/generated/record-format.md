@@ -45,7 +45,7 @@ The quantity code is the legacy path of the approved science rules; the definiti
 | `derived_kinematics.galactocentric_x` | Galactocentric x | Galactocentric Cartesian position x at the reference state. Preserve the authors' axis directions and frame description. |
 | `derived_kinematics.galactocentric_y` | Galactocentric y | Galactocentric Cartesian position y at the reference state. Preserve the authors' axis directions and frame description. |
 | `derived_kinematics.galactocentric_z` | Galactocentric z | Galactocentric Cartesian position z at the reference state. Preserve the authors' axis directions and frame description. |
-| `derived_kinematics.galactocentric_radius` | Three-dimensional Galactocentric distance | The three-dimensional distance r from the object to the Galactic center at the reference state. Do not enter cylindrical radius R here. If the type of distance is unclear, apply the active ambiguity policy. |
+| `derived_kinematics.galactocentric_radius` | Three-dimensional Galactocentric distance | The three-dimensional distance r from the object to the Galactic center at the reference state. Do not enter cylindrical radius R here. If the type of distance is unclear, apply S07. |
 | `derived_kinematics.galactocentric_vx` | Galactocentric vx | Galactocentric Cartesian velocity component vx at the reference state. Preserve the frame convention. |
 | `derived_kinematics.galactocentric_vy` | Galactocentric vy | Galactocentric Cartesian velocity component vy at the reference state. Preserve the frame convention. |
 | `derived_kinematics.galactocentric_vz` | Galactocentric vz | Galactocentric Cartesian velocity component vz at the reference state. Preserve the frame convention. |
@@ -64,7 +64,7 @@ The quantity code is the legacy path of the approved science rules; the definiti
 | `possibly_bound` | The authors overall favor a Galactic bound interpretation while still considering an unbound interpretation possible. |
 | `bound` | The authors explicitly give an overall bound conclusion. Such an object is not included as candidates_found; an object eligible as follow_up of a historical candidate may have this state. |
 
-Rules version: `0.2.1` (sha256 `67ab32bb7bf16dd9c856830ed752084edddf137b8a25048e0387052e5e5efafc`).
+Rules version: `0.3.0` (sha256 `1fb10e90d3659e646a1bf75c2a7e24c0fbae73988f607e4714159f6e53bbfa68`).
 
 ## Field definitions
 
@@ -332,6 +332,7 @@ printed form and direct evidence. Step filling uses ValueSubmission instead.
 | `evidence_refs` | list of `RecordRef` | yes | minItems 0 |  |
 | `issue_refs` | list of `RecordRef` | yes | minItems 0 |  |
 | `gap_refs` | list of `GapRef` | yes | minItems 0 |  |
+| `author_errors` | list of `AuthorError` | no |  |  |
 
 #### ConditionalAssessment
 
@@ -356,7 +357,7 @@ printed form and direct evidence. Step filling uses ValueSubmission instead.
 | `quantity` | `string` | yes | minLength 1 |  |
 | `reason` | `string` | yes | minLength 1 |  |
 | `alternatives` | list of `MeasuredValue` | yes | minItems 2 |  |
-| `issue_ref` | `RecordRef` | yes |  |  |
+| `issue_ref` | `RecordRef` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 
 #### QuantityCoverageEntry
 
@@ -407,6 +408,7 @@ printed form and direct evidence. Step filling uses ValueSubmission instead.
 | `quantity_conflicts` | list of `QuantityConflict` | yes | minItems 0 |  |
 | `quantity_coverage` | list of `QuantityCoverageEntry` | yes |  |  |
 | `precedent_uses` | list of `PrecedentUse` | yes | minItems 0 |  |
+| `author_errors` | list of `QuantityAuthorError` | no |  |  |
 
 #### PaperData
 
@@ -446,6 +448,7 @@ printed form and direct evidence. Step filling uses ValueSubmission instead.
 | `issue_refs` | list of `RecordRef` | yes | minItems 0 |  |
 | `contribution_id` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `gap_refs` | list of `GapRef` | no |  |  |
+| `author_errors` | list of `AuthorError` | no |  |  |
 
 #### UnresolvedGroup
 
@@ -746,11 +749,11 @@ The checks below cannot be expressed as field constraints alone; they are implem
 
 - **Roster binding**: Included roster entries and paper object_contributions must correspond one to one through roster_item_id and contribution_id; excluded or pending entries carry no contribution.
 
-- **Quantity coverage**: Each contribution carries exactly one quantity_coverage entry for every quantity in the approved 18-quantity scope. complete entries cannot reference material gaps and contradict any gap whose declared impact covers the entry's object and quantity (an empty item_id or quantity in a gap target means all objects or the whole object; an unknown scope covers everything). partial entries must reference every gap affecting the entry. checked files must exist in the paper's source package. Gap targets may also name a roster-level judgment — inclusion or identity — for known objects; such gaps keep the roster coverage unfinished (a complete roster claim is rejected, a partial one must reference the gap) while quantity-only known gaps leave the roster unaffected. not_checked honestly lists no checked files.
+- **Quantity coverage**: Each contribution carries exactly one quantity_coverage entry for every quantity in the approved 18-quantity scope. complete entries cannot reference material gaps and contradict any gap whose declared impact covers the entry's object and quantity (an empty item_id or quantity in a gap target means all objects or the whole object; an unknown scope covers everything). partial entries must reference every gap affecting the entry. checked files must exist in the paper's source package. Gap targets may also name a roster-level judgment — inclusion or identity — for known objects; such gaps keep the roster coverage unfinished (a complete roster claim is rejected, a partial one must reference the gap) while quantity-only known gaps leave the roster unaffected. not_checked honestly lists no checked files. Current source-error and same-condition conflict diagnostics prevent complete coverage for the affected quantity.
 
 - **Numeric fragments**: Every raw_fragment of a numeric component must equal the saved numeric string of that component (value, errors, endpoints, coverage, quantiles, named error components). Its evidence reference must resolve to the correct paper and revision. Literal containment in the excerpt is not checked; scientific support and parsing fidelity remain unverified. Recorded numbers retain the extractor's reported expressions; the validator never re-computes or re-formats them.
 
-- **Conflict exclusivity**: A measurement pending in a quantity_conflict cannot also be saved as a confirmed value of the same quantity, not even under a new value_id or with the order of any evidence collection permuted — including the evidence inside named error components and interval reports: identity is established by the full expression with nested evidence sets normalized. Independent measurements — different conditions, sources or evidence — remain unaffected, and no unit conversion or scientific equivalence is inferred.
+- **Conflict exclusivity**: A current passive conflict or source error blocks confirmed measurements of that quantity under the affected condition, while other conditions continue. In historical question-backed conflicts, a measurement cannot also be saved as a confirmed value of the same quantity, not even under a new value_id or with the order of any evidence collection permuted — including the evidence inside named error components and interval reports: identity is established by the full expression with nested evidence sets normalized. Independent measurements — different conditions, sources or evidence — remain unaffected, and no unit conversion or scientific equivalence is inferred.
 
 - **Decision binding**: The question's stored fingerprint is recomputed from its actual fixed content (category, targets, evidence, sources, rules); a question whose fingerprint does not match its content is rejected. A decision must carry the recomputed fingerprint of the exact question revision it answers, so a decision made for an older version of the question cannot be applied.
 
@@ -766,7 +769,7 @@ The checks below cannot be expressed as field constraints alone; they are implem
 
 Step submissions contain only the scientific fields of that step. The application supplies fixed paper and source context, object identifiers, record identifiers, references, revisions and all execution metadata; none of these are model-filled. The common instruction text sent with every step is:
 
-> Return only the scientific fields requested for this step. Write new summaries, questions and precedent notes in English; preserve the paper's printed identifiers, values, units, conditions and excerpts in their original form. Use only the supplied paper materials and fixed references. Provide every required list explicitly; an empty list does not establish that the paper reported nothing. Keep material gaps, unresolved scientific questions and the authors' assessment distinct. Supply the evidence required by this step; never invent missing content or silently resolve conflicting results. Use application-supplied identifiers where provided. The application creates persistent record identifiers, references and execution metadata; it does not supply scientific judgments or expert decisions.
+> Return only the scientific fields requested for this step. Write new summaries, interpretation rationales and diagnostic reasons in English; preserve printed identifiers, values, units, conditions and excerpts in their original form. Use only supplied paper materials. Provide required lists explicitly; an empty list does not establish that the paper reported nothing. Keep material gaps, parser errors, source errors, conflicting measurements and the authors' assessment distinct. Choose the best-supported interpretation under S07 and briefly record its evidence-based rationale. Source errors require original-paper evidence, definitions or explicit logical contradictions; unusual but possible values are not errors. Preserve errors and unexplained same-condition conflicts as diagnostics, omit affected claims, and continue independent results. Never invent a replacement value. Supply required evidence and use application-supplied identifiers. The application assigns persistent record identifiers, references and execution metadata.
 
 Numeric filling rules:
 
@@ -775,5 +778,5 @@ Numeric filling rules:
 - Reported single-sided errors, zeros, negative values, percentages and statistical interpretations must be preserved; a pure interval carries endpoints and an `interval_kind` but never a computed central value.
 - Evidence is given inline as `{source, parts, context}`. The application validates each locator and excerpt, creates evidence records, assigns identifiers, and merges only evidence that is identical under the same fixed source version. Extractors never maintain evidence keys or persistent identifiers. For pdf_image evidence, validation checks only the image binding and file integrity; the quoted visual transcription is not string-verified.
 - Coverage is declared once per object as `{scope: all_requested, common, exceptions}` and expanded deterministically to one entry per requested quantity. Missing declarations, unknown or duplicate exceptions, unknown files, gaps or questions, and complete declarations that contradict known material gaps are rejected. Gaps whose impact scope is unknown block complete declarations for every quantity.
-- Each explicit numeric conflict generates a question record of category `numeric_conflict` bound to the affected object; the application assigns identifiers and never answers or closes questions itself.
+- Current numeric conflicts and source errors are passive diagnostics bound to the affected object and quantity. Their values never become formal measurements and their quantity coverage stays partial. Historical question-backed conflicts remain readable in their original format.
 - A technical failure produces no success-shaped result: the failed step keeps its error records and previously saved valid results, and no empty measurement, roster or coverage entry is fabricated.

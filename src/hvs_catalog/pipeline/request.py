@@ -35,7 +35,7 @@ class ExtractionRequest(Config):
     method: str = Field(min_length=1)
     source_refs: list[RecordRef] = Field(min_length=1)
     models: list[StepModel] = Field(min_length=1)
-    expert_adjudication: bool = True
+    expert_adjudication: bool = False
     existing_decision_refs: list[RecordRef] = Field(default_factory=list)
 
     @model_validator(mode="after")

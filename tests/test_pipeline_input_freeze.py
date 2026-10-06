@@ -54,6 +54,7 @@ def _request(source, **overrides):
         "method": "roster",
         "source_refs": [source],
         "models": [StepModel(model="mock-default")],
+        "expert_adjudication": True,
     }
     payload.update(overrides)
     return ExtractionRequest(**payload)

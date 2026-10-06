@@ -18,7 +18,7 @@ CONTRIBUTION_FIELDS = {
     "type_evidence": ("contribution_type", "evidence"),
     "boundness": ("boundness", "status"),
     "boundness_evidence": ("boundness", "evidence"),
-    "boundness_question": ("boundness", "question"),
+    "boundness_author_errors": ("boundness", "author_errors"),
     "boundness_gap_ids": ("boundness", "gap_ids"),
     "conditional_assessments": ("conditional_assessments",),
 }
@@ -39,6 +39,7 @@ def roster_input_schema() -> dict:
     }
     entry = definitions["RosterEntrySubmission"]
     del entry["properties"]["contribution"]
+    entry["properties"].pop("question")
     contribution = definitions["ContributionFieldsSubmission"]
     for name, path in CONTRIBUTION_FIELDS.items():
         field = contribution

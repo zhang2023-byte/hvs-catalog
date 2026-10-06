@@ -72,13 +72,14 @@ def quantity_input_schema() -> dict:
         "CoverageExceptionSubmission",
     ):
         definitions[name]["properties"]["quantity"]["enum"] = list(quantity_paths())
+    definitions["QuantityAuthorErrorSubmission"]["properties"]["quantity"]["enum"] = (
+        list(quantity_paths())
+    )
     definitions["ObjectQuestionSubmission"]["properties"]["quantity"]["enum"] = [
         *quantity_paths(),
         None,
     ]
-    # In this PDF step the requested scope and supplied file are fixed. Inline
-    # scientific questions already name their affected quantity; IDs are assigned
-    # and linked by the converter, never authored by the model.
+    # The requested scope and supplied file are fixed by the application.
     for name, technical in (
         ("CoverageDeclarationBody", ("checked_file_ids", "gap_ids", "issue_ids")),
         ("CoverageExceptionSubmission", ("checked_file_ids", "gap_ids", "issue_ids")),
@@ -110,11 +111,10 @@ def quantity_input_schema() -> dict:
         },
         "quantity_conflicts": obj["quantity_conflicts"],
         "coverage": obj["coverage"],
-        "precedent_uses": obj["precedent_uses"],
-        "questions": schema["properties"]["questions"],
+        "author_errors": obj["author_errors"],
         "model_judgments": schema["properties"]["model_judgments"],
     }
-    schema["required"] = ["measurements", "quantity_conflicts", "coverage", "questions"]
+    schema["required"] = ["measurements", "quantity_conflicts", "coverage"]
     reachable = set()
 
     def visit(value):
@@ -151,7 +151,13 @@ def expand_object_quantity_input(payload: dict, object_id: str) -> dict:
         key = repr(quantity)
         group = groups.setdefault(key, {"quantity": quantity, "values": []})
         group["values"].append(value)
-    object_fields = {"measurements", "quantity_conflicts", "coverage", "precedent_uses"}
+    object_fields = {
+        "measurements",
+        "quantity_conflicts",
+        "coverage",
+        "precedent_uses",
+        "author_errors",
+    }
     result = {k: copy.deepcopy(v) for k, v in payload.items() if k not in object_fields}
     result["objects"] = [
         {
@@ -160,6 +166,7 @@ def expand_object_quantity_input(payload: dict, object_id: str) -> dict:
             "quantity_conflicts": copy.deepcopy(payload.get("quantity_conflicts", [])),
             "coverage": copy.deepcopy(payload.get("coverage", {})),
             "precedent_uses": copy.deepcopy(payload.get("precedent_uses", [])),
+            "author_errors": copy.deepcopy(payload.get("author_errors", [])),
         }
     ]
     result["questions"] = []

@@ -779,6 +779,13 @@ class ReviewService:
         )
         if not isinstance(run, RunRecord):
             raise WorkspaceIntegrityError(f"执行 {execution_id} 的运行清单缺失")
+        if run.data.input_snapshot.options.get("extraction_scope") in {
+            "roster",
+            "full",
+        }:
+            raise AdjudicationNotAllowedError(
+                "Expert decisions for PDF extraction are retired; historical runs are read-only"
+            )
         if not run.data.input_snapshot.expert_adjudication:
             raise AdjudicationNotAllowedError(
                 f"执行 {execution_id} 关闭了运行中专家裁决；"

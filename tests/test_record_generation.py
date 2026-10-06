@@ -100,7 +100,9 @@ def test_quantity_template_lists_scope_and_instructions():
     for path in quantity_paths():
         assert f"`{path}`" in template
     assert COMMON_INSTRUCTIONS in template
-    assert "numeric_conflict" in template
+    assert "Passive conflict diagnostics" in template
+    assert "numeric_conflict" not in template
+    assert "author_errors" in template
 
 
 def test_all_templates_share_common_instructions():
@@ -152,10 +154,7 @@ def test_quantity_template_field_levels_match_submission_schema():
     from hvs_catalog.records.quantity_input import quantity_input_schema
 
     template = build_outputs()["templates/quantity-extraction.md"]
-    assert QuantitySubmission.model_json_schema()["required"] == [
-        "objects",
-        "questions",
-    ]
+    assert QuantitySubmission.model_json_schema()["required"] == ["objects"]
     assert "questions" not in ObjectQuantitySubmission.model_fields
     coverage = ObjectQuantitySubmission.model_json_schema()["properties"]["coverage"]
     assert coverage == {"$ref": "#/$defs/CoverageDeclaration"}
@@ -164,7 +163,6 @@ def test_quantity_template_field_levels_match_submission_schema():
         "measurements",
         "quantity_conflicts",
         "coverage",
-        "questions",
     ]
     assert wire["properties"]["coverage"] == {"$ref": "#/$defs/CoverageDeclaration"}
     assert "Exactly one application-supplied object" in template

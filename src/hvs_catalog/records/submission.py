@@ -56,6 +56,26 @@ class InlineQuestion(Config):
     gap_ids: list[str] = Field(default_factory=list)
 
 
+class AuthorErrorSubmission(Config):
+    reason: str = Field(min_length=1)
+    raw_values: list[str] = Field(min_length=1)
+    evidence: list[InlineEvidence] = Field(min_length=1)
+
+
+class QuantityAuthorErrorSubmission(AuthorErrorSubmission):
+    quantity: str = Field(min_length=1)
+    condition: str = Field(min_length=1)
+    source: ValueSource
+    frame: str | None = None
+    epoch: str | None = None
+
+    @model_validator(mode="after")
+    def _known_quantity(self):
+        if not is_quantity_path(self.quantity):
+            raise SubmissionError(f"未知的物理量编码：{self.quantity}")
+        return self
+
+
 # ---------------------------------------------------------------------------
 # Roster extraction.
 # ---------------------------------------------------------------------------
@@ -71,11 +91,21 @@ class BoundnessSubmission(Config):
     evidence: list[InlineEvidence] = Field(default_factory=list)
     question: InlineQuestion | None = None
     gap_ids: list[str] = Field(default_factory=list)
+    author_errors: list[AuthorErrorSubmission] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _status_or_reason(self) -> BoundnessSubmission:
-        if self.status is None and self.question is None and not self.gap_ids:
-            raise SubmissionError("尚不能判断作者状态时必须提交问题或引用材料缺口")
+        if (
+            self.status is None
+            and self.question is None
+            and not self.gap_ids
+            and not self.author_errors
+        ):
+            raise SubmissionError(
+                "尚不能判断作者状态时必须保存原文错误诊断或引用材料缺口"
+            )
+        if self.status is not None and self.author_errors:
+            raise SubmissionError("原文错误影响的作者判断不能保存为已确认状态")
         needs_evidence = (
             self.status is not None and self.status != "no_overall_conclusion"
         )
@@ -114,6 +144,7 @@ class RosterEntrySubmission(Config):
     question: InlineQuestion | None = None
     contribution: ContributionFieldsSubmission | None = None
     gap_ids: list[str] = Field(default_factory=list)
+    author_errors: list[AuthorErrorSubmission] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _disposition_consistent(self) -> RosterEntrySubmission:
@@ -126,8 +157,15 @@ class RosterEntrySubmission(Config):
             raise SubmissionError("排除或待决条目不能填写贡献字段")
         if self.disposition in {"included", "excluded"} and not self.evidence:
             raise SubmissionError("收录或排除条目必须给出依据")
-        if self.disposition == "pending" and self.question is None and not self.gap_ids:
-            raise SubmissionError("待决条目必须提交问题或引用材料缺口")
+        if (
+            self.disposition == "pending"
+            and self.question is None
+            and not self.gap_ids
+            and not self.author_errors
+        ):
+            raise SubmissionError("待决条目必须保存原文错误诊断或引用材料缺口")
+        if self.disposition != "pending" and self.author_errors:
+            raise SubmissionError("影响身份或收录的原文错误必须隔离为未完成条目")
         return self
 
 
@@ -158,7 +196,7 @@ class RosterSubmission(Config):
     unresolved_groups: list[UnresolvedGroupSubmission]
     model_judgments: list[str] = Field(
         default_factory=list,
-        description="Brief evidence-based interpretations when the active policy calls for model judgment.",
+        description="Brief chosen interpretations with their supporting original evidence.",
     )
 
 
@@ -268,6 +306,7 @@ class ObjectQuantitySubmission(Config):
     quantity_conflicts: list[ConflictSubmission]
     coverage: CoverageDeclaration
     precedent_uses: list[PrecedentUseSubmission] = Field(default_factory=list)
+    author_errors: list[QuantityAuthorErrorSubmission] = Field(default_factory=list)
 
 
 class ObjectQuestionSubmission(InlineQuestion):
@@ -283,5 +322,5 @@ class ObjectQuestionSubmission(InlineQuestion):
 
 class QuantitySubmission(Config):
     objects: list[ObjectQuantitySubmission]
-    questions: list[ObjectQuestionSubmission]
+    questions: list[ObjectQuestionSubmission] = Field(default_factory=list)
     model_judgments: list[str] = Field(default_factory=list)

@@ -606,9 +606,13 @@ class RosterFlow(DefaultFlowAdapter):
                     raise SubmissionError(
                         "Automatic extraction must form a model judgment, not an expert question"
                     )
-                if entry["disposition"] == "pending" and not entry.get("gap_ids"):
+                if (
+                    entry["disposition"] == "pending"
+                    and not entry.get("gap_ids")
+                    and not entry.get("author_errors")
+                ):
                     raise SubmissionError(
-                        "Only missing material may leave an automatic roster entry pending"
+                        "A blocked automatic roster entry requires missing material or source-error diagnostics"
                     )
         conversion = convert_roster_submission(
             context, RosterSubmission.model_validate(hydrated)

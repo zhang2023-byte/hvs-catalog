@@ -31,6 +31,7 @@ LINES = [
     "B RV = 510 +/- 0 km/s. The paper gives a 90% credible distance interval [2.0, 3.0] kpc.",
     "Under Model P, A RV < -430 km/s; under Model SP, A RV > 0 km/s.",
     "A RV = 4 9 9 $\\pm 6$ km/s.",
+    "A distance = -2.4 kpc; distance is defined as non-negative. The authors identify this as a printing error.",
 ]
 
 
@@ -84,9 +85,15 @@ def quantities(object_id, *, values=None, conflicts=None, questions=None):
         ],
         "quantity_conflicts": conflicts or [],
         "coverage": {"common": {"state": "complete"}, "exceptions": []},
-        "questions": [
-            {k: v for k, v in q.items() if k != "object_id"} for q in questions or []
-        ],
+        **(
+            {
+                "questions": [
+                    {k: v for k, v in q.items() if k != "object_id"} for q in questions
+                ]
+            }
+            if questions
+            else {}
+        ),
     }
 
 
@@ -153,9 +160,8 @@ def paper(space, execution):
     return space.store().read_record_current(f"pdf-{execution}-paper")
 
 
-@pytest.mark.parametrize("expert", [True, False])
-def test_both_policies_preserve_numbers_and_all_eighteen_completion_entries(
-    prepared_pdf, expert
+def test_automatic_extraction_preserves_numbers_and_all_eighteen_completion_entries(
+    prepared_pdf,
 ):
     adapter = Adapter(
         lambda tool, _: (
@@ -172,7 +178,7 @@ def test_both_policies_preserve_numbers_and_all_eighteen_completion_entries(
             else quantities(object_id(tool))
         )
     )
-    handle, result, service = start(prepared_pdf, adapter, expert=expert)
+    handle, result, service = start(prepared_pdf, adapter, expert=False)
     assert result.outcome == "finished", result.errors
     contributions = paper(
         prepared_pdf[0], handle.execution_id
@@ -231,13 +237,12 @@ def test_single_object_wire_contract_binds_flat_measurements(prepared_pdf):
         "measurements",
         "quantity_conflicts",
         "coverage",
-        "precedent_uses",
-        "questions",
+        "author_errors",
         "model_judgments",
     }
     assert "ObjectQuantitySubmission" not in schema["$defs"]
     assert "QuantityGroupSubmission" not in schema["$defs"]
-    assert "object_id" not in schema["$defs"]["ObjectQuestionSubmission"]["properties"]
+    assert "ObjectQuestionSubmission" not in schema["$defs"]
     assert (
         len(schema["$defs"]["MeasurementSubmission"]["properties"]["quantity"]["enum"])
         == 18
@@ -246,9 +251,8 @@ def test_single_object_wire_contract_binds_flat_measurements(prepared_pdf):
     assert obj.quantities[0].values[0].value == "-430"
 
 
-@pytest.mark.parametrize("expert", [True, False])
 def test_bad_question_container_preserves_independent_complete_measurement(
-    prepared_pdf, expert
+    prepared_pdf,
 ):
     def respond(tool, _):
         if tool["name"] == "repair_quantities":
@@ -258,7 +262,7 @@ def test_bad_question_container_preserves_independent_complete_measurement(
         return payload
 
     adapter = Adapter(respond, names=("A",))
-    handle, result, _ = start(prepared_pdf, adapter, expert=expert)
+    handle, result, _ = start(prepared_pdf, adapter, expert=False)
     assert result.outcome == "failed"
     assert (
         len(adapter.seen) == 4
@@ -340,7 +344,7 @@ def test_automatic_repair_removes_redundant_expert_request_but_keeps_chosen_scie
 ):
     def respond(tool, _):
         if tool["name"] == "repair_quantities":
-            return {"R1": []}
+            return {"R1": None}
         payload = quantities(
             object_id(tool),
             questions=[
@@ -445,116 +449,76 @@ def test_interval_without_invented_central_value(prepared_pdf):
     assert saved.range_lower == "2.0" and saved.range_upper == "3.0"
 
 
-def test_expert_quantity_question_recovers_only_its_object_and_execution(prepared_pdf):
-    from hvs_catalog.records.questions import Actor, DecisionPatch, PatchChange
-    from hvs_catalog.review.service import DecisionSubmission
+def source_error(quantity="observed_phase_space.distance"):
+    return {
+        "quantity": quantity,
+        "condition": "Reported heliocentric distance",
+        "source": "this_paper",
+        "raw_values": ["-2.4 kpc"],
+        "reason": "The paper explicitly defines distance as non-negative and identifies the printed negative distance as an error.",
+        "evidence": [cite(5)],
+    }
+
+
+def test_source_error_isolated_and_restored_without_human_tasks(prepared_pdf, tmp_path):
+    from hvs_catalog.pipeline import get_extraction
+    from hvs_catalog.workspace import backup_workspace, restore_workspace
 
     def respond(tool, _):
-        oid = object_id(tool)
-        question = {
-            "object_id": oid,
-            "quantity": "observed_phase_space.radial_velocity",
-            "category": "quantity_attribution",
-            "prompt": "Does the reported RV belong to A under this reference state?",
-            "evidence": [cite()],
-        }
-        payload = (
-            quantities(
-                oid,
-                values=[],
-                questions=[
-                    question,
-                    {
-                        **question,
-                        "quantity": "observed_phase_space.distance",
-                        "prompt": "Does the distance belong to A under this reference state?",
-                    },
-                ],
-            )
-            if oid.endswith("1")
-            else quantities(oid)
-        )
-        if oid.endswith("1"):
-            payload["coverage"]["exceptions"] = [
-                {
-                    "quantity": quantity,
-                    "state": "partial",
-                }
-                for quantity in (
-                    "observed_phase_space.radial_velocity",
-                    "observed_phase_space.distance",
-                )
-            ]
-        return payload
+        result = quantities(object_id(tool))
+        if object_id(tool).endswith("1"):
+            result["author_errors"] = [source_error()]
+        return result
 
     adapter = Adapter(respond)
-    handle, result, service = start(prepared_pdf, adapter, expert=True)
-    assert result.outcome == "paused", result.errors
+    handle, result, service = start(prepared_pdf, adapter)
+    assert result.outcome == "finished", result.errors
     space = prepared_pdf[0]
-    aggregate = paper(space, handle.execution_id)
-    assert aggregate.data.object_contributions[1].quantities
-    pending_rows = [
-        c
-        for c in aggregate.data.object_contributions[0].quantity_coverage
-        if c.issue_refs
-    ]
-    assert {c.quantity for c in pending_rows} == {
-        "observed_phase_space.radial_velocity",
-        "observed_phase_space.distance",
+    saved = paper(space, handle.execution_id)
+    first, second = saved.data.object_contributions
+    assert first.quantities[0].values[0].value == "-430"
+    assert second.quantities[0].values[0].value == "-430"
+    assert first.author_errors[0].raw_values == ["-2.4 kpc"]
+    assert {c.quantity for c in first.quantity_coverage if c.state == "partial"} == {
+        "observed_phase_space.distance"
     }
-    assert all(c.state == "partial" and len(c.issue_refs) == 1 for c in pending_rows)
-    # Another paper execution can complete while the first waits.
-    other_adapter = Adapter(lambda tool, _: quantities(object_id(tool)), names=("A",))
-    other, finished, _ = start(prepared_pdf, other_adapter, expert=False, key="other")
+    status = get_extraction(space, handle.execution_id)
+    assert status["science_completion"]["state"] == "partial"
+    assert status["questions"] == [] and len(status["diagnostics"]) == 1
+    diagnostic = status["diagnostics"][0]
+    assert diagnostic["item_id"] == first.item_id and diagnostic[
+        "source_ref"
+    ] == saved.data.source_ref.model_dump(mode="json")
+    assert diagnostic["evidence_refs"]
+    other, finished, _ = start(
+        prepared_pdf,
+        Adapter(lambda tool, _: quantities(object_id(tool)), names=("A",)),
+        key="other",
+    )
     assert finished.outcome == "finished"
     other_before = paper(space, other.execution_id).ref()
-    review = ReviewService(space)
-    view = review.list_questions(execution_id=handle.execution_id)[0]
-    assert len(review.list_questions(execution_id=handle.execution_id)) == 1
     assert (
-        len(
-            review.list_questions(
-                execution_id=handle.execution_id, include_scientific_issues=True
-            )
+        resume_extraction(space, handle.execution_id, service=service).outcome
+        == "finished"
+    )
+    assert (
+        len(adapter.seen) == 3
+        and paper(space, other.execution_id).ref() == other_before
+    )
+    backup_workspace(space, tmp_path / "backup")
+    restored = restore_workspace(tmp_path / "backup", tmp_path / "restored")
+    try:
+        assert (
+            get_extraction(restored, handle.execution_id)["diagnostics"]
+            == status["diagnostics"]
         )
-        == 3
-    )
-    assert len(view.record.data.context_refs) == 2
-    target = view.record.data.target_refs[0]
-    unit = space.store().read_record_current(target.record_id)
-    obj = next(c for c in unit.data.object_contributions if c.item_id == target.item_id)
-    coverage = [
-        c.model_copy(update={"state": "complete", "issue_refs": []}).model_dump(
-            mode="json"
+        assert (
+            resume_extraction(restored, handle.execution_id, service=service).outcome
+            == "finished"
         )
-        for c in obj.quantity_coverage
-    ]
-    decision = DecisionSubmission(
-        question_ref=view.question_ref,
-        fingerprint=view.record.data.fingerprint,
-        actor=Actor(kind="human", id="synthetic-expert"),
-        outcome="resolved",
-        answer_original="The paper reports no separate RV for A here.",
-        answer_en="The paper reports no separate RV for A here.",
-        reason="The fixed synthetic evidence resolves the attribution.",
-        evidence_refs=view.record.data.evidence_refs,
-        patch=DecisionPatch(
-            target=target,
-            changes=[PatchChange(field="quantity_coverage", value=coverage)],
-        ),
-    )
-    review.submit_decision(
-        execution_id=handle.execution_id,
-        step_id=view.step_id,
-        request_key="answer",
-        submission=decision,
-    )
-    resumed = resume_extraction(space, handle.execution_id, service=service)
-    assert resumed.outcome == "finished", resumed.errors
-    assert len(adapter.seen) == 3
-    assert paper(space, other.execution_id).ref() == other_before
-    again = resume_extraction(space, handle.execution_id, service=service)
-    assert again.outcome == "finished" and len(adapter.seen) == 3
+        assert len(adapter.seen) == 3
+    finally:
+        restored.close()
 
 
 def test_failed_measurement_keeps_other_complete_values_in_same_object(prepared_pdf):
@@ -571,15 +535,6 @@ def test_failed_measurement_keeps_other_complete_values_in_same_object(prepared_
                     "values": [valid, invalid],
                 }
             ],
-            questions=[
-                {
-                    "object_id": object_id(tool),
-                    "quantity": "observed_phase_space.radial_velocity",
-                    "category": "interpretation",
-                    "prompt": "Is this alternative error attributable to the same measurement?",
-                    "evidence": [cite()],
-                }
-            ],
         )
         payload["coverage"]["exceptions"] = [
             {"quantity": "observed_phase_space.radial_velocity", "state": "partial"}
@@ -587,7 +542,7 @@ def test_failed_measurement_keeps_other_complete_values_in_same_object(prepared_
         return payload
 
     adapter = Adapter(respond, names=("A",))
-    handle, result, _ = start(prepared_pdf, adapter, expert=True)
+    handle, result, _ = start(prepared_pdf, adapter)
     assert result.outcome == "failed"
     obj = paper(prepared_pdf[0], handle.execution_id).data.object_contributions[0]
     assert len(obj.quantities[0].values) == 1
@@ -596,7 +551,7 @@ def test_failed_measurement_keeps_other_complete_values_in_same_object(prepared_
     questions = ReviewService(prepared_pdf[0]).list_questions(
         execution_id=handle.execution_id
     )
-    assert len(questions) == 1
+    assert questions == []
 
 
 def test_surplus_root_brace_is_application_repair_without_scientific_rewrite(
@@ -628,10 +583,7 @@ def test_surplus_root_brace_is_application_repair_without_scientific_rewrite(
     )
 
 
-@pytest.mark.parametrize("expert", [False, True])
-def test_annotated_citation_ids_are_bound_without_extra_model_calls(
-    prepared_pdf, expert
-):
+def test_annotated_citation_ids_are_bound_without_extra_model_calls(prepared_pdf):
     def respond(tool, _):
         payload = quantities(object_id(tool))
         payload["measurements"][0]["evidence"][0]["location"] += (
@@ -640,7 +592,7 @@ def test_annotated_citation_ids_are_bound_without_extra_model_calls(
         return payload
 
     adapter = Adapter(respond, names=("A",))
-    handle, result, _ = start(prepared_pdf, adapter, expert=expert)
+    handle, result, _ = start(prepared_pdf, adapter, expert=False)
     assert result.outcome == "finished", result.errors
     assert len(adapter.seen) == 2
     space = prepared_pdf[0]
@@ -664,13 +616,12 @@ def test_annotated_citation_ids_are_bound_without_extra_model_calls(
     )
 
 
-@pytest.mark.parametrize("expert", [False, True])
-def test_example_id_cannot_be_used_as_unsupplied_precedent(prepared_pdf, expert):
+def test_example_id_cannot_be_used_as_unsupplied_precedent(prepared_pdf):
     def respond(tool, _):
         if tool["name"] == "repair_quantities":
             assert set(tool["parameters"]["properties"]) == {"R1"}
-            assert tool["parameters"]["properties"]["R1"]["maxItems"] == 0
-            return {"R1": []}
+            assert tool["parameters"]["properties"]["R1"]["type"] == "null"
+            return {"R1": None}
         payload = quantities(object_id(tool))
         payload["precedent_uses"] = [
             {
@@ -681,7 +632,7 @@ def test_example_id_cannot_be_used_as_unsupplied_precedent(prepared_pdf, expert)
         return payload
 
     adapter = Adapter(respond, names=("A",))
-    handle, result, _ = start(prepared_pdf, adapter, expert=expert)
+    handle, result, _ = start(prepared_pdf, adapter, expert=False)
     assert result.outcome == "finished", result.errors
     assert len(adapter.seen) == 3
     contribution = paper(
@@ -863,30 +814,23 @@ def test_recovery_rejects_object_revision_without_bound_decision(prepared_pdf):
     from hvs_catalog.pipeline.quantities import PDFExtractionFlow
     from hvs_catalog.workspace import CommitRequest
 
-    def respond(tool, _):
-        oid = object_id(tool)
-        payload = quantities(
-            oid,
-            values=[],
-            questions=[
-                {
-                    "object_id": oid,
-                    "quantity": "observed_phase_space.radial_velocity",
-                    "category": "quantity_attribution",
-                    "prompt": "Check this attribution.",
-                    "evidence": [cite()],
-                }
-            ],
-        )
-        payload["coverage"]["common"]["state"] = "partial"
-        return payload
-
-    adapter = Adapter(respond, names=("A",))
-    handle, result, service = start(prepared_pdf, adapter, expert=True)
-    assert result.outcome == "paused"
+    adapter = Adapter(
+        lambda tool, _: {
+            **quantities(object_id(tool)),
+            "author_errors": [source_error()],
+        },
+        names=("A",),
+    )
+    handle, result, service = start(prepared_pdf, adapter)
+    assert result.outcome == "finished"
     space = prepared_pdf[0]
-    view = ReviewService(space).list_questions(execution_id=handle.execution_id)[0]
-    unit = space.store().read_record_current(view.record.data.target_refs[0].record_id)
+    run = space.store().read_record_current(f"run-{handle.execution_id}")
+    step = next(
+        s
+        for s in run.data.steps
+        if s.step_id.startswith("quantities-") and s.result_refs
+    )
+    unit = space.store().read_record(step.result_refs[0])
     space.store().commit(
         CommitRequest(
             operation_key="unrelated-unit-revision",
@@ -894,13 +838,13 @@ def test_recovery_rejects_object_revision_without_bound_decision(prepared_pdf):
             new_records=[unit.model_copy(update={"revision": unit.revision + 1})],
             expected_revisions={unit.record_id: unit.revision},
             execution_id=handle.execution_id,
-            step_id=view.step_id,
+            step_id=step.step_id,
         )
     )
     recovered = resume_extraction(space, handle.execution_id, service=service)
     # Waiting for an answer still pauses, and aggregation refuses the unrelated
     # revision rather than selecting the newest object contents.
-    assert recovered.outcome == "paused"
+    assert recovered.outcome == "finished"
     ctx = SimpleNamespace(space=space, store=space.store(), execution=handle)
     with pytest.raises(SubmissionError, match="no matching applied decision receipt"):
         PDFExtractionFlow(mode="evaluation")._applied_record(ctx, unit.ref())
@@ -1002,3 +946,36 @@ def test_program_binds_known_material_gap_only_to_declared_affected_quantity(tmp
         )
     finally:
         space.close()
+
+
+@pytest.mark.parametrize("valid_diagnostic", [True, False])
+def test_failed_submission_never_recovers_diagnosed_measurement(
+    prepared_pdf, valid_diagnostic
+):
+    def respond(tool, _):
+        diagnostic = source_error()
+        if not valid_diagnostic:
+            diagnostic["evidence"] = []
+        distance = value("-2.4", None, 5)
+        distance.update(unit="kpc", condition=diagnostic["condition"])
+        result = quantities(
+            object_id(tool),
+            values=[
+                {
+                    "quantity": "observed_phase_space.radial_velocity",
+                    "values": [value()],
+                },
+                {"quantity": diagnostic["quantity"], "values": [distance]},
+            ],
+        )
+        result["author_errors"] = [diagnostic]
+        return result
+
+    handle, result, _ = start(prepared_pdf, Adapter(respond, names=("A",)))
+    assert result.outcome == "failed"
+    obj = paper(prepared_pdf[0], handle.execution_id).data.object_contributions[0]
+    assert [g.quantity for g in obj.quantities] == [
+        "observed_phase_space.radial_velocity"
+    ]
+    assert len(obj.author_errors) == int(valid_diagnostic)
+    assert all(c.state != "complete" for c in obj.quantity_coverage)

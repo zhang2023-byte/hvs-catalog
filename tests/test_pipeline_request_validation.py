@@ -238,8 +238,8 @@ def test_daily_and_evaluation_share_one_entry_and_snapshot_has_no_answer_channel
     assert daily.input_digest != evaluation.input_digest
 
 
-def test_expert_adjudication_defaults_to_true(source):
+def test_expert_adjudication_defaults_to_false(source):
     request = _request(source)
-    assert request.expert_adjudication is True
+    assert request.expert_adjudication is False
     with pytest.raises(ValidationError):
         _request(source, expert_adjudication="maybe")

@@ -361,6 +361,18 @@ def _check_contribution(
         field="判断证据",
         paper_keys=keys,
     )
+    for error in [
+        *contribution.author_errors,
+        *contribution.paper_boundness.author_errors,
+    ]:
+        _check_evidence_refs(
+            error.evidence_refs,
+            index=index,
+            issues=issues,
+            where=f"{spot} 原文错误 {error.error_id}",
+            field="原文错误证据",
+            paper_keys=keys,
+        )
     for assessment in contribution.conditional_assessments:
         _check_evidence_refs(
             assessment.evidence_refs,
@@ -440,6 +452,15 @@ def _check_roster_entry(
         field="条目证据",
         paper_keys=keys,
     )
+    for error in entry.author_errors:
+        _check_evidence_refs(
+            error.evidence_refs,
+            index=index,
+            issues=issues,
+            where=f"{where} 条目 {entry.item_id} 原文错误 {error.error_id}",
+            field="原文错误证据",
+            paper_keys=keys,
+        )
     for ref in entry.issue_refs:
         target = index.resolve(ref)
         if target is not None and not isinstance(target, QuestionRecord):

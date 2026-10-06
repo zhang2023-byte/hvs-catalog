@@ -236,16 +236,67 @@ class ContributionTypeEntry(Config):
     evidence_refs: list[RecordRef] = Field(min_length=1)
 
 
+class AuthorError(Config):
+    """A source error retained for diagnosis, never a corrected scientific claim."""
+
+    error_id: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    raw_values: list[str] = Field(min_length=1)
+    evidence_refs: list[RecordRef] = Field(min_length=1)
+
+
+class QuantityAuthorError(AuthorError):
+    quantity: str = Field(min_length=1)
+    condition: str = Field(
+        min_length=1,
+        description="Affected conditions, including method or source identity where needed to distinguish independent results.",
+    )
+    source: ValueSource
+    frame: str | None = None
+    epoch: str | None = None
+
+    @model_validator(mode="after")
+    def _known_quantity(self):
+        if not is_quantity_path(self.quantity):
+            raise ValueError(f"未知的物理量编码：{self.quantity}")
+        return self
+
+
+def author_error_blocks(error, value) -> bool:
+    """Match only the diagnostic's stated scientific scope."""
+    return (
+        error.condition == value.condition
+        and error.source == value.source
+        and all(
+            getattr(error, field) is None
+            or getattr(error, field) == getattr(value, field)
+            for field in ("frame", "epoch")
+        )
+    )
+
+
+def _measurement_scope(value) -> tuple:
+    return value.condition, value.source, value.frame, value.epoch
+
+
 class PaperBoundness(Config):
     status: AuthorStatus | None = None
     evidence_refs: list[RecordRef] = Field(min_length=0)
     issue_refs: list[RecordRef] = Field(min_length=0)
     gap_refs: list[GapRef] = Field(min_length=0)
+    author_errors: list[AuthorError] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _status_or_reason(self) -> PaperBoundness:
-        if self.status is None and not self.issue_refs and not self.gap_refs:
+        if (
+            self.status is None
+            and not self.issue_refs
+            and not self.gap_refs
+            and not self.author_errors
+        ):
             raise ValueError("尚不能判断作者状态时必须关联问题或材料缺口")
+        if self.status is not None and self.author_errors:
+            raise ValueError("存在影响作者判断的原文错误时不能保存已确认作者状态")
         if (
             self.status is not None
             and self.status != "no_overall_conclusion"
@@ -315,15 +366,24 @@ def find_conflict_exclusivity_violation(quantity_conflicts, quantities) -> str |
     violations.
     """
     pending: dict[str, set[str]] = {}
+    blocked_conditions: set[tuple[str, tuple]] = set()
     for conflict in quantity_conflicts:
         keys = pending.setdefault(conflict.quantity, set())
         keys.update(_expression_key(value) for value in conflict.alternatives)
+        if conflict.issue_ref is None:
+            blocked_conditions.update(
+                (conflict.quantity, _measurement_scope(v))
+                for v in conflict.alternatives
+            )
     for group in quantities:
         banned = pending.get(group.quantity)
         if not banned:
             continue
         for value in group.values:
-            if _expression_key(value) in banned:
+            if (
+                _expression_key(value) in banned
+                or (group.quantity, _measurement_scope(value)) in blocked_conditions
+            ):
                 return f"{group.quantity} 的已确认数值 {value.value_id}"
     return None
 
@@ -333,12 +393,17 @@ class QuantityConflict(Config):
     quantity: str = Field(min_length=1)
     reason: str = Field(min_length=1)
     alternatives: list[MeasuredValue] = Field(min_length=2)
-    issue_ref: RecordRef
+    issue_ref: RecordRef | None = None
 
     @model_validator(mode="after")
     def _distinct_alternatives(self) -> QuantityConflict:
         if not is_quantity_path(self.quantity):
             raise ValueError(f"未知的物理量编码：{self.quantity}")
+        if (
+            self.issue_ref is None
+            and len({_measurement_scope(v) for v in self.alternatives}) != 1
+        ):
+            raise ValueError("不同条件下的结果应分别保存，不构成同条件冲突诊断")
         expressions = [_expression_key(value) for value in self.alternatives]
         if any(
             expressions[i] == expressions[j]
@@ -399,6 +464,7 @@ class ObjectContribution(Config):
     quantity_conflicts: list[QuantityConflict] = Field(min_length=0)
     quantity_coverage: list[QuantityCoverageEntry]
     precedent_uses: list[PrecedentUse] = Field(min_length=0)
+    author_errors: list[QuantityAuthorError] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _consistent_contribution(self) -> ObjectContribution:
@@ -422,6 +488,23 @@ class ObjectContribution(Config):
         )
         if violation is not None:
             raise ValueError(f"冲突中的待决测量不能同时作为已确认数值保存：{violation}")
+        for diagnostic in self.author_errors:
+            if any(
+                group.quantity == diagnostic.quantity
+                and any(
+                    author_error_blocks(diagnostic, value) for value in group.values
+                )
+                for group in self.quantities
+            ):
+                raise ValueError("原文错误影响的同条件测量不能同时作为已确认数值保存")
+        blocked = {d.quantity for d in self.author_errors} | {
+            c.quantity for c in self.quantity_conflicts if c.issue_ref is None
+        }
+        if any(
+            entry.quantity in blocked and entry.state == "complete"
+            for entry in self.quantity_coverage
+        ):
+            raise ValueError("原文错误／冲突影响的物理量不能声明完整")
         expected = quantity_paths()
         covered = [entry.quantity for entry in self.quantity_coverage]
         if sorted(covered) != sorted(expected):

@@ -31,6 +31,7 @@ from .paper import (
     QuantityConflict,
     QuantityCoverageEntry,
     QuantityGroup,
+    author_error_blocks,
     find_conflict_exclusivity_violation,
 )
 from .questions import QuestionRecord, RulesRef, compute_question_fingerprint
@@ -72,6 +73,7 @@ class StepContext:
     id_prefix: str = "record"
     execution_id: str | None = None
     rules_ref: RulesRef | None = None
+    legacy_questions: bool = False
 
     def resolved_rules_ref(self) -> RulesRef:
         if self.rules_ref is not None:
@@ -229,6 +231,29 @@ class _QuestionFactory:
 
 def _refs(items: list[InlineEvidence], pool: _EvidencePool) -> list[RecordRef]:
     return [pool.ref_for(item) for item in items]
+
+
+def _author_errors(items, pool, numbering, *, quantity=False):
+    from .paper import AuthorError, QuantityAuthorError
+
+    result = []
+    for item in items:
+        fields = {
+            "error_id": numbering.next_id("author-error"),
+            "reason": item.reason,
+            "raw_values": list(item.raw_values),
+            "evidence_refs": _refs(item.evidence, pool),
+        }
+        if quantity:
+            fields.update(
+                quantity=item.quantity,
+                condition=item.condition,
+                source=item.source,
+                frame=item.frame,
+                epoch=item.epoch,
+            )
+        result.append((QuantityAuthorError if quantity else AuthorError)(**fields))
+    return result
 
 
 def _context_refs(items: list[InlineEvidence], pool: _EvidencePool) -> list[RecordRef]:
@@ -584,6 +609,8 @@ def convert_roster_submission(
             for item in identifiers
         ]
         context.require_gap_ids(entry_sub.gap_ids, f"名单条目 {item_id}")
+        if not context.legacy_questions and entry_sub.question is not None:
+            raise SubmissionError("Expert questions are retired")
         entry_issue_refs: list[RecordRef] = []
         if entry_sub.disposition == "pending" and entry_sub.question is not None:
             entry_issue_refs = [
@@ -629,6 +656,9 @@ def convert_roster_submission(
                         GapRef(source_ref=source_ref, gap_id=g)
                         for g in entry_sub.gap_ids
                     ],
+                    author_errors=_author_errors(
+                        entry_sub.author_errors, pool, numbering
+                    ),
                 )
             )
         except ValueError as exc:
@@ -660,7 +690,9 @@ def convert_roster_submission(
             source_ref=source_ref,
             method="roster",
             coverage={
-                "state": submission.coverage.state,
+                "state": "partial"
+                if any(e.author_errors for e in entries)
+                else submission.coverage.state,
                 "checked_file_ids": list(submission.coverage.checked_file_ids),
                 "gap_refs": [
                     GapRef(source_ref=source_ref, gap_id=gap_id)
@@ -690,6 +722,8 @@ def _contribution_fields(
     fields: ContributionFieldsSubmission,
 ) -> ContributionDraft:
     context.require_gap_ids(fields.boundness.gap_ids, "作者判断")
+    if not context.legacy_questions and fields.boundness.question is not None:
+        raise SubmissionError("Expert questions are retired")
     boundness_issue_refs: list[RecordRef] = []
     if fields.boundness.question is not None:
         boundness_issue_refs = [
@@ -726,6 +760,9 @@ def _contribution_fields(
                     GapRef(source_ref=context.source.ref(), gap_id=gap_id)
                     for gap_id in fields.boundness.gap_ids
                 ],
+                author_errors=_author_errors(
+                    fields.boundness.author_errors, pool, questions._numbering
+                ),
             ),
             conditional_assessments=[
                 ConditionalAssessment(
@@ -777,6 +814,7 @@ class QuantityObjectUpdate:
     quantity_conflicts: list[QuantityConflict]
     quantity_coverage: list[QuantityCoverageEntry]
     precedent_uses: list[PrecedentUse]
+    author_errors: list
 
 
 @dataclass
@@ -807,6 +845,8 @@ def convert_quantity_submission(
     pool = _EvidencePool(context, numbering)
     questions = _QuestionFactory(context, numbering)
 
+    if not context.legacy_questions and submission.questions:
+        raise SubmissionError("Expert questions are retired")
     question_refs_by_quantity: dict[tuple[str, str], list[RecordRef]] = {}
     for question in submission.questions:
         if given is not None and question.object_id not in given:
@@ -897,8 +937,27 @@ def _convert_object_quantities(
         item_id=item_id,
         extra_issue_refs=_merge_issue_refs(conflict_issues, inline_issue_refs),
     )
+    author_errors = _author_errors(obj.author_errors, pool, numbering, quantity=True)
+    for error in author_errors:
+        if any(
+            group.quantity == error.quantity
+            and any(author_error_blocks(error, value) for value in group.values)
+            for group in groups
+        ):
+            raise SubmissionError("Source-error measurements cannot also be confirmed")
+    blocked = {error.quantity for error in author_errors} | {
+        conflict.quantity for conflict in conflicts if conflict.issue_ref is None
+    }
+    coverage = [
+        entry.model_copy(update={"state": "partial"})
+        if entry.quantity in blocked and entry.state == "complete"
+        else entry
+        for entry in coverage
+    ]
 
     precedent_uses: list[PrecedentUse] = []
+    if not context.legacy_questions and obj.precedent_uses:
+        raise SubmissionError("Precedent input is retired")
     for use in obj.precedent_uses:
         snapshot = context.precedents.get(use.precedent_id)
         if snapshot is None:
@@ -922,6 +981,7 @@ def _convert_object_quantities(
         quantity_conflicts=conflicts,
         quantity_coverage=coverage,
         precedent_uses=precedent_uses,
+        author_errors=author_errors,
     )
 
 
@@ -947,27 +1007,32 @@ def _convert_conflict(
     for value in alternatives:
         evidence_refs.extend(part.evidence_ref for part in value.direct_evidence)
         evidence_refs.extend(value.context_evidence_refs)
-    question = questions.create(
-        category="numeric_conflict",
-        target_refs=[
-            ItemRef(
-                record_id=context.paper_ref.record_id,
-                revision=context.paper_ref.revision,
-                item_id=item_id,
-            )
-        ],
-        prompt=conflict.reason,
-        evidence_refs=_unique_refs(evidence_refs),
-        gap_refs=[],
+    question = (
+        questions.create(
+            category="numeric_conflict",
+            target_refs=[
+                ItemRef(
+                    record_id=context.paper_ref.record_id,
+                    revision=context.paper_ref.revision,
+                    item_id=item_id,
+                )
+            ],
+            prompt=conflict.reason,
+            evidence_refs=_unique_refs(evidence_refs),
+            gap_refs=[],
+        )
+        if context.legacy_questions
+        else None
     )
-    conflict_issues.setdefault(conflict.quantity, []).append(question.ref())
+    if question is not None:
+        conflict_issues.setdefault(conflict.quantity, []).append(question.ref())
     try:
         return QuantityConflict(
             conflict_id=numbering.next_id("conflict"),
             quantity=conflict.quantity,
             reason=conflict.reason,
             alternatives=alternatives,
-            issue_ref=question.ref(),
+            issue_ref=question.ref() if question is not None else None,
         )
     except ValueError as exc:
         raise SubmissionError(

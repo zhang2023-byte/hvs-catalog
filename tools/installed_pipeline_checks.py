@@ -113,8 +113,8 @@ if command == "run-to-pause":
     space = initialize_workspace(root)
     source = import_mock_source(space, PAPER_A)
     request = ExtractionRequest(
-        mode="daily", method="roster", source_refs=[source],
-        models=[StepModel(model="mock-default")],
+        mode="synthetic", method="roster", source_refs=[source],
+        models=[StepModel(model="mock-default")], expert_adjudication=True,
     )
     handle = start_extraction(space, request=request, request_key="installed-pause")
     report = resume_extraction(
