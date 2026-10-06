@@ -182,7 +182,7 @@ def initialize_workspace(root: Path, *, config: dict | None = None) -> Workspace
     return open_workspace(root)
 
 
-def open_workspace(root: Path) -> Workspace:
+def open_workspace(root: Path, *, read_only: bool = False) -> Workspace:
     """Open explicitly without implicit initialization, repair, or migration."""
     root = Path(root).resolve()
     identity = _read_marker(root)
@@ -196,7 +196,7 @@ def open_workspace(root: Path) -> Workspace:
         raise WorkspaceIntegrityError(
             f"空间 {identity.space_id} 的标记与业务数据库身份（{db_identity}）不符"
         )
-    return Workspace(root, identity)
+    return Workspace(root, identity, read_only=read_only)
 
 
 def _read_space_id(business_db: Path) -> str | None:
@@ -252,10 +252,13 @@ def resolve_within(root: Path, relative: str | Path) -> Path:
 class Workspace:
     """Opened workspace; callers perform writes under its lock."""
 
-    def __init__(self, root: Path, identity: SpaceIdentity) -> None:
+    def __init__(
+        self, root: Path, identity: SpaceIdentity, *, read_only: bool = False
+    ) -> None:
         self.root = root
         self.identity = identity
         self._store: RecordStore | None = None
+        self.read_only = read_only
 
     def lock(self) -> SpaceLock:
         return SpaceLock(self.root)
@@ -264,11 +267,22 @@ class Workspace:
         if self._store is None:
             from .store import RecordStore
 
-            self._store = RecordStore(self.root / BUSINESS_DB, materials_root=self.root)
+            self._store = RecordStore(
+                self.root / BUSINESS_DB,
+                materials_root=self.root,
+                read_only=self.read_only,
+            )
         return self._store
 
     def checkpoint_connection(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.root / CHECKPOINT_DB, check_same_thread=False)
+        path = self.root / CHECKPOINT_DB
+        conn = (
+            sqlite3.connect(
+                path.as_uri() + "?mode=ro", uri=True, check_same_thread=False
+            )
+            if self.read_only
+            else sqlite3.connect(path, check_same_thread=False)
+        )
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -276,6 +290,8 @@ class Workspace:
         return json.loads((self.root / CONFIG_FILENAME).read_text(encoding="utf-8"))
 
     def update_config(self, changes: dict) -> dict:
+        if self.read_only:
+            raise WorkspaceIntegrityError("只读空间不能修改配置")
         _validate_config(changes)
         with self.lock():
             merged = {**self.read_config(), **changes}
@@ -287,6 +303,8 @@ class Workspace:
         return merged
 
     def publish_file(self, relative_path: str, data: bytes) -> ArtifactRef:
+        if self.read_only:
+            raise WorkspaceIntegrityError("只读空间不能发布文件")
         rel = Path(relative_path)
         top = rel.parts[0] if rel.parts else ""
         if top not in {SOURCE_DIR, RUNS_DIR}:

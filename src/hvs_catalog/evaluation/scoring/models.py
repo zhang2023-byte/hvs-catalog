@@ -147,6 +147,15 @@ class ScoringPlan(Config):
     scoring_scheme_ref: InputReference
     program_ref: InputReference
     auxiliary_ref: InputReference
+    comparison_mode: Literal["legacy_protocol", "numeric"] = Field(
+        default="legacy_protocol", exclude_if=lambda value: value == "legacy_protocol"
+    )
+    readiness_gaps: dict[str, list[str]] = Field(
+        default_factory=dict, exclude_if=lambda value: not value
+    )
+    input_snapshot: dict = Field(
+        default_factory=dict, exclude_if=lambda value: not value
+    )
     scoped_coverages: list[ScopedCoverage] = Field(default_factory=list)
     known_evidence_record_ids: list[str] = Field(default_factory=list)
     limitations: list[EvaluationLimitation] = Field(
@@ -157,6 +166,8 @@ class ScoringPlan(Config):
     def _consistent(self) -> ScoringPlan:
         if len(self.paper_keys) != len(set(self.paper_keys)):
             raise ValueError("计划中的 paper_key 必须有序且唯一")
+        if set(self.readiness_gaps) - set(self.paper_keys):
+            raise ValueError("就绪缺口引用了计划外论文")
         scope_keys = [scope.paper_key for scope in self.scopes]
         if sorted(scope_keys) != sorted(self.paper_keys):
             raise ValueError("评价范围声明必须与计划论文一一对应")
@@ -374,6 +385,9 @@ class PredictionPaperEntry(Config):
     completion: Literal["complete", "partial", "failed", "unfinished", "pending"]
     errors: list[str] = Field(default_factory=list)
     objects: list[PredictionObjectEntry] = Field(default_factory=list)
+    execution_state: str | None = Field(default=None, exclude_if=lambda v: v is None)
+    science_state: str | None = Field(default=None, exclude_if=lambda v: v is None)
+    pending_questions: int | None = Field(default=None, exclude_if=lambda v: v is None)
 
     @model_validator(mode="after")
     def _consistent_state(self) -> PredictionPaperEntry:

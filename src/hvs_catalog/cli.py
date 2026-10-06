@@ -1,10 +1,6 @@
-"""CLI entry point for help/version, offline persistence/recovery demos, Gold tools,
-extraction configuration/previews, synthetic extraction and scoring, and arXiv
-discovery/fetch/revision/import/status.
-
-List implemented operations only. Real numerical extraction and official
-scoring are not available; demos do not claim these capabilities. Add commands when
-their corresponding features ship.
+"""CLI for Gold tools, saved full PDF extraction, program-only scoring and replay,
+configuration/previews, offline persistence/recovery demos, and arXiv acquisition.
+Real materials and Gold are used only within the operator's authorized scope.
 """
 
 from __future__ import annotations
@@ -244,14 +240,32 @@ def build_parser() -> argparse.ArgumentParser:
 
     score = commands.add_parser(
         "score",
-        help="独立评分（当前提供合成 demo；正式评分未授权）",
+        help="纯程序评分：已存完整提取、Gold配对和冻结输入重评",
         description=(
-            "独立评分入口：只读取评分输入集，不参与提取。当前只提供"
-            "合成演示：核对输入指纹后离线重评，可在新进程重复执行。"
-            "正式评分需要获准的私有评分空间与 Gold 核对，尚未授权。"
+            "独立评分入口：run 按明确清单读取已存提取与获准Gold，核对固定PDF；"
+            "replay 核对输入指纹后离线重评。真实Gold须在获准私有空间使用。"
         ),
     )
     score_commands = score.add_subparsers(dest="score_command", required=True)
+    score_run = score_commands.add_parser(
+        "run", help="核对Gold与已存完整结果，输出L0/L1/L2和差异"
+    )
+    score_run.add_argument(
+        "--manifest",
+        required=True,
+        type=Path,
+        help="显式论文、Gold、PDF、业务空间和执行清单JSON",
+    )
+    score_run.add_argument(
+        "--output", required=True, type=Path, help="新建私有评分输出目录"
+    )
+    score_replay = score_commands.add_parser(
+        "replay", help="校验冻结输入并离线重评，不读取原Gold仓"
+    )
+    score_replay.add_argument("--inputs", required=True, type=Path)
+    score_replay.add_argument(
+        "--output", type=Path, default=None, help="可选：报告及CSV输出目录"
+    )
     score_demo = score_commands.add_parser(
         "demo", help="合成独立评分演示：指纹核对、离线重评并输出 L0/L1/L2"
     )
@@ -625,10 +639,25 @@ def _run_extract_demo(args: argparse.Namespace) -> int:
 
 def _run_score_demo(args: argparse.Namespace) -> int:
     from hvs_catalog.evaluation.bundle import ScoringBundleError, score_scoring_bundle
+    from hvs_catalog.evaluation.errors import GoldError
+    from hvs_catalog.evaluation.saved import export_scoring_report, score_saved_manifest
+    from hvs_catalog.evaluation.scoring import ScoringError
+    from hvs_catalog.workspace import WorkspaceError
 
     try:
-        report = score_scoring_bundle(args.inputs)
-    except ScoringBundleError as exc:
+        report = (
+            score_saved_manifest(args.manifest, args.output)
+            if args.score_command == "run"
+            else score_scoring_bundle(args.inputs)
+        )
+    except (
+        ScoringBundleError,
+        ScoringError,
+        GoldError,
+        WorkspaceError,
+        OSError,
+        ValueError,
+    ) as exc:
         print(f"[拒绝] {exc}", file=sys.stderr)
         return 2
     for paper in report.papers:
@@ -641,26 +670,28 @@ def _run_score_demo(args: argparse.Namespace) -> int:
             f"  L0 交付 {l0.delivered}/{l0.planned}，合格 {l0.format_valid}/"
             f"{l0.delivered}，完成分布 {dict(l0.completion_counts)}"
         )
-        print(
-            f"  L1 TP={l1.tp} FP={l1.fp} FN={l1.fn}，"
-            f"P={_rate(l1.precision)} R={_rate(l1.recall)} F1={_rate(l1.f1)}"
-        )
-        print(
-            f"  L2 C={l2.correct} P={l2.predicted} G={l2.gold}，"
-            f"P={_rate(l2.precision)} R={_rate(l2.recall)} F1={_rate(l2.f1)}"
-        )
+        if l1 is not None:
+            print(
+                f"  L1 TP={l1.tp} FP={l1.fp} FN={l1.fn}，P={_rate(l1.precision)} R={_rate(l1.recall)} F1={_rate(l1.f1)}"
+            )
+        if l2 is not None:
+            print(
+                f"  L2 C={l2.correct} P={l2.predicted} G={l2.gold}，P={_rate(l2.precision)} R={_rate(l2.recall)} F1={_rate(l2.f1)}"
+            )
         for diagnostic in paper.diagnostics:
             print(f"  [诊断] {diagnostic.code}：{diagnostic.message}")
     micro = report.micro
-    print(
-        f"[汇总] L1 TP={micro.l1.tp} FP={micro.l1.fp} FN={micro.l1.fn}；"
-        f"L2 C={micro.l2.correct} P={micro.l2.predicted} G={micro.l2.gold}"
-    )
+    if micro.l1 is not None and micro.l2 is not None:
+        print(
+            f"[汇总] L1 TP={micro.l1.tp} FP={micro.l1.fp} FN={micro.l1.fn}；L2 C={micro.l2.correct} P={micro.l2.predicted} G={micro.l2.gold}"
+        )
     state = "暂定" if report.batch_provisional else "final"
     print(f"[结论] 整批 {state}；Gold 摘要 {report.digests['gold'][:12]}…")
     for note in report.notes:
         print(f"[说明] {note}")
-    if args.output is not None:
+    if args.score_command == "replay" and args.output is not None:
+        export_scoring_report(report, args.output)
+    elif args.score_command == "demo" and args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
             json.dumps(report.model_dump(mode="json"), ensure_ascii=False, indent=2)

@@ -206,7 +206,7 @@ class AuxiliaryScoringConfig(Config):
     connected; locally fabricated validation records cannot enable production calls.
     """
 
-    mode: Literal["protocol_only", "production"] = "protocol_only"
+    mode: Literal["disabled", "protocol_only", "production"] = "protocol_only"
     model_config_digest: str = Field(pattern=HEX64_PATTERN)
     prompt_digest: str = Field(pattern=HEX64_PATTERN)
     params_digest: str = Field(pattern=HEX64_PATTERN)
@@ -218,6 +218,8 @@ class AuxiliaryScoringConfig(Config):
         return self.mode == "protocol_only"
 
     def refusal_reason(self) -> str | None:
+        if self.mode == "disabled":
+            return "辅助评分已关闭"
         if self.agent_allowed():
             return None
         return (

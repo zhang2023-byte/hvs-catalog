@@ -297,12 +297,13 @@ def test_extract_demo_automatic_daily_records_model_judgment(tmp_path, capsys):
 
 
 @pytest.mark.integration
-def test_help_texts_state_real_extraction_not_available():
+def test_help_texts_expose_extraction_and_program_scoring():
     extract_help = _cli(["extract", "--help"], Path.cwd())
     assert extract_help.returncode == 0
     assert "真实名单提取使用 roster 子命令" in extract_help.stdout
     score_help = _cli(["score", "--help"], Path.cwd())
     assert score_help.returncode == 0
-    assert "正式评分需要获准的私有评分空间" in score_help.stdout
+    assert "run" in score_help.stdout and "replay" in score_help.stdout
+    assert "真实Gold须在获准私有空间使用" in score_help.stdout
     methods_help = _cli(["methods", "--help"], Path.cwd())
     assert methods_help.returncode == 2

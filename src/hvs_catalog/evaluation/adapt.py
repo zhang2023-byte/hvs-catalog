@@ -835,15 +835,20 @@ def _l0_from_status(status: dict, roster, paper) -> dict:
 def _objects_from_paper(paper: PaperRecord) -> list[PredictionObjectEntry]:
     objects: list[PredictionObjectEntry] = []
     for contribution in paper.data.object_contributions:
+        groups = {
+            group.quantity: list(group.values) for group in contribution.quantities
+        }
+        for conflict in contribution.quantity_conflicts:
+            groups.setdefault(conflict.quantity, []).extend(conflict.alternatives)
         quantities = [
             PredictionQuantityEntry(
-                quantity_path=group.quantity,
+                quantity_path=path,
                 values=[
                     PredictionValueEntry(record_id=value.value_id, value=value)
-                    for value in group.values
+                    for value in values
                 ],
             )
-            for group in contribution.quantities
+            for path, values in groups.items()
         ]
         objects.append(
             PredictionObjectEntry(
@@ -920,6 +925,11 @@ def prediction_from_execution(
         completion=l0["completion"],
         errors=l0["errors"],
         objects=objects,
+        execution_state=status["state"],
+        science_state=science_completion(status, roster, paper)[0],
+        pending_questions=sum(
+            item.get("status") == "open" for item in status.get("questions", [])
+        ),
     )
 
 

@@ -48,6 +48,32 @@ space.close()
 """
 )
 
+NUMERIC_DRIVER = r"""
+import json,sys
+from pathlib import Path
+from hvs_catalog.evaluation.bundle import load_scoring_bundle,save_scoring_bundle,score_scoring_bundle
+from hvs_catalog.evaluation.saved import program_reference
+from hvs_catalog.evaluation.scoring import auxiliary_config_digest,numeric_scoring_config,numeric_scheme_reference,score_batch
+plan,gold,preds,_=load_scoring_bundle(sys.argv[1])
+plan.comparison_mode="numeric"
+plan.scoring_scheme_ref=numeric_scheme_reference()
+config=numeric_scoring_config()
+plan.auxiliary_ref.fingerprint=auxiliary_config_digest(config)
+plan.program_ref=program_reference()
+for paper in preds:
+    for obj in paper.objects:
+        for group in obj.quantities:
+            for entry in group.values:
+                entry.value.condition="Independent alternate wording"
+report=score_batch(plan,gold,preds)
+assert report.micro.l2.correct==report.micro.l2.predicted==report.micro.l2.gold==2
+assert not report.auxiliary.enabled
+path=Path(sys.argv[2])
+save_scoring_bundle(path,plan=plan,gold=gold,predictions=preds,auxiliary=config)
+assert score_scoring_bundle(path)==report
+print(json.dumps({"numeric_correct":report.micro.l2.correct,"program":plan.program_ref.model_dump(mode="json")}))
+"""
+
 
 PIPELINE_DRIVER = '''
 """External installed shared-extraction pause/decision/recovery checks.
@@ -450,6 +476,32 @@ def verify_pipeline_and_scoring(
                     )
     if bundle_path is None:
         problems.append("没有任何 extract demo 用例产出评分输入集")
+    else:
+        numeric = run_json(
+            [
+                python,
+                "-I",
+                "-c",
+                NUMERIC_DRIVER,
+                bundle_path,
+                work_dir / "numeric-inputs.json",
+            ]
+        )
+        if not isinstance(numeric, dict) or numeric.get("numeric_correct") != 2:
+            problems.append("安装包完整数值评分或冻结重评失败")
+        replay = run(
+            [
+                script,
+                "score",
+                "replay",
+                "--inputs",
+                work_dir / "numeric-inputs.json",
+                "--output",
+                work_dir / "numeric-replay",
+            ]
+        )
+        if replay.returncode != 0:
+            note("安装包数值评分CLI重评", replay)
 
     # 4) Changed plan content rejects old-fingerprint rescoring with code 2.
     if bundle_path is not None:

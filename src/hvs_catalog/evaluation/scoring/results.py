@@ -108,6 +108,12 @@ class PaperResult(Config):
     diagnostics: list[Diagnostic] = Field(default_factory=list)
     unresolved: list[Diagnostic] = Field(default_factory=list)
     evidence_verification: dict[str, int] = Field(default_factory=dict)
+    value_records: dict[str, dict] = Field(
+        default_factory=dict, exclude_if=lambda value: not value
+    )
+    execution_state: str | None = Field(default=None, exclude_if=lambda v: v is None)
+    science_state: str | None = Field(default=None, exclude_if=lambda v: v is None)
+    pending_questions: int | None = Field(default=None, exclude_if=lambda v: v is None)
 
 
 class BatchMicro(Config):

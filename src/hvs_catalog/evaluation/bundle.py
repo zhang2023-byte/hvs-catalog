@@ -1,15 +1,9 @@
-"""Save scoring-demo inputs, verify fingerprints, and rescore offline.
+"""Freeze explicit scoring inputs, verify all fingerprints, and replay offline.
 
-save_scoring_bundle writes complete pure inputs (plan, Gold, predictions, auxiliary
-configuration) and recomputed digests to canonical JSON. plan_digest binds the complete
-scope, program/rules/material/Gold/auxiliary references, versions, scoring, and
-provenance fields. load_scoring_bundle recomputes every digest using the same
-canonicalization and rejects changes; ordinary round trips are idempotent.
-score_scoring_bundle rescores validated input offline with identical result digests in
-fresh processes, without extraction.
-
-Files contain only synthetic demo input. Real Gold/answer-bearing storage and transfer
-require authorized private scoring workspaces; no real repository scanning occurs here.
+Bundles retain the complete scope, Gold/prediction records, comparison mode, program,
+rules, materials, and optional saved-run snapshot. Real Gold and answer-bearing bundles
+belong in authorized private scoring spaces. No extraction or repository scanning
+occurs during replay.
 """
 
 from __future__ import annotations
@@ -154,4 +148,11 @@ def score_scoring_bundle(path: str | Path) -> ScoringReport:
     processes.
     """
     plan, gold, predictions, auxiliary = load_scoring_bundle(path)
+    if plan.comparison_mode == "numeric" and plan.program_ref.name == "hvs-catalog":
+        from .saved import program_reference
+
+        if plan.program_ref != program_reference():
+            raise ScoringBundleError(
+                "冻结输入绑定的程序与当前安装不符；请使用原程序重评或明确生成新快照"
+            )
     return score_batch(plan, gold, predictions, auxiliary=auxiliary)

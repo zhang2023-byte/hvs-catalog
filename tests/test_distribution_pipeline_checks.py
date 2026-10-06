@@ -223,6 +223,8 @@ def test_zero_exit_with_bad_artifact_reports_context(
         code, payload = 0, {}
         if "list_methods" in " ".join(command):
             payload = GOOD_METHODS
+        elif checks.NUMERIC_DRIVER in command:
+            payload = {"numeric_correct": 2}
         elif "-c" in command:
             payload = [
                 str(venv / "lib/python3.12/site-packages/hvs_catalog/__init__.py")

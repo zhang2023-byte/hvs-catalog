@@ -505,15 +505,30 @@ class RecordStore:
         create: bool = False,
         space_id: str | None = None,
         materials_root: Path | None = None,
+        read_only: bool = False,
     ) -> None:
         self.db_path = Path(db_path)
+        self.read_only = read_only
         self.materials_root = Path(materials_root) if materials_root else None
-        self._conn = sqlite3.connect(self.db_path, isolation_level=None)
+        if read_only and create:
+            raise WorkspaceIntegrityError("只读存储不能初始化数据库")
+        self._conn = (
+            sqlite3.connect(
+                self.db_path.resolve().as_uri() + "?mode=ro",
+                uri=True,
+                isolation_level=None,
+            )
+            if read_only
+            else sqlite3.connect(self.db_path, isolation_level=None)
+        )
         self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.execute("PRAGMA synchronous=FULL")
+        if read_only:
+            self._conn.execute("PRAGMA query_only=ON")
+        else:
+            self._conn.execute("PRAGMA journal_mode=WAL")
+            self._conn.execute("PRAGMA synchronous=FULL")
+            self._conn.executescript(_SCHEMA)
         self._conn.execute("PRAGMA busy_timeout=5000")
-        self._conn.executescript(_SCHEMA)
         if create:
             if space_id is None:
                 raise WorkspaceIntegrityError("初始化业务数据库必须提供空间身份")
@@ -535,7 +550,7 @@ class RecordStore:
     @contextmanager
     def transaction(self) -> Iterator[StoreTransaction]:
         """One business transaction: commit on success, roll back on exceptions."""
-        self._conn.execute("BEGIN IMMEDIATE")
+        self._conn.execute("BEGIN" if self.read_only else "BEGIN IMMEDIATE")
         tx = StoreTransaction(self._conn)
         try:
             yield tx

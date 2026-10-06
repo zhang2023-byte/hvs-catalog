@@ -1,14 +1,10 @@
-"""score_batch: pure-input batch L0/L1/L2 scoring.
+"""Pure-input L0/L1/L2 scoring with validated plan and record fingerprints.
 
-Accept JSON-serializable plan/Gold/prediction/auxiliary inputs without reading files or
-real services, except persisting Agent judgments in explicitly configured frozen
-directories with injected synchronous adapters. Recompute fingerprints canonically;
-reject stale digests, duplicate/out-of-plan papers, duplicate record IDs, and wrong
-ownership without silent overwrites. Missing predictions remain undelivered with Gold
-denominators. Partial Gold receives scoped metrics only within predeclared closed
-subsets; otherwise report preparation gaps without final scores. Score-affecting L2
-unknowns/technical failures make batches provisional, retain definite counts, and null
-final L2 rates.
+Numeric plans compare complete numerical structures through maximum one-to-one
+matching without auxiliary models or attribution gates. Legacy synthetic protocols
+remain readable under their explicit historical configuration. Readiness gaps retain
+L0 and block scientific metrics; unknown expressions that can affect C make L2
+provisional. Input records are never rewritten.
 """
 
 from __future__ import annotations
@@ -31,6 +27,7 @@ from .agent import (
 from .errors import ScoringInputError
 from .layers import (
     ValueSide,
+    compare_content,
     match_objects,
     normalize_identifier,
     pair_quantity_values,
@@ -43,6 +40,11 @@ from .models import (
     ScoringPlan,
     gold_input_digest,
     predictions_input_digest,
+)
+from .numeric import (
+    numeric_scheme_reference,
+    numeric_scoring_config,
+    pair_numeric_values,
 )
 from .results import (
     AuxiliarySummary,
@@ -108,13 +110,27 @@ def score_batch(
     gold: list[GoldPaperEntry],
     predictions: list[PredictionPaperEntry],
     *,
-    auxiliary: AuxiliaryScoringConfig,
+    auxiliary: AuxiliaryScoringConfig | None = None,
     agent_adapter: AgentAdapter | None = None,
 ) -> ScoringReport:
     """Produce per-paper and micro L0/L1/L2 reports for every planned paper."""
     # All later indexing, fingerprints, attribution, Agent requests, scores, and reports use
     # reconstructed validated copies; original caller objects are neither changed nor scored.
     plan, gold, predictions = _revalidate_inputs(plan, gold, predictions)
+    if plan.comparison_mode == "numeric":
+        expected = numeric_scoring_config()
+        if agent_adapter is not None or (
+            auxiliary is not None
+            and auxiliary.model_dump(mode="json") != expected.model_dump(mode="json")
+        ):
+            raise ScoringInputError("程序数值评分不允许辅助模型或冻结判定配置")
+        auxiliary = expected
+        if plan.scoring_scheme_ref != numeric_scheme_reference():
+            raise ScoringInputError("程序数值评分方案版本或指纹不符")
+        if plan.limitations:
+            raise ScoringInputError("程序数值评分保留全部范围；不接受旧语义排除方案")
+    elif auxiliary is None:
+        raise ScoringInputError("历史协议评分须显式提供辅助配置")
     gold_map = _validate_inputs(plan, gold, predictions, auxiliary)
     if plan.limitations:
         from .limitations import score_with_limitations
@@ -129,6 +145,11 @@ def score_batch(
 
     papers: list[PaperResult] = []
     notes: list[str] = []
+    if plan.comparison_mode == "numeric":
+        notes.append(
+            "仅评价完整数值结构；条件、来源、历元、参考系及证据保留供核对，"
+            "数值匹配不认证这些解释或整体科学正确性。辅助模型未启用。"
+        )
     provisional_reasons: list[str] = []
     blocked_papers: list[str] = []
     for paper_key in plan.paper_keys:
@@ -196,6 +217,8 @@ def score_batch(
         auxiliary=(_auxiliary_summary(resolver, adjudicator, auxiliary)),
         notes=notes,
     )
+    if plan.comparison_mode == "numeric":
+        report.digests["plan"] = sha256_of(plan.model_dump(mode="json"))
     return report
 
 
@@ -318,7 +341,7 @@ def _score_paper(
     if prediction is None:
         prediction = _missing_prediction(paper_key)
     l0 = _l0(prediction)
-    gaps: list[str] = []
+    gaps: list[str] = list(plan.readiness_gaps.get(paper_key, []))
     if gold_paper is None:
         gaps.append("gold_missing")
     elif scoped is not None:
@@ -336,6 +359,9 @@ def _score_paper(
     if gaps:
         return PaperResult(
             paper_key=paper_key,
+            execution_state=prediction.execution_state,
+            science_state=prediction.science_state,
+            pending_questions=prediction.pending_questions,
             readiness="blocked",
             readiness_gaps=gaps,
             l0=l0,
@@ -439,7 +465,11 @@ def _score_paper(
                         )
                     )
 
-    per_path: dict[str, dict[str, int]] = {}
+    per_path: dict[str, dict[str, int]] = (
+        {path: {"correct": 0, "predicted": 0, "gold": 0} for path in effective_paths}
+        if plan.comparison_mode == "numeric"
+        else {}
+    )
     path_reasons: dict[str, list[str]] = {}
 
     def _tally(
@@ -510,7 +540,23 @@ def _score_paper(
                 )
                 for entry in pred_groups.get(path, [])
             ]
-            pairing = pair_quantity_values(gold_sides, pred_sides, resolver=resolver)
+            if plan.comparison_mode == "numeric":
+                for side in [*gold_sides, *pred_sides]:
+                    verdict, _, fields = compare_content(side.measured, side.measured)
+                    if verdict == "undecidable":
+                        diagnostics.append(
+                            Diagnostic(
+                                code="unknown_numeric_expression",
+                                message="Unsupported printed expression: "
+                                + ", ".join(fields),
+                                refs=[side.ref],
+                            )
+                        )
+            pairing = (
+                pair_numeric_values(gold_sides, pred_sides)
+                if plan.comparison_mode == "numeric"
+                else pair_quantity_values(gold_sides, pred_sides, resolver=resolver)
+            )
             pairings.extend(pairing.pairings)
             _tally(
                 path,
@@ -668,6 +714,27 @@ def _score_paper(
     )
     return PaperResult(
         paper_key=paper_key,
+        execution_state=prediction.execution_state,
+        science_state=prediction.science_state,
+        pending_questions=prediction.pending_questions,
+        value_records=(
+            {
+                side: {
+                    f"{obj.label}|{group.quantity_path}|{entry.record_id}": entry.model_dump(
+                        mode="json"
+                    )
+                    for obj in objects
+                    for group in obj.quantities
+                    for entry in group.values
+                }
+                for side, objects in (
+                    ("gold", gold_in_scope),
+                    ("prediction", pred_in_scope),
+                )
+            }
+            if plan.comparison_mode == "numeric"
+            else {}
+        ),
         readiness="scoped" if scoped is not None else "ready",
         scoped=scoped is not None,
         scope_note=(
@@ -780,6 +847,8 @@ def _evidence_verification(
 
 
 def code_of(reason: str) -> str:
+    if reason == "unknown_numeric_expression":
+        return reason
     if reason.startswith("agent_technical_failure"):
         return "agent_technical_failure"
     if reason.startswith("unresolved_attribution"):
