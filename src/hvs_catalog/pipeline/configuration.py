@@ -30,6 +30,7 @@ class ExtractionConfig(Config):
 
     mode: Literal["daily", "evaluation", "synthetic"] = "daily"
     expert_adjudication: bool = True
+    parallelism: int = Field(default=100, ge=1, strict=True)
     default_model: ModelConfig = Field(
         default_factory=lambda: ModelConfig(model="deepseek-v4.1-flash")
     )
@@ -217,8 +218,9 @@ def validate_configuration_snapshot(snapshot) -> ExtractionConfig | None:
 
 
 def configured_request(ctx, step_id: str, request: dict, state: dict) -> dict:
+    """Archive mock-batch requests with one quantity target per model request."""
     config = stored_configuration(ctx.execution.input_snapshot)
-    if config is None or "call_request" in request:
+    if config is None or "call_request" in request or "object_calls" in request:
         return request
     blueprints = json.loads(
         ctx.space.read_file(ctx.execution.input_snapshot.prompt_refs[0])
@@ -252,12 +254,25 @@ def configured_request(ctx, step_id: str, request: dict, state: dict) -> dict:
             for g in source.data.gaps
         ],
     )
-    call = blueprint.request(config.model_for(step_id), inputs)
-    return {
-        **request,
-        "call_request": call.model_dump(mode="json"),
-        "call_prepared": TokenDanceAdapter().prepare(call),
-    }
+    units = (
+        [inputs.model_copy(update={"targets": [target]}) for target in targets]
+        if step_id == "quantities"
+        else [inputs]
+    )
+    calls = []
+    for unit in units:
+        call = blueprint.request(config.model_for(step_id), unit)
+        calls.append(
+            {
+                "call_request": call.model_dump(mode="json"),
+                "call_prepared": TokenDanceAdapter().prepare(call),
+            }
+        )
+    return (
+        {**request, **calls[0]}
+        if len(calls) == 1
+        else {**request, "object_calls": calls}
+    )
 
 
 def start_configured_extraction(

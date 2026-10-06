@@ -14,7 +14,7 @@ from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
-from ..records.common import RecordRef, sha256_of
+from ..records.common import ArtifactRef, RecordRef, sha256_of
 from ..records.questions import RulesRef
 from ..records.registry import AnyRecord
 from ..records.rules import rules_bytes
@@ -512,6 +512,7 @@ def append_run_revision(
     operation_key: str | None = None,
     meta_updates: dict[str, str] | None = None,
     usage: Usage | None = None,
+    artifacts: list[ArtifactRef] | None = None,
 ) -> RunRecord:
     """Append run revisions for pauses/completion/failure/model judgments.
 
@@ -539,12 +540,17 @@ def append_run_revision(
     for ref in extra_result_refs or []:
         if ref not in result_refs:
             result_refs.append(ref)
+    run_artifacts = list(run.data.artifacts)
+    for ref in artifacts or []:
+        if ref not in run_artifacts:
+            run_artifacts.append(ref)
     now = datetime.now(UTC)
     payload: dict[str, Any] = {
         "steps": [steps[key] for key in sorted(steps)],
         "model_judgments": judgments,
         "errors": run_errors,
         "result_refs": result_refs,
+        "artifacts": run_artifacts,
     }
     if state is not None:
         payload["state"] = state
@@ -577,6 +583,7 @@ def append_run_revision(
                             ref.model_dump(mode="json")
                             for ref in (extra_result_refs or [])
                         ],
+                        "artifacts": [ref.model_dump() for ref in artifacts or []],
                     }
                 )[:16]
             ),
@@ -642,9 +649,19 @@ def verify_execution_inputs(space: Workspace, execution: ExecutionHandle) -> lis
             digest = hashlib.sha256(archive.read_bytes()).hexdigest()
             if digest != snapshot.rules.sha256:
                 problems.append("规则归档与快照声明的规则哈希不一致")
+    prepared_refs = []
+    for name in ("prepared_input", "prepared_prompt"):
+        if name in snapshot.options:
+            try:
+                prepared_refs.append(
+                    ArtifactRef.model_validate_json(snapshot.options[name])
+                )
+            except ValueError as exc:
+                problems.append(f"固定准备引用无效：{name}：{exc}")
     for label, refs in (
         ("提示", snapshot.prompt_refs),
         ("示例", snapshot.example_refs),
+        ("准备", prepared_refs),
     ):
         for ref in refs:
             try:

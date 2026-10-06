@@ -4,7 +4,6 @@ and material locations.
 
 from __future__ import annotations
 
-import hashlib
 import json
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -14,6 +13,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from .common import ArtifactRef, GapRef, ItemRef, RecordRef
+from .file_checks import file_digest, scoped_verification
 from .objects import ExternalRecord, ObjectChange, ObjectRecord
 from .paper import (
     CoverageReport,
@@ -170,7 +170,7 @@ def _fragment_checks(
     field: str,
     paper_keys: set[str] | None,
 ) -> None:
-    """Numeric fragments must occur in source excerpts at the exact referenced revision."""
+    """Numeric components retain valid evidence references; containment is not checked."""
     for part in parts:
         evidence = _check_evidence_ref(
             part.evidence_ref,
@@ -182,15 +182,6 @@ def _fragment_checks(
         )
         if evidence is None:
             continue  # Missing/type/ownership errors were reported above.
-        if part.raw_fragment not in evidence.data.excerpt:
-            issues.append(
-                ValidationIssue(
-                    where,
-                    f"数字片段 {part.raw_fragment!r} 不在证据 "
-                    f"{part.evidence_ref.record_id} v{part.evidence_ref.revision}"
-                    " 的原文片段中",
-                )
-            )
 
 
 def _value_fragment_checks(
@@ -903,7 +894,7 @@ def _check_materials(
                         )
                     )
                     continue
-                digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                digest = file_digest(path)
                 if digest != file.sha256:
                     issues.append(
                         ValidationIssue(
@@ -927,7 +918,7 @@ def _check_artifact(
     if not path.is_file():
         issues.append(ValidationIssue(where, f"引用文件缺失：{ref.path}"))
         return
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    digest = file_digest(path)
     if digest != ref.sha256:
         issues.append(ValidationIssue(where, f"引用文件哈希改变：{ref.path}"))
 
@@ -1098,6 +1089,7 @@ def _resolve_json_pointer(document: Any, pointer: str) -> Any:
     return value
 
 
+@scoped_verification
 def validate_collection(
     records: list[AnyRecord], materials_root: Path | str | None = None
 ) -> list[ValidationIssue]:

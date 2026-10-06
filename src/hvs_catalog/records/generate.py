@@ -41,6 +41,7 @@ from .paper import (
     QuantityCoverageEntry,
     QuantityGroup,
 )
+from .quantity_input import quantity_input_schema
 from .questions import (
     Actor,
     DecisionData,
@@ -88,7 +89,6 @@ from .source import (
     TextLocator,
 )
 from .submission import (
-    QuantitySubmission,
     ValueSubmission,
 )
 
@@ -169,8 +169,10 @@ CROSS_RECORD_RULES = (
         (
             "Every raw_fragment of a numeric component must equal the saved numeric "
             "string of that component (value, errors, endpoints, coverage, quantiles, "
-            "named error components) and occur inside the excerpt of the exact "
-            "evidence revision it cites. Recorded numbers are the printed fragments; "
+            "named error components). Its evidence reference must resolve to the correct "
+            "paper and revision. Literal containment in the excerpt is not checked; "
+            "scientific support and parsing fidelity remain unverified. Recorded numbers "
+            "retain the extractor's reported expressions; "
             "the validator never re-computes or re-formats them."
         ),
     ),
@@ -210,7 +212,7 @@ CROSS_RECORD_RULES = (
             "order while field and cross-field constraints still hold. The patched "
             "item's scientific references then run through the same checks as saved "
             "records — existence at the exact revision, record types, paper "
-            "ownership, numeric fragment containment — so a patch cannot bypass the "
+            "ownership, numeric component evidence references — so a patch cannot bypass the "
             "normal entry points. Patch application is provided by records.patches; "
             "transactional saving and recovery are responsibilities of the workspace "
             "and runtime interfaces."
@@ -724,9 +726,9 @@ def render_quantity_template() -> str:
             [
                 (
                     (
-                        "Per object: reported quantity groups with values in their "
+                        "For the fixed object: a flat measurements list, each with its quantity and values in their "
                         "printed form (value, errors, unit, condition, frame, source), "
-                        "inline evidence grouped by source location"
+                        "citations using supplied location identifiers and verbatim quotes"
                     ),
                     "Value, conflict, question, evidence and record identifiers",
                 ),
@@ -739,15 +741,14 @@ def render_quantity_template() -> str:
                 ),
                 (
                     (
-                        "Coverage declaration: `scope: all_requested`, common state, "
-                        "checked files, known gap and question references, plus a "
-                        "complete replacement for each exceptional quantity"
+                        "Coverage declaration: common state, plus quantity and state "
+                        "for each exception. Do not fill technical file, gap or question IDs."
                     ),
-                    "Expansion to one completion entry for each of the 18 requested quantities",
+                    "Fixed supplied file binding, material gaps and inline scientific question references; expansion to all 18 requested quantities",
                 ),
                 (
                     (
-                        "Other scientific questions inline: affected object and quantity, "
+                        "Other scientific questions inline: affected quantity, "
                         "category, content, evidence"
                     ),
                     "Question records; the application never answers them",
@@ -769,15 +770,23 @@ def render_quantity_template() -> str:
             "## Required behavior",
             "",
             (
-                "- Top-level lists `objects` and `questions`, and each object's "
-                "`quantities` and `quantity_conflicts` lists, must be present even when "
-                "empty. Each object also requires `object_id` and a `coverage` "
-                "declaration object, not a list. `questions` belongs at the top level, "
-                "not inside an object; an empty list never means the paper reported nothing."
+                "- Exactly one application-supplied object is processed per call. "
+                "Provide top-level `measurements`, `quantity_conflicts`, and `questions` "
+                "lists even when empty, plus a `coverage` declaration object. "
+                "Each measurements entry contains `quantity` and one complete numeric "
+                "expression directly (e.g. value, error, condition, source, evidence). "
+                "Repeat entries for distinct results. Do not submit objects, object_id, "
+                "quantity groups, or nested values lists; the application binds and groups them. "
+                "An empty list never means the paper reported nothing."
             ),
             (
-                "- Omit a numeric group entirely when there is no result; never create a "
-                "group with an empty `values` list."
+                "- Omit a measurement entirely when there is no result; never create "
+                "an empty numeric expression."
+            ),
+            (
+                "- A one-sided lower or upper limit uses value for its printed operand; "
+                "range_lower and range_upper describe a two-sided range. Preserve the "
+                "explicit inequality and its printed number."
             ),
             (
                 "- Provide optional numeric fields (interval endpoints, inclusiveness, "
@@ -791,15 +800,23 @@ def render_quantity_template() -> str:
                 'every exception, e.g. "all checked in the main text; radial velocity '
                 'exceptional, the supplement is not yet processed". Declaring all '
                 "quantities not checked is also a valid explicit declaration. "
+                "Use {common: {state: ...}, exceptions: [{quantity: ..., state: ...}]}. "
+                "The scope is all requested quantities. The application assigns checked files "
+                "from the supplied PDF whenever the state indicates checking, and binds known "
+                "material gaps and inline questions using their affected quantities. Do not "
+                "supply scope, checked_file_ids, gap_ids or issue_ids in coverage. "
                 "Declarations contradicting known material gaps are rejected, and gaps "
                 "with unknown impact scope block complete declarations everywhere."
             ),
             (
-                "- Cite every filled numeric component (value, each error side, both "
-                "endpoints, coverage, quantiles) with its printed fragment; group "
-                "components that share one source location into a single inline "
-                "evidence item and mark it as context evidence when it also supports "
-                "the condition or source."
+                "- Cite evidence with location and quote only for each measurement and "
+                "nested numerical structure. Text quotes must match the fixed parser text. "
+                "Literal numeric containment is not checked; this does not certify that "
+                "the cited passage supports the filled number. The application "
+                "assigns component names and evidence references; do not submit parts, "
+                "file identifiers, locators or context flags. Include condition and source "
+                "support in the cited passages. Preserve math notation and signed strings "
+                "exactly as printed; do not rewrite them into decimal approximations."
             ),
             (
                 "- Conflicting printings of one result are reported as a conflict with "
@@ -809,8 +826,9 @@ def render_quantity_template() -> str:
                 "inclusion nor identity."
             ),
             (
-                "- Use only application-supplied object identifiers; unknown or missing "
-                "objects are rejected."
+                "- All measurements, conflicts and scientific questions belong to the "
+                "single supplied target. The application assigns its identifier; "
+                "do not repeat object_id in the submission or questions."
             ),
             "",
             "## Common instructions",
@@ -865,7 +883,10 @@ def build_outputs() -> dict[str, str]:
             roster_input_schema(), ensure_ascii=False, indent=2
         )
         + "\n",
-        "schemas/submission.quantity.json": _schema_json(QuantitySubmission),
+        "schemas/submission.quantity.json": json.dumps(
+            quantity_input_schema(), ensure_ascii=False, indent=2
+        )
+        + "\n",
     }
     for name, model in RECORD_MODELS.items():
         outputs[f"schemas/record.{name}.json"] = _schema_json(model)

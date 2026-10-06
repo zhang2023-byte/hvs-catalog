@@ -98,6 +98,11 @@ def test_prepare_replay_reopen_no_reparse_and_pdf_page_binding(tmp_path):
     )
     block = pdf_evidence_block(record, space.root, "raw", 1, "p1-b0")
     assert block["text"] == "S5-HVS1 is one object."
+    assert not any(f.file_id.startswith("original-pages/") for f in record.data.files)
+    with pytest.raises(ValueError):
+        pdf_evidence_block(
+            record, space.root, "raw", 1, "p1-original-page", require_image=True
+        )
     with pytest.raises(ValueError):
         pdf_evidence_block(record, space.root, "raw", 2, "p1-b0")
     with pytest.raises(ValueError):

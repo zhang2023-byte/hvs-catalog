@@ -226,8 +226,17 @@ class ReviewService:
         execution_id: str | None = None,
         step_id: str | None = None,
         needs_processing: bool | None = None,
+        include_scientific_issues: bool = False,
     ) -> list[QuestionView]:
         rows = self.space.store().list_questions(execution_id=execution_id)
+        if not include_scientific_issues:
+            rows = [
+                row
+                for row in rows
+                if not row.step_id.startswith(
+                    ("scientific-conflict:", "scientific-context:")
+                )
+            ]
         views = [self._view(row.question_id) for row in rows]
         if step_id is not None:
             views = [view for view in views if view.step_id == step_id]
@@ -362,6 +371,7 @@ class ReviewService:
         request_key: str,
         questions: list[QuestionRecord],
         records: list[AnyRecord],
+        context_question_ids: tuple[str, ...] = (),
     ) -> list[QuestionView]:
         """Save mutually referencing step results and question bindings atomically.
 
@@ -374,6 +384,8 @@ class ReviewService:
             ids = [q.record_id for q in questions]
             if len(ids) != len(set(ids)):
                 raise ValueError("duplicate question identity in batch")
+            if not set(context_question_ids) <= set(ids):
+                raise ValueError("context questions must belong to the saved batch")
             for question in questions:
                 data = question.data
                 content = QuestionContent(
@@ -407,10 +419,16 @@ class ReviewService:
                     execution_id=execution_id,
                     step_id=step_id,
                     result_refs=[q.ref() for q in questions],
-                    question_steps={qid: step_id for qid in ids},
+                    question_steps={
+                        qid: "scientific-context:" + step_id
+                        if qid in context_question_ids
+                        else step_id
+                        for qid in ids
+                    },
                     content={
                         "execution_id": execution_id,
                         "step_id": step_id,
+                        "context_question_ids": list(context_question_ids),
                         "questions": [
                             q.data.model_dump(mode="json") for q in questions
                         ],

@@ -86,6 +86,7 @@ def schema_repairs(payload: dict, schema: dict) -> list[Repair]:
             isinstance(value, list)
             and spec.get("type") == "array"
             and len(value) >= spec.get("minItems", 0)
+            and len(value) <= spec.get("maxItems", len(value))
         ):
             for index, child in enumerate(value):
                 walk(child, spec["items"], (*path, index))
@@ -110,9 +111,9 @@ def schema_repairs(payload: dict, schema: dict) -> list[Repair]:
     ]
 
 
-def repair_tool(fixes: list[Repair], schema: dict) -> Tool:
+def repair_tool(fixes: list[Repair], schema: dict, *, name="repair_roster") -> Tool:
     return Tool(
-        name="repair_roster",
+        name=name,
         description="Submit only the requested replacements. All other fields remain unchanged in the application.",
         parameters={
             "type": "object",

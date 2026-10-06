@@ -149,6 +149,8 @@ def test_generated_tables_keep_one_column_per_header():
 
 
 def test_quantity_template_field_levels_match_submission_schema():
+    from hvs_catalog.records.quantity_input import quantity_input_schema
+
     template = build_outputs()["templates/quantity-extraction.md"]
     assert QuantitySubmission.model_json_schema()["required"] == [
         "objects",
@@ -157,9 +159,17 @@ def test_quantity_template_field_levels_match_submission_schema():
     assert "questions" not in ObjectQuantitySubmission.model_fields
     coverage = ObjectQuantitySubmission.model_json_schema()["properties"]["coverage"]
     assert coverage == {"$ref": "#/$defs/CoverageDeclaration"}
-    assert "Top-level lists `objects` and `questions`" in template
-    assert "declaration object, not a list" in template
-    assert "`questions` belongs at the top level" in template
+    wire = quantity_input_schema()
+    assert wire["required"] == [
+        "measurements",
+        "quantity_conflicts",
+        "coverage",
+        "questions",
+    ]
+    assert wire["properties"]["coverage"] == {"$ref": "#/$defs/CoverageDeclaration"}
+    assert "Exactly one application-supplied object" in template
+    assert "Do not submit objects, object_id" in template
+    assert "a `coverage` declaration object" in template
 
 
 def test_common_instructions_are_step_independent():

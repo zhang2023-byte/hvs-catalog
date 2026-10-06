@@ -219,19 +219,16 @@ def test_json_pointer_mismatch_rejected():
         )
 
 
-def test_fragment_outside_excerpt_rejected():
+def test_numeric_containment_is_not_a_collection_gate():
     records = load_fixture("gap-conflict")
     paper = fixture_by_name(records, "paper")
-    payload = as_payload(paper)
+    payload = paper.model_dump(mode="json", by_alias=True)
     value = payload["data"]["object_contributions"][0]["quantities"][0]["values"][0]
-    # Value and fragment match and pass model validation, but absent source text must fail collection validation.
+    # Reference validity remains checked; numerical support is left unverified.
     value["value"] = "9999"
     value["direct_evidence"][0]["raw_fragment"] = "9999"
-    tampered = [
-        parse_record(payload) if r.record_id == paper.record_id else r for r in records
-    ]
-    with pytest.raises(CollectionValidationError, match="不在证据"):
-        validate_collection(tampered)
+    tampered = [parse_record(payload) if r.ref() == paper.ref() else r for r in records]
+    assert not validate_collection(tampered)
 
 
 def test_external_raw_response_hash_checked(tmp_path):

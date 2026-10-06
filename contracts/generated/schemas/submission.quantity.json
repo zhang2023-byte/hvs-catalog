@@ -6,7 +6,27 @@
         "quantity": {
           "minLength": 1,
           "title": "Quantity",
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "observed_phase_space.ra",
+            "observed_phase_space.dec",
+            "observed_phase_space.distance",
+            "observed_phase_space.parallax",
+            "observed_phase_space.proper_motion_ra",
+            "observed_phase_space.proper_motion_dec",
+            "observed_phase_space.radial_velocity",
+            "derived_kinematics.galactocentric_x",
+            "derived_kinematics.galactocentric_y",
+            "derived_kinematics.galactocentric_z",
+            "derived_kinematics.galactocentric_radius",
+            "derived_kinematics.galactocentric_vx",
+            "derived_kinematics.galactocentric_vy",
+            "derived_kinematics.galactocentric_vz",
+            "derived_kinematics.tangential_velocity",
+            "derived_kinematics.galactic_rest_frame_velocity",
+            "bound_assessment.bound_probability",
+            "bound_assessment.unbound_probability"
+          ]
         },
         "reason": {
           "minLength": 1,
@@ -33,11 +53,6 @@
     "CoverageDeclaration": {
       "additionalProperties": false,
       "properties": {
-        "scope": {
-          "const": "all_requested",
-          "title": "Scope",
-          "type": "string"
-        },
         "common": {
           "$ref": "#/$defs/CoverageDeclarationBody"
         },
@@ -50,7 +65,6 @@
         }
       },
       "required": [
-        "scope",
         "common",
         "exceptions"
       ],
@@ -68,36 +82,10 @@
           ],
           "title": "State",
           "type": "string"
-        },
-        "checked_file_ids": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Checked File Ids",
-          "type": "array"
-        },
-        "gap_ids": {
-          "items": {
-            "type": "string"
-          },
-          "minItems": 0,
-          "title": "Gap Ids",
-          "type": "array"
-        },
-        "issue_ids": {
-          "items": {
-            "type": "string"
-          },
-          "minItems": 0,
-          "title": "Issue Ids",
-          "type": "array"
         }
       },
       "required": [
-        "state",
-        "checked_file_ids",
-        "gap_ids",
-        "issue_ids"
+        "state"
       ],
       "title": "CoverageDeclarationBody",
       "type": "object"
@@ -114,114 +102,37 @@
           "title": "State",
           "type": "string"
         },
-        "checked_file_ids": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Checked File Ids",
-          "type": "array"
-        },
-        "gap_ids": {
-          "items": {
-            "type": "string"
-          },
-          "minItems": 0,
-          "title": "Gap Ids",
-          "type": "array"
-        },
-        "issue_ids": {
-          "items": {
-            "type": "string"
-          },
-          "minItems": 0,
-          "title": "Issue Ids",
-          "type": "array"
-        },
         "quantity": {
           "minLength": 1,
           "title": "Quantity",
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "observed_phase_space.ra",
+            "observed_phase_space.dec",
+            "observed_phase_space.distance",
+            "observed_phase_space.parallax",
+            "observed_phase_space.proper_motion_ra",
+            "observed_phase_space.proper_motion_dec",
+            "observed_phase_space.radial_velocity",
+            "derived_kinematics.galactocentric_x",
+            "derived_kinematics.galactocentric_y",
+            "derived_kinematics.galactocentric_z",
+            "derived_kinematics.galactocentric_radius",
+            "derived_kinematics.galactocentric_vx",
+            "derived_kinematics.galactocentric_vy",
+            "derived_kinematics.galactocentric_vz",
+            "derived_kinematics.tangential_velocity",
+            "derived_kinematics.galactic_rest_frame_velocity",
+            "bound_assessment.bound_probability",
+            "bound_assessment.unbound_probability"
+          ]
         }
       },
       "required": [
         "state",
-        "checked_file_ids",
-        "gap_ids",
-        "issue_ids",
         "quantity"
       ],
       "title": "CoverageExceptionSubmission",
-      "type": "object"
-    },
-    "DataElementDecoder": {
-      "additionalProperties": false,
-      "properties": {
-        "name": {
-          "minLength": 1,
-          "title": "Name",
-          "type": "string"
-        },
-        "encoding": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "title": "Encoding"
-        }
-      },
-      "required": [
-        "name",
-        "encoding"
-      ],
-      "title": "DataElementDecoder",
-      "type": "object"
-    },
-    "DataElementLocator": {
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "const": "data_element",
-          "title": "Kind",
-          "type": "string"
-        },
-        "selector": {
-          "$ref": "#/$defs/DataElementSelector"
-        },
-        "decoder": {
-          "$ref": "#/$defs/DataElementDecoder"
-        }
-      },
-      "required": [
-        "kind",
-        "selector",
-        "decoder"
-      ],
-      "title": "DataElementLocator",
-      "type": "object"
-    },
-    "DataElementSelector": {
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "minLength": 1,
-          "title": "Kind",
-          "type": "string"
-        },
-        "value": {
-          "minLength": 1,
-          "title": "Value",
-          "type": "string"
-        }
-      },
-      "required": [
-        "kind",
-        "value"
-      ],
-      "title": "DataElementSelector",
       "type": "object"
     },
     "ErrorComponentSubmission": {
@@ -285,147 +196,22 @@
       "type": "object"
     },
     "InlineEvidence": {
+      "type": "object",
       "additionalProperties": false,
       "properties": {
-        "source": {
-          "$ref": "#/$defs/InlineSource"
+        "location": {
+          "type": "string",
+          "minLength": 1
         },
-        "parts": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidencePart"
-          },
-          "minItems": 0,
-          "title": "Parts",
-          "type": "array"
-        },
-        "context": {
-          "default": false,
-          "title": "Context",
-          "type": "boolean"
+        "quote": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "required": [
-        "source",
-        "parts"
-      ],
-      "title": "InlineEvidence",
-      "type": "object"
-    },
-    "InlineEvidencePart": {
-      "additionalProperties": false,
-      "properties": {
-        "part": {
-          "minLength": 1,
-          "title": "Part",
-          "type": "string"
-        },
-        "raw_fragment": {
-          "description": "The printed fragment of this component; must equal the filled numeric string of that component.",
-          "minLength": 1,
-          "title": "Raw Fragment",
-          "type": "string"
-        }
-      },
-      "required": [
-        "part",
-        "raw_fragment"
-      ],
-      "title": "InlineEvidencePart",
-      "type": "object"
-    },
-    "InlineSource": {
-      "additionalProperties": false,
-      "properties": {
-        "file_id": {
-          "minLength": 1,
-          "title": "File Id",
-          "type": "string"
-        },
-        "locator": {
-          "discriminator": {
-            "mapping": {
-              "data_element": "#/$defs/DataElementLocator",
-              "pdf": "#/$defs/PdfLocator",
-              "pdf_image": "#/$defs/PdfImageLocator",
-              "table_cell": "#/$defs/TableCellLocator",
-              "text": "#/$defs/TextLocator"
-            },
-            "propertyName": "kind"
-          },
-          "oneOf": [
-            {
-              "$ref": "#/$defs/TextLocator"
-            },
-            {
-              "$ref": "#/$defs/TableCellLocator"
-            },
-            {
-              "$ref": "#/$defs/DataElementLocator"
-            },
-            {
-              "$ref": "#/$defs/PdfLocator"
-            },
-            {
-              "$ref": "#/$defs/PdfImageLocator"
-            }
-          ],
-          "title": "Locator"
-        },
-        "excerpt": {
-          "minLength": 1,
-          "title": "Excerpt",
-          "type": "string"
-        }
-      },
-      "required": [
-        "file_id",
-        "locator",
-        "excerpt"
-      ],
-      "title": "InlineSource",
-      "type": "object"
-    },
-    "ObjectQuantitySubmission": {
-      "additionalProperties": false,
-      "properties": {
-        "object_id": {
-          "minLength": 1,
-          "title": "Object Id",
-          "type": "string"
-        },
-        "quantities": {
-          "items": {
-            "$ref": "#/$defs/QuantityGroupSubmission"
-          },
-          "title": "Quantities",
-          "type": "array"
-        },
-        "quantity_conflicts": {
-          "items": {
-            "$ref": "#/$defs/ConflictSubmission"
-          },
-          "title": "Quantity Conflicts",
-          "type": "array"
-        },
-        "coverage": {
-          "$ref": "#/$defs/CoverageDeclaration"
-        },
-        "precedent_uses": {
-          "items": {
-            "$ref": "#/$defs/PrecedentUseSubmission"
-          },
-          "title": "Precedent Uses",
-          "type": "array"
-        }
-      },
-      "required": [
-        "object_id",
-        "quantities",
-        "quantity_conflicts",
-        "coverage"
-      ],
-      "title": "ObjectQuantitySubmission",
-      "type": "object"
+        "location",
+        "quote"
+      ]
     },
     "ObjectQuestionSubmission": {
       "additionalProperties": false,
@@ -461,11 +247,6 @@
           "title": "Gap Ids",
           "type": "array"
         },
-        "object_id": {
-          "minLength": 1,
-          "title": "Object Id",
-          "type": "string"
-        },
         "quantity": {
           "anyOf": [
             {
@@ -476,74 +257,35 @@
             }
           ],
           "default": null,
-          "title": "Quantity"
+          "title": "Quantity",
+          "enum": [
+            "observed_phase_space.ra",
+            "observed_phase_space.dec",
+            "observed_phase_space.distance",
+            "observed_phase_space.parallax",
+            "observed_phase_space.proper_motion_ra",
+            "observed_phase_space.proper_motion_dec",
+            "observed_phase_space.radial_velocity",
+            "derived_kinematics.galactocentric_x",
+            "derived_kinematics.galactocentric_y",
+            "derived_kinematics.galactocentric_z",
+            "derived_kinematics.galactocentric_radius",
+            "derived_kinematics.galactocentric_vx",
+            "derived_kinematics.galactocentric_vy",
+            "derived_kinematics.galactocentric_vz",
+            "derived_kinematics.tangential_velocity",
+            "derived_kinematics.galactic_rest_frame_velocity",
+            "bound_assessment.bound_probability",
+            "bound_assessment.unbound_probability",
+            null
+          ]
         }
       },
       "required": [
         "category",
-        "prompt",
-        "object_id"
+        "prompt"
       ],
       "title": "ObjectQuestionSubmission",
-      "type": "object"
-    },
-    "PdfImageLocator": {
-      "additionalProperties": false,
-      "description": "An image-bound transcription; only the location and image bytes are validated.",
-      "properties": {
-        "kind": {
-          "const": "pdf_image",
-          "title": "Kind",
-          "type": "string"
-        },
-        "page": {
-          "description": "One-based page in the original PDF.",
-          "minimum": 1,
-          "title": "Page",
-          "type": "integer"
-        },
-        "block_id": {
-          "description": "Supplied content block on that page.",
-          "minLength": 1,
-          "title": "Block Id",
-          "type": "string"
-        }
-      },
-      "required": [
-        "kind",
-        "page",
-        "block_id"
-      ],
-      "title": "PdfImageLocator",
-      "type": "object"
-    },
-    "PdfLocator": {
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "const": "pdf",
-          "title": "Kind",
-          "type": "string"
-        },
-        "page": {
-          "description": "One-based page in the original PDF.",
-          "minimum": 1,
-          "title": "Page",
-          "type": "integer"
-        },
-        "block_id": {
-          "description": "Supplied content block on that page.",
-          "minLength": 1,
-          "title": "Block Id",
-          "type": "string"
-        }
-      },
-      "required": [
-        "kind",
-        "page",
-        "block_id"
-      ],
-      "title": "PdfLocator",
       "type": "object"
     },
     "PrecedentUseSubmission": {
@@ -565,30 +307,6 @@
         "explanation"
       ],
       "title": "PrecedentUseSubmission",
-      "type": "object"
-    },
-    "QuantityGroupSubmission": {
-      "additionalProperties": false,
-      "properties": {
-        "quantity": {
-          "minLength": 1,
-          "title": "Quantity",
-          "type": "string"
-        },
-        "values": {
-          "items": {
-            "$ref": "#/$defs/ValueSubmission"
-          },
-          "minItems": 1,
-          "title": "Values",
-          "type": "array"
-        }
-      },
-      "required": [
-        "quantity",
-        "values"
-      ],
-      "title": "QuantityGroupSubmission",
       "type": "object"
     },
     "ReportedNumberSubmission": {
@@ -625,74 +343,6 @@
         "evidence"
       ],
       "title": "ReportedNumberSubmission",
-      "type": "object"
-    },
-    "TableCellLocator": {
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "const": "table_cell",
-          "title": "Kind",
-          "type": "string"
-        },
-        "row_key": {
-          "additionalProperties": true,
-          "minProperties": 1,
-          "title": "Row Key",
-          "type": "object"
-        },
-        "column": {
-          "minLength": 1,
-          "title": "Column",
-          "type": "string"
-        },
-        "row_number": {
-          "anyOf": [
-            {
-              "minimum": 1,
-              "type": "integer"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "title": "Row Number"
-        }
-      },
-      "required": [
-        "kind",
-        "row_key",
-        "column",
-        "row_number"
-      ],
-      "title": "TableCellLocator",
-      "type": "object"
-    },
-    "TextLocator": {
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "const": "text",
-          "title": "Kind",
-          "type": "string"
-        },
-        "start_line": {
-          "minimum": 1,
-          "title": "Start Line",
-          "type": "integer"
-        },
-        "end_line": {
-          "minimum": 1,
-          "title": "End Line",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "kind",
-        "start_line",
-        "end_line"
-      ],
-      "title": "TextLocator",
       "type": "object"
     },
     "ValueSubmission": {
@@ -992,15 +642,353 @@
       ],
       "title": "ValueSubmission",
       "type": "object"
+    },
+    "MeasurementSubmission": {
+      "additionalProperties": false,
+      "description": "Values filled in applicable forms; programs complete omitted optional fields with\nnull/empty lists.",
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "lower_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Error"
+        },
+        "upper_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper Error"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "limit_kind": {
+          "enum": [
+            "none",
+            "lower_limit",
+            "upper_limit",
+            "range"
+          ],
+          "title": "Limit Kind",
+          "type": "string"
+        },
+        "range_lower": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Range Lower"
+        },
+        "range_upper": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Range Upper"
+        },
+        "lower_inclusive": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Inclusive"
+        },
+        "upper_inclusive": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper Inclusive"
+        },
+        "interval_kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "ordinary_range",
+                "prior_support",
+                "confidence",
+                "credible",
+                "statistical_interval",
+                "unspecified"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interval Kind"
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportedNumberSubmission"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "lower_quantile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportedNumberSubmission"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "upper_quantile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReportedNumberSubmission"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "error_components": {
+          "items": {
+            "$ref": "#/$defs/ErrorComponentSubmission"
+          },
+          "title": "Error Components",
+          "type": "array"
+        },
+        "condition": {
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "frame": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frame"
+        },
+        "epoch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Epoch"
+        },
+        "coordinate_format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coordinate Format"
+        },
+        "representation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Representation"
+        },
+        "purpose": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Purpose"
+        },
+        "source": {
+          "enum": [
+            "this_paper",
+            "prior_work",
+            "unclear"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "source_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Note"
+        },
+        "author_usage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author Usage"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/InlineEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "quantity": {
+          "type": "string",
+          "enum": [
+            "observed_phase_space.ra",
+            "observed_phase_space.dec",
+            "observed_phase_space.distance",
+            "observed_phase_space.parallax",
+            "observed_phase_space.proper_motion_ra",
+            "observed_phase_space.proper_motion_dec",
+            "observed_phase_space.radial_velocity",
+            "derived_kinematics.galactocentric_x",
+            "derived_kinematics.galactocentric_y",
+            "derived_kinematics.galactocentric_z",
+            "derived_kinematics.galactocentric_radius",
+            "derived_kinematics.galactocentric_vx",
+            "derived_kinematics.galactocentric_vy",
+            "derived_kinematics.galactocentric_vz",
+            "derived_kinematics.tangential_velocity",
+            "derived_kinematics.galactic_rest_frame_velocity",
+            "bound_assessment.bound_probability",
+            "bound_assessment.unbound_probability"
+          ]
+        }
+      },
+      "required": [
+        "limit_kind",
+        "condition",
+        "source",
+        "evidence",
+        "quantity"
+      ],
+      "title": "MeasurementSubmission",
+      "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
-    "objects": {
+    "measurements": {
+      "type": "array",
       "items": {
-        "$ref": "#/$defs/ObjectQuantitySubmission"
+        "$ref": "#/$defs/MeasurementSubmission"
+      }
+    },
+    "quantity_conflicts": {
+      "items": {
+        "$ref": "#/$defs/ConflictSubmission"
       },
-      "title": "Objects",
+      "title": "Quantity Conflicts",
+      "type": "array"
+    },
+    "coverage": {
+      "$ref": "#/$defs/CoverageDeclaration"
+    },
+    "precedent_uses": {
+      "items": {
+        "$ref": "#/$defs/PrecedentUseSubmission"
+      },
+      "title": "Precedent Uses",
       "type": "array"
     },
     "questions": {
@@ -1009,12 +997,21 @@
       },
       "title": "Questions",
       "type": "array"
+    },
+    "model_judgments": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Model Judgments",
+      "type": "array"
     }
   },
   "required": [
-    "objects",
+    "measurements",
+    "quantity_conflicts",
+    "coverage",
     "questions"
   ],
-  "title": "QuantitySubmission",
+  "title": "ObjectQuantityInput",
   "type": "object"
 }

@@ -34,6 +34,7 @@ from ..workspace.backup import (
     framework_final_key,
     walk_state_refs,
 )
+from .deferred import WaitingForCall
 from .execution import (
     DefaultFlowAdapter,
     ExecutionHandle,
@@ -234,6 +235,11 @@ def _resume_locked(
         else:
             graph.invoke(None, config, durability="sync")
         end = graph.get_state(config)
+    except WaitingForCall:
+        report.outcome = "running"
+        report.steps = ctx.journal
+        report.service_summary = _service_summary(service)
+        return report
     except RecoveryInconsistentError:
         raise
     except Exception as exc:  # noqa: BLE001 - all node failures become failure reports

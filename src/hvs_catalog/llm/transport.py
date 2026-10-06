@@ -310,7 +310,7 @@ class TokenDanceAdapter:
                     "tokendance-recovery-action",
                 )
             }
-            for chunk in response.iter_content(chunk_size=1):
+            for chunk in response.iter_content(chunk_size=8192):
                 if (
                     expired.is_set()
                     or time.monotonic() - started >= runtime.total_timeout

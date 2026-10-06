@@ -149,6 +149,7 @@ class RunData(Config):
     model_judgments: list[ModelJudgment] = Field(min_length=0)
     usage: Usage
     errors: list[RunError] = Field(min_length=0)
+    artifacts: list[ArtifactRef] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _consistent(self) -> RunData:

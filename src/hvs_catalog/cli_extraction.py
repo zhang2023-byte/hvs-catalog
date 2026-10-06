@@ -42,12 +42,33 @@ def add_extraction_commands(commands):
         default="FIC-R05-B",
     )
     simulate.add_argument("--request-key", required=True)
-    roster = commands.add_parser("roster", help="对固定准备输入执行真实名单提取")
-    roster.add_argument("--config", type=Path)
-    roster.add_argument("--space", type=Path, required=True)
-    roster.add_argument("--preparation", required=True, help="已完成的材料准备执行编号")
-    roster.add_argument("--request-key", required=True)
-    roster.add_argument("--env-file", type=Path)
+    for name, help_text in (
+        ("roster", "对固定准备输入执行真实名单提取"),
+        ("run", "对固定PDF执行名单和18类数值提取"),
+    ):
+        roster = commands.add_parser(name, help=help_text)
+        roster.add_argument("--config", type=Path)
+        roster.add_argument("--space", type=Path, required=True)
+        roster.add_argument(
+            "--preparation", required=True, help="已完成的材料准备执行编号"
+        )
+        roster.add_argument("--request-key", required=True)
+        roster.add_argument("--env-file", type=Path)
+    batch = commands.add_parser(
+        "batch", help="并行运行多篇固定PDF的名单和逐对象数值提取"
+    )
+    batch.add_argument("--space", type=Path, required=True)
+    batch.add_argument("--config", type=Path)
+    batch.add_argument("--request-key")
+    batch.add_argument("--env-file", type=Path)
+    batch.add_argument("--concurrency", type=int)
+    selection = batch.add_mutually_exclusive_group(required=True)
+    selection.add_argument(
+        "--preparation", action="append", help="重复指定准备执行编号，创建新提取"
+    )
+    selection.add_argument(
+        "--execution", action="append", help="重复指定已固定提取执行编号，恢复批次"
+    )
     for name in ("status", "resume"):
         command = commands.add_parser(
             name, help="查询提取执行" if name == "status" else "按固定输入恢复提取执行"
@@ -85,7 +106,60 @@ def run_extraction_command(args) -> int:
                 open_workspace,
             )
 
-            if name == "roster":
+            if name == "batch":
+                from .llm.managed import CallService
+                from .pipeline import ExtractionTask, resume_extractions
+                from .pipeline.configuration import stored_configuration
+                from .runtime import get_execution
+
+                space = open_workspace(args.space)
+                if args.preparation:
+                    if not args.request_key:
+                        raise ValueError("batch creation requires --request-key")
+                    config = load_extraction_config(args.config)
+                    if args.concurrency is not None:
+                        config = type(config).model_validate(
+                            {**config.model_dump(), "parallelism": args.concurrency}
+                        )
+                    executions = [
+                        start_roster_extraction(
+                            space,
+                            configuration=config,
+                            preparation_execution_id=prep,
+                            request_key=args.request_key + ":" + prep,
+                            full=True,
+                        ).execution_id
+                        for prep in args.preparation
+                    ]
+                else:
+                    if args.config is not None or args.request_key is not None:
+                        raise ValueError(
+                            "batch recovery uses saved configurations and request keys"
+                        )
+                    executions = args.execution
+                tasks = []
+                for execution in executions:
+                    config = stored_configuration(
+                        get_execution(space, execution).input_snapshot
+                    )
+                    tasks.append(
+                        ExtractionTask(
+                            space,
+                            execution,
+                            CallService(config.runtime, env_file=args.env_file),
+                        )
+                    )
+                reports = resume_extractions(tasks, concurrency=args.concurrency)
+                result = {
+                    "outcome": "failed"
+                    if any(r.outcome == "failed" for r in reports)
+                    else "paused"
+                    if any(r.outcome == "paused" for r in reports)
+                    else "finished",
+                    "implementation": "model-pdf",
+                    "executions": [r.to_dict() for r in reports],
+                }
+            elif name in {"roster", "run"}:
                 from .llm.managed import CallService
 
                 config = load_extraction_config(args.config)
@@ -95,13 +169,16 @@ def run_extraction_command(args) -> int:
                     configuration=config,
                     preparation_execution_id=args.preparation,
                     request_key=args.request_key,
+                    full=name == "run",
                 )
                 result = resume_extraction(
                     space,
                     handle.execution_id,
                     service=CallService(config.runtime, env_file=args.env_file),
                 ).to_dict()
-                result["implementation"] = "model-roster"
+                result["implementation"] = (
+                    "model-pdf" if name == "run" else "model-roster"
+                )
             elif name == "simulate":
                 config = load_extraction_config(args.config)
                 check_extraction_config(config)
@@ -128,12 +205,12 @@ def run_extraction_command(args) -> int:
                 if handle.input_snapshot.options.get(
                     "extraction_config"
                 ) is None or not handle.flow_id.startswith(
-                    ("hvs-extraction-", "hvs-roster-")
+                    ("hvs-extraction-", "hvs-roster-", "hvs-pdf-")
                 ):
                     raise ValueError("this command requires a configured extraction")
-                actual_roster = (
-                    handle.input_snapshot.options.get("extraction_scope") == "roster"
-                )
+                actual_roster = handle.input_snapshot.options.get(
+                    "extraction_scope"
+                ) in {"roster", "full"}
                 if actual_roster:
                     from .llm.managed import CallService
                     from .pipeline.configuration import stored_configuration
@@ -152,7 +229,14 @@ def run_extraction_command(args) -> int:
                     ).to_dict()
                 )
                 result["implementation"] = (
-                    "model-roster" if actual_roster else "synthetic-mock"
+                    (
+                        "model-pdf"
+                        if handle.input_snapshot.options.get("extraction_scope")
+                        == "full"
+                        else "model-roster"
+                    )
+                    if actual_roster
+                    else "synthetic-mock"
                 )
             if name == "simulate":
                 result["implementation"] = "synthetic-mock"

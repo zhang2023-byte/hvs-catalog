@@ -1,10 +1,13 @@
 """Bounded PDF validation; document interpretation belongs to the external parser."""
 
+import copy
 import hashlib
 import json
 from io import BytesIO
 
 from pypdf import PdfReader
+
+from .file_checks import checked_value, file_content
 
 MAX_PDF_BYTES = 256 * 1024 * 1024
 MAX_PDF_PAGES = 2000
@@ -32,8 +35,8 @@ def pdf_evidence_block(
         path = (root / file.path).resolve()
         if not path.is_relative_to(root.resolve()) or not path.is_file():
             raise ValueError("PDF evidence file is missing or outside the workspace")
-        content = path.read_bytes()
-        if hashlib.sha256(content).hexdigest() != file.sha256:
+        content, digest = file_content(path)
+        if digest != file.sha256:
             raise ValueError("PDF evidence file hash changed")
         return content
 
@@ -47,10 +50,13 @@ def pdf_evidence_block(
     ]
     if pdf is None or len(indices) != 1:
         raise ValueError("PDF evidence lacks an unambiguous parser mapping")
-    mapping = json.loads(read(indices[0]))
+    raw_mapping = read(indices[0])
+    mapping = checked_value(
+        "pdf-index", indices[0].sha256, lambda: json.loads(raw_mapping)
+    )
     if mapping["pdf_sha256"] != pdf.sha256 or mapping["pdf_file_id"] != file_id:
         raise ValueError("PDF mapping refers to a different original")
-    count = pdf_page_count(read(pdf))
+    count = _verified_page_count(read(pdf), pdf.sha256)
     if mapping["page_count"] != count or not 1 <= page <= count:
         raise ValueError("PDF evidence page is out of bounds")
     blocks = [
@@ -72,12 +78,22 @@ def pdf_evidence_block(
                 raise ValueError("PDF image evidence is not bound to this original")
             if image_media_type(read(image)) != image.media_type:
                 raise ValueError("PDF image evidence MIME type is invalid")
-    return blocks[0]
+    return copy.deepcopy(blocks[0])
 
 
 def pdf_page_count(payload: bytes) -> int:
     if not payload.startswith(b"%PDF-") or len(payload) > MAX_PDF_BYTES:
         raise ValueError("Expected a PDF within the supported size limit")
+    return _verified_page_count(payload, hashlib.sha256(payload).hexdigest())
+
+
+def _verified_page_count(payload: bytes, digest: str) -> int:
+    if not payload.startswith(b"%PDF-") or len(payload) > MAX_PDF_BYTES:
+        raise ValueError("Expected a PDF within the supported size limit")
+    return checked_value("pdf-pages", digest, lambda: _page_count(payload))
+
+
+def _page_count(payload):
     try:
         reader = PdfReader(BytesIO(payload), strict=True)
         if reader.is_encrypted:

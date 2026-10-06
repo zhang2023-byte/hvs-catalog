@@ -99,6 +99,16 @@ def test_ai_interpretation_is_recorded_without_expert_and_remains_pending(space)
     assert report.model_judgments >= 1 and report.open_questions == 0
     assert not any(r["step"] == "interpret_ambiguity" for r in service.requests)
     assert get_extraction(space, handle.execution_id)["questions"] == []
+    quantities = next(r for r in service.requests if r["step"] == "quantities")
+    assert len(quantities["object_calls"]) == 2
+    assert "call_request" not in quantities
+    for unit in quantities["object_calls"]:
+        call = unit["call_request"]
+        context = json.loads(
+            call["messages"][1]["content"].split("===== SUPPLIED CONTEXT =====\n", 1)[1]
+        )
+        assert len(context["targets"]) == 1
+        assert "measurements" in call["tool"]["parameters"]["properties"]
 
 
 def test_paused_recovery_uses_archives_after_source_prompts_change(space, monkeypatch):

@@ -124,6 +124,7 @@ class MaterialsFlow(DefaultFlowAdapter):
                 )
                 if ref.sha256 != image["sha256"]:
                     raise ValueError("Parser image fingerprint changed")
+        blocks = list(parsed["blocks"])
         publish(
             "manuscript.md",
             parsed["markdown"].encode(),
@@ -136,7 +137,7 @@ class MaterialsFlow(DefaultFlowAdapter):
             "pdf_sha256": pdf.sha256,
             "page_count": pages,
             "parser": request["parser"],
-            "blocks": parsed["blocks"],
+            "blocks": blocks,
             "image_policy": "original_images_without_generated_descriptions",
             "evidence_basis": "parser transcription; original PDF remains authoritative",
         }

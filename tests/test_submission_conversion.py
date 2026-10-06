@@ -362,12 +362,12 @@ def test_duplicated_object_response_rejected(gap_source):
         )
 
 
-def test_evidence_fragment_must_occur_in_excerpt(gap_source):
+def test_component_evidence_must_match_its_filled_value(gap_source):
     payload = gap_conflict_submission()
-    payload["objects"][0]["quantities"][0]["values"][0]["evidence"][0]["parts"] = [
-        {"part": "value", "raw_fragment": "9999"}
-    ]
-    with pytest.raises(ValueError, match="不在所给原文片段"):
+    payload["objects"][0]["quantities"][0]["values"][0]["evidence"][0]["parts"][0][
+        "raw_fragment"
+    ] = "9999"
+    with pytest.raises(ValueError, match="与原报片段|与填写数值|不一致"):
         convert_quantity_submission(
             make_context(gap_source), QuantitySubmission.model_validate(payload)
         )

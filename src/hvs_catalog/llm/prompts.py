@@ -16,6 +16,7 @@ from ..records.generate import (
     render_roster_template,
 )
 from ..records.paper import ContributionType
+from ..records.quantity_input import quantity_input_schema
 from ..records.questions import QuestionCategory
 from ..records.roster_input import roster_input_schema
 from ..records.rules import AuthorStatus, rules_bytes
@@ -172,7 +173,7 @@ def science_content() -> dict:
 
 
 def _filling_format(kind: str) -> tuple[str, dict]:
-    model, render = FORMATS[kind]
+    _model, render = FORMATS[kind]
     text = render().replace("<!-- Generated -->\n", "")
     # Only the scientific filling sections are sent; application bookkeeping is hidden.
     if "## Provided by the application" in text:
@@ -190,7 +191,7 @@ def _filling_format(kind: str) -> tuple[str, dict]:
         rows.append(line)
     text = "\n".join(rows)
     return text.strip(), (
-        roster_input_schema() if kind == "roster" else model.model_json_schema()
+        roster_input_schema() if kind == "roster" else quantity_input_schema()
     )
 
 
@@ -211,6 +212,8 @@ class PromptBlueprint(Config):
             not inputs.targets or any(t.object_id is None for t in inputs.targets)
         ):
             raise ValueError("quantity extraction requires supplied roster objects")
+        if self.step_id == "quantities" and len(inputs.targets) != 1:
+            raise ValueError("quantity extraction requires exactly one supplied object")
         user = (
             "===== PAPER MATERIALS =====\n"
             + inputs.manuscript
@@ -347,6 +350,13 @@ def assemble_blueprint(
             )
         )
     filling, schema = _filling_format(step["format"])
+    precedent_ids = [p.precedent_id for p in precedents]
+    for definition in [schema, *schema.get("$defs", {}).values()]:
+        properties = definition.get("properties", {})
+        if "precedent_uses" in properties and not precedent_ids:
+            properties["precedent_uses"]["maxItems"] = 0
+        if "precedent_id" in properties and precedent_ids:
+            properties["precedent_id"]["enum"] = precedent_ids
     if not expert_adjudication:
         for definition in schema.get("$defs", {}).values():
             properties = definition.get("properties", {})
@@ -367,7 +377,10 @@ def assemble_blueprint(
             system += "\n\n# Model expression guidance\n" + english_text(
                 supplement.get("text"), location=model.model + ".supplement"
             )
-    system += f"\n\nUse the tool supplied for this turn exactly once. Initially submit_{step_id} receives the scientific fields; a later repair_roster tool accepts only the requested replacements. Return no additional wrapper or commentary."
+    system += f"\n\nUse the tool supplied for this turn exactly once. Initially submit_{step_id} receives the scientific fields; a later repair tool accepts only the requested replacements. Return no additional wrapper or commentary."
+    system += "\n\nA precedent_id must identify a supplied approved precedent. Synthetic example IDs are not precedent IDs."
+    if not precedent_ids:
+        system += " No approved precedents are supplied for this step; omit precedent_uses or submit []."
     return PromptBlueprint(
         step_id=step_id,
         system=system,

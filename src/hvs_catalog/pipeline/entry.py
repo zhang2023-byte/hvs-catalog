@@ -199,6 +199,7 @@ def start_extraction(
     registry: PipelineRegistry | None = None,
     configuration=None,
     prepared_input: ArtifactRef | None = None,
+    extraction_scope: str = "roster",
 ) -> ExtractionHandle:
     """Create/reuse extraction through strict requests.
 
@@ -206,6 +207,8 @@ def start_extraction(
     snapshots/digests. Changed same-key input rejects; new configuration requires new
     keys. Requests have no Gold/scoring/answer paths.
     """
+    if extraction_scope not in {"roster", "full"}:
+        raise PipelineRequestError("unknown prepared extraction scope")
     registration = _default_registry(registry).get(request.method)
     _validate_models(registration.spec, request)
     frozen = {}
@@ -262,7 +265,7 @@ def start_extraction(
             {
                 "prepared_input": prepared_input.model_dump_json(),
                 "prepared_prompt": rendered_ref.model_dump_json(),
-                "extraction_scope": "roster",
+                "extraction_scope": extraction_scope,
             }
         )
     snapshot = _build_input_snapshot(
@@ -276,7 +279,12 @@ def start_extraction(
     if prepared_input is not None:
         from .roster import RosterFlow
 
-        flow = RosterFlow(mode=request.mode)
+        if extraction_scope == "full":
+            from .quantities import PDFExtractionFlow
+
+            flow = PDFExtractionFlow(mode=request.mode)
+        else:
+            flow = RosterFlow(mode=request.mode)
     else:
         flow = registration.build_flow(registration.spec, mode=request.mode)
     handle, reused = _create_execution(
@@ -306,6 +314,26 @@ def resume_extraction(
     service: Any = None,
     registry: PipelineRegistry | None = None,
 ) -> ExtractionReport:
+    """Use the shared coordinator for prepared PDF runs, including single papers."""
+    handle = get_execution(space, execution_id)
+    if handle.input_snapshot.options.get("extraction_scope") in {"roster", "full"}:
+        from .batch import ExtractionTask, resume_extractions
+
+        return resume_extractions(
+            [ExtractionTask(space, execution_id, service)], registry=registry
+        )[0]
+    return _resume_extraction_once(
+        space, execution_id, service=service, registry=registry
+    )
+
+
+def _resume_extraction_once(
+    space: Workspace,
+    execution_id: str,
+    *,
+    service: Any = None,
+    registry: PipelineRegistry | None = None,
+) -> ExtractionReport:
     """Advance extraction with saved fixed configuration only.
 
     Share initial execution, paused recovery, and completed reentry; resolve frozen
@@ -317,12 +345,17 @@ def resume_extraction(
 
     if validate_configuration_snapshot(handle.input_snapshot) is None:
         _check_stored_model_specs(registration, handle.input_snapshot.models)
-    if handle.input_snapshot.options.get("extraction_scope") == "roster":
+    if handle.input_snapshot.options.get("extraction_scope") in {"roster", "full"}:
         from ..llm.managed import CallService
         from .configuration import stored_configuration
         from .roster import RosterFlow
 
-        flow = RosterFlow(mode=handle.mode)
+        if handle.input_snapshot.options["extraction_scope"] == "full":
+            from .quantities import PDFExtractionFlow
+
+            flow = PDFExtractionFlow(mode=handle.mode)
+        else:
+            flow = RosterFlow(mode=handle.mode)
         if service is None:
             service = CallService(stored_configuration(handle.input_snapshot).runtime)
     else:
@@ -516,4 +549,9 @@ def execution_result_refs(space: Workspace, execution_id: str) -> list[RecordRef
     """Read all execution result references for stable scoring adaptation."""
     handle = get_execution(space, execution_id)
     run = _current_run(space, handle)
+    if handle.input_snapshot.options.get("extraction_scope") == "full":
+        assembly = next((s for s in run.data.steps if s.step_id == "assemble"), None)
+        if assembly and assembly.result_refs:
+            paper = space.store().read_record(assembly.result_refs[0])
+            return [paper.ref(), paper.data.roster_ref]
     return list(run.data.result_refs)

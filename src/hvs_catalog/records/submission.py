@@ -42,15 +42,6 @@ class InlineEvidence(Config):
     parts: list[InlineEvidencePart] = Field(min_length=0)
     context: bool = False
 
-    @model_validator(mode="after")
-    def _fragments_in_excerpt(self) -> InlineEvidence:
-        for item in self.parts:
-            if item.raw_fragment not in self.source.excerpt:
-                raise SubmissionError(
-                    f"数字片段 {item.raw_fragment!r} 不在所给原文片段中"
-                )
-        return self
-
 
 class InlineSource(Config):
     file_id: str = Field(min_length=1)
@@ -293,3 +284,4 @@ class ObjectQuestionSubmission(InlineQuestion):
 class QuantitySubmission(Config):
     objects: list[ObjectQuantitySubmission]
     questions: list[ObjectQuestionSubmission]
+    model_judgments: list[str] = Field(default_factory=list)

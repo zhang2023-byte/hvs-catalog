@@ -30,6 +30,7 @@ from ..records.common import (
     canonical_json,
     sha256_of,
 )
+from ..records.file_checks import scoped_verification
 from ..records.paper import PaperRecord
 from ..records.questions import QuestionRecord
 from ..records.roster import RosterRecord
@@ -59,10 +60,122 @@ def _prior_submission(prior):
     if len(calls) != 1:
         return None
     try:
-        value = strict_json(calls[0]["function"]["arguments"])
+        arguments = calls[0]["function"]["arguments"]
+        try:
+            value = strict_json(arguments)
+        except json.JSONDecodeError:
+            # Only discard one surplus root brace after a complete object. The
+            # prefix is rechecked strictly: duplicate keys/nonfinite values fail.
+            text = arguments.lstrip()
+            value, end = json.JSONDecoder().raw_decode(text)
+            if not isinstance(value, dict) or text[end:].strip() != "}":
+                return None
+            value = strict_json(text[:end])
     except (ValueError, KeyError, TypeError):
         return None
     return value if isinstance(value, dict) else None
+
+
+def _argument_cleanup(prior):
+    calls = prior.get("tool_calls") or []
+    if len(calls) != 1 or _prior_submission(prior) is None:
+        return None
+    try:
+        strict_json(calls[0]["function"]["arguments"])
+    except json.JSONDecodeError:
+        return (
+            "Application discarded one surplus root closing brace after one complete strict JSON object. "
+            "The raw response remains archived; no scientific fields were rewritten."
+        )
+    return None
+
+
+def _save_argument_cleanup(ctx, prior, step_id, call_key):
+    cleanup = _argument_cleanup(prior)
+    if cleanup:
+        ref = ctx.space.publish_run_file(
+            ctx.execution.execution_id,
+            f"outputs/format-cleanups/{call_key}.json",
+            canonical_json(
+                {
+                    "step_id": step_id,
+                    "call_key": call_key,
+                    "application_repair": cleanup,
+                    "raw_arguments_sha256": sha256_of(
+                        prior["tool_calls"][0]["function"]["arguments"]
+                    ),
+                    "parsed_payload_sha256": sha256_of(_prior_submission(prior)),
+                }
+            ).encode(),
+        )
+        append_run_revision(ctx.space, ctx.execution, artifacts=[ref])
+
+
+@scoped_verification
+def _clean_citations(ctx, payload, inputs, source, step_id, call_key):
+    """Resolve annotated IDs and redundant escaping only against fixed material."""
+    from ..records.pdf import pdf_evidence_block
+
+    result = copy.deepcopy(payload)
+    changes = []
+    compact = lambda text: re.sub(r"\s+", " ", text).strip()
+
+    def walk(value, path):
+        if isinstance(value, dict):
+            if set(value) == {"location", "quote"}:
+                original = copy.deepcopy(value)
+                location = value["location"]
+                if location not in inputs.citation_locations:
+                    match = re.fullmatch(r"([^\s()]+)\s+\([^\n]*\)", location)
+                    if match and match[1] in inputs.citation_locations:
+                        value["location"] = match[1]
+                supplied = inputs.citation_locations.get(value["location"])
+                if supplied and supplied["locator"]["kind"] == "pdf":
+                    loc = supplied["locator"]
+                    block = pdf_evidence_block(
+                        source,
+                        ctx.space.root,
+                        supplied["file_id"],
+                        loc["page"],
+                        loc["block_id"],
+                    )
+                    quote = value["quote"]
+                    unescaped = quote.replace("\\\\", "\\")
+                    if compact(quote) not in compact(block["text"]) and compact(
+                        unescaped
+                    ) in compact(block["text"]):
+                        value["quote"] = unescaped
+                if value != original:
+                    changes.append(
+                        {
+                            "path": list(path),
+                            "before": original,
+                            "after": copy.deepcopy(value),
+                        }
+                    )
+                return
+            for key, child in value.items():
+                walk(child, (*path, key))
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                walk(child, (*path, index))
+
+    walk(result, ())
+    if changes:
+        ref = ctx.space.publish_run_file(
+            ctx.execution.execution_id,
+            f"outputs/format-cleanups/{call_key}-citations.json",
+            canonical_json(
+                {
+                    "step_id": step_id,
+                    "call_key": call_key,
+                    "application_repair": "Known location IDs with appended annotations and redundant backslash escaping verified against the exact fixed text only.",
+                    "changes": changes,
+                }
+            ).encode(),
+        )
+        append_run_revision(ctx.space, ctx.execution, artifacts=[ref])
+    return result
 
 
 def _format_details(prior, tool):
@@ -81,6 +194,7 @@ def _format_details(prior, tool):
     return "Follow the supplied tool schema and repair IDs exactly."
 
 
+@scoped_verification
 def _citation_repairs(payload, inputs, source, space):
     """Locate only failing citations; successful readings remain untouched."""
     from ..records.pdf import pdf_evidence_block
@@ -192,18 +306,19 @@ def material_prompt(space, bundle: dict, source: SourcePackageRecord) -> PromptI
     blocks = [f"FILE {pdf_id} (role=pdf; pages={index['page_count']})"]
     for block in index["blocks"]:
         text_location = "T:" + block["block_id"]
-        locations[text_location] = {
-            "file_id": pdf_id,
-            "locator": {
-                "kind": "pdf",
-                "page": block["page"],
-                "block_id": block["block_id"],
-            },
-        }
-        blocks.append(
-            f"LOCATION {text_location} PAGE {block['page']} BLOCK {block['block_id']} ({block['type']})\n"
-            + block["text"]
-        )
+        if block["text"]:
+            locations[text_location] = {
+                "file_id": pdf_id,
+                "locator": {
+                    "kind": "pdf",
+                    "page": block["page"],
+                    "block_id": block["block_id"],
+                },
+            }
+            blocks.append(
+                f"LOCATION {text_location} PAGE {block['page']} BLOCK {block['block_id']} ({block['type']})\n"
+                + block["text"]
+            )
         for image_id in block.get("image_files", []):
             file = files[image_id]
             if file.role != "pdf_image" or pdf_id not in file.derived_from:
@@ -232,6 +347,7 @@ def material_prompt(space, bundle: dict, source: SourcePackageRecord) -> PromptI
         citation_locations=locations,
         manuscript=(
             "The following blocks are parser transcriptions of the fixed PDF. Cite only a supplied location and quote. "
+            "Copy the bare location ID exactly (for example T:p3-b11 or I:p3-b11); put no descriptions or annotations in the location string. "
             "For text, use its T: location and quote a verbatim substring of that block. "
             "For an attached image, use its I: location and transcribe relevant printed text you can actually read. "
             "Image transcriptions are model readings, not automatically verified text. Author captions remain text evidence. "
@@ -254,7 +370,12 @@ def material_prompt(space, bundle: dict, source: SourcePackageRecord) -> PromptI
 
 
 def start_roster_extraction(
-    space, *, preparation_execution_id: str, request_key: str, configuration=None
+    space,
+    *,
+    preparation_execution_id: str,
+    request_key: str,
+    configuration=None,
+    full=False,
 ):
     """Create a roster execution through the common extraction entry."""
     from ..materials import MaterialsService
@@ -276,9 +397,11 @@ def start_roster_extraction(
         request_key=request_key,
         configuration=config,
         prepared_input=ref,
+        extraction_scope="full" if full else "roster",
     )
 
 
+@scoped_verification
 def _hydrate_sources(
     payload: dict, space, source: SourcePackageRecord, supplied_file_ids: set[str]
 ) -> dict:
@@ -591,6 +714,12 @@ class RosterFlow(DefaultFlowAdapter):
                     k: v for k, v in prior.items() if k in {"content", "tool_calls"}
                 }
                 proposed = _prior_submission(prior)
+                cleanup = _argument_cleanup(prior)
+                if cleanup and error == "invalid_tool_arguments":
+                    error = None
+                    _save_argument_cleanup(
+                        ctx, prior, STEP, f"roster-{round_number:02d}"
+                    )
                 if request.tool.name == "repair_roster":
                     if error is None:
                         draft = apply_repairs(draft, fixes, proposed)
@@ -605,6 +734,14 @@ class RosterFlow(DefaultFlowAdapter):
                 ):
                     fixes = schema_repairs(draft, initial.tool.parameters)
                     if not fixes:
+                        draft = _clean_citations(
+                            ctx,
+                            draft,
+                            inputs,
+                            source,
+                            STEP,
+                            f"roster-{round_number:02d}",
+                        )
                         fixes = _citation_repairs(draft, inputs, source, ctx.space)
                     error = (
                         "Submission has fields requiring correction." if fixes else None
@@ -752,7 +889,9 @@ class RosterFlow(DefaultFlowAdapter):
                         step_id=STEP, judgment=judgment, created_at=ctx.now()
                     ),
                 )
-        if ctx.execution.input_snapshot.expert_adjudication:
+        if ctx.execution.input_snapshot.expert_adjudication and not getattr(
+            self, "defer_review", False
+        ):
             review = ReviewService(ctx.space)
             for ref in refs:
                 if isinstance(ctx.store.read_record(ref), QuestionRecord):

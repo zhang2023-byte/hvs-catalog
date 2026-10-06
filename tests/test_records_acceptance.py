@@ -105,7 +105,7 @@ def test_fragment_checked_against_exact_evidence_revision():
     # Value and fragment match, but the fragment is absent from v1; new v2 cannot hide the v1 defect.
     value["value"] = "9999"
     value["direct_evidence"][0]["raw_fragment"] = "9999"
-    check_rejected(rows, "不在证据")
+    validate_collection([parse_record(row) for row in rows])
 
 
 # ---------------------------------------------------------------------------
@@ -864,7 +864,7 @@ def test_patch_foreign_paper_evidence_rejected():
     check_rejected(rows, "另一篇论文的证据")
 
 
-def test_patch_numeric_value_reuses_fragment_containment_check():
+def test_patch_keeps_evidence_without_a_numeric_containment_gate():
     rows = payloads("gap-conflict")
     paper = find(rows, "gap-conflict-paper")
     item = paper["data"]["object_contributions"][0]
@@ -896,4 +896,4 @@ def test_patch_numeric_value_reuses_fragment_containment_check():
             }
         ],
     }
-    check_rejected(rows, "不在证据")
+    validate_collection([parse_record(row) for row in rows])

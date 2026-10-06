@@ -274,6 +274,16 @@ def test_original_materials_preserved_and_precedent_maintenance_hidden():
     assert precedent.version not in json.dumps(preview["request"], ensure_ascii=False)
     assert preview["precedents"][0]["version"] == precedent.version
     assert preview["prepared"]["payload"]["model"] == "deepseek-v4.1-flash"
+    quantities = preview_extraction_prompt(
+        ExtractionConfig(precedents=[precedent]),
+        "quantities",
+        PromptInput(
+            manuscript=source, targets=[PromptTarget(object_id="A", identifiers=["A"])]
+        ),
+    )["request"]["tool"]["parameters"]
+    assert quantities["$defs"]["PrecedentUseSubmission"]["properties"]["precedent_id"][
+        "enum"
+    ] == ["SYN-P1"]
     for bad in ({"approved": False}, {"explanation": ""}, {"language": "zh"}):
         with pytest.raises(ValidationError):
             PrecedentInput.model_validate({**precedent.model_dump(), **bad})
@@ -295,6 +305,16 @@ def test_single_roster_and_quantity_contract():
     }
     with pytest.raises(ValueError, match="roster objects"):
         preview_extraction_prompt(config, "quantities", source)
+    multiple = source.model_copy(
+        update={
+            "targets": [
+                PromptTarget(object_id="object-1", identifiers=["A"]),
+                PromptTarget(object_id="object-2", identifiers=["B"]),
+            ]
+        }
+    )
+    with pytest.raises(ValueError, match="exactly one supplied object"):
+        preview_extraction_prompt(config, "quantities", multiple)
     for retired in ("direct_roster", "discover_candidates", "review_candidates"):
         with pytest.raises(ValueError, match="non-model step"):
             preview_extraction_prompt(config, retired, source)

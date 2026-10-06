@@ -22,6 +22,7 @@ from ..runtime import (
     get_execution,
     resume_execution,
 )
+from ..runtime.deferred import WaitingForCall
 from ..runtime.execution import DefaultFlowAdapter, append_run_revision
 from ..workspace import Workspace, WorkspaceIntegrityError
 from .config import CallRequest, RuntimeConfig, load_credential
@@ -50,6 +51,7 @@ class CallService:
         self.env_file = env_file
         self.adapter = adapter or TokenDanceAdapter()
         self.hooks = hooks or {}
+        self.dispatcher = None
 
     def credential(self):
         if self._credential is None:
@@ -148,6 +150,8 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
     boundary. The caller validates science and commits the business step.
     Known output-format failures are returned for bounded caller correction.
     """
+    if service.dispatcher is not None:
+        return _execute_concurrent(ctx, service, request, prepared, step_id, call_key)
     attempts = _attempts(ctx, step_id)
     prefix = f"{call_key}-" if call_key else ""
     indices = [
@@ -317,6 +321,108 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
             )
         # AccountQuota performs the bounded wait for the next physical request.
     raise AssertionError("unreachable")
+
+
+def _execute_concurrent(ctx, service, request, prepared, step_id, call_key):
+    """Persist before dispatch; reentry consumes only this coordinator's calls."""
+    dispatcher = service.dispatcher
+    key = (str(ctx.space.root), ctx.execution.execution_id, step_id, call_key)
+    prefix = f"{call_key}-" if call_key else ""
+    attempts = _attempts(ctx, step_id)
+    indices = [
+        i
+        for i, a in enumerate(attempts)
+        if a.request is not None
+        and Path(a.request.path).name.startswith(prefix + "attempt-")
+    ]
+    for i in indices:
+        if json.loads(ctx.space.read_file(attempts[i].request)) != prepared:
+            raise CallFailure("archived call key is bound to different input")
+    if indices:
+        index = indices[-1]
+        attempt = attempts[index]
+        if attempt.response is None:
+            if key in dispatcher.jobs:
+                raise WaitingForCall()
+            _save(
+                ctx,
+                attempts,
+                step_state="failed",
+                error_kind="completion_unknown",
+                step_id=step_id,
+            )
+            raise CallFailure(
+                "completion_unknown; no live coordinator owns the pending call"
+            )
+        envelope = json.loads(ctx.space.read_file(attempt.response))
+        if attempt.state == "pending":
+            service.hook("after_archive")
+            _finalize(ctx, attempts, envelope, index=index, step_id=step_id)
+        if not envelope.get("error") or envelope.get("error") in FORMAT_ERRORS:
+            return envelope
+        if (
+            envelope.get("uncertain")
+            or not envelope.get("retryable")
+            or len(indices) >= service.runtime.max_attempts
+            or key not in dispatcher.completed
+        ):
+            raise CallFailure(
+                "completion_unknown" if envelope.get("uncertain") else envelope["error"]
+            )
+    if dispatcher.stop_reason is not None:
+        raise CallFailure(dispatcher.stop_reason)
+    credential = service.credential()
+    if credential.get_secret_value() in canonical_json(prepared):
+        raise CallFailure("credential values must not occur in model inputs")
+    service.hook("before_send")
+    request_ref = ctx.space.publish_run_file(
+        ctx.execution.execution_id,
+        f"requests/{prefix}attempt-{len(indices) + 1:03d}.json",
+        canonical_json(prepared).encode(),
+    )
+    attempts.append(
+        Attempt(
+            request=request_ref,
+            response=None,
+            state="pending",
+            started_at=datetime.now(UTC),
+            finished_at=None,
+            usage=None,
+            service_request_id=None,
+        )
+    )
+    _save(ctx, attempts, step_id=step_id)
+    service.hook("after_pending")
+    digest = sha256_of(prepared)
+
+    def archive(envelope):
+        with ctx.space.lock():
+            envelope["request_sha256"] = digest
+            response_ref = ctx.space.publish_run_file(
+                ctx.execution.execution_id,
+                f"responses/{prefix}attempt-{len(indices) + 1:03d}.json",
+                canonical_json(envelope).encode(),
+            )
+            current = _attempts(ctx, step_id)
+            index = next(i for i, a in enumerate(current) if a.request == request_ref)
+            exchange = envelope.get("exchange") or {}
+            usage = token_usage(
+                exchange.get("body") if isinstance(exchange.get("body"), dict) else {}
+            )
+            result = envelope.get("result") or {}
+            usage = result.get("usage", usage)
+            current[index] = current[index].model_copy(
+                update={
+                    "response": response_ref,
+                    "usage": Usage(tokens=usage["tokens"]),
+                    "service_request_id": result.get("service_request_id")
+                    or exchange.get("headers", {}).get("x-request-id"),
+                }
+            )
+            _save(ctx, current, step_id=step_id)
+
+    dispatcher.submit(key, service, request, prepared, archive)
+    raise WaitingForCall()
 
 
 class ModelCallFlow(DefaultFlowAdapter):

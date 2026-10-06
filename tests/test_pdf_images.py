@@ -23,6 +23,7 @@ from hvs_catalog.pipeline.roster import (
     material_prompt,
 )
 from hvs_catalog.records.common import RecordRef
+from hvs_catalog.records.file_checks import verification_scope
 from hvs_catalog.records.pdf import pdf_evidence_block
 from hvs_catalog.records.source import EvidenceRecord
 from hvs_catalog.records.validate import validate_collection
@@ -128,6 +129,43 @@ def test_image_bound_to_pdf_and_sent_as_image_not_markdown_link(image_space):
         pdf_evidence_block(source, space.root, "raw", 1, "p1-b1", require_image=True)
 
 
+def test_one_validation_reuses_pdf_but_detects_changed_files_and_blocks(
+    image_space, monkeypatch
+):
+    from hvs_catalog.records import pdf
+
+    space, _, _, source = image_space
+    original_reader = pdf.PdfReader
+    parsed = []
+
+    def reader(*args, **kwargs):
+        parsed.append(True)
+        return original_reader(*args, **kwargs)
+
+    monkeypatch.setattr(pdf, "PdfReader", reader)
+    with verification_scope():
+        block = pdf_evidence_block(source, space.root, "raw", 1, "p1-b0")
+        block["text"] = "Caller mutation must not modify fixed evidence"
+        assert (
+            pdf_evidence_block(source, space.root, "raw", 1, "p1-b0")["text"]
+            == "A is unbound."
+        )
+        pdf_evidence_block(source, space.root, "raw", 1, "p1-b1", require_image=True)
+        assert len(parsed) == 1
+        image = next(f for f in source.data.files if f.role == "pdf_image")
+        path = space.root / image.path
+        unchanged = path.read_bytes()
+        path.write_bytes(unchanged + b"changed")
+        with pytest.raises(ValueError, match="hash changed"):
+            pdf_evidence_block(
+                source, space.root, "raw", 1, "p1-b1", require_image=True
+            )
+        path.write_bytes(unchanged)
+    with verification_scope():
+        pdf_evidence_block(source, space.root, "raw", 1, "p1-b0")
+        assert len(parsed) == 2
+
+
 def test_visual_quote_is_preserved_without_pretending_string_verification(image_space):
     space, _, _, source = image_space
     quote = {
@@ -166,7 +204,11 @@ def test_mock_roster_images_and_visual_evidence_survive_backup(
     content = adapter.seen[0]["messages"][1]["content"]
     assert isinstance(content, list)
     assert content[-1]["type"] == "image_url"
-    assert base64.b64decode(content[-1]["image_url"]["url"].split(",", 1)[1]) == PNG
+    original_images = [p for p in content if p["type"] == "image_url"]
+    assert len(original_images) == 1
+    assert (
+        base64.b64decode(original_images[0]["image_url"]["url"].split(",", 1)[1]) == PNG
+    )
     assert HALLUCINATION not in json.dumps(content)
     if corrections:
         assert len(adapter.seen) == 3

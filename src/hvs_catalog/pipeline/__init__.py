@@ -9,6 +9,7 @@ metadata.
 
 from __future__ import annotations
 
+from .batch import ExtractionTask, resume_extractions
 from .configuration import (
     ExtractionConfig,
     check_extraction_config,
@@ -59,6 +60,7 @@ from .params import (
     ParameterSpec,
     effective_policy,
 )
+from .quantities import start_pdf_extraction
 from .registry import (
     MethodRegistration,
     MethodRegistrationError,
@@ -92,6 +94,7 @@ __all__ = [
     "ExtractionHandle",
     "ExtractionReport",
     "ExtractionRequest",
+    "ExtractionTask",
     "MaterialBindingError",
     "MethodRegistration",
     "MethodRegistrationError",
@@ -119,8 +122,10 @@ __all__ = [
     "registered_source_binding",
     "resolve_registered_material",
     "resume_extraction",
+    "resume_extractions",
     "start_configured_extraction",
     "start_extraction",
+    "start_pdf_extraction",
     "start_roster_extraction",
     "submit_expert_decision",
     "supported_parameters",

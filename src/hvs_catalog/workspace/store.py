@@ -18,6 +18,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from ..records.common import RecordRef, canonical_json, sha256_of
+from ..records.file_checks import file_digest, scoped_verification
 from ..records.paper import PaperRecord
 from ..records.registry import AnyRecord
 from ..records.roster import RosterRecord
@@ -775,7 +776,15 @@ def walk_artifact_refs(value: object) -> list[dict]:
         if set(value) >= {"path", "sha256"} and isinstance(value.get("path"), str):
             found.append(value)
         else:
-            for item in value.values():
+            for key, item in value.items():
+                # Fixed preparation options are serialized ArtifactRefs. Read
+                # only these explicit keys, never arbitrary JSON-valued strings.
+                if key in {"prepared_input", "prepared_prompt"} and isinstance(
+                    item, str
+                ):
+                    from ..records.common import ArtifactRef
+
+                    item = ArtifactRef.model_validate_json(item).model_dump(mode="json")
                 found.extend(walk_artifact_refs(item))
     elif isinstance(value, list):
         for item in value:
@@ -783,6 +792,7 @@ def walk_artifact_refs(value: object) -> list[dict]:
     return found
 
 
+@scoped_verification
 def verify_artifact_refs(records: list[AnyRecord], root: Path) -> list[str]:
     """Verify all referenced archive existence, root-contained paths, and hashes.
 
@@ -790,8 +800,6 @@ def verify_artifact_refs(records: list[AnyRecord], root: Path) -> list[str]:
     reference, including historical runs. Commits, backups, recovery, and completion
     share this function.
     """
-    import hashlib
-
     from .layout import resolve_within
 
     problems: list[str] = []
@@ -807,7 +815,7 @@ def verify_artifact_refs(records: list[AnyRecord], root: Path) -> list[str]:
             if resolved.is_symlink() or not resolved.is_file():
                 problems.append(f"{where} 缺失或不可读")
                 continue
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            digest = file_digest(path)
             if digest != ref.get("sha256"):
                 problems.append(f"{where} 哈希与记录不符")
     return problems
