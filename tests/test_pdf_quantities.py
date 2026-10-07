@@ -129,6 +129,7 @@ def prepared_pdf(tmp_path):
     assert result.outcome == "finished"
     config = ExtractionConfig(
         mode="evaluation",
+        max_format_corrections=2,
         expert_adjudication=False,
         runtime=RuntimeConfig(quota_store=tmp_path / "quota.sqlite"),
     )
@@ -158,6 +159,56 @@ def object_id(tool):
 
 def paper(space, execution):
     return space.store().read_record_current(f"pdf-{execution}-paper")
+
+
+@pytest.mark.parametrize("repair_succeeds", [True, False])
+def test_large_quantity_reply_preserves_draft_and_correction_budget(
+    prepared_pdf, repair_succeeds
+):
+    raw = quantities("A")
+    condition = "Retained measurement condition. " * 6000 + "End of retained condition."
+    raw["measurements"][0]["condition"] = condition
+    bad = {"location": "T:p1-b0", "quote": "An incorrect quotation"}
+    raw["measurements"][0]["evidence"] = [bad]
+    original = copy.deepcopy(raw)
+    assert len(json.dumps(raw).encode()) > 128 * 1024
+
+    def respond(tool, payload):
+        if tool["name"] == "submit_quantities":
+            return raw
+        assert tool["name"] == "repair_quantities"
+        previous = json.loads(
+            payload["messages"][-1]["content"].split("Previous output:\n", 1)[1]
+        )
+        function = previous["tool_calls"][0]["function"]
+        arguments = json.loads(function["arguments"])
+        if function["name"] == "submit_quantities":
+            assert arguments == raw
+        else:
+            assert function["name"] == "repair_quantities"
+            assert arguments and all(value == bad for value in arguments.values())
+        return {
+            key: cite() if repair_succeeds else bad
+            for key in tool["parameters"]["properties"]
+        }
+
+    adapter = Adapter(respond, names=("A",))
+    handle, report, service = start(prepared_pdf, adapter)
+    expected = "finished" if repair_succeeds else "failed"
+    assert report.outcome == expected, report.errors
+    if not repair_succeeds:
+        assert "correction exhausted" in str(report.errors)
+    assert len(adapter.seen) == (3 if repair_succeeds else 4)
+    assert raw == original
+    if repair_succeeds:
+        result = paper(prepared_pdf[0], handle.execution_id)
+        saved = result.data.object_contributions[0].quantities[0].values[0]
+        assert (saved.value, saved.error, saved.condition) == ("-430", "12", condition)
+    assert (
+        resume_extraction(prepared_pdf[0], handle.execution_id, service=service).outcome
+        == expected
+    )
+    assert len(adapter.seen) == (3 if repair_succeeds else 4)
 
 
 def test_automatic_extraction_preserves_numbers_and_all_eighteen_completion_entries(

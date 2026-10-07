@@ -53,6 +53,11 @@ from .mock import (
     resolve_registered_material,
     submit_expert_decision,
 )
+from .network_retry import (
+    continue_format_corrections,
+    retry_failed_objects,
+    retry_network_failures,
+)
 from .params import (
     EMPTY_PARAMETER_POLICY,
     ParameterPolicy,
@@ -60,7 +65,7 @@ from .params import (
     ParameterSpec,
     effective_policy,
 )
-from .quantities import start_pdf_extraction
+from .quantities import refresh_saved_partials, start_pdf_extraction
 from .registry import (
     MethodRegistration,
     MethodRegistrationError,
@@ -111,6 +116,7 @@ __all__ = [
     "UnknownMethodError",
     "build_default_registry",
     "check_extraction_config",
+    "continue_format_corrections",
     "effective_policy",
     "execution_result_refs",
     "get_extraction",
@@ -119,10 +125,13 @@ __all__ = [
     "load_extraction_config",
     "pending_questions",
     "preview_extraction_prompt",
+    "refresh_saved_partials",
     "registered_source_binding",
     "resolve_registered_material",
     "resume_extraction",
     "resume_extractions",
+    "retry_failed_objects",
+    "retry_network_failures",
     "start_configured_extraction",
     "start_extraction",
     "start_pdf_extraction",

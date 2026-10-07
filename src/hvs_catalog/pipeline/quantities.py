@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
 from ..llm.config import CallRequest, Message
-from ..llm.managed import CallFailure, execute_model_call
+from ..llm.managed import CallFailure, CallService, execute_model_call
 from ..llm.prompts import PromptBlueprint, PromptTarget
 from ..records import StepContext, convert_quantity_submission, validate_collection
 from ..records.common import RecordRef, build_record, canonical_json, sha256_of
@@ -28,9 +29,8 @@ from ..review import ReviewService, derive_question_id
 from ..runtime.deferred import WaitingForCall
 from ..runtime.execution import append_run_revision
 from .configuration import stored_configuration
+from .network_retry import format_correction_limit, object_retry_token, retry_call_key
 from .roster import (
-    MAX_CORRECTION_BYTES,
-    MAX_FORMAT_CORRECTIONS,
     RosterFlow,
     RosterState,
     _argument_cleanup,
@@ -42,8 +42,10 @@ from .roster import (
     _question_content,
     _replace_question_refs,
     _save_argument_cleanup,
+    roster_result_refs,
+    saved_roster,
 )
-from .roster_repair import apply_repairs, repair_tool, schema_repairs
+from .roster_repair import Repair, apply_repairs, repair_tool, schema_repairs
 
 
 def start_pdf_extraction(space, **kwargs):
@@ -53,10 +55,111 @@ def start_pdf_extraction(space, **kwargs):
     return start_roster_extraction(space, full=True, **kwargs)
 
 
+def refresh_saved_partials(space, execution_id, *, object_ids):
+    """Replay selected failed objects' archived replies to retain validated partials.
+
+    This performs no model requests, cannot consume missing corrections, leaves
+    the run failed, and reassembles the bound paper. Old records and attempts stay
+    immutable. Useful after fixing application validation/partial-saving bugs.
+    """
+    from ..runtime.execution import (
+        RuntimeContext,
+        append_run_revision,
+        get_execution,
+        verify_execution_inputs,
+    )
+    from .configuration import validate_configuration_snapshot
+
+    class ArchiveOnly(CallService):
+        def credential(self):
+            # execute_model_call checks this before quota/attempt creation when
+            # no reusable reply exists. No credential or network access is possible.
+            raise CallFailure("Offline refresh requires an already archived reply")
+
+    if not object_ids or len(object_ids) != len(set(object_ids)):
+        raise ValueError("offline refresh requires unique selected objects")
+    with space.lock():
+        handle = get_execution(space, execution_id)
+        verify_execution_inputs(space, handle)
+        config = validate_configuration_snapshot(handle.input_snapshot)
+        run = space.store().read_record(handle.run_ref)
+        if (
+            run.data.state != "failed"
+            or handle.input_snapshot.expert_adjudication
+            or handle.input_snapshot.options.get("extraction_scope") != "full"
+        ):
+            raise ValueError(
+                "offline refresh requires a failed automatic full extraction"
+            )
+        flow = PDFExtractionFlow(mode=handle.mode)
+        ctx = RuntimeContext(
+            space=space,
+            execution=handle,
+            flow=flow,
+            service=ArchiveOnly(config.runtime),
+        )
+        source, original, _ = flow._inputs(ctx)
+        roster = saved_roster(space, execution_id)
+        selected = [e for e in roster.data.entries if e.contribution_id in object_ids]
+        if len(selected) != len(object_ids):
+            raise ValueError("selected object is absent from the saved roster")
+        for entry in selected:
+            step_id = "quantities-" + entry.item_id
+            step = next((s for s in run.data.steps if s.step_id == step_id), None)
+            if step is None or step.state == "finished" or not step.attempts:
+                raise ValueError(
+                    "offline refresh only accepts previously attempted failed objects"
+                )
+        blueprint = PromptBlueprint.model_validate(
+            json.loads(space.read_file(handle.input_snapshot.prompt_refs[0]))[
+                "quantities"
+            ]
+        )
+        errors = []
+        for entry in selected:
+            inputs = original.model_copy(
+                update={
+                    "targets": [
+                        PromptTarget(
+                            object_id=entry.contribution_id,
+                            identifiers=[i.value for i in entry.identifiers],
+                        )
+                    ]
+                }
+            )
+            request = blueprint.request(config.model_for("quantities"), inputs)
+            request.tool.parameters["title"] = "Quantities for " + entry.contribution_id
+            digest = sha256_of(request.model_dump(mode="json"))
+            try:
+                flow._submit(
+                    ctx,
+                    source,
+                    inputs,
+                    request,
+                    "quantities-" + entry.item_id,
+                    digest,
+                    entry.contribution_id,
+                )
+            except (CallFailure, SubmissionError, ValueError) as exc:
+                errors.append(str(exc))
+        paper = flow._assemble(ctx)
+        if (
+            space.store().read_record_current(handle.run_ref.record_id).data.state
+            != "failed"
+        ):
+            append_run_revision(space, handle, state="failed")
+        return {
+            "paper_ref": paper.ref().model_dump(mode="json"),
+            "errors": errors,
+            "new_model_calls": 0,
+        }
+
+
 class PDFExtractionFlow(RosterFlow):
     """Preserve each successful object before reviewing or failing another one."""
 
     defer_review = True
+    defer_partial_failure = True
 
     def __init__(self, *, mode):
         super().__init__(mode=mode)
@@ -79,6 +182,14 @@ class PDFExtractionFlow(RosterFlow):
         return builder.compile(checkpointer=ctx.checkpointer)
 
     def _paper(self, ctx):
+        refs = roster_result_refs(ctx.space, ctx.execution.execution_id)
+        if refs:
+            original = next(
+                ref
+                for ref in refs
+                if isinstance(ctx.store.read_record(ref), PaperRecord)
+            )
+            return self._applied_record(ctx, original)
         return self._applied_record(
             ctx,
             RecordRef(
@@ -122,18 +233,40 @@ class PDFExtractionFlow(RosterFlow):
             )
         return record
 
+    def _extract(self, ctx, state):
+        raw = ctx.execution.input_snapshot.options.get("reused_roster")
+        if raw is None:
+            return super()._extract(ctx, state)
+        from .roster_reuse import clone_roster
+
+        frozen = json.loads(raw)
+        digest = sha256_of(frozen)
+        records = clone_roster(ctx)
+        refs = [record.ref() for record in records]
+        if ctx.reuse_step("roster", digest) is None:
+            ctx.commit_step(
+                step_id="roster", input_digest=digest, records=records, result_refs=refs
+            )
+        return {"result_refs": [ref.model_dump(mode="json") for ref in refs]}
+
     def _quantities(self, ctx, state):
+        if state.get("roster_error"):
+            # A bounded explicit recovery can complete the roster after this
+            # node was checkpointed. Otherwise the cached partial makes no call.
+            state = {**state, **super()._extract(ctx, state)}
         source, original, _ = self._inputs(ctx)
         snapshot = ctx.execution.input_snapshot
         config = stored_configuration(snapshot)
         blueprint = PromptBlueprint.model_validate(
             json.loads(ctx.space.read_file(snapshot.prompt_refs[0]))["quantities"]
         )
-        errors = []
-        pending = False
-        roster = ctx.store.read_record_current(
-            f"roster-{ctx.execution.execution_id}-roster"
+        errors = (
+            ["Roster extraction incomplete: " + state["roster_error"]]
+            if state.get("roster_error")
+            else []
         )
+        pending = False
+        roster = saved_roster(ctx.space, ctx.execution.execution_id)
         for entry in roster.data.entries:
             if entry.disposition != "included":
                 continue
@@ -200,7 +333,12 @@ class PDFExtractionFlow(RosterFlow):
             )
         return {"result_refs": [paper.ref().model_dump(mode="json")]}
 
-    def _convert(self, ctx, source, inputs, payload, item_id, digest):
+    def _convert(self, ctx, source, inputs, payload, item_id, digest, *, step_id):
+        token = object_retry_token(ctx, step_id)
+        if token or digest.endswith("-partial"):
+            # Fresh generations and retained partials must never collide with
+            # earlier immutable object/evidence records sharing a request digest.
+            digest = sha256_of({"request_digest": digest, "object_retry": token})
         if "measurements" in payload:
             payload = expand_object_quantity_input(payload, item_id)
         if not ctx.execution.input_snapshot.expert_adjudication and payload.get(
@@ -392,14 +530,21 @@ class PDFExtractionFlow(RosterFlow):
         request = CallRequest.model_validate(initial.model_dump())
         draft = None
         fixes = []
-        for round_number in range(MAX_FORMAT_CORRECTIONS + 1):
+        max_corrections = format_correction_limit(ctx)
+        for round_number in range(max_corrections + 1):
+            call_key = retry_call_key(ctx, step_id, round_number)
             prepared = ctx.service.adapter.prepare(request)
             if round_number:
                 run = ctx.store.read_record_current(ctx.execution.run_ref.record_id)
                 step = next((s for s in run.data.steps if s.step_id == step_id), None)
                 for attempt in step.attempts if step else []:
+                    prefix = (
+                        call_key + "-attempt-"
+                        if object_retry_token(ctx, step_id)
+                        else f"{step_id}-{round_number:02d}-"
+                    )
                     if attempt.request and Path(attempt.request.path).name.startswith(
-                        f"{step_id}-{round_number:02d}-"
+                        prefix
                     ):
                         archived = json.loads(ctx.space.read_file(attempt.request))
                         frozen, rebuilt = (
@@ -423,7 +568,7 @@ class PDFExtractionFlow(RosterFlow):
                 request,
                 prepared,
                 step_id=step_id,
-                call_key=f"{step_id}-{round_number:02d}",
+                call_key=call_key,
             )
             error = envelope.get("error")
             body = envelope.get("exchange", {}).get("body") or {}
@@ -433,9 +578,7 @@ class PDFExtractionFlow(RosterFlow):
             cleanup = _argument_cleanup(prior)
             if cleanup and error == "invalid_tool_arguments":
                 error = None
-                _save_argument_cleanup(
-                    ctx, prior, step_id, f"{step_id}-{round_number:02d}"
-                )
+                _save_argument_cleanup(ctx, prior, step_id, call_key)
             if request.tool.name == "repair_quantities":
                 if error is None:
                     draft = apply_repairs(draft, fixes, proposed)
@@ -451,7 +594,7 @@ class PDFExtractionFlow(RosterFlow):
                 if operand_changes:
                     artifact = ctx.space.publish_run_file(
                         ctx.execution.execution_id,
-                        f"outputs/format-cleanups/{step_id}-{round_number:02d}-limit-operands.json",
+                        f"outputs/format-cleanups/{call_key}-limit-operands.json",
                         canonical_json(
                             {
                                 "step_id": step_id,
@@ -469,14 +612,14 @@ class PDFExtractionFlow(RosterFlow):
                         inputs,
                         source,
                         step_id,
-                        f"{step_id}-{round_number:02d}",
+                        call_key,
                     )
                     fixes = _citation_repairs(draft, inputs, source, ctx.space)
                 error = "Correct the selected invalid fields." if fixes else None
             if error is None:
                 try:
                     records, questions = self._convert(
-                        ctx, source, inputs, draft, item_id, digest
+                        ctx, source, inputs, draft, item_id, digest, step_id=step_id
                     )
                 except ValueError as exc:
                     error = str(exc)
@@ -488,7 +631,12 @@ class PDFExtractionFlow(RosterFlow):
                         step_id=step_id
                         if ctx.execution.input_snapshot.expert_adjudication
                         else "scientific-conflict:" + step_id,
-                        request_key=f"{ctx.execution.execution_id}:{step_id}:questions",
+                        request_key=f"{ctx.execution.execution_id}:{step_id}:questions"
+                        + (
+                            ":" + object_retry_token(ctx, step_id)
+                            if object_retry_token(ctx, step_id)
+                            else ""
+                        ),
                         questions=questions,
                         records=records,
                         context_question_ids=tuple(q.record_id for q in questions[:-1])
@@ -514,12 +662,10 @@ class PDFExtractionFlow(RosterFlow):
                         ),
                     )
                 return
-            if round_number == MAX_FORMAT_CORRECTIONS:
+            if round_number == max_corrections:
                 self._retain_valid(ctx, source, inputs, draft, step_id, digest, item_id)
                 raise CallFailure("Quantity format correction exhausted: " + str(error))
             prior_text = canonical_json(prior)
-            if len(prior_text.encode()) > MAX_CORRECTION_BYTES:
-                raise CallFailure("Quantity correction input exceeds bounded size")
             if draft is not None:
                 if not fixes:
                     self._retain_valid(
@@ -564,8 +710,7 @@ class PDFExtractionFlow(RosterFlow):
             draft = expand_object_quantity_input(draft, item_id)
         if not isinstance(draft, dict) or len(draft.get("objects", [])) != 1:
             return
-        if ctx.reuse_step("partial-" + step_id, digest) is not None:
-            return
+        token = object_retry_token(ctx, step_id)
         original = draft["objects"][0]
         common = original.get("coverage", {}).get("common", {})
         checked = common.get("state") in {"complete", "partial"}
@@ -641,7 +786,13 @@ class PDFExtractionFlow(RosterFlow):
                 ]
                 try:
                     self._convert(
-                        ctx, source, inputs, candidate, item_id, digest + "-partial"
+                        ctx,
+                        source,
+                        inputs,
+                        candidate,
+                        item_id,
+                        digest + "-partial",
+                        step_id=step_id,
                     )
                 except ValueError:
                     continue
@@ -655,7 +806,13 @@ class PDFExtractionFlow(RosterFlow):
             candidate["objects"][0]["quantity_conflicts"] = [conflict]
             try:
                 self._convert(
-                    ctx, source, inputs, candidate, item_id, digest + "-partial"
+                    ctx,
+                    source,
+                    inputs,
+                    candidate,
+                    item_id,
+                    digest + "-partial",
+                    step_id=step_id,
                 )
             except ValueError:
                 continue
@@ -665,7 +822,13 @@ class PDFExtractionFlow(RosterFlow):
             candidate["objects"][0]["author_errors"] = [diagnostic]
             try:
                 self._convert(
-                    ctx, source, inputs, candidate, item_id, digest + "-partial"
+                    ctx,
+                    source,
+                    inputs,
+                    candidate,
+                    item_id,
+                    digest + "-partial",
+                    step_id=step_id,
                 )
             except ValueError:
                 continue
@@ -675,10 +838,42 @@ class PDFExtractionFlow(RosterFlow):
             for field in ("quantities", "quantity_conflicts", "author_errors")
         ):
             return
-        records, questions = self._convert(
-            ctx, source, inputs, payload, item_id, digest + "-partial"
+        # A later bounded repair can validate additional fields while the whole
+        # object still fails. Preserve a new immutable snapshot, rather than
+        # reusing the earlier partial merely because the original request is equal.
+        partial_digest = sha256_of(
+            {"request_digest": digest, "object_retry": token, "payload": payload}
         )
-        partial_step = "partial-" + step_id
+        run = ctx.store.read_record_current(ctx.execution.run_ref.record_id)
+        prior = [
+            s
+            for s in run.data.steps
+            if s.step_id.startswith("partial-quantities-")
+            and s.step_id.endswith(step_id.removeprefix("quantities-"))
+        ]
+        for saved in prior:
+            if ctx.reuse_step(saved.step_id, partial_digest) is not None:
+                return
+        partial_step = (
+            "partial-quantities-"
+            + (f"retry-{token}-" if token else "")
+            + "snapshot-"
+            + f"{len(prior) + 1:06d}-"
+            + partial_digest[:12]
+            + "-"
+            + step_id.removeprefix("quantities-")
+        )
+        if ctx.reuse_step(partial_step, partial_digest) is not None:
+            return
+        records, questions = self._convert(
+            ctx,
+            source,
+            inputs,
+            payload,
+            item_id,
+            partial_digest + "-partial",
+            step_id=step_id,
+        )
         if questions:
             ReviewService(ctx.space).create_questions(
                 execution_id=ctx.execution.execution_id,
@@ -698,7 +893,7 @@ class PDFExtractionFlow(RosterFlow):
             committed = records
         ctx.commit_step(
             step_id=partial_step,
-            input_digest=digest,
+            input_digest=partial_digest,
             records=committed,
             result_refs=[r.ref() for r in [*records, *questions]],
         )
@@ -713,7 +908,23 @@ class PDFExtractionFlow(RosterFlow):
         base = self._paper(ctx)
         contributions = {c.item_id: c for c in base.data.object_contributions}
         run = ctx.store.read_record_current(ctx.execution.run_ref.record_id)
-        for step in run.data.steps:
+
+        # A completed object always supersedes retained partial snapshots, even
+        # when its original step precedes those partial steps in run history.
+        def partial_order(step):
+            generation = re.search(r"-snapshot-(\d{6})-", step.step_id)
+            timestamps = [
+                r.created_at.timestamp()
+                for ref in step.result_refs
+                if isinstance(r := ctx.store.read_record(ref), PaperRecord)
+            ]
+            return (
+                not step.step_id.startswith("partial-"),
+                int(generation[1]) if generation else 0,
+                max(timestamps, default=0),
+            )
+
+        for step in sorted(run.data.steps, key=partial_order):
             if (
                 not step.step_id.startswith(("quantities-", "partial-quantities-"))
                 or step.state != "finished"
@@ -784,4 +995,54 @@ class PDFExtractionFlow(RosterFlow):
 
 def quantity_repairs(payload, schema, error):
     """Expose invalid numeric forms or their citations, never a complete object."""
+    if not isinstance(payload, dict) or "measurements" not in payload:
+        return []
+    if "非纯区间不能填写区间解释" in error:
+        return [
+            Repair(
+                ("measurements", index, "interval_kind"),
+                {"type": "null"},
+                "Confirm removal of the inapplicable interval_kind on this submitted point/limit expression. Preserve every printed numeric component, coverage/quantile report, condition and citation.",
+                "delete",
+            )
+            for index, value in enumerate(payload["measurements"])
+            if value.get("limit_kind", "none") in {"none", "lower_limit", "upper_limit"}
+            and value.get("interval_kind") is not None
+        ]
+    if "不同条件下的结果应分别保存" in error:
+        fixes = []
+        # Delete backwards so indices keep referring to the original declarations.
+        for index in reversed(range(len(payload.get("quantity_conflicts", [])))):
+            conflict = payload["quantity_conflicts"][index]
+            alternatives = conflict.get("alternatives", [])
+            scopes = {
+                (
+                    v.get("condition"),
+                    v.get("source", "this_paper"),
+                    v.get("frame"),
+                    v.get("epoch"),
+                )
+                for v in alternatives
+            }
+            if len(scopes) <= 1:
+                continue
+            fixes.append(
+                Repair(
+                    ("quantity_conflicts", index),
+                    {"type": "null"},
+                    "The alternatives explicitly declare different scopes. Under the supplied rules these are separate values, not a same-scope conflict. Confirm removing only this invalid container; the following fixed replacements preserve all alternatives verbatim.",
+                    "delete",
+                )
+            )
+            for value in alternatives:
+                measurement = {"quantity": conflict["quantity"], **copy.deepcopy(value)}
+                fixes.append(
+                    Repair(
+                        ("measurements",),
+                        {"const": measurement},
+                        "Confirm this unchanged alternative as a separate measurement. Every numeric expression, condition, source, frame, epoch and evidence must remain exactly as submitted; the application appends it without modifying existing measurements.",
+                        "append",
+                    )
+                )
+        return fixes
     return []

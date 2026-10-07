@@ -17,6 +17,7 @@ from pathlib import Path
 from pydantic import Field, model_validator
 
 from ..pipeline import get_extraction
+from ..pipeline.acquisition import parse_arxiv_identifier
 from ..records.common import Config, sha256_of
 from ..records.rules import load_rules, quantity_paths
 from ..runtime import get_execution
@@ -65,6 +66,28 @@ class SavedScoringInput(Config):
 
 def _file_digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _same_paper_version(paper_key: str, left: str, right: str) -> bool:
+    """Compare explicit short and full arXiv versions without changing Gold."""
+    if left == right:
+        return True
+    try:
+        identifiers = []
+        for value in (left, right):
+            value = value.removeprefix("arXiv:")
+            if value.startswith("v"):
+                value = paper_key + value
+            identifiers.append(parse_arxiv_identifier(value))
+    except ValueError:
+        return False
+    return (
+        all(
+            item.canonical_id == paper_key and item.version is not None
+            for item in identifiers
+        )
+        and identifiers[0].version == identifiers[1].version
+    )
 
 
 def _git(root: Path, *args: str) -> str:
@@ -142,9 +165,10 @@ def prepare_saved_scoring(
             source_files = []
             fixed = set()
             for source in sources:
-                if (
-                    source.data.paper_key != item.paper_key
-                    or source.data.source_version != pair.metadata.paper.version
+                if source.data.paper_key != item.paper_key or not _same_paper_version(
+                    item.paper_key,
+                    source.data.source_version,
+                    pair.metadata.paper.version,
                 ):
                     raise ValueError("提取与Gold固定论文版本不符")
                 for file in source.data.files:

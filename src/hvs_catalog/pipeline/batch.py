@@ -20,7 +20,7 @@ class ExtractionTask:
 
 
 def resume_extractions(tasks, *, concurrency=None, registry=None, on_report=None):
-    """Advance papers as replies arrive, sharing a bounded network worker pool."""
+    """Advance papers as replies arrive; on_report may return same-space branches."""
     from .entry import _resume_extraction_once
 
     tasks = list(tasks)
@@ -65,6 +65,7 @@ def resume_extractions(tasks, *, concurrency=None, registry=None, on_report=None
         for task in tasks:
             task.service.dispatcher = dispatcher
         while remaining:
+            added = set()
             for index in sorted(ready & remaining):
                 task = tasks[index]
                 report = _resume_extraction_once(
@@ -77,11 +78,39 @@ def resume_extractions(tasks, *, concurrency=None, registry=None, on_report=None
                     results[index] = report
                     remaining.remove(index)
                     if on_report is not None:
-                        on_report(index, report)
+                        for branch in on_report(index, report) or []:
+                            identity = (str(branch.space.root), branch.execution_id)
+                            if identity in identities or identity[0] not in locks:
+                                raise ValueError(
+                                    "branches require a new execution in an owned space"
+                                )
+                            handle = get_execution(branch.space, branch.execution_id)
+                            config = stored_configuration(handle.input_snapshot)
+                            if handle.input_snapshot.options.get(
+                                "extraction_scope"
+                            ) != "full" or limit > min(
+                                config.parallelism, config.runtime.concurrency
+                            ):
+                                raise ValueError(
+                                    "branch is incompatible with the fixed batch"
+                                )
+                            if branch.service is None:
+                                branch.service = CallService(config.runtime)
+                            if (
+                                not isinstance(branch.service, CallService)
+                                or branch.service.dispatcher is not None
+                            ):
+                                raise ValueError("branch service is already in use")
+                            branch.service.dispatcher = dispatcher
+                            added.add(len(tasks))
+                            remaining.add(len(tasks))
+                            tasks.append(branch)
+                            identities.append(identity)
+                            results.append(None)
             if not remaining:
                 break
-            completed = dispatcher.collect()
-            ready = {
+            completed = dispatcher.collect(wait_for_result=not added)
+            ready = added | {
                 i
                 for i in remaining
                 if any(key[:2] == identities[i] for key in completed)

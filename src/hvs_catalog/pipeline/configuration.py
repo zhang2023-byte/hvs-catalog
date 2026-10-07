@@ -31,14 +31,46 @@ class ExtractionConfig(Config):
     mode: Literal["daily", "evaluation", "synthetic"] = "daily"
     expert_adjudication: bool = False
     parallelism: int = Field(default=100, ge=1, strict=True)
+    max_format_corrections: int = Field(default=2, ge=0, le=2, strict=True)
     default_model: ModelConfig = Field(
-        default_factory=lambda: ModelConfig(model="deepseek-v4.1-flash")
+        default_factory=lambda: ModelConfig(
+            model="deepseek-v4.1-flash",
+            parameters={
+                "max_tokens": 393216,
+                "thinking_type": "enabled",
+                "reasoning_effort": "max",
+            },
+        )
     )
-    step_models: dict[str, ModelConfig] = Field(default_factory=dict)
+    step_models: dict[str, ModelConfig] = Field(
+        default_factory=lambda: {
+            "quantities": ModelConfig(
+                model="deepseek-v4.1-flash",
+                parameters={
+                    "max_tokens": 393216,
+                    "thinking_type": "enabled",
+                    "reasoning_effort": "low",
+                },
+            )
+        }
+    )
     examples: dict[str, list[str]] = Field(default_factory=dict)
     use_model_supplements: bool = True
     precedents: list[PrecedentInput] = Field(default_factory=list)
-    runtime: RuntimeConfig = Field(default_factory=RuntimeConfig)
+    runtime: RuntimeConfig = Field(
+        default_factory=lambda: RuntimeConfig(retry_post_send_network_errors=True)
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _legacy_defaults(cls, value, info: ValidationInfo):
+        if isinstance(value, dict):
+            value = dict(value)
+            if "default_model" in value and "step_models" not in value:
+                value["step_models"] = {}
+            if info.context and info.context.get("historical"):
+                value.setdefault("max_format_corrections", 2)
+        return value
 
     @model_validator(mode="after")
     def _supported(self, info: ValidationInfo):

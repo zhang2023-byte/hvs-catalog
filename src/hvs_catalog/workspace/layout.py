@@ -330,6 +330,36 @@ class Workspace:
     ) -> ArtifactRef:
         return self.publish_file(f"{RUNS_DIR}/{execution_id}/{name}", data)
 
+    def publish_run_stream(self, execution_id: str, name: str, stream) -> ArtifactRef:
+        """Publish a binary stream immutably without loading it into memory."""
+        if self.read_only:
+            raise WorkspaceIntegrityError("只读空间不能发布文件")
+        relative = f"{RUNS_DIR}/{execution_id}/{name}"
+        target = resolve_within(self.root, relative)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        staging = target.parent / f".{target.name}.tmp-{uuid.uuid4().hex}"
+        digest = hashlib.sha256()
+        try:
+            with staging.open("xb") as output:
+                while chunk := stream.read(1024 * 1024):
+                    digest.update(chunk)
+                    output.write(chunk)
+                output.flush()
+                os.fsync(output.fileno())
+            if target.exists():
+                with target.open("rb") as existing:
+                    old = hashlib.file_digest(existing, "sha256").hexdigest()
+                if old != digest.hexdigest():
+                    raise WorkspaceConflictError(
+                        "目标文件已存在且内容不同，拒绝覆盖：" + relative
+                    )
+            else:
+                os.replace(staging, target)
+                _fsync_dir(target.parent)
+            return ArtifactRef(path=relative, sha256=digest.hexdigest())
+        finally:
+            staging.unlink(missing_ok=True)
+
     def read_file(self, ref: ArtifactRef) -> bytes:
         path = resolve_within(self.root, ref.path)
         if not path.is_file():

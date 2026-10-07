@@ -194,7 +194,8 @@ def test_mock_roster_images_and_visual_evidence_survive_backup(
     ev.clear()
     ev.update({"location": "I:p1-b1", "quote": "A"})
     config = ExtractionConfig(
-        runtime=RuntimeConfig(quota_store=tmp_path / "quota.sqlite")
+        runtime=RuntimeConfig(quota_store=tmp_path / "quota.sqlite"),
+        max_format_corrections=2,
     )
     replies = (["{first-invalid", "{second-invalid"] if corrections else []) + [
         submission([item])

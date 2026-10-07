@@ -25,11 +25,11 @@ from .agent import (
     auxiliary_config_digest,
 )
 from .errors import ScoringInputError
+from .identifiers import identifier_keys
 from .layers import (
     ValueSide,
     compare_content,
     match_objects,
-    normalize_identifier,
     pair_quantity_values,
 )
 from .models import (
@@ -321,8 +321,8 @@ def _scoped_confirmed(scoped, gold_paper: GoldPaperEntry) -> bool:
     for identifier in scoped.object_identifiers:
         for path in scoped.quantity_paths:
             if not any(
-                normalize_identifier(identifier)
-                in {normalize_identifier(item) for item in confirmed.object_identifiers}
+                identifier_keys([identifier])
+                & identifier_keys(confirmed.object_identifiers)
                 and path in confirmed.quantity_paths
                 for confirmed in gold_paper.confirmed_ranges
             ):
@@ -347,11 +347,9 @@ def _score_paper(
     elif scoped is not None:
         if not _scoped_confirmed(scoped, gold_paper):
             gaps.append("scoped_coverage_not_confirmed")
-        matched_objects = {
-            normalize_identifier(name)
-            for obj in gold_paper.objects
-            for name in obj.identifiers
-        } & {normalize_identifier(name) for name in scoped.object_identifiers}
+        matched_objects = identifier_keys(
+            name for obj in gold_paper.objects for name in obj.identifiers
+        ) & identifier_keys(scoped.object_identifiers)
         if not matched_objects:
             gaps.append("scoped_object_not_in_gold")
     elif gold_paper.coverage == "partial":
@@ -374,9 +372,7 @@ def _score_paper(
         )
 
     scoped_ids = (
-        {normalize_identifier(name) for name in scoped.object_identifiers}
-        if scoped is not None
-        else None
+        identifier_keys(scoped.object_identifiers) if scoped is not None else None
     )
     effective_paths = (
         set(scope.quantity_paths)
@@ -385,7 +381,7 @@ def _score_paper(
     )
 
     def _ids(entry) -> set[str]:
-        return {normalize_identifier(name) for name in entry.identifiers}
+        return identifier_keys(entry.identifiers)
 
     gold_in_scope = [
         obj

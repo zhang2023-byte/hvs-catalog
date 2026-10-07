@@ -507,9 +507,9 @@ def _report_bundle(report_field, gold_pair, pred_pair, fragments=("coverage.unit
 @pytest.mark.parametrize(
     ("report_field", "gold_pair", "pred_pair", "undecided_sub"),
     [
-        ("coverage", ("95", "km s^{-1}"), ("95", "km/s"), "unit"),
-        ("lower_quantile", ("2.5", "km s^{-1}"), ("2.5", "km/s"), "unit"),
-        ("upper_quantile", ("97.5", "m s^{-1}"), ("97.5", "m/s"), "unit"),
+        ("coverage", ("95", "km s^{-1}"), ("95", "km//s"), "unit"),
+        ("lower_quantile", ("2.5", "km s^{-1}"), ("2.5", "km//s"), "unit"),
+        ("upper_quantile", ("97.5", "m s^{-1}"), ("97.5", "m//s"), "unit"),
         ("coverage", ("95", "kpc"), ("\\mystery{95}", "kpc"), "value"),
         ("lower_quantile", ("2.5", "kpc"), ("\\mystery{2.5}", "kpc"), "value"),
         ("upper_quantile", ("97.5", "kpc"), ("\\mystery{97.5}", "kpc"), "value"),

@@ -32,6 +32,7 @@ from .transport import (
     OutputFailure,
     TokenDanceAdapter,
     TransportFailure,
+    network_retry_allowed,
     token_usage,
 )
 
@@ -119,6 +120,20 @@ def _finalize(ctx, attempts, envelope, *, index=-1, step_id=STEP):
         step_id=step_id,
     )
     return attempt
+
+
+def _archive_raw(ctx, envelope, name):
+    """The coordinator adopts a worker spool into the normal backup closure."""
+    exchange = envelope.get("exchange") or {}
+    raw = exchange.pop("_raw_stream", None)
+    if raw is not None:
+        try:
+            raw.seek(0)
+            ref = ctx.space.publish_run_stream(ctx.execution.execution_id, name, raw)
+            exchange["raw_response_ref"] = ref.model_dump(mode="json")
+            append_run_revision(ctx.space, ctx.execution, artifacts=[ref])
+        finally:
+            raw.close()
 
 
 def _execute(ctx, service: CallService):
@@ -281,6 +296,7 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
                     "retry_after": exc.retry_after,
                 }
             envelope["request_sha256"] = digest
+            _archive_raw(ctx, envelope, f"responses/{prefix}attempt-{number:03d}.raw")
             response_ref = ctx.space.publish_run_file(
                 ctx.execution.execution_id,
                 f"responses/{prefix}attempt-{number:03d}.json",
@@ -303,7 +319,7 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
             _save(ctx, attempts, step_id=step_id)
             service.hook("after_archive")
             _finalize(ctx, attempts, envelope, step_id=step_id)
-            if envelope["retryable"]:
+            if network_retry_allowed(envelope, service.runtime):
                 delay = envelope.get("retry_after")
                 quota.cooldown(delay if delay is not None else min(2**index, 30))
         finally:
@@ -311,8 +327,7 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
         if not envelope["error"] or envelope["error"] in FORMAT_ERRORS:
             return envelope
         if (
-            envelope["uncertain"]
-            or not envelope["retryable"]
+            not network_retry_allowed(envelope, service.runtime)
             or number == service.runtime.max_attempts
         ):
             _save(ctx, attempts, step_state="failed", step_id=step_id)
@@ -361,8 +376,7 @@ def _execute_concurrent(ctx, service, request, prepared, step_id, call_key):
         if not envelope.get("error") or envelope.get("error") in FORMAT_ERRORS:
             return envelope
         if (
-            envelope.get("uncertain")
-            or not envelope.get("retryable")
+            not network_retry_allowed(envelope, service.runtime)
             or len(indices) >= service.runtime.max_attempts
             or key not in dispatcher.completed
         ):
@@ -398,6 +412,9 @@ def _execute_concurrent(ctx, service, request, prepared, step_id, call_key):
     def archive(envelope):
         with ctx.space.lock():
             envelope["request_sha256"] = digest
+            _archive_raw(
+                ctx, envelope, f"responses/{prefix}attempt-{len(indices) + 1:03d}.raw"
+            )
             response_ref = ctx.space.publish_run_file(
                 ctx.execution.execution_id,
                 f"responses/{prefix}attempt-{len(indices) + 1:03d}.json",

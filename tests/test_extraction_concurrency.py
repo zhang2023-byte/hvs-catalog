@@ -241,3 +241,39 @@ def test_stop_new_requests_still_saves_returned_independent_object(
     saved = space.store().read_record_current("pdf-" + handle.execution_id + "-paper")
     assert saved.data.object_contributions[0].quantities == []
     assert saved.data.object_contributions[1].quantities[0].values[0].value == "-430"
+
+
+def test_quota_setup_failure_is_known_unsent(monkeypatch, tmp_path):
+    import sqlite3
+
+    from hvs_catalog.llm import concurrent
+
+    def denied(_):
+        raise sqlite3.OperationalError("synthetic inaccessible quota store")
+
+    monkeypatch.setattr(concurrent, "AccountQuota", denied)
+    adapter = ScriptedAdapter([{}])
+    service = CallService(
+        RuntimeConfig(quota_store=tmp_path / "quota"),
+        credential=SecretStr("synthetic"),
+        adapter=adapter,
+    )
+    request = CallRequest(
+        model=ModelConfig(model="deepseek-v4.1-flash"),
+        messages=[Message(role="user", content="Fictional quota failure")],
+    )
+    archived = []
+    dispatcher = ConcurrentCalls(1)
+    try:
+        dispatcher.submit(
+            (1,), service, request, service.adapter.prepare(request), archived.append
+        )
+        while dispatcher.jobs:
+            dispatcher.collect()
+    finally:
+        dispatcher.close()
+    assert not adapter.seen
+    assert len(archived) == 1
+    assert archived[0]["error"] == "quota_unavailable"
+    assert not archived[0]["uncertain"] and not archived[0]["retryable"]
+    assert archived[0]["exchange"]["transport"]["phase"] == "quota"

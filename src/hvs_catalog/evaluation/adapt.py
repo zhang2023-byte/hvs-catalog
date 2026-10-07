@@ -44,6 +44,7 @@ from ..records.paper import (
 from ..records.roster import RosterRecord
 from ..records.rules import load_rules
 from ..records.source import SourcePackageRecord
+from ..review import ReviewService
 from ..runtime import get_execution as runtime_get_execution
 from ..workspace import Workspace
 from .compact import (
@@ -65,6 +66,7 @@ from .scoring import (
     PredictionQuantityEntry,
     PredictionValueEntry,
 )
+from .scoring.identifiers import qualified_identifiers
 
 __all__ = [
     "GoldAdaptation",
@@ -295,9 +297,16 @@ def _objects_from_contributions(contributions: list[Any]) -> list[GoldObjectEntr
         objects.append(
             GoldObjectEntry(
                 label=contribution_id,
-                identifiers=[
-                    identifier.value for identifier in contribution.identifiers
-                ],
+                identifiers=list(
+                    dict.fromkeys(
+                        alias
+                        for identifier in contribution.identifiers
+                        for alias in qualified_identifiers(
+                            identifier.value,
+                            ((e.location, e.quote) for e in identifier.evidence),
+                        )
+                    )
+                ),
                 contribution_type=_contribution_type(contribution),
                 author_judgment=_boundness_status(contribution.paper_boundness),
                 quantities=[
@@ -800,7 +809,7 @@ def prediction_from_execution(
     paper: PaperRecord | None = None
     roster: RosterRecord | None = None
     for ref in execution_result_refs(space, execution_id):
-        record = space.store().read_record_current(ref.record_id)
+        record = _bound_execution_record(space, execution_id, ref)
         if isinstance(record, PaperRecord) and paper is None:
             paper = record
         elif isinstance(record, RosterRecord) and roster is None:
@@ -834,6 +843,44 @@ def prediction_from_execution(
             item.get("status") == "open" for item in status.get("questions", [])
         ),
     )
+
+
+def _bound_execution_record(space: Workspace, execution_id: str, ref: RecordRef):
+    """Follow only this execution's explicitly applied historical decisions.
+
+    Automatic assembly references already name the exact result. A historical
+    expert decision can legitimately advance a roster/paper, but an unrelated
+    latest revision never changes the prediction of this execution.
+    """
+    patches = []
+    for view in ReviewService(space).list_questions(
+        execution_id=execution_id, include_scientific_issues=True
+    ):
+        if view.application is None or view.application.phase != "applied":
+            continue
+        for decision in view.decisions:
+            patch = decision.data.result_patch
+            if patch is not None and patch.target.record_id == ref.record_id:
+                patches.extend(
+                    (patch.target, result)
+                    for result in view.application.result_refs
+                    if result.record_id == ref.record_id
+                )
+    current = ref
+    while True:
+        following = {
+            result.revision: result
+            for target, result in patches
+            if target.record_id == current.record_id
+            and target.revision == current.revision
+        }
+        if not following:
+            return space.store().read_record(current)
+        if len(following) != 1 or current.revision + 1 not in following:
+            raise GoldAdaptationError(
+                "Saved execution has an inconsistent applied result chain"
+            )
+        current = following[current.revision + 1]
 
 
 def _paper_key_from(

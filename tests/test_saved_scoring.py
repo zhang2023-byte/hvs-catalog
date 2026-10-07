@@ -28,10 +28,53 @@ from hvs_catalog.evaluation import (
     write_compact_gold_pair,
 )
 from hvs_catalog.evaluation.adapt import prediction_from_execution
+from hvs_catalog.evaluation.compact import CompactGoldPair, CompactRevision
 from hvs_catalog.evaluation.saved import SavedScoringInput, prepare_saved_scoring
 from hvs_catalog.workspace import open_workspace
 
 prepared_pdf = _prepared_pdf_fixture
+
+
+def test_prediction_uses_execution_bound_revision_not_later_record(prepared_pdf):
+    from hvs_catalog.pipeline import execution_result_refs
+    from hvs_catalog.records.paper import PaperRecord
+    from hvs_catalog.workspace import CommitRequest
+
+    space, _, _ = prepared_pdf
+    handle, result, _ = start(
+        prepared_pdf, Adapter(lambda tool, _: quantities(object_id(tool)), names=("A",))
+    )
+    assert result.outcome == "finished"
+    before = prediction_from_execution(space, handle.execution_id)
+    ref = next(
+        r
+        for r in execution_result_refs(space, handle.execution_id)
+        if isinstance(space.store().read_record(r), PaperRecord)
+    )
+    paper = space.store().read_record(ref)
+    later = paper.model_copy(
+        update={
+            "revision": paper.revision + 1,
+            "data": paper.data.model_copy(
+                update={
+                    "object_contributions": [
+                        obj.model_copy(update={"quantities": []})
+                        for obj in paper.data.object_contributions
+                    ]
+                }
+            ),
+        }
+    )
+    space.store().commit(
+        CommitRequest(
+            operation_key="synthetic-later-paper",
+            kind="synthetic-interference",
+            new_records=[later],
+            expected_revisions={paper.record_id: paper.revision},
+        )
+    )
+    assert space.store().read_record_current(paper.record_id) == later
+    assert prediction_from_execution(space, handle.execution_id) == before
 
 
 @pytest.fixture
@@ -183,6 +226,87 @@ def test_saved_scoring_rejects_changed_extraction_material(manifest):
     raw = next((space.root / "sources/packages").glob("*.bin"))
     raw.write_bytes(raw.read_bytes() + b"changed")
     with pytest.raises(ValueError, match="指纹不符"):
+        prepare_saved_scoring(data)
+
+
+@pytest.mark.parametrize("version", [PAPER + "v1", "arXiv:" + PAPER + "v1"])
+def test_saved_scoring_accepts_same_explicit_full_arxiv_version(
+    manifest, tmp_path, version
+):
+    path, _, _, _ = manifest
+    data = SavedScoringInput.model_validate_json(path.read_bytes())
+    item = data.papers[0]
+    target = GoldTarget(item.gold_target)
+    current, approval = target.read_current()
+    metadata = current.metadata.model_copy(
+        update={
+            "paper": current.metadata.paper.model_copy(update={"version": version}),
+            "revision": CompactRevision(
+                revised_by="synthetic-human",
+                decided_by="synthetic-human",
+                revised_at="2026-10-06",
+                basis="Synthetic explicit version spelling for scoring checks",
+                previous_answer_sha256=approval.binding.answer_sha256,
+            ),
+        }
+    )
+    staged = tmp_path / "full-version-gold"
+    write_compact_gold_pair(CompactGoldPair(current.answer, metadata), staged)
+    checked = check_save(
+        pair_path=staged,
+        material_root=item.material_root,
+        target=target,
+        expected_old=approval.binding.pair_sha256,
+    )
+    approved_save(
+        pair_path=staged,
+        material_root=item.material_root,
+        target=target,
+        approval=authorize(checked.binding),
+    )
+    plan, gold, predictions = prepare_saved_scoring(data)
+    assert not plan.readiness_gaps
+    assert gold and predictions
+
+
+@pytest.mark.parametrize(
+    "version", ["v2", PAPER + "v2", "arXiv:" + PAPER + "v2", "arXiv:2304.11269v1"]
+)
+def test_saved_scoring_rejects_other_full_arxiv_version_or_paper(
+    manifest, tmp_path, version
+):
+    path, _, _, _ = manifest
+    data = SavedScoringInput.model_validate_json(path.read_bytes())
+    item = data.papers[0]
+    target = GoldTarget(item.gold_target)
+    current, approval = target.read_current()
+    metadata = current.metadata.model_copy(
+        update={
+            "paper": current.metadata.paper.model_copy(update={"version": version}),
+            "revision": CompactRevision(
+                revised_by="synthetic-human",
+                decided_by="synthetic-human",
+                revised_at="2026-10-06",
+                basis="Synthetic other version for rejection checks",
+                previous_answer_sha256=approval.binding.answer_sha256,
+            ),
+        }
+    )
+    staged = tmp_path / "other-version-gold"
+    write_compact_gold_pair(CompactGoldPair(current.answer, metadata), staged)
+    checked = check_save(
+        pair_path=staged,
+        material_root=item.material_root,
+        target=target,
+        expected_old=approval.binding.pair_sha256,
+    )
+    approved_save(
+        pair_path=staged,
+        material_root=item.material_root,
+        target=target,
+        approval=authorize(checked.binding),
+    )
+    with pytest.raises(ValueError, match="固定论文版本不符"):
         prepare_saved_scoring(data)
 
 

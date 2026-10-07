@@ -18,6 +18,22 @@ class Repair:
     operation: str = "replace"
 
 
+def merge_repairs(*groups: list[Repair]) -> list[Repair]:
+    """Expose each selected path once, preferring an already selected parent."""
+    unique = {
+        (fix.path, fix.reason if fix.operation == "append" else None): fix
+        for group in groups
+        for fix in group
+    }
+    parents = {fix.path for fix in unique.values() if fix.operation != "append"}
+    return [
+        fix
+        for fix in unique.values()
+        if not any(fix.path[:i] in parents for i in range(len(fix.path)))
+        and not (fix.operation == "append" and fix.path in parents)
+    ]
+
+
 def at(value, path):
     for key in path:
         value = value[key]
@@ -103,12 +119,7 @@ def schema_repairs(payload: dict, schema: dict) -> list[Repair]:
 
     walk(payload, schema, ())
     # Prefer the explicitly selected parent if several diagnostics overlap.
-    unique = {fix.path: fix for fix in fixes}
-    return [
-        fix
-        for path, fix in unique.items()
-        if not any(path[:i] in unique for i in range(len(path)))
-    ]
+    return merge_repairs(fixes)
 
 
 def repair_tool(fixes: list[Repair], schema: dict, *, name="repair_roster") -> Tool:
@@ -144,3 +155,36 @@ def apply_repairs(payload: dict, fixes: list[Repair], values: dict) -> dict:
         else:
             target[fix.path[-1]] = copy.deepcopy(values[f"R{index}"])
     return result
+
+
+def roster_invariant_repairs(payload):
+    """Apply the existing isolation rule to explicitly declared source errors only."""
+    from ..records.roster_input import CONTRIBUTION_FIELDS
+
+    fixes = []
+    entries = payload.get("entries", [])
+    if not isinstance(entries, list):
+        return fixes
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            continue
+        if not entry.get("author_errors") or entry.get("disposition") == "pending":
+            continue
+        fixes.append(
+            Repair(
+                ("entries", index, "disposition"),
+                {"const": "pending"},
+                "The submitted identity/inclusion source-error diagnostic requires an unfinished entry under the supplied rules. Confirm pending; retain its identifiers, evidence and source-error diagnostic unchanged.",
+            )
+        )
+        for field in CONTRIBUTION_FIELDS:
+            if field in entry:
+                fixes.append(
+                    Repair(
+                        ("entries", index, field),
+                        {"type": "null"},
+                        "Remove this contribution field, which is inapplicable to the explicitly source-error-blocked entry. The original submission remains archived.",
+                        "delete",
+                    )
+                )
+    return fixes

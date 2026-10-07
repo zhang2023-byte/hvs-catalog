@@ -24,12 +24,12 @@ differences cannot be overturned and become definite mismatch diagnostics.
 
 from __future__ import annotations
 
-import unicodedata
 from dataclasses import dataclass, field
 
 from hvs_catalog.records.paper import MeasuredValue
 
 from .agent import ScoringAgentResolver
+from .identifiers import identifier_keys
 from .models import EvidenceFragment, GoldObjectEntry, PredictionObjectEntry
 from .printed import (
     Verdict,
@@ -37,7 +37,12 @@ from .printed import (
     compare_number,
     compare_unit,
     is_supported_number_syntax,
+    limit_operand,
     normalize_printed,
+    percent_operand,
+    printed_limit_inclusive,
+    split_error_number,
+    split_unit_roles,
 )
 from .results import PairingDetail
 
@@ -62,13 +67,6 @@ NUMBER_CONTENT_FIELDS = (
 UNIT_CONTENT_FIELDS = ("unit",)
 REPORT_CONTENT_FIELDS = ("coverage", "lower_quantile", "upper_quantile")
 COMPONENT_FIELDS = ("error", "lower_error", "upper_error")
-
-
-def normalize_identifier(text: str) -> str:
-    """Restricted identifier normalization: NFC, Unicode minus, and collapsed whitespace
-    only.
-    """
-    return " ".join(unicodedata.normalize("NFC", text).replace("−", "-").split())
 
 
 def _attribution_summary(value: MeasuredValue) -> str:
@@ -187,6 +185,43 @@ def _compare_unit_field(
         undecided.append(field_name)
 
 
+def _compare_error_field(
+    field_name,
+    left,
+    right,
+    left_unit,
+    right_unit,
+    diff,
+    undecided,
+    *,
+    compare_units=False,
+):
+    inherited_units = left_unit, right_unit
+    symmetric = field_name.split(".")[-1] == "error"
+    left, left_unit = split_error_number(left, left_unit, symmetric=symmetric)
+    right, right_unit = split_error_number(right, right_unit, symmetric=symmetric)
+    direction = {"lower_error": "-", "upper_error": "+"}.get(field_name.split(".")[-1])
+    if direction:
+        # The field already states the direction. Strip only its redundant sign,
+        # never the opposite sign, a central-value sign, or an exponent sign.
+        def magnitude(raw):
+            normalized = normalize_printed(raw)
+            if normalized and normalized.startswith(direction):
+                operand = normalized[1:].strip()
+                if operand and not operand.startswith(("+", "-")):
+                    return operand
+            return raw
+
+        left, right = magnitude(left), magnitude(right)
+    _compare_number_field(field_name, left, right, diff, undecided)
+    if not compare_units and inherited_units == (left_unit, right_unit):
+        return
+    if (left_unit is None) != (right_unit is None):
+        diff.append(field_name)
+    elif left_unit is not None:
+        _compare_unit_field(field_name, left_unit, right_unit, diff, undecided)
+
+
 def _compare_components(
     gold: MeasuredValue, prediction: MeasuredValue
 ) -> tuple[list[str], list[str]]:
@@ -198,6 +233,8 @@ def _compare_components(
         return [f"error_components(缺 {missing}，多 {extra})"], []
     diff: list[str] = []
     undecided: list[str] = []
+    gold_base, gold_unit = split_unit_roles(gold.unit)
+    pred_base, pred_unit = split_unit_roles(prediction.unit)
     pred_by_name = {c.name: c for c in prediction.error_components}
     for component in gold.error_components:
         other = pred_by_name[component.name]
@@ -209,12 +246,15 @@ def _compare_components(
                 continue
             if left is None:
                 continue
-            _compare_number_field(
+            _compare_error_field(
                 f"error_components.{component.name}.{name}",
                 left,
                 right,
+                gold_unit,
+                pred_unit,
                 diff,
                 undecided,
+                compare_units=gold_unit != gold_base or pred_unit != pred_base,
             )
     return diff, undecided
 
@@ -252,6 +292,8 @@ def compare_content(
     """
     diff: list[str] = []
     undecided: list[str] = []
+    gold_base, gold_error_unit = split_unit_roles(gold.unit)
+    pred_base, pred_error_unit = split_unit_roles(prediction.unit)
     for name in NUMBER_CONTENT_FIELDS:
         left = getattr(gold, name)
         right = getattr(prediction, name)
@@ -260,10 +302,53 @@ def compare_content(
             continue
         if left is None:
             continue
-        _compare_number_field(name, left, right, diff, undecided)
+        if name in COMPONENT_FIELDS:
+            _compare_error_field(
+                name,
+                left,
+                right,
+                gold_error_unit,
+                pred_error_unit,
+                diff,
+                undecided,
+                compare_units=gold_error_unit != gold_base
+                or pred_error_unit != pred_base,
+            )
+        else:
+            if name == "value":
+                gold_endpoint = printed_limit_inclusive(left, gold.limit_kind)
+                pred_endpoint = printed_limit_inclusive(right, prediction.limit_kind)
+                if (
+                    gold.limit_kind == prediction.limit_kind
+                    and gold_endpoint is not None
+                    and pred_endpoint is not None
+                    and gold_endpoint != pred_endpoint
+                ):
+                    diff.append(
+                        "upper_inclusive"
+                        if gold.limit_kind == "upper_limit"
+                        else "lower_inclusive"
+                    )
+                left = limit_operand(
+                    left,
+                    gold.limit_kind,
+                    inclusive=gold.upper_inclusive
+                    if gold.limit_kind == "upper_limit"
+                    else gold.lower_inclusive,
+                )
+                left = percent_operand(left, gold_base)
+                right = limit_operand(
+                    right,
+                    prediction.limit_kind,
+                    inclusive=prediction.upper_inclusive
+                    if prediction.limit_kind == "upper_limit"
+                    else prediction.lower_inclusive,
+                )
+                right = percent_operand(right, pred_base)
+            _compare_number_field(name, left, right, diff, undecided)
     for name in UNIT_CONTENT_FIELDS:
-        left = getattr(gold, name)
-        right = getattr(prediction, name)
+        left = gold_base
+        right = pred_base
         if (left is None) != (right is None):
             diff.append(name)
             continue
@@ -279,6 +364,7 @@ def compare_content(
     component_diff, component_undecided = _compare_components(gold, prediction)
     diff.extend(component_diff)
     undecided.extend(component_undecided)
+    diff, undecided = list(dict.fromkeys(diff)), list(dict.fromkeys(undecided))
     if diff:
         return "different", diff, undecided
     if undecided:
@@ -759,11 +845,11 @@ def match_objects(
     taken: set[str] = set()
     ambiguous_candidates: set[str] = set()
     for pred in pred_objects:
-        pred_ids = {normalize_identifier(name) for name in pred.identifiers}
+        pred_ids = identifier_keys(pred.identifiers)
         candidates = [
             gold
             for gold in gold_objects
-            if pred_ids & {normalize_identifier(name) for name in gold.identifiers}
+            if pred_ids & identifier_keys(gold.identifiers)
         ]
         if not candidates:
             match.fp += 1

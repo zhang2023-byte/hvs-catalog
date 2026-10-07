@@ -200,6 +200,7 @@ def start_extraction(
     configuration=None,
     prepared_input: ArtifactRef | None = None,
     extraction_scope: str = "roster",
+    roster_execution_id: str | None = None,
 ) -> ExtractionHandle:
     """Create/reuse extraction through strict requests.
 
@@ -276,6 +277,16 @@ def start_extraction(
         existing_decision_refs=list(request.existing_decision_refs),
         **frozen,
     )
+    if roster_execution_id is not None:
+        if prepared_input is None or extraction_scope != "full":
+            raise PipelineRequestError(
+                "roster reuse requires a prepared full extraction"
+            )
+        from .roster_reuse import freeze_roster
+
+        snapshot.options["reused_roster"] = canonical_json(
+            freeze_roster(space, roster_execution_id, snapshot)
+        )
     if prepared_input is not None:
         from .roster import RosterFlow
 
@@ -607,4 +618,10 @@ def execution_result_refs(space: Workspace, execution_id: str) -> list[RecordRef
         if assembly and assembly.result_refs:
             paper = space.store().read_record(assembly.result_refs[0])
             return [paper.ref(), paper.data.roster_ref]
+    if handle.input_snapshot.options.get("extraction_scope") in {"roster", "full"}:
+        from .roster import roster_result_refs
+
+        refs = roster_result_refs(space, execution_id)
+        if refs:
+            return refs
     return list(run.data.result_refs)

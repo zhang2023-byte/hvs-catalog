@@ -87,11 +87,11 @@ def test_unsupported_number_without_macro_is_unknown_not_mismatch():
 def test_unsupported_unit_syntax_is_unknown_not_mismatch():
     plan, gold, preds = _bundle(
         [("g1", STD, {"value": "600", "error": "20", "unit": "km s^{-1}"}, [])],
-        [("p1", STD, {"value": "600", "error": "20", "unit": "km/s"}, [])],
+        [("p1", STD, {"value": "600", "error": "20", "unit": "km//s"}, [])],
     )
     report = _score(plan, gold, preds)
     paper = report.papers[0]
-    assert compare_unit("km s^{-1}", "km/s") == "undecidable"
+    assert compare_unit("km s^{-1}", "km//s") == "undecidable"
     assert paper.l2.precision is None
     assert report.batch_provisional is True
     assert any(

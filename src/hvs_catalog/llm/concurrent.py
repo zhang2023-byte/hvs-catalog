@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import sqlite3
 import threading
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 
 from .quota import AccountQuota
-from .transport import OutputFailure, TransportFailure
+from .transport import OutputFailure, TransportFailure, network_retry_allowed
 
 
 class ConcurrentCalls:
@@ -46,14 +47,28 @@ class ConcurrentCalls:
                 "uncertain": False,
                 "retryable": False,
             }
-        quota = AccountQuota(service.runtime)
         try:
+            quota = AccountQuota(service.runtime)
             lease = quota.acquire()
         except TimeoutError:
             return {
                 "exchange": {},
                 "result": None,
                 "error": "quota_wait_expired",
+                "uncertain": False,
+                "retryable": False,
+            }
+        except (OSError, sqlite3.Error, ValueError) as exc:
+            # Quota setup precedes adapter.send: no request reached the network.
+            return {
+                "exchange": {
+                    "transport": {
+                        "phase": "quota",
+                        "exceptions": [{"type": type(exc).__name__}],
+                    }
+                },
+                "result": None,
+                "error": "quota_unavailable",
                 "uncertain": False,
                 "retryable": False,
             }
@@ -92,11 +107,7 @@ class ConcurrentCalls:
                         "retryable": False,
                     }
             except TransportFailure as exc:
-                if exc.retryable:
-                    quota.cooldown(
-                        exc.retry_after if exc.retry_after is not None else 1
-                    )
-                return {
+                envelope = {
                     "exchange": exc.exchange,
                     "result": None,
                     "error": exc.kind,
@@ -104,6 +115,11 @@ class ConcurrentCalls:
                     "retryable": exc.retryable,
                     "retry_after": exc.retry_after,
                 }
+                if network_retry_allowed(envelope, service.runtime):
+                    quota.cooldown(
+                        exc.retry_after if exc.retry_after is not None else 1
+                    )
+                return envelope
         finally:
             quota.release(lease)
 

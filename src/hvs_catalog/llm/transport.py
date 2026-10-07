@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import socket
+import tempfile
 import threading
 import time
 from datetime import UTC, datetime
@@ -23,6 +24,14 @@ from urllib3.exceptions import NewConnectionError
 from urllib3.util import Timeout
 
 from .config import BASE_URL, CallRequest, CallResult, RuntimeConfig, parameter_manifest
+from .stream import (
+    RawResponse,
+    SSEBody,
+    SSEDecoder,
+    UploadAdapter,
+    exception_facts,
+    upload_gate,
+)
 
 
 def strict_json(text: str):
@@ -64,6 +73,32 @@ class TransportFailure(Exception):
 
 class OutputFailure(ValueError):
     pass
+
+
+def network_retry_allowed(envelope, runtime):
+    """Retry archived transport failures only, retaining uncertain attempts."""
+    if envelope.get("retryable") and not envelope.get("uncertain"):
+        return True
+    if not runtime.retry_post_send_network_errors:
+        return False
+    error = envelope.get("error")
+    exchange = envelope.get("exchange") or {}
+    transport = exchange.get("transport") or {}
+    if error == "http_error":
+        status = exchange.get("status")
+        return type(status) is int and (status >= 500 or status in {408, 499})
+    if error == "stream_incomplete":
+        return transport.get("phase") == "decode"
+    if error == "completion_unknown":
+        return transport.get("phase") in {
+            "connect",
+            "upload",
+            "response_headers",
+            "read",
+        } and bool(
+            transport.get("exceptions") or transport.get("total_deadline_expired")
+        )
+    return False
 
 
 class ModelAdapter(Protocol):
@@ -123,55 +158,12 @@ def _retry_after(value):
 
 
 def _merge_sse(events: list[str]) -> tuple[dict, bool]:
-    body, message, tools = {}, {"content": "", "reasoning_content": ""}, {}
-    finish = None
-    done = False
+    merged = SSEBody(strict_json)
     for event in events:
-        if event == "[DONE]":
-            done = True
-            continue
-        part = strict_json(event)
-        if not isinstance(part, dict) or "error" in part:
-            raise OutputFailure("invalid_stream_event")
-        for k in ("id", "model", "usage", "created"):
-            if k in part:
-                body[k] = part[k]
-        choices = part.get("choices", [])
-        if not isinstance(choices, list) or len(choices) > 1:
-            raise OutputFailure("invalid_choices")
-        if not choices:
-            continue
-        choice = choices[0]
-        if choice.get("index", 0) != 0:
-            raise OutputFailure("invalid_choice_index")
-        finish = choice.get("finish_reason") or finish
-        delta = choice.get("delta", {})
-        for k in ("content", "reasoning_content"):
-            value = delta.get(k)
-            if value is not None:
-                if not isinstance(value, str):
-                    raise OutputFailure("invalid_delta")
-                message[k] += value
-        for tool in delta.get("tool_calls") or []:
-            index = tool.get("index", 0)
-            current = tools.setdefault(
-                index,
-                {
-                    "id": "",
-                    "type": "function",
-                    "function": {"name": "", "arguments": ""},
-                },
-            )
-            if tool.get("id"):
-                current["id"] = tool["id"]
-            for k in ("name", "arguments"):
-                value = (tool.get("function") or {}).get(k)
-                if value is not None:
-                    current["function"][k] += value
-    if tools:
-        message["tool_calls"] = [tools[k] for k in sorted(tools)]
-    body["choices"] = [{"index": 0, "message": message, "finish_reason": finish}]
-    return body, done
+        merged.add(event)
+    if merged.error:
+        raise OutputFailure("invalid_stream_event")
+    return merged.result(), merged.done
 
 
 class TokenDanceAdapter:
@@ -246,55 +238,108 @@ class TokenDanceAdapter:
     ) -> dict:
         self.validate_runtime(runtime)
         started = time.monotonic()
+        deadline = started + runtime.total_timeout
         expired = threading.Event()
-        response_holder = []
+        sockets = []
+        phase_started = started
+        diagnostics = {
+            "phase": "upload_queue",
+            "phase_seconds": {},
+            "request_bytes": 0,
+            "request_started": False,
+            "response_bytes": 0,
+            "total_deadline_expired": False,
+            "exceptions": [],
+        }
         exchange = {
             "status": None,
             "headers": {},
             "events": [],
             "body": None,
             "text": "",
+            "transport": diagnostics,
         }
+        # Ownership transfers to the coordinator, which archives and closes it.
+        spool = tempfile.TemporaryFile(mode="w+b")  # noqa: SIM115
+        raw = RawResponse(spool, credential.get_secret_value())
+        exchange["_raw_stream"] = spool
+        merged = SSEBody(strict_json)
+        decoder = SSEDecoder(merged.add)
+        parse_error = None
+        gate = upload_gate(runtime)
+        held = False
+
+        def phase(name):
+            nonlocal phase_started
+            now = time.monotonic()
+            previous = diagnostics["phase"]
+            times = diagnostics["phase_seconds"]
+            times[previous] = times.get(previous, 0) + now - phase_started
+            diagnostics["phase"] = name
+            if name == "upload":
+                diagnostics["request_started"] = True
+            phase_started = now
+
+        def release_upload():
+            nonlocal held
+            if held:
+                held = False
+                gate.release()
 
         def expire():
             expired.set()
-            if response_holder:
-                raw = response_holder[0].raw
-                # Abort a trickling response at the wall deadline, not merely idle timeout.
-                sock = getattr(
-                    getattr(
-                        getattr(getattr(raw, "_fp", None), "fp", None), "raw", None
-                    ),
-                    "_sock",
-                    None,
-                )
-                if sock is not None:
-                    try:
-                        sock.shutdown(socket.SHUT_RDWR)
-                    except OSError:
-                        pass
+            # Cover upload, waiting for headers and body reads, including trickles.
+            for sock in sockets:
+                try:
+                    sock.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
 
         timer = threading.Timer(runtime.total_timeout, expire)
         timer.daemon = True
-        timer.start()
         session = requests.Session()
         session.trust_env = False
+        adapter = UploadAdapter(runtime, phase, sockets, release_upload, deadline)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
         response = None
-        raw_bytes = bytearray()
+
+        def snapshot():
+            raw.write(b"", final=True)
+            spool.flush()
+            spool.seek(0)
+            exchange["text"] = raw.preview.decode("utf-8", errors="replace")
+            exchange["text_is_preview"] = diagnostics["response_bytes"] > 65536
+            diagnostics["elapsed_seconds"] = time.monotonic() - started
+            diagnostics["total_deadline_expired"] = expired.is_set()
+            if payload.get("stream") and exchange["status"] == 200:
+                exchange["body"] = merged.result()
+                diagnostics["sse_events"] = merged.events
+                diagnostics["sse_done"] = merged.done
+            return redact(exchange, credential)
+
+        timer.start()
         try:
+            # Encoding once gives the exact upload byte count and Content-Length.
+            data = json.dumps(payload, allow_nan=False).encode("utf-8")
+            diagnostics["request_bytes"] = len(data)
+            held = gate.acquire(timeout=max(0, deadline - time.monotonic()))
+            if not held or expired.is_set():
+                raise TransportFailure("upload_queue_expired")
+            phase("connect")
             response = session.post(
                 runtime.base_url.rstrip("/") + "/chat/completions",
-                json=payload,
-                headers={"Authorization": "Bearer " + credential.get_secret_value()},
+                data=data,
+                headers={
+                    "Authorization": "Bearer " + credential.get_secret_value(),
+                    "Content-Type": "application/json",
+                },
                 stream=True,
                 allow_redirects=False,
                 timeout=Timeout(
-                    total=runtime.total_timeout,
-                    connect=runtime.connect_timeout,
-                    read=runtime.idle_timeout,
+                    connect=runtime.connect_timeout, read=runtime.idle_timeout
                 ),
             )
-            response_holder.append(response)
             exchange["status"] = response.status_code
             exchange["headers"] = {
                 k.lower(): v
@@ -310,84 +355,83 @@ class TokenDanceAdapter:
                     "tokendance-recovery-action",
                 )
             }
+            phase("read")
             for chunk in response.iter_content(chunk_size=8192):
-                if (
-                    expired.is_set()
-                    or time.monotonic() - started >= runtime.total_timeout
-                ):
+                if expired.is_set() or time.monotonic() >= deadline:
                     raise TransportFailure("completion_unknown", uncertain=True)
-                raw_bytes.extend(chunk)
-                if len(raw_bytes) > runtime.max_response_bytes:
+                raw.write(chunk)
+                diagnostics["response_bytes"] += len(chunk)
+                if diagnostics["response_bytes"] > runtime.max_response_bytes:
                     raise TransportFailure("response_limit", uncertain=True)
+                if (
+                    payload.get("stream")
+                    and response.status_code == 200
+                    and parse_error is None
+                ):
+                    try:
+                        decoder.feed(chunk)
+                    except (ValueError, TypeError, KeyError, AttributeError) as exc:
+                        parse_error = exc
             if expired.is_set():
                 raise TransportFailure("completion_unknown", uncertain=True)
-            text = raw_bytes.decode("utf-8")
-            exchange["text"] = text
+            phase("decode")
+            raw.write(b"", final=True)
+            spool.flush()
+            spool.seek(0)
             if response.status_code != 200:
                 try:
-                    exchange["body"] = strict_json(text)
+                    exchange["body"] = json.load(spool)
                 except (ValueError, TypeError):
                     pass
                 status = response.status_code
                 raise TransportFailure(
                     "rate_limited" if status == 429 else "http_error",
-                    uncertain=status >= 500,
+                    uncertain=status >= 500 or status in {408, 499},
                     retryable=status == 429,
                     retry_after=_retry_after(response.headers.get("Retry-After")),
                 )
             if payload.get("stream"):
-                events, data = [], []
-                # SSE recognizes CR/LF; Unicode separators inside JSON strings
-                # are payload characters, not event boundaries.
-                for line in (part.rstrip("\r") for part in text.split("\n") + [""]):
-                    if line.startswith("data:"):
-                        data.append(line[5:].lstrip(" "))
-                    elif line == "" and data:
-                        events.append("\n".join(data))
-                        data = []
-                exchange["events"] = events
-                body, done = _merge_sse(events)
-                exchange["body"] = body
-                if not done:
+                if parse_error is None:
+                    decoder.feed(b"", final=True)
+                if parse_error is not None or merged.error:
+                    raise ValueError("invalid_stream_event")
+                if not merged.done:
                     raise TransportFailure("stream_incomplete", uncertain=True)
+                exchange["body"] = merged.result()
             else:
-                exchange["body"] = strict_json(text)
+                exchange["body"] = strict_json(spool.read().decode("utf-8"))
             if not isinstance(exchange["body"], dict):
-                raise OutputFailure("invalid_response")
-            return redact(exchange, credential)
+                raise TypeError("invalid_response")
+            phase("complete")
+            return snapshot()
         except TransportFailure as exc:
-            exchange["text"] = raw_bytes.decode("utf-8", errors="replace")
-            exc.exchange = redact(exchange, credential)
+            exc.exchange = snapshot()
             raise
-        except requests.ConnectTimeout:
-            raise TransportFailure(
-                "connection_failed",
-                retryable=True,
-                exchange=redact(exchange, credential),
-            ) from None
-        except requests.ConnectionError as exc:
+        except requests.RequestException as exc:
+            diagnostics["exceptions"] = exception_facts(exc)
             reason = getattr(exc.args[0], "reason", None) if exc.args else None
-            known_unsent = isinstance(reason, NewConnectionError)
-            exchange["text"] = raw_bytes.decode("utf-8", errors="replace")
+            known_unsent = (
+                diagnostics["phase"] == "connect"
+                and not diagnostics.get("request_started", False)
+                and (
+                    isinstance(exc, (requests.ConnectTimeout, requests.ReadTimeout))
+                    or isinstance(reason, NewConnectionError)
+                )
+            )
             raise TransportFailure(
                 "connection_failed" if known_unsent else "completion_unknown",
                 uncertain=not known_unsent,
                 retryable=known_unsent,
-                exchange=redact(exchange, credential),
+                exchange=snapshot(),
             ) from None
-        except requests.RequestException:
-            exchange["text"] = raw_bytes.decode("utf-8", errors="replace")
-            raise TransportFailure(
-                "completion_unknown",
-                uncertain=True,
-                exchange=redact(exchange, credential),
-            ) from None
-        except (ValueError, TypeError, KeyError, AttributeError, UnicodeError):
-            exchange["text"] = raw_bytes.decode("utf-8", errors="replace")
-            raise TransportFailure(
-                "invalid_response", exchange=redact(exchange, credential)
-            ) from None
+        except (ValueError, TypeError, KeyError, AttributeError, UnicodeError) as exc:
+            diagnostics["exceptions"] = exception_facts(exc)
+            raise TransportFailure("invalid_response", exchange=snapshot()) from None
+        except BaseException:
+            spool.close()
+            raise
         finally:
+            release_upload()
             timer.cancel()
             if response is not None:
                 response.close()

@@ -15,6 +15,7 @@ import re
 from pathlib import Path
 from typing import TypedDict
 
+from jsonschema import Draft202012Validator
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import interrupt
 
@@ -44,11 +45,19 @@ from ..review.service import QuestionContent
 from ..runtime import DefaultFlowAdapter
 from ..runtime.execution import append_run_revision
 from .configuration import stored_configuration, validate_configuration_snapshot
-from .roster_repair import Repair, apply_repairs, repair_tool, schema_repairs
+from .network_retry import format_correction_limit, retry_call_key
+from .roster_repair import (
+    Repair,
+    apply_repairs,
+    merge_repairs,
+    repair_tool,
+    roster_invariant_repairs,
+    schema_repairs,
+)
 
 STEP = "roster"
+PARTIAL_STEP = "partial-roster"
 MAX_FORMAT_CORRECTIONS = 2
-MAX_CORRECTION_BYTES = 128 * 1024
 
 
 class EvidenceLocationError(SubmissionError):
@@ -122,7 +131,9 @@ def _clean_citations(ctx, payload, inputs, source, step_id, call_key):
 
     def walk(value, path):
         if isinstance(value, dict):
-            if set(value) == {"location", "quote"}:
+            if {"location", "quote"} <= value.keys():
+                if not all(isinstance(value[k], str) for k in ("location", "quote")):
+                    return
                 original = copy.deepcopy(value)
                 location = value["location"]
                 if location not in inputs.citation_locations:
@@ -204,6 +215,8 @@ def _citation_repairs(payload, inputs, source, space):
     def walk(value, path):
         if isinstance(value, dict):
             if set(value) == {"location", "quote"}:
+                if not all(isinstance(value[k], str) for k in ("location", "quote")):
+                    return  # Schema repair owns malformed citation components.
                 location = inputs.citation_locations.get(value["location"])
                 reason = None
                 if location is None:
@@ -219,8 +232,10 @@ def _citation_repairs(payload, inputs, source, space):
                         require_image=loc["kind"] == "pdf_image",
                     )
                     compact = lambda text: re.sub(r"\s+", " ", text).strip()
-                    if loc["kind"] == "pdf" and compact(value["quote"]) not in compact(
-                        block["text"]
+                    quote = value["quote"]
+                    if loc["kind"] == "pdf" and not any(
+                        compact(q) in compact(block["text"])
+                        for q in (quote, quote.replace("\\\\", "\\"))
                     ):
                         reason = "The quote is not verbatim at this location. Correct only this citation against the supplied paper; keep its supported scientific claim unchanged."
                 if reason:
@@ -247,6 +262,8 @@ def _gap_repairs(payload, source):
             for key, child in value.items():
                 if (
                     key in {"gap_ids", "boundness_gap_ids"}
+                    and isinstance(child, list)
+                    and all(isinstance(g, str) for g in child)
                     and not set(child) <= allowed
                 ):
                     fixes.append(
@@ -376,6 +393,7 @@ def start_roster_extraction(
     request_key: str,
     configuration=None,
     full=False,
+    roster_execution_id=None,
 ):
     """Create a roster execution through the common extraction entry."""
     from ..materials import MaterialsService
@@ -398,6 +416,7 @@ def start_roster_extraction(
         configuration=config,
         prepared_input=ref,
         extraction_scope="full" if full else "roster",
+        roster_execution_id=roster_execution_id,
     )
 
 
@@ -504,12 +523,39 @@ def _replace_question_refs(record, replacements):
 class RosterState(TypedDict, total=False):
     execution_id: str
     result_refs: list[dict]
+    roster_error: str
+
+
+def roster_result_refs(space, execution_id):
+    """Read the exact committed full roster, or its latest validated partial."""
+    from ..runtime import get_execution
+
+    handle = get_execution(space, execution_id)
+    run = space.store().read_record(handle.run_ref)
+    for step_id in (STEP, PARTIAL_STEP):
+        step = next((s for s in run.data.steps if s.step_id == step_id), None)
+        if step is not None and step.state == "finished":
+            return list(step.result_refs)
+    return []
+
+
+def saved_roster(space, execution_id):
+    """Select the roster from exact execution-bound results, including partials."""
+    return next(
+        (
+            record
+            for ref in roster_result_refs(space, execution_id)
+            if isinstance(record := space.store().read_record(ref), RosterRecord)
+        ),
+        None,
+    )
 
 
 class RosterFlow(DefaultFlowAdapter):
     """One roster node with fixed input and durable correction calls."""
 
     flow_version = "1"
+    terminal_failures = True
 
     def __init__(self, *, mode):
         self.mode = mode
@@ -552,17 +598,29 @@ class RosterFlow(DefaultFlowAdapter):
         config = stored_configuration(snapshot)
         return source, inputs, blueprint.request(config.model_for(STEP), inputs)
 
-    def _records(self, ctx, source, inputs, payload):
+    def _records(
+        self, ctx, source, inputs, payload, *, partial_digest=None, entry_indices=None
+    ):
         prefix = f"roster-{ctx.execution.execution_id}"
-        roster_ref = RecordRef(record_id=prefix + "-roster", revision=1)
-        paper_ref = RecordRef(record_id=prefix + "-paper", revision=1)
-        previous = ctx.store.read_record(roster_ref)
+        scientific_prefix = (
+            prefix + "-partial-" + partial_digest[:20] if partial_digest else prefix
+        )
+        previous = ctx.store.read_record_current(scientific_prefix + "-roster")
+        previous_paper = ctx.store.read_record_current(scientific_prefix + "-paper")
+        roster_ref = RecordRef(
+            record_id=scientific_prefix + "-roster",
+            revision=previous.revision + 1 if previous else 1,
+        )
+        paper_ref = RecordRef(
+            record_id=scientific_prefix + "-paper",
+            revision=previous_paper.revision + 1 if previous_paper else 1,
+        )
         created_at = previous.created_at if previous is not None else ctx.now()
         context = StepContext(
             source=source,
             paper_ref=paper_ref,
             created_at=created_at,
-            id_prefix=prefix,
+            id_prefix=scientific_prefix,
             execution_id=ctx.execution.execution_id,
             rules_ref=ctx.execution.input_snapshot.rules,
         )
@@ -617,9 +675,31 @@ class RosterFlow(DefaultFlowAdapter):
         conversion = convert_roster_submission(
             context, RosterSubmission.model_validate(hydrated)
         )
+        run = ctx.store.read_record_current(ctx.execution.run_ref.record_id)
+        if partial_digest or any(s.step_id == PARTIAL_STEP for s in run.data.steps):
+            # Positions refer to the unchanged raw submission, including failed
+            # entries. Later bounded continuation cannot renumber saved objects.
+            indices = entry_indices or list(range(len(payload["entries"])))
+            mapping = {}
+            for item, index in zip(conversion.roster.entries, indices, strict=True):
+                mapping[item.item_id] = f"{prefix}-roster-{index + 1}"
+                if item.contribution_id:
+                    mapping[item.contribution_id] = f"{prefix}-contribution-{index + 1}"
+            for item in conversion.roster.entries:
+                item.item_id = mapping[item.item_id]
+                if item.contribution_id:
+                    item.contribution_id = mapping[item.contribution_id]
+            for group in conversion.roster.unresolved_groups:
+                group.known_member_item_ids = [
+                    mapping[item] for item in group.known_member_item_ids
+                ]
+            for contribution in conversion.contributions:
+                contribution.item_id = mapping[contribution.item_id]
+                contribution.roster_item_id = mapping[contribution.roster_item_id]
         roster = build_record(
             RosterRecord,
             record_id=roster_ref.record_id,
+            revision=roster_ref.revision,
             created_at=created_at,
             execution_id=ctx.execution.execution_id,
             data=conversion.roster,
@@ -627,6 +707,7 @@ class RosterFlow(DefaultFlowAdapter):
         paper = build_record(
             PaperRecord,
             record_id=paper_ref.record_id,
+            revision=paper_ref.revision,
             created_at=created_at,
             execution_id=ctx.execution.execution_id,
             data={
@@ -662,7 +743,304 @@ class RosterFlow(DefaultFlowAdapter):
         )
         return records, questions
 
+    def _repairs(self, ctx, source, inputs, payload, schema):
+        """Collect independent safe repairs together, without changing science."""
+        from ..records.roster_input import CONTRIBUTION_FIELDS
+
+        invariants = roster_invariant_repairs(payload)
+        blocked = {
+            fix.path[1]
+            for fix in invariants
+            if len(fix.path) == 3 and fix.path[-1] == "disposition"
+        }
+        structural = []
+        for fix in schema_repairs(payload, schema):
+            if (
+                len(fix.path) >= 3
+                and fix.path[0] == "entries"
+                and fix.path[1] in blocked
+            ):
+                field = fix.path[2]
+                if field in CONTRIBUTION_FIELDS:
+                    continue  # The source-error repair removes these claims.
+                if field == "evidence" and len(fix.path) == 3:
+                    entry = payload["entries"][fix.path[1]]
+                    base = schema["$defs"]["RosterEntrySubmission"]["properties"][field]
+                    if field not in entry or Draft202012Validator(
+                        {**base, "$defs": schema["$defs"]}
+                    ).is_valid(entry[field]):
+                        continue
+            structural.append(fix)
+        fixes = [
+            structural,
+            _citation_repairs(payload, inputs, source, ctx.space),
+            invariants,
+            _gap_repairs(payload, source),
+        ]
+        entries = payload.get("entries")
+        groups = payload.get("unresolved_groups")
+        if isinstance(entries, list) and isinstance(groups, list):
+            identifiers = {
+                item.get("value")
+                for entry in entries
+                if isinstance(entry, dict)
+                and isinstance(entry.get("identifiers"), list)
+                for item in entry["identifiers"]
+                if isinstance(item, dict) and isinstance(item.get("value"), str)
+            }
+            missing = sorted(
+                {
+                    name
+                    for group in groups
+                    if isinstance(group, dict)
+                    and isinstance(group.get("member_identifier_values"), list)
+                    for name in group["member_identifier_values"]
+                    if isinstance(name, str) and name not in identifiers
+                }
+            )
+            fixes.append(
+                [
+                    Repair(
+                        ("entries",),
+                        {
+                            "allOf": [
+                                {"$ref": "#/$defs/RosterEntrySubmission"},
+                                {
+                                    "properties": {
+                                        "identifiers": {
+                                            "contains": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "value": {"const": name}
+                                                },
+                                                "required": ["value"],
+                                            }
+                                        }
+                                    }
+                                },
+                            ]
+                        },
+                        f"Append the omitted entry for already named member {name!r}. Existing entries remain unchanged.",
+                        "append",
+                    )
+                    for name in missing
+                ]
+            )
+        return merge_repairs(*fixes)
+
+    @scoped_verification
+    def _retain_roster(self, ctx, source, inputs, initial, draft, error, failure_key):
+        """Retain only whole, independently validated entries from a failed draft."""
+        if not isinstance(draft, dict) or not isinstance(draft.get("entries"), list):
+            return None
+        schema = initial.tool.parameters
+        definitions = schema["$defs"]
+
+        def valid(value, definition):
+            return Draft202012Validator(
+                {"$ref": "#/$defs/" + definition, "$defs": definitions}
+            ).is_valid(value)
+
+        partial = {
+            "coverage": {
+                "state": "not_checked",
+                "checked_file_ids": [],
+                "gap_ids": [],
+            },
+            "entries": [],
+            "unresolved_groups": [],
+            "model_judgments": [],
+        }
+        coverage = draft.get("coverage")
+        if valid(coverage, "RosterCoverageSubmission"):
+            supplied = {v["file_id"] for v in inputs.citation_locations.values()}
+            gaps = {g.gap_id for g in source.data.gaps}
+            if (
+                set(coverage["checked_file_ids"]) <= supplied
+                and set(coverage.get("gap_ids", [])) <= gaps
+            ):
+                partial["coverage"] = copy.deepcopy(coverage)
+                partial["coverage"]["state"] = (
+                    "partial" if coverage["checked_file_ids"] else "not_checked"
+                )
+        try:
+            self._records(ctx, source, inputs, partial)
+        except ValueError:
+            # Invalid global bookkeeping cannot certify material checks. Keep
+            # the raw declaration archived and make no checked-material claim.
+            partial["coverage"] = {
+                "state": "not_checked",
+                "checked_file_ids": [],
+                "gap_ids": [],
+            }
+        # A duplicate identity blocks all owners, including an otherwise valid
+        # entry. Never choose the first row or treat it as an established object.
+        owners = {}
+        for index, entry in enumerate(draft["entries"]):
+            if not isinstance(entry, dict) or not isinstance(
+                entry.get("identifiers"), list
+            ):
+                continue
+            for identifier in entry["identifiers"]:
+                if isinstance(identifier, dict) and isinstance(
+                    identifier.get("value"), str
+                ):
+                    owners.setdefault(identifier["value"], set()).add(index)
+        ambiguous = {
+            i for indices in owners.values() if len(indices) > 1 for i in indices
+        }
+        kept = []
+        rejected = []
+        for index, entry in enumerate(draft["entries"]):
+            reason = None
+            if index in ambiguous:
+                reason = "Identifier also belongs to another submitted entry."
+            elif not valid(entry, "RosterEntrySubmission"):
+                reason = "Entry does not satisfy the original submission schema."
+            else:
+                probe = {**partial, "entries": [entry]}
+                try:
+                    self._records(ctx, source, inputs, probe)
+                except (ValueError, KeyError, TypeError) as exc:
+                    reason = str(exc)
+            if reason:
+                rejected.append({"index": index, "error": reason})
+            else:
+                kept.append(index)
+                partial["entries"].append(copy.deepcopy(entry))
+        if not kept:
+            return None  # Invalid entries cannot become a successful empty roster.
+        available = {
+            identifier["value"]
+            for entry in partial["entries"]
+            for identifier in entry["identifiers"]
+        }
+        groups = draft.get("unresolved_groups")
+        if isinstance(groups, list):
+            for group in groups:
+                if not valid(group, "UnresolvedGroupSubmission"):
+                    continue
+                candidate = copy.deepcopy(group)
+                candidate["member_identifier_values"] = [
+                    name
+                    for name in candidate.get("member_identifier_values", [])
+                    if name in available
+                ]
+                probe = {**partial, "unresolved_groups": [candidate]}
+                try:
+                    self._records(ctx, source, inputs, probe)
+                except (ValueError, KeyError, TypeError):
+                    continue
+                partial["unresolved_groups"].append(candidate)
+        judgments = draft.get("model_judgments", [])
+        if isinstance(judgments, list) and all(isinstance(s, str) for s in judgments):
+            partial["model_judgments"] = copy.deepcopy(judgments)
+        digest = sha256_of(
+            {
+                "request": initial.model_dump(mode="json"),
+                "draft": draft,
+                "partial": partial,
+                "entry_indices": kept,
+            }
+        )
+        saved = ctx.reuse_step(PARTIAL_STEP, failure_key)
+        if saved is None:
+            records, questions = self._records(
+                ctx,
+                source,
+                inputs,
+                partial,
+                partial_digest=digest,
+                entry_indices=kept,
+            )
+            if questions:
+                raise SubmissionError(
+                    "Automatic partial rosters cannot create questions"
+                )
+            ref = ctx.space.publish_run_file(
+                ctx.execution.execution_id,
+                f"outputs/roster-partials/{failure_key}.json",
+                canonical_json(
+                    {
+                        "error": str(error),
+                        "retained_entry_indices": kept,
+                        "rejected_entries": rejected,
+                        "draft_sha256": sha256_of(draft),
+                        "membership_unverified_outside_retained_entries": True,
+                    }
+                ).encode(),
+            )
+            append_run_revision(ctx.space, ctx.execution, artifacts=[ref])
+            ctx.commit_step(
+                step_id=PARTIAL_STEP,
+                input_digest=failure_key,
+                records=records,
+                result_refs=[r.ref() for r in records],
+            )
+            saved = ctx.reuse_step(PARTIAL_STEP, failure_key)
+        return [r.model_dump(mode="json") for r in saved.result_refs]
+
     def _extract(self, ctx, state):
+        source, inputs, initial = self._inputs(ctx)
+        digest = sha256_of(initial.model_dump(mode="json"))
+        limit = format_correction_limit(ctx)
+        failure_key = sha256_of(
+            {
+                "request": digest,
+                "corrections": limit,
+                "call_keys": [retry_call_key(ctx, STEP, i) for i in range(limit + 1)],
+            }
+        )
+        draft_state = {}
+        try:
+            if (
+                ctx.store.find_step_result(ctx.execution.execution_id, STEP, digest)
+                is None
+            ):
+                partial = ctx.store.find_step_result(
+                    ctx.execution.execution_id, PARTIAL_STEP, failure_key
+                )
+                if partial is not None:
+                    path = (
+                        ctx.space.root
+                        / "runs"
+                        / ctx.execution.execution_id
+                        / "outputs/roster-partials"
+                        / (failure_key + ".json")
+                    )
+                    ref = next(
+                        a
+                        for a in ctx.store.read_record_current(
+                            ctx.execution.run_ref.record_id
+                        ).data.artifacts
+                        if a.path == path.relative_to(ctx.space.root).as_posix()
+                    )
+                    error = json.loads(ctx.space.read_file(ref))["error"]
+                    if self.defer_partial_failure:
+                        return {
+                            "result_refs": [
+                                r.model_dump(mode="json") for r in partial.result_refs
+                            ],
+                            "roster_error": error,
+                        }
+                    raise CallFailure(error)
+            return {
+                **self._extract_complete(ctx, state, draft_state),
+                "roster_error": "",
+            }
+        except (CallFailure, ValueError) as exc:
+            if ctx.execution.input_snapshot.expert_adjudication:
+                raise
+            refs = self._retain_roster(
+                ctx, source, inputs, initial, draft_state.get("draft"), exc, failure_key
+            )
+            if refs and self.defer_partial_failure:
+                return {"result_refs": refs, "roster_error": str(exc)}
+            raise
+
+    defer_partial_failure = False
+
+    def _extract_complete(self, ctx, state, draft_state):
         source, inputs, initial = self._inputs(ctx)
         digest = sha256_of(initial.model_dump(mode="json"))
         saved = ctx.reuse_step(STEP, digest)
@@ -670,7 +1048,8 @@ class RosterFlow(DefaultFlowAdapter):
             request = CallRequest.model_validate(initial.model_dump())
             draft = None
             fixes = []
-            for round_number in range(MAX_FORMAT_CORRECTIONS + 1):
+            max_corrections = format_correction_limit(ctx)
+            for round_number in range(max_corrections + 1):
                 prepared = ctx.service.adapter.prepare(request)
                 if round_number:
                     # A saved correction is immutable even when validation diagnostics
@@ -709,7 +1088,7 @@ class RosterFlow(DefaultFlowAdapter):
                     request,
                     prepared,
                     step_id=STEP,
-                    call_key=f"roster-{round_number:02d}",
+                    call_key=retry_call_key(ctx, STEP, round_number),
                 )
                 error = envelope.get("error")
                 body = envelope.get("exchange", {}).get("body") or {}
@@ -736,20 +1115,16 @@ class RosterFlow(DefaultFlowAdapter):
                 if draft is not None and (
                     request.tool.name != "repair_roster" or error is None
                 ):
-                    fixes = schema_repairs(draft, initial.tool.parameters)
-                    if not fixes:
-                        draft = _clean_citations(
-                            ctx,
-                            draft,
-                            inputs,
-                            source,
-                            STEP,
-                            f"roster-{round_number:02d}",
-                        )
-                        fixes = _citation_repairs(draft, inputs, source, ctx.space)
+                    draft = _clean_citations(
+                        ctx, draft, inputs, source, STEP, f"roster-{round_number:02d}"
+                    )
+                    fixes = self._repairs(
+                        ctx, source, inputs, draft, initial.tool.parameters
+                    )
                     error = (
                         "Submission has fields requiring correction." if fixes else None
                     )
+                draft_state["draft"] = draft
                 payload = draft
                 if error is None:
                     try:
@@ -757,53 +1132,10 @@ class RosterFlow(DefaultFlowAdapter):
                     except EvidenceLocationError as exc:
                         error = "PDF citation validation: " + str(exc)
                     except SubmissionError as exc:
-                        if "输入中不存在的材料缺口" in str(exc):
-                            fixes = _gap_repairs(payload, source)
-                            error = "Use only the supplied gap identifiers."
-                        elif "未列清范围的已明确成员" in str(exc):
-                            identifiers = {
-                                i["value"]
-                                for entry in payload["entries"]
-                                for i in entry["identifiers"]
-                            }
-                            missing = sorted(
-                                {
-                                    name
-                                    for group in payload["unresolved_groups"]
-                                    for name in group["member_identifier_values"]
-                                    if name not in identifiers
-                                }
-                            )
-                            entry_schema = {"$ref": "#/$defs/RosterEntrySubmission"}
-                            fixes = [
-                                Repair(
-                                    ("entries",),
-                                    {
-                                        "allOf": [
-                                            entry_schema,
-                                            {
-                                                "properties": {
-                                                    "identifiers": {
-                                                        "contains": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "value": {"const": name}
-                                                            },
-                                                            "required": ["value"],
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                        ]
-                                    },
-                                    f"Append the omitted entry for already named member {name!r}. Existing entries remain unchanged.",
-                                    "append",
-                                )
-                                for name in missing
-                            ]
-                            error = "Named members require their own entries."
-                        else:
-                            raise
+                        fixes = self._repairs(
+                            ctx, source, inputs, payload, initial.tool.parameters
+                        )
+                        error = str(exc)
                 if error is None:
                     if questions:
                         ReviewService(ctx.space).create_questions(
@@ -825,13 +1157,9 @@ class RosterFlow(DefaultFlowAdapter):
                     )
                     saved = ctx.reuse_step(STEP, digest)
                     break
-                if round_number == MAX_FORMAT_CORRECTIONS:
+                if round_number == max_corrections:
                     raise CallFailure("roster format correction exhausted")
                 prior_text = canonical_json(prior)
-                if len(prior_text.encode("utf-8")) > MAX_CORRECTION_BYTES:
-                    raise CallFailure(
-                        "previous output exceeds the bounded correction input; inspect the archived output"
-                    )
                 if draft is not None:
                     if not fixes:
                         raise CallFailure(

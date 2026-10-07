@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from ...records.common import sha256_of
 from .errors import ScoringInputError
-from .layers import normalize_identifier
+from .identifiers import identifier_keys
 from .models import gold_input_digest, predictions_input_digest
 from .printed import compare_condition
 from .results import LimitationEffect
@@ -18,8 +18,7 @@ from .results import LimitationEffect
 
 def _object_matches(scope, obj) -> bool:
     return bool(
-        {normalize_identifier(name) for name in scope.object_identifiers}
-        & {normalize_identifier(name) for name in obj.identifiers}
+        identifier_keys(scope.object_identifiers) & identifier_keys(obj.identifiers)
     )
 
 
@@ -119,8 +118,8 @@ def _filter(papers, exclusions, *, identity_gold=None):
                     for gold_paper in identity_gold
                     if gold_paper.paper_key == paper.paper_key
                     for gold_obj in gold_paper.objects
-                    if {normalize_identifier(name) for name in gold_obj.identifiers}
-                    & {normalize_identifier(name) for name in obj.identifiers}
+                    if identifier_keys(gold_obj.identifiers)
+                    & identifier_keys(obj.identifiers)
                 ]
                 if len(matches) > 1:
                     objects.append(obj)

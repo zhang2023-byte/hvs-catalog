@@ -228,10 +228,13 @@ class RuntimeConfig(Config):
     account_concurrency: int = Field(default=100, ge=1, strict=True)
     concurrency: int = Field(default=100, ge=1, strict=True)
     connect_timeout: float = Field(default=10, gt=0, allow_inf_nan=False, strict=True)
+    upload_timeout: float = Field(default=120, gt=0, allow_inf_nan=False, strict=True)
+    upload_concurrency: int = Field(default=4, ge=1, strict=True)
     idle_timeout: float = Field(default=180, gt=0, allow_inf_nan=False, strict=True)
     total_timeout: float = Field(default=600, gt=0, allow_inf_nan=False, strict=True)
     max_attempts: int = Field(default=3, ge=1, le=3, strict=True)
-    max_response_bytes: int = Field(default=32 * 1024 * 1024, ge=1, strict=True)
+    retry_post_send_network_errors: bool = False
+    max_response_bytes: int = Field(default=256 * 1024 * 1024, ge=1, strict=True)
 
     @model_validator(mode="after")
     def _valid(self):

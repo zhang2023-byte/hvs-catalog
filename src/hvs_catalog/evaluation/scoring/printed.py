@@ -5,7 +5,8 @@ differences to numeric comparison or numeric rules to conditions. compare_number
 performs scale-preserving formatting normalization of Unicode signs, scripts, supported
 LaTeX wrappers/spacing/times, sexagesimal markers, and limited whitespace. Preserve
 precision, coefficient trailing zeros, exponent signs, and unit scales, retaining
-C1/B1/B2 differences. Unknown macros or uninterpretable syntax stay undecidable; never
+C1/B1/B2 differences. A complete scalar plus/minus an unresolved identifier differs
+from a scalar without evaluating the expression. Unknown macros or uninterpretable syntax stay undecidable; never
 strip macros or admit expressions merely containing valid digits. compare_unit performs
 no scale conversion; distinct supported symbols differ and unsupported syntax is
 undecidable. compare_condition uses exact matches, A5 allowlist, explicit M1/M2
@@ -22,7 +23,22 @@ from typing import Literal
 Verdict = Literal["equivalent", "different", "undecidable"]
 
 # Approved LaTeX macros only; any other macro such as \\mystery is undecidable.
-_KNOWN_MACROS = frozenset({"times", "mathrm", ",", ";", "!", " ", "quad", "qquad"})
+_KNOWN_MACROS = frozenset(
+    {
+        "times",
+        "mathrm",
+        ",",
+        ";",
+        "!",
+        " ",
+        "quad",
+        "qquad",
+        "pm",
+        "circ",
+        "sim",
+        "approx",
+    }
+)
 
 _SUPERSCRIPTS = {
     "⁰": "0",
@@ -70,6 +86,16 @@ _NUM_SEXAGESIMAL = (
 _NUMERIC_FORM = re.compile(
     rf"(?:{_NUM_ATOM}(?:{_NUM_EXP}|{_NUM_POW})?|{_NUM_SEXAGESIMAL})"
 )
+_SYMBOLIC_OFFSET = re.compile(
+    rf"{_NUM_ATOM}(?:{_NUM_EXP}|{_NUM_POW})?\s*[+-]\s*[A-Za-z][A-Za-z0-9_]*"
+)
+_COLON_FORM = re.compile(r"[+-]?\d+:(\d{1,2}(?:\.\d+)?)(?::(\d{1,2}(?:\.\d+)?))?")
+_APPROXIMATION = re.compile(r"^(?:about\s+|approximately\s+|[∼≈≃]\s*)")
+_SPACED_INTEGER = re.compile(r"[+-]?[0-9](?: [0-9])+")
+_UNIT_FACTOR = re.compile(
+    r"(?P<symbol>[A-Za-z]+|°|%)(?:\^(?:\{(?P<braced>[+-]?\d+)\}|(?P<power>[+-]?\d+))|(?P<suffix>-\d+))?"
+)
+_UNIT_ROLES = re.compile(r"\s*(.+?)\s*(?:;\s*error\s+|±\s*)(.+?)\s*")
 
 # A5 exact allowlist for model-condition formatting variants; U2 lacks a model qualifier.
 _MODEL_PHRASE_MODEL = {
@@ -102,6 +128,9 @@ def normalize_printed(text: str) -> str | None:
         if match.group(1) not in _KNOWN_MACROS:
             return None
     work = text.replace("−", "-")
+    # A leading ASCII tilde immediately qualifying a number is approximation;
+    # interior TeX nonbreaking spacing remains spacing.
+    work = re.sub(r"^\s*~\s*(?=[+-]?(?:\d|\.\d))", "∼", work)
     work = _SUP_RUN_RE.sub(
         lambda m: "^{" + "".join(_SUPERSCRIPTS[ch] for ch in m.group(0)) + "}",
         work,
@@ -111,6 +140,8 @@ def normalize_printed(text: str) -> str | None:
         work = work.replace(spacing, " ")
     work = work.replace("\\!", "")
     work = work.replace("\\times", "*").replace("×", "*")
+    for macro, mark in (("pm", "±"), ("circ", "°"), ("sim", "∼"), ("approx", "≈")):
+        work = work.replace("\\" + macro, mark)
     work = _TIMES_SPACE_RE.sub("*", work)
     for mark in _SEXAGESIMAL_MARKS:
         work = work.replace("^{" + mark + "}", mark)
@@ -140,7 +171,147 @@ def is_supported_number_syntax(normalized: str) -> bool:
     """Whether normalized text fully matches restricted numeric grammar, beyond a character
     allowlist.
     """
-    return _NUMERIC_FORM.fullmatch(normalized) is not None
+    plain = _APPROXIMATION.sub("", normalized, count=1)
+    if _NUMERIC_FORM.fullmatch(plain) is not None:
+        return True
+    colon = _COLON_FORM.fullmatch(plain)
+    if colon is None:
+        return False
+    minute, second = colon.groups()
+    return float(minute) < 60 and (
+        second is None or ("." not in minute and float(second) < 60)
+    )
+
+
+def _number_form(text: str) -> str | None:
+    normalized = normalize_printed(text)
+    if normalized is None:
+        return None
+    normalized = re.sub(r"\s*:\s*", ":", normalized)
+    plain = _APPROXIMATION.sub("", normalized, count=1)
+    if _SPACED_INTEGER.fullmatch(plain):
+        # Recover only uniformly separated digits in one complete scalar integer.
+        # Never join grouped numbers, decimal/exponent fragments, or list syntax.
+        normalized = normalized[: len(normalized) - len(plain)] + plain.replace(" ", "")
+    if not is_supported_number_syntax(normalized):
+        return None
+    return _APPROXIMATION.sub("approx ", normalized, count=1)
+
+
+def split_unit_roles(unit: str | None) -> tuple[str | None, str | None]:
+    """Read explicitly printed value/error units without filling or converting scales."""
+    if unit is None:
+        return None, None
+    match = _UNIT_ROLES.fullmatch(unit)
+    return match.groups() if match else (unit, unit)
+
+
+def _unit_factors(text: str) -> tuple | None:
+    # Escaping the exponent marker does not change an explicit unit exponent.
+    # Keep this recovery unit-only and require a complete signed integer power.
+    text = re.sub(r"(?<=[A-Za-z°%])\\\^(?=\{[+-]?\d+\})", "^", text)
+    normalized = normalize_printed(text)
+    if normalized is None:
+        return None
+    if normalized in {"°", "^{°}", "{}^{°}"}:
+        normalized = "deg"
+    if normalized in {"percent", "per cent"}:
+        normalized = "%"
+    sides = normalized.split("/")
+    if len(sides) > 2:
+        return None
+    factors: dict[str, int] = {}
+    for side_number, side in enumerate(sides):
+        side = side.strip()
+        if side == "1" and side_number == 0:
+            continue
+        matches = list(_UNIT_FACTOR.finditer(side))
+        if not matches or (side_number and len(matches) != 1):
+            return None
+        end = 0
+        for match in matches:
+            gap = side[end : match.start()]
+            if (end == 0 and gap.strip()) or (
+                end and (not gap or re.fullmatch(r"\s*(?:[·*]\s*)?", gap) is None)
+            ):
+                return None
+            symbol = match["symbol"]
+            symbol = "deg" if symbol == "°" else symbol
+            exponent = int(match["braced"] or match["power"] or match["suffix"] or 1)
+            factors[symbol] = factors.get(symbol, 0) + (
+                -exponent if side_number else exponent
+            )
+            end = match.end()
+        if side[end:].strip():
+            return None
+    return tuple(sorted(factors.items()))
+
+
+def split_error_number(
+    text: str, unit: str | None, *, symmetric: bool
+) -> tuple[str, str | None]:
+    """Recognize a redundant symmetric sign and explicit inline error unit only."""
+    normalized = normalize_printed(text)
+    if normalized is None:
+        return text, unit
+    if symmetric and normalized.startswith("±"):
+        operand = normalized[1:].strip()
+        if operand.startswith("-"):
+            return text, unit
+        normalized = operand
+    if _number_form(normalized) is not None:
+        return normalized, unit
+    for match in re.finditer(r"\s+", normalized):
+        number, printed_unit = normalized[: match.start()], normalized[match.end() :]
+        if _number_form(number) is not None and _unit_factors(printed_unit) is not None:
+            return number, printed_unit
+    return text, unit
+
+
+def limit_operand(text: str, limit_kind: str, *, inclusive: bool | None = None) -> str:
+    """Separate a printed inequality only when its direction is already stored."""
+    direction = {"upper_limit": r"(?:<=|<|≤)", "lower_limit": r"(?:>=|>|≥)"}.get(
+        limit_kind
+    )
+    if direction is None:
+        return text
+    normalized = normalize_printed(text)
+    if normalized is None:
+        return text
+    match = re.match(r"^(" + direction + r")\s*", normalized)
+    if match is None or (
+        inclusive is not None and inclusive != (match[1] in {"<=", "≤", ">=", "≥"})
+    ):
+        return text
+    return normalized[match.end() :]
+
+
+def percent_operand(text: str, unit: str | None) -> str:
+    """Read a redundant percent mark only when the stored unit already is percent."""
+    normalized = normalize_printed(text)
+    if (
+        unit is not None
+        and compare_unit(unit, "%") == "equivalent"
+        and normalized is not None
+        and normalized.endswith("%")
+        and _number_form(normalized[:-1].strip()) is not None
+    ):
+        return normalized[:-1].strip()
+    return text
+
+
+def printed_limit_inclusive(text: str, limit_kind: str) -> bool | None:
+    """Keep an explicit printed endpoint distinction even if stored flags are absent."""
+    direction = {"upper_limit": r"(?:<=|<|≤)", "lower_limit": r"(?:>=|>|≥)"}.get(
+        limit_kind
+    )
+    normalized = normalize_printed(text)
+    if direction is None or normalized is None:
+        return None
+    match = re.match(r"^(" + direction + r")\s*", normalized)
+    if match is None or _number_form(normalized[match.end() :]) is None:
+        return None
+    return match[1] in {"<=", "≤", ">=", "≥"}
 
 
 def _is_supported_number(normalized: str) -> bool:
@@ -171,15 +342,19 @@ def compare_number(gold: str, prediction: str) -> Verdict:
     exponents, broken powers, unmatched parentheses, or out-of-domain text never imply
     scientific differences merely through allowed characters.
     """
-    left = normalize_printed(gold)
-    right = normalize_printed(prediction)
+    left = _number_form(gold)
+    right = _number_form(prediction)
     if left is None or right is None:
-        return "undecidable"
-    left_supported = _is_supported_number(left)
-    right_supported = _is_supported_number(right)
-    if left == right and left_supported:
-        return "equivalent"
-    if not (left_supported and right_supported):
+        # A printed unresolved offset is not one scalar. Do not substitute the
+        # identifier, compute a result, or compare two symbolic expressions.
+        unsupported = prediction if left is not None else gold
+        normalized = normalize_printed(unsupported)
+        if (
+            (left is not None or right is not None)
+            and normalized is not None
+            and _SYMBOLIC_OFFSET.fullmatch(normalized)
+        ):
+            return "different"
         return "undecidable"
     return "different" if left != right else "equivalent"
 
@@ -189,10 +364,13 @@ def compare_unit(gold: str, prediction: str) -> Verdict:
     unsupported syntax is undecidable.
     """
     left, right, determined = _compare_domain(gold, prediction, _is_supported_unit)
-    if left is None or right is None:
-        return "undecidable"
-    if left == right:
+    if left is not None and left == right:
         return "equivalent"
+    left_roles, right_roles = split_unit_roles(gold), split_unit_roles(prediction)
+    left_signature = tuple(_unit_factors(unit) for unit in left_roles)
+    right_signature = tuple(_unit_factors(unit) for unit in right_roles)
+    if all(part is not None for part in (*left_signature, *right_signature)):
+        return "equivalent" if left_signature == right_signature else "different"
     return "different" if determined else "undecidable"
 
 

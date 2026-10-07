@@ -99,7 +99,7 @@ def test_unit_different_forms(gold, prediction):
 @pytest.mark.parametrize(
     ("gold", "prediction"),
     [
-        ("km s⁻¹", "km/s"),  # Unsupported syntax cannot establish semantics.
+        ("km s⁻¹", "km//s"),  # Malformed syntax cannot establish semantics.
         ("kpc", "\\mysteryunit"),
     ],
 )

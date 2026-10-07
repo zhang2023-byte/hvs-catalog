@@ -173,6 +173,22 @@ def _resume_locked(
             report.service_summary = _service_summary(service)
             return report
 
+        if (
+            run.data.state == "failed"
+            and getattr(flow, "terminal_failures", False)
+            and run.data.errors
+            and run.data.errors[-1].message.startswith(
+                ("CallFailure:", "ValidationError:", "SubmissionError:")
+            )
+        ):
+            # All frozen inputs, archives and checkpoint references were checked above.
+            # A failed model extraction needs a new request, not another error revision.
+            report.outcome = "failed"
+            report.mode = "already-failed"
+            report.errors = [error.message for error in run.data.errors]
+            report.service_summary = _service_summary(service)
+            return report
+
         try:
             report.applied = _apply_pending_decisions(space, ctx, review)
         except RecoveryInconsistentError:

@@ -160,7 +160,7 @@ def prepared(tmp_path):
     )
     assert report.outcome == "finished", report
     runtime = RuntimeConfig(quota_store=tmp_path / "quota.sqlite")
-    config = ExtractionConfig(runtime=runtime)
+    config = ExtractionConfig(runtime=runtime, max_format_corrections=2)
     yield space, preparation.execution_id, config
     space.close()
 
@@ -381,7 +381,17 @@ def test_invalid_evidence_or_science_relationship_is_not_committed(prepared, cas
     assert len(adapter.seen) == (
         3 if case in {"invented_excerpt", "wrong_line", "unknown_file"} else 1
     )
-    assert get_extraction(prepared[0], handle.execution_id)["result_refs"] == []
+    if case == "unsupplied_coverage":
+        # The invalid global claim is not retained; the independently valid
+        # object remains available with no certified material-check declaration.
+        roster, paper = results(prepared[0], handle.execution_id)
+        assert roster.data.coverage.state == "not_checked"
+        assert roster.data.coverage.checked_file_ids == []
+        assert [c.identifiers[0].value for c in paper.data.object_contributions] == [
+            "A"
+        ]
+    else:
+        assert get_extraction(prepared[0], handle.execution_id)["result_refs"] == []
 
 
 def test_unknown_completion_is_not_resent(prepared):

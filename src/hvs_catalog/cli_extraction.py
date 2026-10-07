@@ -76,6 +76,30 @@ def add_extraction_commands(commands):
         command.add_argument("--space", type=Path, required=True)
         command.add_argument("--execution", required=True)
         command.add_argument("--env-file", type=Path)
+    retry = commands.add_parser(
+        "retry-network", help="仅重试已证实未发送的网络失败，复用成功名单和对象"
+    )
+    retry.add_argument("--space", type=Path, required=True)
+    retry.add_argument("--execution", required=True)
+    retry.add_argument("--request-key", required=True)
+    retry.add_argument("--object", action="append", dest="object_ids")
+    retry.add_argument("--env-file", type=Path)
+    objects = commands.add_parser(
+        "retry-object", help="显式重提格式失败对象，保存新代次并复用成功对象"
+    )
+    objects.add_argument("--space", type=Path, required=True)
+    objects.add_argument("--execution", required=True)
+    objects.add_argument("--request-key", required=True)
+    objects.add_argument("--object", action="append", dest="object_ids", required=True)
+    objects.add_argument("--env-file", type=Path)
+    correction = commands.add_parser(
+        "continue-format", help="接续未用完的格式补正，不重发初次提取"
+    )
+    correction.add_argument("--space", type=Path, required=True)
+    correction.add_argument("--execution", required=True)
+    correction.add_argument("--request-key", required=True)
+    correction.add_argument("--maximum", type=int, choices=(1, 2), default=2)
+    correction.add_argument("--env-file", type=Path)
 
 
 def run_extraction_command(args) -> int:
@@ -221,6 +245,34 @@ def run_extraction_command(args) -> int:
                     )
                 else:
                     service = PipelineMockService()
+                intent = None
+                if name == "retry-network":
+                    from .pipeline import retry_network_failures
+
+                    intent = retry_network_failures(
+                        space,
+                        args.execution,
+                        request_key=args.request_key,
+                        object_ids=args.object_ids,
+                    )
+                elif name == "retry-object":
+                    from .pipeline import retry_failed_objects
+
+                    intent = retry_failed_objects(
+                        space,
+                        args.execution,
+                        request_key=args.request_key,
+                        object_ids=args.object_ids,
+                    )
+                elif name == "continue-format":
+                    from .pipeline import continue_format_corrections
+
+                    intent = continue_format_corrections(
+                        space,
+                        args.execution,
+                        request_key=args.request_key,
+                        maximum=args.maximum,
+                    )
                 result = (
                     get_extraction(space, args.execution)
                     if name == "status"
@@ -238,6 +290,14 @@ def run_extraction_command(args) -> int:
                     if actual_roster
                     else "synthetic-mock"
                 )
+                if intent is not None:
+                    result[
+                        {
+                            "retry-network": "network_retry",
+                            "retry-object": "object_retry",
+                            "continue-format": "format_continuation",
+                        }[name]
+                    ] = intent
             if name == "simulate":
                 result["implementation"] = "synthetic-mock"
         print(json.dumps(result, ensure_ascii=False, indent=2))
