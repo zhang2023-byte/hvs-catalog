@@ -7,6 +7,8 @@ from pathlib import Path
 from ..records.common import canonical_json, sha256_of
 from ..runtime import get_execution
 from ..runtime.execution import append_run_revision
+from ..workspace.archives import read_json
+from ..workspace.retention import require_resumable
 
 _PREFIX = "network-retry-"
 _OBJECT_PREFIX = "object-retry-"
@@ -84,6 +86,7 @@ def retry_network_failures(space, execution_id, *, request_key, object_ids=None)
                 ):
                     raise ValueError("network retry key is bound to another selection")
                 return {**intent, "reused": True}
+        require_resumable(space, execution_id)
         scope = execution.input_snapshot.options.get("extraction_scope")
         if scope not in {"roster", "full"} or run.data.state != "failed":
             raise ValueError("network retry requires a failed prepared extraction")
@@ -107,7 +110,7 @@ def retry_network_failures(space, execution_id, *, request_key, object_ids=None)
             if not _known_unsent(envelope):
                 continue
             # Reading verifies the frozen original request before making any intent.
-            prepared = json.loads(space.read_file(attempt.request))
+            prepared = read_json(space, attempt.request)
             match = re.fullmatch(
                 re.escape(step.step_id)
                 + r"-(\d{2})(?:-retry-[a-f0-9]+)?-attempt-\d{3}\.json",
@@ -178,6 +181,7 @@ def retry_failed_objects(space, execution_id, *, request_key, object_ids):
                 ):
                     raise ValueError("object retry key is bound to another selection")
                 return {**intent, "reused": True}
+        require_resumable(space, execution_id)
         if (
             execution.input_snapshot.options.get("extraction_scope") != "full"
             or execution.input_snapshot.expert_adjudication
@@ -223,7 +227,7 @@ def retry_failed_objects(space, execution_id, *, request_key, object_ids):
                 )
             ):
                 continue
-            prepared = json.loads(space.read_file(attempt.request))
+            prepared = read_json(space, attempt.request)
             targets.append(
                 {
                     "step_id": step.step_id,
@@ -291,6 +295,7 @@ def continue_format_corrections(space, execution_id, *, request_key, maximum=2):
                 raise ValueError(
                     "format continuation allowance already fixed; budget cannot reset"
                 )
+        require_resumable(space, execution_id)
         if (
             run.data.state != "failed"
             or execution.input_snapshot.expert_adjudication
@@ -332,7 +337,7 @@ def continue_format_corrections(space, execution_id, *, request_key, maximum=2):
                 raise ValueError(
                     "format continuation cannot retry network or unknown failures"
                 )
-            prepared = json.loads(space.read_file(attempt.request))
+            prepared = read_json(space, attempt.request)
             targets.append(
                 {
                     "step_id": step.step_id,

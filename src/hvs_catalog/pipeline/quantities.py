@@ -28,6 +28,7 @@ from ..records.submission import QuantitySubmission, SubmissionError, ValueSubmi
 from ..review import ReviewService, derive_question_id
 from ..runtime.deferred import WaitingForCall
 from ..runtime.execution import append_run_revision
+from ..workspace.archives import read_json
 from .configuration import stored_configuration
 from .network_retry import format_correction_limit, object_retry_token, retry_call_key
 from .roster import (
@@ -79,6 +80,9 @@ def refresh_saved_partials(space, execution_id, *, object_ids):
     if not object_ids or len(object_ids) != len(set(object_ids)):
         raise ValueError("offline refresh requires unique selected objects")
     with space.lock():
+        from ..workspace.retention import require_resumable
+
+        require_resumable(space, execution_id)
         handle = get_execution(space, execution_id)
         verify_execution_inputs(space, handle)
         config = validate_configuration_snapshot(handle.input_snapshot)
@@ -546,7 +550,7 @@ class PDFExtractionFlow(RosterFlow):
                     if attempt.request and Path(attempt.request.path).name.startswith(
                         prefix
                     ):
-                        archived = json.loads(ctx.space.read_file(attempt.request))
+                        archived = read_json(ctx.space, attempt.request)
                         frozen, rebuilt = (
                             copy.deepcopy(archived),
                             copy.deepcopy(prepared),

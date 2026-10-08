@@ -1,6 +1,6 @@
 """A durable single model-call flow using the existing workspace/runtime contract.
 
-Request snapshots, attempts, raw responses and outcomes use normal RunRecord
+Shared request snapshots, attempts, submissions and outcomes use normal RunRecord
 artifacts. The adapter never writes business state or retries on its own.
 """
 
@@ -14,7 +14,7 @@ from pathlib import Path
 from langgraph.graph import END, START, StateGraph
 from pydantic import SecretStr
 
-from ..records.common import canonical_json, sha256_of
+from ..records.common import ArtifactRef, canonical_json, sha256_of
 from ..records.runs import Attempt, ModelSpec, RunError, RunRecord, StepRecord, Usage
 from ..runtime import (
     build_input_snapshot,
@@ -25,6 +25,7 @@ from ..runtime import (
 from ..runtime.deferred import WaitingForCall
 from ..runtime.execution import DefaultFlowAdapter, append_run_revision
 from ..workspace import Workspace, WorkspaceIntegrityError
+from ..workspace.archives import publish_json, read_json
 from .config import CallRequest, RuntimeConfig, load_credential
 from .quota import AccountQuota
 from .transport import (
@@ -123,24 +124,38 @@ def _finalize(ctx, attempts, envelope, *, index=-1, step_id=STEP):
 
 
 def _archive_raw(ctx, envelope, name):
-    """The coordinator adopts a worker spool into the normal backup closure."""
+    """Retain submissions and transport facts, discarding reasoning and wire bytes."""
     exchange = envelope.get("exchange") or {}
     raw = exchange.pop("_raw_stream", None)
     if raw is not None:
-        try:
-            raw.seek(0)
-            ref = ctx.space.publish_run_stream(ctx.execution.execution_id, name, raw)
-            exchange["raw_response_ref"] = ref.model_dump(mode="json")
-            append_run_revision(ctx.space, ctx.execution, artifacts=[ref])
-        finally:
-            raw.close()
+        raw.close()
+    exchange.pop("raw_response_ref", None)
+    exchange["events"] = []
+    exchange["text"] = ""
+    body = exchange.get("body") or {}
+    if isinstance(body, dict):
+        for choice in body.get("choices") or []:
+            message = choice.get("message") or {}
+            message.pop("reasoning_content", None)
+    result = envelope.get("result")
+    if isinstance(result, dict):
+        result.pop("reasoning_content", None)
+
+
+def _frozen_call_inputs(space, snapshot):
+    if "llm_input" in snapshot.options:
+        value = read_json(
+            space, ArtifactRef.model_validate_json(snapshot.options["llm_input"])
+        )
+        return CallRequest.model_validate(value["request"]), value["prepared"]
+    return (
+        CallRequest.model_validate_json(snapshot.options["llm_request"]),
+        json.loads(snapshot.options["llm_prepared"]),
+    )
 
 
 def _execute(ctx, service: CallService):
-    request = CallRequest.model_validate_json(
-        ctx.execution.input_snapshot.options["llm_request"]
-    )
-    prepared = json.loads(ctx.execution.input_snapshot.options["llm_prepared"])
+    request, prepared = _frozen_call_inputs(ctx.space, ctx.execution.input_snapshot)
     digest = sha256_of(prepared)
     if ctx.reuse_step(STEP, digest):
         return {"completed": True}
@@ -176,7 +191,7 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
         and Path(a.request.path).name.startswith(prefix + "attempt-")
     ]
     for i in indices:
-        if json.loads(ctx.space.read_file(attempts[i].request)) != prepared:
+        if read_json(ctx.space, attempts[i].request) != prepared:
             raise CallFailure("archived call key is bound to different input")
     index = indices[-1] if indices else None
     # A response committed before a crash is enough to finish; an unconfirmed
@@ -235,10 +250,10 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
         envelope = None
         try:
             number = index + 1
-            request_ref = ctx.space.publish_run_file(
-                ctx.execution.execution_id,
-                f"requests/{prefix}attempt-{number:03d}.json",
-                canonical_json(prepared).encode(),
+            request_ref = publish_json(
+                ctx.space,
+                f"runs/{ctx.execution.execution_id}/requests/{prefix}attempt-{number:03d}.json",
+                prepared,
             )
             attempts.append(
                 Attempt(
@@ -351,7 +366,7 @@ def _execute_concurrent(ctx, service, request, prepared, step_id, call_key):
         and Path(a.request.path).name.startswith(prefix + "attempt-")
     ]
     for i in indices:
-        if json.loads(ctx.space.read_file(attempts[i].request)) != prepared:
+        if read_json(ctx.space, attempts[i].request) != prepared:
             raise CallFailure("archived call key is bound to different input")
     if indices:
         index = indices[-1]
@@ -389,10 +404,10 @@ def _execute_concurrent(ctx, service, request, prepared, step_id, call_key):
     if credential.get_secret_value() in canonical_json(prepared):
         raise CallFailure("credential values must not occur in model inputs")
     service.hook("before_send")
-    request_ref = ctx.space.publish_run_file(
-        ctx.execution.execution_id,
-        f"requests/{prefix}attempt-{len(indices) + 1:03d}.json",
-        canonical_json(prepared).encode(),
+    request_ref = publish_json(
+        ctx.space,
+        f"runs/{ctx.execution.execution_id}/requests/{prefix}attempt-{len(indices) + 1:03d}.json",
+        prepared,
     )
     attempts.append(
         Attempt(
@@ -484,6 +499,11 @@ def start_call(
         }
     ):
         raise ValueError("credential values must not occur in model inputs")
+    fixed = {"request": request.model_dump(mode="json"), "prepared": prepared}
+    with space.lock():
+        input_ref = publish_json(
+            space, f"runs/inputs/llm/{sha256_of(fixed)}.json", fixed
+        )
     snapshot = build_input_snapshot(
         source_refs=[],
         method=None,
@@ -497,8 +517,7 @@ def start_call(
             )
         ],
         options={
-            "llm_request": request.model_dump_json(),
-            "llm_prepared": canonical_json(prepared),
+            "llm_input": input_ref.model_dump_json(),
             "llm_runtime": runtime.model_dump_json(),
         },
     )
@@ -523,9 +542,7 @@ def resume_call(
     runtime = RuntimeConfig.model_validate_json(
         handle.input_snapshot.options["llm_runtime"]
     )
-    request = CallRequest.model_validate_json(
-        handle.input_snapshot.options["llm_request"]
-    )
+    request, _ = _frozen_call_inputs(space, handle.input_snapshot)
     adapter = adapter or TokenDanceAdapter()
     if request.model.adapter != adapter.name:
         raise ValueError("resume requires the original trusted adapter")
@@ -563,7 +580,9 @@ def get_call(space: Workspace, execution_id: str) -> dict:
         "attempts": [a.model_dump(mode="json") for a in attempts],
         "response": response,
         "config": {
-            "request": json.loads(handle.input_snapshot.options["llm_request"]),
+            "request": _frozen_call_inputs(space, handle.input_snapshot)[0].model_dump(
+                mode="json"
+            ),
             "runtime": json.loads(handle.input_snapshot.options["llm_runtime"]),
         },
     }

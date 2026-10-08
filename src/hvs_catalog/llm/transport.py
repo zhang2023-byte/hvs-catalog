@@ -359,6 +359,8 @@ class TokenDanceAdapter:
             for chunk in response.iter_content(chunk_size=8192):
                 if expired.is_set() or time.monotonic() >= deadline:
                     raise TransportFailure("completion_unknown", uncertain=True)
+                if payload.get("stream") and response.status_code == 200:
+                    raw.file = None
                 raw.write(chunk)
                 diagnostics["response_bytes"] += len(chunk)
                 if diagnostics["response_bytes"] > runtime.max_response_bytes:

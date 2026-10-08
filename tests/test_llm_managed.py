@@ -50,7 +50,11 @@ def test_stream_tools_usage_and_completed_resume(tmp_path, model):
         assert report["state"] == "finished", report
         result = report["response"]["result"]
         assert result["parsed"] == {"id": "SYN-1", "value": 42}
-        assert result["reasoning_content"] == "Synthetic Ω reasoning."
+        assert "reasoning_content" not in result
+        assert (
+            "reasoning_content"
+            not in report["response"]["exchange"]["body"]["choices"][0]["message"]
+        )
         assert result["trace_id"] == "local-trace-1"
         assert result["usage"]["cached_tokens"] == 2
         assert report["usage"] == {"tokens": 10}

@@ -44,6 +44,7 @@ from ..review import ReviewService, derive_question_id
 from ..review.service import QuestionContent
 from ..runtime import DefaultFlowAdapter
 from ..runtime.execution import append_run_revision
+from ..workspace.archives import read_json
 from .configuration import stored_configuration, validate_configuration_snapshot
 from .network_retry import format_correction_limit, retry_call_key
 from .roster_repair import (
@@ -587,9 +588,10 @@ class RosterFlow(DefaultFlowAdapter):
         snapshot = ctx.execution.input_snapshot
         ref = ArtifactRef.model_validate_json(snapshot.options["prepared_input"])
         _, source = prepared_bundle(ctx.space, ref, snapshot.source_refs[0])
-        inputs = PromptInput.model_validate_json(
-            ctx.space.read_file(
-                ArtifactRef.model_validate_json(snapshot.options["prepared_prompt"])
+        inputs = PromptInput.model_validate(
+            read_json(
+                ctx.space,
+                ArtifactRef.model_validate_json(snapshot.options["prepared_prompt"]),
             )
         )
         blueprint = PromptBlueprint.model_validate(
@@ -1062,9 +1064,7 @@ class RosterFlow(DefaultFlowAdapter):
                             if attempt.request and Path(
                                 attempt.request.path
                             ).name.startswith(f"roster-{round_number:02d}-"):
-                                archived = json.loads(
-                                    ctx.space.read_file(attempt.request)
-                                )
+                                archived = read_json(ctx.space, attempt.request)
                                 frozen, rebuilt = (
                                     copy.deepcopy(archived),
                                     copy.deepcopy(prepared),

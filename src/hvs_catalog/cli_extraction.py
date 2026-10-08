@@ -76,6 +76,10 @@ def add_extraction_commands(commands):
         command.add_argument("--space", type=Path, required=True)
         command.add_argument("--execution", required=True)
         command.add_argument("--env-file", type=Path)
+    close = commands.add_parser("close", help="验证并精简提取结果，明确结束恢复现场")
+    close.add_argument("--space", type=Path, required=True)
+    close.add_argument("--execution", required=True)
+    close.add_argument("--end", action="store_true", help="明确结束失败或中断执行")
     retry = commands.add_parser(
         "retry-network", help="仅重试已证实未发送的网络失败，复用成功名单和对象"
     )
@@ -221,6 +225,12 @@ def run_extraction_command(args) -> int:
                 result = resume_extraction(
                     space, handle.execution_id, service=PipelineMockService()
                 ).to_dict()
+            elif name == "close":
+                from .workspace.retention import close_extraction
+
+                space = open_workspace(args.space)
+                result = close_extraction(space, args.execution, end=args.end)["status"]
+                result = {**result, "retention": "closed", "resumable": False}
             else:
                 space = open_workspace(args.space)
                 from .runtime import get_execution

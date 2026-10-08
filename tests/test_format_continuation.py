@@ -73,7 +73,13 @@ def test_continuation_only_repairs_failure_and_survives_backup(prepared, tmp_pat
         )
         for x in good:
             assert next(y for y in new.data.steps if y.step_id == x.step_id) == x
-        assert restored.store().read_record(old.ref()) == old
+        # Successful closure removes progress revisions, retaining every submission.
+        from hvs_catalog.workspace.retention import retained_result
+
+        assert restored.store().read_record(old.ref()) is None
+        assert len(retained_result(restored, h.execution_id)["calls"]) == sum(
+            len(step.attempts) for step in new.data.steps
+        )
         assert (
             resume_extraction(restored, h.execution_id, service=service).outcome
             == "finished"

@@ -547,6 +547,55 @@ class RecordStore:
     def close(self) -> None:
         self._conn.close()
 
+    def compact_run_history(self, record_id, revision, execution_id) -> set[str]:
+        """Remove closed-run progress revisions; science records remain immutable."""
+        if self.read_only:
+            raise WorkspaceIntegrityError("只读存储不能精简运行历史")
+        from .backup import walk_state_refs
+
+        protected = {revision}
+        with self.transaction() as tx:
+            # Exact revisions referenced by another result/input remain available.
+            for row in tx.conn.execute(
+                "SELECT r.payload FROM records r LEFT JOIN current_revisions c"
+                " ON r.record_id=c.record_id AND r.revision=c.revision"
+                " WHERE r.record_id <> ? AND (r.schema_name <> 'run' OR c.record_id IS NOT NULL)",
+                (record_id,),
+            ):
+                value = json.loads(row[0])
+                reused = (
+                    (value.get("data", {}).get("input_snapshot") or {})
+                    .get("options", {})
+                    .get("reused_roster")
+                )
+                if reused:
+                    value["reused_roster"] = json.loads(reused)
+                protected.update(
+                    ref.revision
+                    for ref in walk_state_refs(value)
+                    if ref.record_id == record_id
+                )
+            tx.conn.execute(
+                "DELETE FROM receipts WHERE execution_id = ? AND kind IN ('run_update','create_execution')",
+                (execution_id,),
+            )
+            tx.conn.execute(
+                "DELETE FROM records WHERE record_id = ? AND revision NOT IN ("
+                + ",".join("?" for _ in protected)
+                + ")",
+                (record_id, *sorted(protected)),
+            )
+            paths = {
+                ref["path"]
+                for row in tx.conn.execute(
+                    "SELECT payload FROM records WHERE record_id=?", (record_id,)
+                )
+                for ref in walk_artifact_refs(json.loads(row[0]))
+            }
+        self._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        self._conn.execute("VACUUM")
+        return paths
+
     @contextmanager
     def transaction(self) -> Iterator[StoreTransaction]:
         """One business transaction: commit on success, roll back on exceptions."""
@@ -794,9 +843,11 @@ def walk_artifact_refs(value: object) -> list[dict]:
             for key, item in value.items():
                 # Fixed preparation options are serialized ArtifactRefs. Read
                 # only these explicit keys, never arbitrary JSON-valued strings.
-                if key in {"prepared_input", "prepared_prompt"} and isinstance(
-                    item, str
-                ):
+                if key in {
+                    "prepared_input",
+                    "prepared_prompt",
+                    "llm_input",
+                } and isinstance(item, str):
                     from ..records.common import ArtifactRef
 
                     item = ArtifactRef.model_validate_json(item).model_dump(mode="json")
@@ -819,8 +870,13 @@ def verify_artifact_refs(records: list[AnyRecord], root: Path) -> list[str]:
 
     problems: list[str] = []
     for record in records:
-        for ref in walk_artifact_refs(record.model_dump(mode="json")):
-            where = f"记录 {record.record_id} v{record.revision} 引用的 {ref['path']}"
+        payload = record if isinstance(record, dict) else record.model_dump(mode="json")
+        record_id = (
+            record["record_id"] if isinstance(record, dict) else record.record_id
+        )
+        revision = record["revision"] if isinstance(record, dict) else record.revision
+        for ref in walk_artifact_refs(payload):
+            where = f"记录 {record_id} v{revision} 引用的 {ref['path']}"
             path = root / ref["path"]
             try:
                 resolved = resolve_within(root, ref["path"])
@@ -833,6 +889,16 @@ def verify_artifact_refs(records: list[AnyRecord], root: Path) -> list[str]:
             digest = file_digest(path)
             if digest != ref.get("sha256"):
                 problems.append(f"{where} 哈希与记录不符")
+            else:
+                from .archives import shared_dependencies
+
+                try:
+                    for dependency in shared_dependencies(root, ref):
+                        target = resolve_within(root, dependency["path"])
+                        if file_digest(target) != dependency["sha256"]:
+                            problems.append(f"{where} 的共用输入哈希不符")
+                except (OSError, ValueError) as exc:
+                    problems.append(f"{where} 的共用输入不可读：{exc}")
     return problems
 
 

@@ -121,7 +121,7 @@ class SSEBody:
     def __init__(self, strict_json):
         self.strict_json = strict_json
         self.body = {}
-        self.message = {"content": [], "reasoning_content": []}
+        self.message = {"content": []}
         self.tools = {}
         self.finish = None
         self.done = False
@@ -221,7 +221,8 @@ class RawResponse:
                 start = found + len(self.secret)
         self.pending = value[start:]
         safe = b"".join(parts)
-        self.file.write(safe)
+        if self.file is not None:
+            self.file.write(safe)
         self.preview.extend(safe[: max(0, 65536 - len(self.preview))])
 
 

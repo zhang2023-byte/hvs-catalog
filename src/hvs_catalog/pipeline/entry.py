@@ -258,9 +258,12 @@ def start_extraction(
             )
     if prepared_input is not None:
         with space.lock():
-            rendered_ref = space.publish_file(
-                f"runs/inputs/{sha256_of(rendered)}/roster-material.json",
-                canonical_json(rendered).encode(),
+            from ..workspace.archives import publish_json
+
+            rendered_ref = publish_json(
+                space,
+                f"runs/inputs/{sha256_of(rendered)}/shared-roster-material.json",
+                rendered,
             )
         frozen["options"].update(
             {
@@ -372,6 +375,12 @@ def _resume_extraction_once(
     else:
         flow = registration.build_flow(registration.spec, mode=handle.mode)
     report = _resume_execution(space, execution_id, flow, service=service)
+    if report.outcome == "finished" and handle.input_snapshot.options.get(
+        "extraction_scope"
+    ) in {"roster", "full"}:
+        from ..workspace.retention import close_extraction
+
+        close_extraction(space, execution_id)
     return _build_report(space, handle, report)
 
 
@@ -499,6 +508,10 @@ def get_extraction(
     status.update(
         diagnostics=diagnostics, science_completion={"state": state, "reasons": reasons}
     )
+    from ..workspace.retention import PREFIX
+
+    if space.store().get_meta(PREFIX + execution_id) is not None:
+        status.update(retention="closed", resumable=False)
     return status
 
 

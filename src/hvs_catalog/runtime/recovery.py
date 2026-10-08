@@ -98,6 +98,23 @@ def _resume_locked(
         execution_id=execution_id, outcome="paused", mode="resumed"
     )
 
+    from ..workspace.retention import PREFIX, retained_result
+
+    if space.store().get_meta(PREFIX + execution_id) is not None:
+        problems = verify_execution_inputs(space, execution)
+        if problems:
+            raise RecoveryInconsistentError(
+                "已结束执行的固定输入损坏：" + "；".join(problems)
+            )
+    closed = retained_result(space, execution_id)
+    if closed is not None:
+        report.outcome = (
+            "finished" if closed["status"]["state"] == "finished" else "failed"
+        )
+        report.mode = "already-finished"
+        report.errors = list(closed["status"]["errors"])
+        return report
+
     compatibility = verify_flow_compatibility(space, execution, flow)
     if compatibility:
         raise RecoveryInconsistentError(

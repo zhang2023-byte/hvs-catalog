@@ -409,6 +409,9 @@ def commit_step_result(
             )
         _ensure_step_finished(space, execution, step_id, list(existing.result_refs))
         return row.to_receipt(replayed=True)
+    from ..workspace.retention import require_resumable
+
+    require_resumable(space, execution.execution_id)
     run = store.read_record_current(execution.run_ref.record_id)
     if not isinstance(run, RunRecord):  # pragma: no cover - defensive check
         raise WorkspaceIntegrityError(f"执行 {execution.execution_id} 的运行清单缺失")
@@ -519,6 +522,9 @@ def append_run_revision(
     Write meta_updates in the same business transaction; completion credentials and
     revisions cannot be separated by a failure window.
     """
+    from ..workspace.retention import require_resumable
+
+    require_resumable(space, execution.execution_id)
     store = space.store()
     run = store.read_record_current(execution.run_ref.record_id)
     if not isinstance(run, RunRecord):  # pragma: no cover - defensive check

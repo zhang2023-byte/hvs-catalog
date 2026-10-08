@@ -87,6 +87,18 @@ def _referenced_files(space: Workspace) -> list[str]:
     for row in space.store().list_executions():
         paths.append(rules_archive_rel(row.execution_id))
     paths.extend(_checkpoint_artifact_paths(space))
+    from .retention import PREFIX
+
+    for row in space.store().list_executions():
+        marker = space.store().get_meta(PREFIX + row.execution_id)
+        if marker is not None:
+            paths.append(json.loads(marker)["path"])
+    from .archives import shared_dependencies
+
+    for path in list(paths):
+        paths.extend(
+            ref["path"] for ref in shared_dependencies(space.root, {"path": path})
+        )
     return sorted(set(paths))
 
 
@@ -157,6 +169,10 @@ def checkpoint_state_problems(
         if execution_id is not None
         else {row.execution_id for row in store.list_executions()}
     )
+    from .retention import retained_result
+
+    closed = {key for key in executions if retained_result(space, key) is not None}
+    executions -= closed
     conn = space.checkpoint_connection()
     problems: list[str] = []
     try:
@@ -167,6 +183,8 @@ def checkpoint_state_problems(
             else {tup.config["configurable"]["thread_id"] for tup in saver.list(None)}
         )
         for thread_id in sorted(threads):
+            if thread_id in closed:
+                continue
             if thread_id not in executions:
                 problems.append(f"检查点线程 {thread_id} 没有对应的执行记录")
                 continue
@@ -245,6 +263,10 @@ def _framework_completion_problems(
         for row in rows:
             if row is None:
                 problems.append(f"执行 {execution_id} 缺失")
+                continue
+            from .retention import retained_result
+
+            if retained_result(space, row.execution_id) is not None:
                 continue
             run = store.read_record_current(row.run_record_id)
             if not isinstance(run, RunRecord) or run.data.state != "finished":

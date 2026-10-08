@@ -387,7 +387,7 @@ def test_bounded_continuation_keeps_saved_object_ids_and_values(prepared, tmp_pa
             get_execution(restored, h.execution_id).run_ref
         )
         assert next(s for s in current.data.steps if s.step_id == good.step_id) == good
-        assert restored.store().read_record(old.ref()) == old
+        assert restored.store().read_record(old.ref()) is None
         assert restored.store().read_record(old_paper.ref()) == old_paper
         final = f.paper(restored, h.execution_id)
         assert [c.identifiers[0].value for c in final.data.object_contributions] == [
