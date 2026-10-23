@@ -1,0 +1,226 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "ExplicitAssociation": {
+      "additionalProperties": false,
+      "description": "A correspondence explicitly supported by a selected paper.",
+      "properties": {
+        "left": {
+          "title": "Left",
+          "type": "string"
+        },
+        "right": {
+          "title": "Right",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "left",
+        "right",
+        "source",
+        "evidence"
+      ],
+      "title": "ExplicitAssociation",
+      "type": "object"
+    },
+    "ImageEvidence": {
+      "additionalProperties": false,
+      "description": "A supplied image location without a text transcription.",
+      "properties": {
+        "location": {
+          "description": "Complete image location, such as I:p5-b6.",
+          "pattern": "^I:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location"
+      ],
+      "title": "ImageEvidence",
+      "type": "object"
+    },
+    "PaperSelection": {
+      "additionalProperties": false,
+      "description": "Select an exact extraction generation; paths are relative to its workspace.",
+      "properties": {
+        "workspace": {
+          "minLength": 1,
+          "title": "Workspace",
+          "type": "string"
+        },
+        "run_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "archive_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "result_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence_audit_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "workspace",
+        "run_ref"
+      ],
+      "title": "PaperSelection",
+      "type": "object"
+    },
+    "TextEvidence": {
+      "additionalProperties": false,
+      "description": "An evidence excerpt attributed to one supplied text block.",
+      "properties": {
+        "location": {
+          "description": "Complete text location, such as T:p3-b5.",
+          "pattern": "^T:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "description": "Faithful excerpt from this text block.",
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "quote"
+      ],
+      "title": "TextEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "data_version": {
+      "minLength": 1,
+      "title": "Data Version",
+      "type": "string"
+    },
+    "papers": {
+      "items": {
+        "$ref": "#/$defs/PaperSelection"
+      },
+      "title": "Papers",
+      "type": "array"
+    },
+    "simbad_refresh": {
+      "description": "Existing catalog IDs whose external snapshots may be explicitly refreshed.",
+      "items": {
+        "pattern": "^hvs-catalog-[0-9]{6,}$",
+        "type": "string"
+      },
+      "title": "Simbad Refresh",
+      "type": "array"
+    },
+    "explicit_associations": {
+      "items": {
+        "$ref": "#/$defs/ExplicitAssociation"
+      },
+      "title": "Explicit Associations",
+      "type": "array"
+    },
+    "identity_assignments": {
+      "additionalProperties": {
+        "pattern": "^hvs-catalog-[0-9]{6,}$",
+        "type": "string"
+      },
+      "description": "Explicit source-node to catalog ID assignments for identity revisions.",
+      "title": "Identity Assignments",
+      "type": "object"
+    },
+    "retired_ids": {
+      "description": "Explicit old to successor ID mappings; retired IDs are never reused.",
+      "patternProperties": {
+        "^hvs-catalog-[0-9]{6,}$": {
+          "items": {
+            "pattern": "^hvs-catalog-[0-9]{6,}$",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "title": "Retired Ids",
+      "type": "object"
+    }
+  },
+  "required": [
+    "data_version",
+    "papers"
+  ],
+  "title": "CatalogSelection",
+  "type": "object"
+}

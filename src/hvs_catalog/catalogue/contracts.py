@@ -1,0 +1,257 @@
+"""Generate catalog field documentation from the shared record definitions."""
+
+
+def outputs():
+    from ..records.catalog import (
+        Association,
+        AssociationOrigin,
+        CatalogContributionType,
+        CatalogIdentifier,
+        CatalogManifest,
+        CatalogQuantity,
+        CatalogSelection,
+        CatalogSource,
+        CatalogStar,
+        CatalogValue,
+        PublishedPaper,
+        PublishedStar,
+        SimbadCandidate,
+        SimbadQuery,
+        SimbadResponse,
+        SimbadSnapshot,
+        SourceObject,
+    )
+    from ..records.generate import _model_table, _schema_json
+
+    models = {
+        "catalog_selection": CatalogSelection,
+        "catalog_manifest": CatalogManifest,
+        "catalog_star": CatalogStar,
+        "simbad_query": SimbadQuery,
+        "simbad_response": SimbadResponse,
+    }
+    result = {
+        "schemas/" + name + ".json": _schema_json(model)
+        for name, model in models.items()
+    }
+    lines = [
+        "<!-- Generated from hvs_catalog.records.catalog and catalogue.contracts. -->",
+        "# Fixed JSON catalog",
+        "",
+        "The build command is offline. It reads exact extraction generations and optional frozen",
+        "SIMBAD responses. It never refreshes the service implicitly or modifies source workspaces.",
+        "Select the complete intended paper versions explicitly; previous papers are retained",
+        "unless the selection provides a replacement for the same bare arXiv ID.",
+        "",
+        "## Commands",
+        "",
+        "- `hvs-catalog catalog select --index INDEX --space SPACE --data-version VERSION --output SELECTION`",
+        "  converts either existing execution-index reference spelling without guessing latest results.",
+        "- `hvs-catalog catalog build --selection SELECTION --output NEW_DIRECTORY [--previous CATALOG] [--simbad RESPONSES]`",
+        "  publishes a new complete snapshot; an existing destination is never overwritten.",
+        "- `hvs-catalog catalog verify CATALOG` validates hashes, references, source coverage,",
+        "  and exact scientific values and evidence, without authenticating scientific correctness.",
+        "- `hvs-catalog catalog query-plan --selection SELECTION --output PLAN [--previous CATALOG]`",
+        "  prepares an explicit query list for review. The list includes identifier queries",
+        "  and possible coordinate fallbacks; remove queries outside the approved scope.",
+        "- `hvs-catalog catalog query --plan PLAN --output RESPONSES` explicitly contacts SIMBAD",
+        "  for only that list. Existing responses are reused, including failures.",
+        "  To refresh, list existing object IDs in selection.simbad_refresh and use a new",
+        "  response directory after approving its scope. Retirement keeps the original IDs",
+        "  for refresh selection; refreshing one member queries its entire merged group.",
+        "",
+        "## Scientific and identity rules",
+        "",
+        "Each stellar JSON embeds all retained scientific values, evidence, and paper metadata.",
+        "Every identifier, contribution type, and value has a source key: bare arXiv ID plus version.",
+        "There is no contributions container and no duplicate complete-paper payload.",
+        "Numerical strings, units, conditions, uncertainty forms, and source-specific duplicates",
+        "are preserved. Paper-level notes retain their paper-wide scope.",
+        "",
+        "Files use stable hvs-catalog-NNNNNN IDs. Display names prefer reliable SIMBAD main IDs,",
+        "then complete Gaia DR3, EDR3, DR2, DR1 IDs, then other recognized complete catalog IDs",
+        "by distinct-paper count and lexical ties, and finally the internal catalog ID.",
+        "Complete prefixes, releases and components are retained. Valid existing display names",
+        "remain stable unless a higher-priority identifier or correction requires a change.",
+        "Reliable prior SIMBAD main IDs and aliases are reusable fixed identity evidence for",
+        "new papers and replacement versions, including during explicit enrichment refresh.",
+        "Ambiguous prior alias links remain rejected, with their candidate/query evidence.",
+        "The affected current source group keeps conflict status and its catalog ID as name;",
+        "old objects that are only rejected link targets retain their own enrichment state.",
+        "Coordinate-only SIMBAD names cannot promote display names or identifier associations.",
+        "Name collisions fall back to separate catalog IDs and never imply an automatic merge.",
+        "Unresolved SIMBAD identity conflicts also use the internal catalog ID as display name.",
+        "",
+        "Coordinates must have one paired RA/Dec value, explicit compatible conditions,",
+        "angular units and a recognized frame (ICRS, J2000/FK5, B1950/FK4).",
+        "Known frames may be transformed; coordinates are never propagated between epochs.",
+        "Unclear or multiple pairs remain unused for matching; original values are retained.",
+        "The association radius is 5 arcseconds. Every union checks the entire group's Gaia",
+        "release identities, including all frozen representations of selected SIMBAD objects.",
+        "SIMBAD merge edges retain the candidate and query evidence used by this check.",
+        "Coordinate-only associations retain warnings.",
+        "SIMBAD coordinate searches select the nearest candidate, warn for multiple candidates,",
+        "and retain ambiguity for tied distances. Reliable conflicting identities block selection.",
+        "",
+        "SIMBAD values remain separate from literature quantities. Basic returned columns",
+        "preserve their units and available uncertainty and bibliographic columns; photometry",
+        "includes its band. Missing data are not derived. Service errors are not no-match results.",
+        "Raw service responses and query times are frozen outside the public catalog.",
+        "Conflicts retain rejected candidates and query bindings inside the stellar snapshot.",
+        "Explicit retirement merges preserve every original object's frozen snapshot evidence;",
+        "incompatible external identities remain conflicts instead of selecting one input.",
+        "",
+        "Each association embeds identity-only origins for its paper endpoints, including",
+        "fixed metadata, result/PDF hashes and original identifiers with evidence.",
+        "Historical associations remain marked historical and retain their original versions;",
+        "their provenance never adds superseded measurements to current scientific values.",
+        "Coordinate SIMBAD associations include the exact source node, coordinate evidence,",
+        "query/response binding, candidate distances, radius and adopted nearest selection.",
+        "",
+        "Existing object mergers and splits require explicit identity_assignments and retired_ids",
+        "in the selection. These mappings record a maintainer's identity correction, not an",
+        "automatic inference. Retired numbers are never reused.",
+        "",
+        "Complete fictional record: [catalog_star.json](examples/catalog_star.json).",
+        "The example uses placeholder hashes and fabricated papers; it is not catalog data.",
+        "",
+        "## Fields",
+        "",
+    ]
+    for model in (
+        CatalogSelection,
+        CatalogManifest,
+        PublishedPaper,
+        PublishedStar,
+        CatalogStar,
+        CatalogSource,
+        SourceObject,
+        CatalogIdentifier,
+        CatalogContributionType,
+        CatalogQuantity,
+        CatalogValue,
+        Association,
+        AssociationOrigin,
+        SimbadSnapshot,
+        SimbadQuery,
+        SimbadCandidate,
+        SimbadResponse,
+    ):
+        lines.extend(_model_table(model))
+    result["catalog-format.md"] = "\n".join(lines)
+    result["examples/catalog_star.json"] = (
+        star_example().model_dump_json(indent=2, exclude_none=True) + "\n"
+    )
+    return result
+
+
+def star_example():
+    """Return a validated fictional record with two independent paper measurements."""
+    from ..records.catalog import AssociationOrigin, CatalogStar
+    from ..records.literature_contribution import LiteratureMetadata
+
+    sources, identifiers, types, values = {}, [], [], []
+    for number, velocity in ((1, "520"), (2, "530")):
+        arxiv_id = f"2601.{number:05d}"
+        key = arxiv_id + "v1"
+        evidence = [{"location": "T:p1-b0", "quote": "Fictional source evidence."}]
+        sources[key] = {
+            "arxiv_id": arxiv_id,
+            "version": "v1",
+            "title": f"Fictional study {number}",
+            "authors": ["A. Example"],
+            "paper_notes": ["Fictional paper-wide note."],
+            "result_status": "complete",
+            "roster_status": "complete",
+            "roster_issues": [],
+            "roster_rejected": {},
+            "errors": [],
+            "result_sha256": "0" * 64,
+            "run_sha256": "0" * 64,
+            "input_sha256": "0" * 64,
+            "pdf_sha256": "0" * 64,
+            "pdf_url": f"https://arxiv.org/pdf/{key}",
+            "pdf_origin": {"kind": "synthetic"},
+            "objects": [
+                {
+                    "result_index": 0,
+                    "source_index": 0,
+                    "status": "complete",
+                    "snapshot_ref": {"record_id": "synthetic-star", "revision": 1},
+                    "issues": [],
+                    "rejected": {},
+                    "source_paths": ["/stars/0"],
+                    "evidence_audit": [],
+                }
+            ],
+        }
+        identifiers.append(
+            {
+                "value": "Gaia DR3 1234567890123456789",
+                "source": key,
+                "evidence": evidence,
+            }
+        )
+        types.append(
+            {
+                "value": "follow_up",
+                "source": key,
+                "evidence": evidence,
+            }
+        )
+        values.append(
+            {
+                "value": velocity,
+                "error": "10",
+                "unit": "km/s",
+                "condition": "Heliocentric",
+                "source": key,
+                "evidence": evidence,
+            }
+        )
+    record = CatalogStar.model_validate(
+        {
+            "data_version": "fictional-example",
+            "catalog_id": "hvs-catalog-000001",
+            "display_name": "Gaia DR3 1234567890123456789",
+            "sources": sources,
+            "identifiers": identifiers,
+            "contribution_types": types,
+            "quantities": [{"quantity": "radial_velocity", "values": values}],
+            "simbad": {
+                "status": "not_queried",
+                "reason": "Fictional example; no external service was contacted.",
+            },
+            "associations": [
+                {
+                    "left": "2601.00001v1#/stars/0",
+                    "right": "2601.00002v1#/stars/0",
+                    "method": "identifier",
+                    "accepted": True,
+                    "details": {"identifier": "Gaia DR3 1234567890123456789"},
+                }
+            ],
+            "warnings": [],
+        }
+    )
+
+    for edge in record.associations:
+        for node in (edge.left, edge.right):
+            key, index = node.split("#/stars/")
+            source = record.sources[key]
+            edge.origins[node] = AssociationOrigin(
+                source=LiteratureMetadata.model_validate(
+                    {k: getattr(source, k) for k in LiteratureMetadata.model_fields}
+                ),
+                result_sha256=source.result_sha256,
+                pdf_sha256=source.pdf_sha256,
+                pdf_url=source.pdf_url,
+                pdf_origin=source.pdf_origin,
+                result_index=int(index),
+                identifiers=[
+                    i.model_dump(exclude={"source"})
+                    for i in record.identifiers
+                    if i.source == key
+                ],
+            )
+    return record

@@ -6,33 +6,39 @@
 
 更新日期：2026-10-23（北京时间）。
 
-### 推送收尾与后续入口
+### R20离线代码验收通过：仅本地提交
 
-用户确认文献提取优化达到目标，批准整理为五个主题提交合入main、清理文档并验证；随后授权推送并删除其余本地分支。五个提交已推至私有origin/main，本地仅保留main；本次另补交接状态文档提交。原优化及文献空间分支的完整历史保存于[本地Git归档](../.work/main-integration/branch-history.bundle)，已通过git bundle verify，旧报告提交号和路径不改写。后续从main新建开发分支；真实材料结果保留，无新增真实调用。R19已收尾；R20／R21未开始。
+独立工作树 /Users/willzhang/.codex/worktrees/catalog-build/hvs-catalog，分支codex/catalog-build。原5项审查问题及复审追加的4项相关缺陷已修复。人类于2026-10-23确认本轮离线代码验收通过，并明确授权仅在当前独立工作树本地提交；不推送、不合并回主工作区，不构造真实星表或调用真实SIMBAD。R20真实数据阶段尚未执行或验收。
 
-整理按依赖形成材料准备、科学合同／提取／评分、Benchmark、文献空间／恢复四个功能提交及一个文档提交。程序、运行资源、生成合同、测试、工具、包定义和锁文件与原分支末端逐文件一致；仅README、Plan、Progress另作清理。各阶段取完整可运行边界，全部37个原历史提交已归档。共享AGENTS和各Agent专属配置均未改。
+### 已完成的修复
 
-### 本次验证
+1. [构建](../src/hvs_catalog/catalogue/build.py)检查继承SIMBAD的main_id、aliases及同一外部对象的全部冻结表示；身份冲突时取消selected，[命名](../src/hvs_catalog/catalogue/identity.py)回退catalog_id，完整保留查询、响应哈希、时间与被拒候选。
+2. 旧身份使用逐来源、逐对象的锚点，保留原坐标配对和上一manifest绑定；多篇同时换版或同版重提取延续编号，真正含糊的多值坐标仍不用于匹配。
+3. [关联出处](../src/hvs_catalog/catalogue/provenance.py)保存固定论文元数据、结果／PDF哈希、源对象序号和标识证据。历史边标记historical并保留原版本，旧测量不混入当前quantities；校验拒绝缺失出处。
+4. [SIMBAD](../src/hvs_catalog/catalogue/simbad.py)坐标关联绑定源节点、坐标证据、各响应实际候选位置／距离、5角秒阈值、采用方式及冻结查询；matched坐标快照缺少关联记录时校验拒绝。
+5. SIMBAD补充合并前核对整个组件的论文和外部身份，被拒合并边保存候选／查询依据。退休编号合并按原previous_id继承各方快照，不丢另一方依据；不同外部身份保留conflict。构建与query-plan共用原编号继承和显式刷新规则，刷新合并组任一原编号会查询整个合并组。
+6. 已确认的旧SIMBAD主名及别名在身份关联阶段复用，连接新来源与旧来源锚点；仅坐标／冲突快照不提升为可靠身份，多旧对象歧义拒绝。新增论文、仅标识变化的换版和显式刷新均能延续旧编号。被拒固定身份关联传入受影响当前对象的conflict及名称回退；仅为被拒目标的旧星保持自身状态。
 
-四个阶段`uv run --frozen --offline python -m pytest -q`全量通过1917／1048／1201／1290项；最终使用独立`--basetemp`，1114常规＋176集成互斥完整，0失败／0跳过、2条fork弃用警告。Ruff、格式、规则／合同生成`--check`及diff通过。通过[验证脚本](../.work/main-integration/check_wheel.py)调用`tools/check_distribution.py`，Python3.11／3.12仓库外安装及合成检索→下载→解析→非空名单／数值→保存→备份／独立进程恢复通过，无源码PYTHONPATH。临时驱动最初误将版本预期写为整数，按合同改为`v2`后重验通过，产品未改。9条README命令参数、离线初始化及61包兼容检查通过；原环境旧路径脚本已按锁文件重装。日志留同一验证目录。
+共同Schema、[生成合同](../contracts/generated/catalog-format.md)和[虚构示例](../contracts/generated/examples/catalog_star.json)已同步。标识、贡献类别及完整科学值仍按source展平保存，不复制其他恒星或重复整篇论文。
 
-真实文献及Benchmark只比较文件系统元数据，未读取Gold答案、重新提取、解析或评分；未改动真实业务空间。各轮真实结果、评分和费用沿用下述已完成交接，不冒充本次新实测。本次检查没有验证当前外部服务可用性。
+### 离线验证与独立复审
 
-### 已有结果与保存入口
+[回归测试](../tests/test_catalog.py)共新增27个用例，覆盖原5项、复审边界、连续增量、同版／换版、候选位置及进程间哈希一致性。原5项首次复现7失败／1通过；追加边界先复现失败再修复。最终星表专项59通过（20.93秒）。
 
-文献空间`.work/literature`，批次`arxiv-20180425-20260430`；[最终报告](../.work/literature/reports/deepseek-1017-max-low/network-repair-01/summary.md)、[168篇准确索引](../.work/literature/reports/deepseek-1017-max-low/network-repair-01/execution-index.json)、[逐篇CSV](../.work/literature/reports/deepseek-1017-max-low/network-repair-01/papers.csv)。最终派生交付163完整、5部分、0失败、0未完成，L0交付及格式合格均168/168；846条论文内对象、5230条数值、95份空名单，未跨论文去重。
+复审后主动停止两轮过时全量检查，不作为最终结果；并行双wheel曾触发120秒超时，未据此报通过。以下为验收代码树的串行复验结果；本次提交仅另更新验收说明，产品代码哈希不变，沿用这些检查：
 
-14篇原执行仍为failed，补跑产物另存于各篇`network-repair-01/`，其他154篇沿用原代准确引用；不得重写原执行或据原状态重复补跑。5篇部分结果为1805.03194、1907.06348、2003.12766、2101.10878、2502.00102。与本批PDF一致的23篇Gold中，L1 F1为92.01%、L2 F1为85.32%；其余145篇没有Gold准确率。Gold参与过开发，非盲测；评分不评价条件和证据语义，complete不保证科学正确。
+- uv run pytest -q：1349通过，480.92秒，2条既有workspace fork弃用提示，无失败或跳过。
+- 常规1169／integration 180，收集互斥且合计1349。
+- uv run python tools/check_distribution.py 3.11及3.12：仓库外全新wheel安装、合成提取／星表／恢复及入口检查通过，未用PYTHONPATH指向源码。
+- uv run ruff check .、uv run ruff format --check .、uv run python tools/render_record_contracts.py --check、git diff --check通过。
 
-最终报告同目录的scoring/、costs/和audit文件保留冻结输入、回放与账单核验；[控制目录](../.work/literature/.state/deepseek-1017-max-low/network-repair-01/)保留授权、输入、原hash、调用归档及恢复依据。[原168篇报告](../.work/literature/reports/deepseek-1017-max-low/summary.md)与原文件完整保留。补跑26次调用已匹配账单1.069986元；累计确认39.200222元，原476次调用费用仍未知，不作为零费用或最终总费用。
+全新上下文子智能体先独立审查，发现的相关缺陷经修复后再独立复核；最终未发现新的可行动缺陷。审查者实际完成59项专项及独立合成复现，检查了两轮连续增量、同版替换、换版／显式刷新、冲突状态、命名、完整科学值、查询候选与无关旧星隔离。全量及安装检查由主Agent完成，离线代码已获人类验收；真实数据与科学质量不在此次验收范围内。
 
-[Benchmark](../.work/benchmark/)保留固定材料、原12轮及派生补跑、exec13～15和比较。最近Gold50三轮L1／L2 F1均值96.17%／91.58%；这些开发结果不与168篇批次合成总分。真实材料和Gold不入本次Git；`.work/`不随新克隆迁移，搬迁须整体备份恢复并核验，不能只复制结果文件或删除`.state/`。
+### 接续、真实数据与Git
 
-### 限制与接续
+真实文献留主工作区 /Users/willzhang/MyProject/hvs-catalog/.work/literature，负责人继续补2018年以前文献。历史基线索引 reports/deepseek-1017-max-low/network-repair-01/execution-index.json 为168篇、163完整／5部分、95空名单、846论文内对象／5230数值；14篇补跑另存、154篇沿用原结果，不重写现场。文献齐全后另固定正式清单，真实SIMBAD前另确认小样本与范围。
 
-当前默认型号仍为`deepseek-v4.1-flash`别名；最近文献批次为固定`deepseek-v4.1-flash-1017`／`deepseek`、Max／Low、图文输入。新运行须明确配置，不能把默认值或派生补跑策略冒充原轮配置。普通CLI新建执行仍自动编号；论文ID命名使用共同接口在创建时绑定。condition近似标记评分调整仍暂缓。近期MinerU下载曾有TLS故障，历史批次特许的官方源站替换不在产品代码中，不沿用于新任务。
-
-文献提取与14篇补跑均已结束，相关定时任务已删除，旧编号轮次已取消，不再接续。任何新真实调用、Gold操作、修复或评分另定具体范围；历史费用和轮次授权已结束。下一项为R20需求审定，尚未授权实施；不自动启动SIMBAD、跨论文关联、数据发布或推送。
+本轮只使用合成材料／本机模拟服务，未读取真实论文／Gold、构造真实catalog、调用真实SIMBAD／模型或进行真实评分，也未启动R21。本轮仅在codex/catalog-build本地提交，提交与暂存状态以实际Git为准；未推送或合并，主工作区实现与真实结果未改。后续整合先核对同期修改，推送、合并及真实执行另按具体授权。
 
 ## 任务总表
 
@@ -58,7 +64,7 @@
 | [R17](plan.md#r17) | 通过 | 2026-10-06 | 完整数值评分、三篇真实核对及 Gold50 规则绑定获验收；1597 测试与双版本安装通过，自动组数值 F1 74.51%；按授权两仓本地交付。 |
 | [R18](plan.md#r18) | 通过 | 2026-10-06 | 规则 0.3.0、全自动流程与诊断隔离获验收；1,613 测试及 3.11／3.12 独立安装通过，已完成本地Git交付及计划精简。 |
 | [R19](plan.md#r19) | 通过 | 2026-10-23 | 人类确认优化达到目标并批准本地整合；程序与原优化分支一致，五个主题提交交付。168篇派生结果163完整／5部分；开发Gold与评分解释限制继续保留。 |
-| [R20](plan.md#r20) | 未开始 | — | 必要跨论文关联、SIMBAD 补充、固定星表及端到端导出验证。 |
-| [R21](plan.md#r21) | 未开始 | — | GitHub Pages、完整数据／SQL 独立下载与 Agent Skill。 |
+| [R20](plan.md#r20) | 进行中 | — | 离线代码于2026-10-23验收通过，仅在独立分支本地提交；1349全量、双版本wheel及独立复核通过。真实构建与SIMBAD仍待范围确认及验收。 |
+| [R21](plan.md#r21) | 未开始 | — | GitHub Pages、完整数据独立下载与Agent Skill；数据库／SQL／表格按后续需求另定。 |
 
 未标注最终评价名单已取消；如另开展独立评价，按[Plan 分工](plan.md#独立评价与人类分工)确定范围。

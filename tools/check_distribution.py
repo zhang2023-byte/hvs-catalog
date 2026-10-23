@@ -155,6 +155,7 @@ def verify_installation(venv_dir: Path, work_dir: Path, version: str) -> list[st
     checks = [
         ([script, "--version"], f"hvs-catalog {version}"),
         ([script, "--help"], "usage: hvs-catalog"),
+        ([script, "catalog", "--help"], "query-plan"),
         (
             [script, "benchmark", "--root", str(work_dir / "benchmark"), "--help"],
             "import-materials",

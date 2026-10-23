@@ -2,7 +2,7 @@
 
 从高速星文献中整理对象、作者判断和测量值，保留原文依据，建设可回查来源与修订的星表。
 
-当前已接通arXiv获取、固定PDF、MinerU解析、名单与数值提取、结果保存和恢复。跨论文关联、SIMBAD补充及星表／网站发布仍属后续工作；验收与现有结果入口见[Progress](.dev/progress.md)。
+当前已接通arXiv获取、固定PDF、MinerU解析、名单与数值提取、结果保存和恢复，并实现跨论文关联、固定JSON星表构建与SIMBAD快照接口。星表离线代码已通过人类验收；正式数据构建等待文献补齐，真实SIMBAD调用另定样本与范围，网站留待后续。验收与现有结果入口见[Progress](.dev/progress.md)，星表命令与字段见[生成合同](contracts/generated/catalog-format.md)。
 
 ## 安装
 

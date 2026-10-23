@@ -123,6 +123,36 @@ resume_extraction(space,eid,service=CallService(stored_configuration(get_executi
     assert roster_targets(restored,handle.execution_id)==targets
     assert resume_extraction(restored,handle.execution_id).outcome=='finished'
     assert len(seen)==4
+
+    from hvs_catalog.pipeline.results import current_result
+    from hvs_catalog.records.catalog import CatalogSelection, PaperSelection
+    from hvs_catalog.catalogue import verify_catalog
+    catalog_run_ref, _ = current_result(restored, handle.execution_id)
+    selection = CatalogSelection(data_version='wheel-synthetic', papers=[
+        PaperSelection(workspace=str(restored.root), run_ref=catalog_run_ref)])
+    selection_path = root/'catalog-selection.json'
+    selection_path.write_text(selection.model_dump_json(indent=2))
+    for name in ('catalog-one', 'catalog-two'):
+        built = subprocess.run([str(script), 'catalog', 'build', '--selection', str(selection_path),
+                                '--output', str(root/name)], check=False, capture_output=True,
+                               text=True, timeout=30)
+        assert built.returncode == 0, built.stdout+built.stderr
+        checked = subprocess.run([str(script), 'catalog', 'verify', str(root/name)],
+                                 check=False, capture_output=True, text=True, timeout=30)
+        assert checked.returncode == 0, checked.stdout+checked.stderr
+        catalog_manifest = verify_catalog(root/name)
+        assert len(catalog_manifest.papers) == len(catalog_manifest.stars) == 1
+        stellar = json.loads((root/name/catalog_manifest.stars[0].file.path).read_bytes())
+        assert stellar['quantities'][0]['values'][0]['value'] == '520'
+        assert stellar['quantities'][0]['values'][0]['source'] == '2501.03333v1'
+        assert stellar['sources']['2501.03333v1']['objects'][0]['evidence_audit'][0]['quote'] == 'Installed warning quote'
+        assert stellar['simbad']['status'] == 'not_queried'
+    assert (root/'catalog-one/manifest.json').read_bytes() == (root/'catalog-two/manifest.json').read_bytes()
+    query_plan = subprocess.run([str(script), 'catalog', 'query-plan', '--selection', str(selection_path),
+                                 '--output', str(root/'query-plan.json')], check=False,
+                                capture_output=True, text=True, timeout=30)
+    assert query_plan.returncode == 0, query_plan.stdout+query_plan.stderr
+    assert len(seen) == 4
     from hvs_catalog.evaluation.adapt import prediction_from_execution
     from hvs_catalog.evaluation.gold import write_annotation
     from hvs_catalog.records.pdf_contribution import GoldAnnotation

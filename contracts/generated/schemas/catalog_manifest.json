@@ -1,0 +1,457 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "CatalogSource": {
+      "additionalProperties": false,
+      "properties": {
+        "arxiv_id": {
+          "description": "Bare arXiv identifier, without a version suffix.",
+          "pattern": "^(?:[0-9]{4}\\.[0-9]{4,5}|[a-zA-Z-]+(?:\\.[A-Z]{2})?/[0-9]{7})$",
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "version": {
+          "description": "arXiv paper version, such as v1; not a format version.",
+          "pattern": "^v[1-9][0-9]*$",
+          "title": "Version",
+          "type": "string"
+        },
+        "title": {
+          "description": "Paper title.",
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "authors": {
+          "description": "Paper authors in reported order.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        },
+        "paper_notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Paper Notes",
+          "type": "array"
+        },
+        "result_status": {
+          "enum": [
+            "complete",
+            "partial"
+          ],
+          "title": "Result Status",
+          "type": "string"
+        },
+        "roster_status": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ],
+          "title": "Roster Status",
+          "type": "string"
+        },
+        "roster_issues": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Roster Issues",
+          "type": "array"
+        },
+        "roster_rejected": {
+          "additionalProperties": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "title": "Roster Rejected",
+          "type": "object"
+        },
+        "errors": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "result_sha256": {
+          "title": "Result Sha256",
+          "type": "string"
+        },
+        "run_sha256": {
+          "title": "Run Sha256",
+          "type": "string"
+        },
+        "input_sha256": {
+          "title": "Input Sha256",
+          "type": "string"
+        },
+        "pdf_sha256": {
+          "title": "Pdf Sha256",
+          "type": "string"
+        },
+        "pdf_url": {
+          "description": "Versioned arXiv reference URL; not a claim about the download method.",
+          "title": "Pdf Url",
+          "type": "string"
+        },
+        "pdf_origin": {
+          "additionalProperties": true,
+          "description": "Original source-package provenance, including synthetic or local import origins.",
+          "title": "Pdf Origin",
+          "type": "object"
+        },
+        "objects": {
+          "items": {
+            "$ref": "#/$defs/SourceObject"
+          },
+          "title": "Objects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "version",
+        "title",
+        "authors",
+        "paper_notes",
+        "result_status",
+        "roster_status",
+        "roster_issues",
+        "roster_rejected",
+        "errors",
+        "result_sha256",
+        "run_sha256",
+        "input_sha256",
+        "pdf_sha256",
+        "pdf_url",
+        "pdf_origin",
+        "objects"
+      ],
+      "title": "CatalogSource",
+      "type": "object"
+    },
+    "PublishedPaper": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/CatalogSource"
+        },
+        "science": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "audit": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "original_audit_sha256": {
+          "title": "Original Audit Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "science",
+        "audit",
+        "original_audit_sha256"
+      ],
+      "title": "PublishedPaper",
+      "type": "object"
+    },
+    "PublishedStar": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog_id": {
+          "pattern": "^hvs-catalog-[0-9]{6,}$",
+          "title": "Catalog Id",
+          "type": "string"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "file": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "nodes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Nodes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "catalog_id",
+        "display_name",
+        "file",
+        "nodes"
+      ],
+      "title": "PublishedStar",
+      "type": "object"
+    },
+    "QuoteMismatch": {
+      "additionalProperties": false,
+      "properties": {
+        "result_path": {
+          "description": "JSON Pointer to the evidence in the bound scientific result.",
+          "title": "Result Path",
+          "type": "string"
+        },
+        "location": {
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "description": "The submitted quote, preserved without changes.",
+          "title": "Quote",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "whitespace_difference",
+            "exact_match_elsewhere",
+            "unknown"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result_path",
+        "location",
+        "quote",
+        "reason"
+      ],
+      "title": "QuoteMismatch",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "SourceObject": {
+      "additionalProperties": false,
+      "description": "A retained source object and its extraction completeness and diagnostics.",
+      "properties": {
+        "result_index": {
+          "minimum": 0,
+          "title": "Result Index",
+          "type": "integer"
+        },
+        "source_index": {
+          "minimum": 0,
+          "title": "Source Index",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "snapshot_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecordRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "repair_stage_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repair Stage Id"
+        },
+        "issues": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "rejected": {
+          "additionalProperties": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "title": "Rejected",
+          "type": "object"
+        },
+        "source_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Paths",
+          "type": "array"
+        },
+        "evidence_audit": {
+          "items": {
+            "$ref": "#/$defs/QuoteMismatch"
+          },
+          "title": "Evidence Audit",
+          "type": "array"
+        }
+      },
+      "required": [
+        "result_index",
+        "source_index",
+        "status",
+        "snapshot_ref",
+        "issues",
+        "rejected",
+        "source_paths",
+        "evidence_audit"
+      ],
+      "title": "SourceObject",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "data_version": {
+      "title": "Data Version",
+      "type": "string"
+    },
+    "rules_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Rules Version",
+      "type": "integer"
+    },
+    "software_version": {
+      "title": "Software Version",
+      "type": "string"
+    },
+    "input_fingerprint": {
+      "title": "Input Fingerprint",
+      "type": "string"
+    },
+    "simbad_fingerprint": {
+      "title": "Simbad Fingerprint",
+      "type": "string"
+    },
+    "previous_manifest_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Previous Manifest Sha256"
+    },
+    "papers": {
+      "additionalProperties": {
+        "$ref": "#/$defs/PublishedPaper"
+      },
+      "title": "Papers",
+      "type": "object"
+    },
+    "stars": {
+      "items": {
+        "$ref": "#/$defs/PublishedStar"
+      },
+      "title": "Stars",
+      "type": "array"
+    },
+    "next_id": {
+      "minimum": 1,
+      "title": "Next Id",
+      "type": "integer"
+    },
+    "retired_ids": {
+      "patternProperties": {
+        "^hvs-catalog-[0-9]{6,}$": {
+          "items": {
+            "pattern": "^hvs-catalog-[0-9]{6,}$",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "title": "Retired Ids",
+      "type": "object"
+    }
+  },
+  "required": [
+    "data_version",
+    "software_version",
+    "input_fingerprint",
+    "simbad_fingerprint",
+    "previous_manifest_sha256",
+    "papers",
+    "stars",
+    "next_id",
+    "retired_ids"
+  ],
+  "title": "CatalogManifest",
+  "type": "object"
+}

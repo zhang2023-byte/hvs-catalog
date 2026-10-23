@@ -1,0 +1,218 @@
+{
+  "$defs": {
+    "SimbadCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "main_id": {
+          "minLength": 1,
+          "title": "Main Id",
+          "type": "string"
+        },
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkyPosition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fields": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "description": "Basic returned fields, including units, errors and references when available.",
+          "title": "Fields",
+          "type": "object"
+        },
+        "photometry": {
+          "description": "Returned photometry with explicit band, errors and references when available.",
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Photometry",
+          "type": "array"
+        }
+      },
+      "required": [
+        "main_id",
+        "aliases",
+        "position",
+        "fields",
+        "photometry"
+      ],
+      "title": "SimbadCandidate",
+      "type": "object"
+    },
+    "SimbadQuery": {
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "enum": [
+            "identifier",
+            "coordinates"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "identifier": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Identifier"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkyPosition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "radius_arcsec": {
+          "const": 5.0,
+          "default": 5.0,
+          "title": "Radius Arcsec",
+          "type": "number"
+        }
+      },
+      "required": [
+        "method"
+      ],
+      "title": "SimbadQuery",
+      "type": "object"
+    },
+    "SkyPosition": {
+      "additionalProperties": false,
+      "description": "Coordinates used only for identity matching; no epoch propagation.",
+      "properties": {
+        "ra_deg": {
+          "exclusiveMaximum": 360,
+          "minimum": 0,
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "frame": {
+          "enum": [
+            "icrs",
+            "fk5",
+            "fk4"
+          ],
+          "title": "Frame",
+          "type": "string"
+        },
+        "equinox": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Equinox"
+        },
+        "evidence": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg",
+        "frame"
+      ],
+      "title": "SkyPosition",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A frozen response kept in the private build workspace, not in the catalog.",
+  "properties": {
+    "query": {
+      "$ref": "#/$defs/SimbadQuery"
+    },
+    "queried_at": {
+      "title": "Queried At",
+      "type": "string"
+    },
+    "client_version": {
+      "title": "Client Version",
+      "type": "string"
+    },
+    "service_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Service Version"
+    },
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/SimbadCandidate"
+      },
+      "title": "Candidates",
+      "type": "array"
+    },
+    "raw_response": {
+      "title": "Raw Response",
+      "type": "string"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error"
+    }
+  },
+  "required": [
+    "query",
+    "queried_at",
+    "client_version",
+    "candidates",
+    "raw_response"
+  ],
+  "title": "SimbadResponse",
+  "type": "object"
+}
