@@ -1,24 +1,23 @@
-"""One local MinerU 4 adapter; preserve its output rather than parse PDFs ourselves."""
+"""Read official MinerU archives into the existing model-material index."""
 
 from __future__ import annotations
 
 import hashlib
 import io
 import json
-import os
 import re
-import shutil
-import signal
-import subprocess
-import tempfile
 import zipfile
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 
 MAX_OUTPUT_BYTES = 256 * 1024 * 1024
 
 
 class MinerUError(ValueError):
-    """Missing parser resources, failed process, or unsupported output."""
+    """Cloud request failure or unreadable official output."""
+
+    def __init__(self, message: str, *, artifacts: dict[str, bytes] | None = None):
+        super().__init__(message)
+        self.artifacts = artifacts or {}
 
 
 def block_text(value) -> str:
@@ -43,6 +42,64 @@ def block_text(value) -> str:
     raise MinerUError("Unsupported MinerU content value")
 
 
+def _checked_bbox(bbox):
+    if (
+        not isinstance(bbox, list)
+        or len(bbox) != 4
+        or not all(isinstance(v, (int, float)) and 0 <= v <= 1 for v in bbox)
+        or not (bbox[0] < bbox[2] and bbox[1] < bbox[3])
+    ):
+        raise MinerUError("PDF block lacks a valid normalized bounding box")
+    return bbox
+
+
+def _layout_document(layout):
+    """Map native cloud geometry and spans; never infer or repair source content."""
+    pages = []
+    for page in layout["pdf_info"]:
+        width, height = page["page_size"]
+        if width <= 0 or height <= 0:
+            raise MinerUError("Invalid MinerU page size")
+
+        def convert(block, width=width, height=height):
+            bbox = block["bbox"]
+            node = {
+                "type": block["type"],
+                "bbox": [
+                    bbox[0] / width,
+                    bbox[1] / height,
+                    bbox[2] / width,
+                    bbox[3] / height,
+                ],
+            }
+            if "blocks" in block:
+                node["content"] = [convert(child) for child in block["blocks"]]
+            else:
+                lines = []
+                for line in block.get("lines", []):
+                    spans = line.get("spans", [])
+                    lines.append(
+                        "".join(
+                            span.get("html", span.get("content", "")) for span in spans
+                        )
+                    )
+                    for span in spans:
+                        if span.get("image_path"):
+                            node.setdefault("image_paths", []).append(
+                                span["image_path"]
+                            )
+                node["content"] = "\n".join(lines)
+            return node
+
+        blocks = []
+        for index, block in enumerate(page.get("para_blocks", [])):
+            node = convert(block)
+            node["index"] = index
+            blocks.append(node)
+        pages.append({"page_idx": page["page_idx"], "blocks": blocks})
+    return {"pages": pages, "is_full_document": True}
+
+
 def read_result(payload: bytes, page_count: int) -> dict:
     if len(payload) > MAX_OUTPUT_BYTES:
         raise MinerUError("MinerU output exceeds the size limit")
@@ -59,18 +116,27 @@ def read_result(payload: bytes, page_count: int) -> dict:
         ):
             raise MinerUError("Invalid MinerU archive member names")
         json_names = [
-            n for n in names if n.endswith(("middle.json", "middle_json.json"))
+            n
+            for n in names
+            if n.endswith(("layout.json", "middle.json", "middle_json.json"))
         ]
         md_names = [n for n in names if n.endswith(".md")]
         if len(json_names) != 1 or len(md_names) != 1:
             raise MinerUError(
-                "MinerU export must contain one middle JSON and one Markdown"
+                "MinerU export must contain one layout JSON and one Markdown"
             )
         document = json.loads(archive.read(json_names[0]))
         markdown = archive.read(md_names[0]).decode("utf-8")
-    if document.get("schema") != "docvortex.middle":
-        raise MinerUError("Only the MinerU 4 document schema is supported")
+    if "pdf_info" in document:
+        document = _layout_document(document)
+    elif document.get("schema") != "docvortex.middle":
+        raise MinerUError("Unsupported MinerU document schema")
     blocks, pages, gaps, images = [], set(), [], {}
+    if not markdown.strip():
+        gaps.append("Official Markdown is empty.")
+    for path in re.findall(r"!\[[^\]]*\]\(([^\s)]+)", markdown):
+        if not path.startswith(("https://", "http://", "data:")) and path not in names:
+            gaps.append(f"Markdown image is absent from its archive: {path}.")
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
 
         def image_paths(node):
@@ -78,19 +144,45 @@ def read_result(payload: bytes, page_count: int) -> dict:
                 return [path for child in node for path in image_paths(child)]
             if not isinstance(node, dict):
                 return []
-            path = node.get("image_path")
-            if node.get("type") in {"image_body", "chart_body", "table_body"} and path:
+            paths = node.get("image_paths", [])
+            if node.get("image_path"):
+                paths = [*paths, node["image_path"]]
+            found = []
+            for path in paths:
+                if path not in names and "images/" + path in names:
+                    path = "images/" + path
                 if path not in names:
-                    raise MinerUError("Parser image is absent from its archive")
-                content = archive.read(path)
-                from ..records.pdf import image_media_type
+                    message = f"Parser image is absent from its archive: {path}."
+                    if message not in gaps:
+                        gaps.append(message)
+                    continue
+                if path not in images:
+                    content = archive.read(path)
+                    from ..records.pdf import image_media_type
 
-                images[path] = {
-                    "media_type": image_media_type(content),
-                    "sha256": hashlib.sha256(content).hexdigest(),
+                    images[path] = {
+                        "media_type": image_media_type(content),
+                        "sha256": hashlib.sha256(content).hexdigest(),
+                    }
+                found.append(path)
+            return [*found, *image_paths(node.get("content", []))]
+
+        def regions(value, parent_bbox):
+            if isinstance(value, list):
+                return [r for child in value for r in regions(child, parent_bbox)]
+            if not isinstance(value, dict):
+                return []
+            # The nearest positioned node owns its inline text. Preserve its
+            # geometry, including author captions outside the body rectangle.
+            bbox = _checked_bbox(value.get("bbox", parent_bbox))
+            return [
+                {
+                    "type": value["type"],
+                    "bbox": bbox,
+                    "text": block_text(value).strip(),
+                    "image_files": list(dict.fromkeys(image_paths(value))),
                 }
-                return [path]
-            return image_paths(node.get("content", []))
+            ]
 
         for page in document["pages"]:
             for block in page["blocks"]:
@@ -107,30 +199,36 @@ def read_result(payload: bytes, page_count: int) -> dict:
         indices = set()
         for block in page["blocks"]:
             index = block["index"]
-            bbox = block.get("bbox")
+            bbox = _checked_bbox(block.get("bbox"))
             if not isinstance(index, int) or index < 0 or index in indices:
                 raise MinerUError("Invalid or duplicate PDF block index")
             indices.add(index)
-            if (
-                not isinstance(bbox, list)
-                or len(bbox) != 4
-                or not all(isinstance(v, (int, float)) and 0 <= v <= 1 for v in bbox)
-                or not (bbox[0] < bbox[2] and bbox[1] < bbox[3])
-            ):
-                raise MinerUError("PDF block lacks a valid normalized bounding box")
             text = block_text(block).strip()
             image_files = block["image_files"]
             if text or image_files:
-                blocks.append(
-                    {
-                        "block_id": f"p{number}-b{index}",
-                        "page": number,
-                        "bbox": bbox,
-                        "type": block["type"],
-                        "text": text,
-                        "image_files": image_files,
-                    }
-                )
+                adapted = {
+                    "block_id": f"p{number}-b{index}",
+                    "page": number,
+                    "bbox": bbox,
+                    "type": block["type"],
+                    "text": text,
+                    "image_files": image_files,
+                }
+                if block["type"] in {"chart", "image", "table"}:
+                    parts = regions(block.get("content", []), bbox)
+                    if parts:
+                        boxes = [bbox, *(part["bbox"] for part in parts)]
+                        adapted.update(
+                            body_bbox=bbox,
+                            regions=parts,
+                            bbox=[
+                                min(b[0] for b in boxes),
+                                min(b[1] for b in boxes),
+                                max(b[2] for b in boxes),
+                                max(b[3] for b in boxes),
+                            ],
+                        )
+                blocks.append(adapted)
         if not any(b["page"] == number for b in blocks):
             gaps.append(f"No readable content was returned for PDF page {number}.")
     missing = sorted(set(range(1, page_count + 1)) - pages)
@@ -147,111 +245,3 @@ def read_result(payload: bytes, page_count: int) -> dict:
         "page_count": page_count,
         "images": images,
     }
-
-
-class LocalMinerU:
-    def __init__(self, executable: str | None = None):
-        self.executable = executable or os.environ.get(
-            "HVS_MINERU_COMMAND", "mineru-kit"
-        )
-
-    def fingerprint(self) -> dict:
-        executable = shutil.which(self.executable)
-        if not executable:
-            raise MinerUError(
-                "Install MinerU 4 and set HVS_MINERU_COMMAND to mineru-kit"
-            )
-        result = subprocess.run(
-            [executable, "--version"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=True,
-        )
-        version = result.stdout.strip()
-        if not re.search(r"\b4\.\d+", version):
-            raise MinerUError("This adapter requires MinerU 4")
-        return {
-            "name": "MinerU",
-            "version": version,
-            "tier": "advanced",
-            "pages": "all",
-            "adapter": "3",
-            "small_backend": "onnx",
-            "vlm_engine": "llama-cpp",
-        }
-
-    def parse(self, pdf: Path, page_count: int) -> tuple[bytes, dict]:
-        self.fingerprint()
-        # Verify first: a product parse must not silently download missing weights.
-        env = {
-            **os.environ,
-            "MINERU_MODEL_SMALL_BACKEND": "onnx",
-            "MINERU_MODEL_VLM_ENGINE": "llama-cpp",
-            "HF_HUB_OFFLINE": "1",
-        }
-        checked = subprocess.run(
-            [self.executable, "models", "verify", "--tier", "standard"],
-            capture_output=True,
-            text=True,
-            timeout=60,
-            env=env,
-            check=False,
-        )
-        if checked.returncode:
-            raise MinerUError(
-                "MinerU model resources are missing; run mineru-kit models download --tier standard before parsing"
-            )
-        with tempfile.TemporaryDirectory(prefix="hvs-mineru-") as temp:
-            input_pdf = Path(temp) / "paper.pdf"
-            shutil.copyfile(pdf, input_pdf)
-            output = Path(temp) / "parsed.zip"
-            # A private config disables optional remote LLM postprocessing.
-            config = Path(temp) / "config.yaml"
-            home = Path(os.environ.get("MINERU_HOME", Path.home() / ".mineru"))
-            config.write_text(
-                "model:\n  base_dir: "
-                + json.dumps(str(home / "models"))
-                + "\nllm_aided:\n  features:\n    title_leveling: false\n    cross_page_table_cell_merge: false\n"
-            )
-            env["MINERU_CONFIG"] = str(config)
-            log = Path(temp) / "parser.log"
-            with log.open("wb") as stream:
-                process = subprocess.Popen(
-                    [
-                        self.executable,
-                        "parse",
-                        str(input_pdf),
-                        "-o",
-                        str(output),
-                        "--format",
-                        "zip",
-                        "--tier",
-                        "advanced",
-                        "--pages",
-                        "all",
-                    ],
-                    stdout=stream,
-                    stderr=stream,
-                    env=env,
-                    start_new_session=os.name == "posix",
-                )
-                try:
-                    returncode = process.wait(timeout=3600)
-                finally:
-                    # The parser may own model-server children; interruption must
-                    # release those resources along with the direct process.
-                    if os.name == "posix":
-                        try:
-                            os.killpg(process.pid, signal.SIGKILL)
-                        except ProcessLookupError:
-                            pass
-                    elif process.poll() is None:
-                        process.kill()
-                    process.wait()
-            if returncode or not output.is_file():
-                detail = log.read_bytes()[-8000:].decode("utf-8", errors="replace")
-                raise MinerUError(f"MinerU failed ({returncode}): {detail}")
-            with output.open("rb") as stream:
-                payload = stream.read(MAX_OUTPUT_BYTES + 1)
-        return payload, read_result(payload, page_count)

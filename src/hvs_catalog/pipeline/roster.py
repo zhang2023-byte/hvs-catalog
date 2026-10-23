@@ -17,7 +17,6 @@ from typing import TypedDict
 
 from jsonschema import Draft202012Validator
 from langgraph.graph import END, START, StateGraph
-from langgraph.types import interrupt
 
 from ..llm.config import CallRequest, Message
 from ..llm.managed import CallFailure, CallService, execute_model_call
@@ -32,8 +31,8 @@ from ..records.common import (
     sha256_of,
 )
 from ..records.file_checks import scoped_verification
+from ..records.identifiers import normalize_catalog_identifier
 from ..records.paper import PaperRecord
-from ..records.questions import QuestionRecord
 from ..records.roster import RosterRecord
 from ..records.roster_input import bind_roster_input
 from ..records.runs import ModelJudgment, RunRecord
@@ -334,8 +333,7 @@ def material_prompt(space, bundle: dict, source: SourcePackageRecord) -> PromptI
                 },
             }
             blocks.append(
-                f"LOCATION {text_location} PAGE {block['page']} BLOCK {block['block_id']} ({block['type']})\n"
-                + block["text"]
+                f"LOCATION {text_location} ({block['type']})\n" + block["text"]
             )
         for image_id in block.get("image_files", []):
             file = files[image_id]
@@ -353,7 +351,7 @@ def material_prompt(space, bundle: dict, source: SourcePackageRecord) -> PromptI
             }
             images.append(
                 PromptImage(
-                    label=f"LOCATION {image_location} FILE {pdf_id} PAGE {block['page']} BLOCK {block['block_id']} IMAGE {image_id}",
+                    label=f"LOCATION {image_location}",
                     image_url={
                         "url": f"data:{file.media_type};base64,"
                         + base64.b64encode(data).decode("ascii")
@@ -592,10 +590,12 @@ class RosterFlow(DefaultFlowAdapter):
             read_json(
                 ctx.space,
                 ArtifactRef.model_validate_json(snapshot.options["prepared_prompt"]),
-            )
+            ),
+            context={"historical": True},
         )
         blueprint = PromptBlueprint.model_validate(
-            json.loads(ctx.space.read_file(snapshot.prompt_refs[0]))[STEP]
+            json.loads(ctx.space.read_file(snapshot.prompt_refs[0]))[STEP],
+            context={"historical": True},
         )
         config = stored_configuration(snapshot)
         return source, inputs, blueprint.request(config.model_for(STEP), inputs)
@@ -657,23 +657,22 @@ class RosterFlow(DefaultFlowAdapter):
                 raise SubmissionError(
                     "an explicitly bound object cannot be included as candidates_found"
                 )
-        if not ctx.execution.input_snapshot.expert_adjudication:
-            for entry in hydrated["entries"]:
-                fields = entry.get("contribution")
-                if entry.get("question") or (
-                    fields and fields["boundness"].get("question")
-                ):
-                    raise SubmissionError(
-                        "Automatic extraction must form a model judgment, not an expert question"
-                    )
-                if (
-                    entry["disposition"] == "pending"
-                    and not entry.get("gap_ids")
-                    and not entry.get("author_errors")
-                ):
-                    raise SubmissionError(
-                        "A blocked automatic roster entry requires missing material or source-error diagnostics"
-                    )
+        for entry in hydrated["entries"]:
+            fields = entry.get("contribution")
+            if entry.get("question") or (
+                fields and fields["boundness"].get("question")
+            ):
+                raise SubmissionError(
+                    "Automatic extraction must form a model judgment, not an expert question"
+                )
+            if (
+                entry["disposition"] == "pending"
+                and not entry.get("gap_ids")
+                and not entry.get("author_errors")
+            ):
+                raise SubmissionError(
+                    "A blocked automatic roster entry requires missing material or source-error diagnostics"
+                )
         conversion = convert_roster_submission(
             context, RosterSubmission.model_validate(hydrated)
         )
@@ -783,7 +782,7 @@ class RosterFlow(DefaultFlowAdapter):
         groups = payload.get("unresolved_groups")
         if isinstance(entries, list) and isinstance(groups, list):
             identifiers = {
-                item.get("value")
+                normalize_catalog_identifier(item["value"])
                 for entry in entries
                 if isinstance(entry, dict)
                 and isinstance(entry.get("identifiers"), list)
@@ -797,7 +796,8 @@ class RosterFlow(DefaultFlowAdapter):
                     if isinstance(group, dict)
                     and isinstance(group.get("member_identifier_values"), list)
                     for name in group["member_identifier_values"]
-                    if isinstance(name, str) and name not in identifiers
+                    if isinstance(name, str)
+                    and normalize_catalog_identifier(name) not in identifiers
                 }
             )
             fixes.append(
@@ -913,7 +913,7 @@ class RosterFlow(DefaultFlowAdapter):
         if not kept:
             return None  # Invalid entries cannot become a successful empty roster.
         available = {
-            identifier["value"]
+            normalize_catalog_identifier(identifier["value"])
             for entry in partial["entries"]
             for identifier in entry["identifiers"]
         }
@@ -926,7 +926,7 @@ class RosterFlow(DefaultFlowAdapter):
                 candidate["member_identifier_values"] = [
                     name
                     for name in candidate.get("member_identifier_values", [])
-                    if name in available
+                    if normalize_catalog_identifier(name) in available
                 ]
                 probe = {**partial, "unresolved_groups": [candidate]}
                 try:
@@ -1031,8 +1031,6 @@ class RosterFlow(DefaultFlowAdapter):
                 "roster_error": "",
             }
         except (CallFailure, ValueError) as exc:
-            if ctx.execution.input_snapshot.expert_adjudication:
-                raise
             refs = self._retain_roster(
                 ctx, source, inputs, initial, draft_state.get("draft"), exc, failure_key
             )
@@ -1195,55 +1193,32 @@ class RosterFlow(DefaultFlowAdapter):
                     )
                 )
         refs = list(saved.result_refs)
-        if not ctx.execution.input_snapshot.expert_adjudication:
-            # Retain the actual model submission as model work, including any
-            # unresolved questions. Links preserve its interpretation and evidence
-            # without copying a large response or creating an expert decision.
-            run = ctx.store.read_record_current(ctx.execution.run_ref.record_id)
-            if not isinstance(run, RunRecord):
-                raise TypeError("roster run record is missing")
-            step = next(s for s in run.data.steps if s.step_id == STEP)
-            judgment = canonical_json(
-                {
-                    "kind": "roster_model_submission",
-                    "response_ref": step.attempts[-1].response.model_dump(mode="json"),
-                    "result_refs": [r.model_dump(mode="json") for r in refs],
-                }
-            )
-            if not any(
-                j.step_id == STEP and j.judgment == judgment
-                for j in run.data.model_judgments
-            ):
-                append_run_revision(
-                    ctx.space,
-                    ctx.execution,
-                    model_judgment=ModelJudgment(
-                        step_id=STEP, judgment=judgment, created_at=ctx.now()
-                    ),
-                )
-        if ctx.execution.input_snapshot.expert_adjudication and not getattr(
-            self, "defer_review", False
+        # Retain the actual model submission as model work, including any
+        # unresolved questions. Links preserve its interpretation and evidence
+        # without copying a large response or creating an expert decision.
+        run = ctx.store.read_record_current(ctx.execution.run_ref.record_id)
+        if not isinstance(run, RunRecord):
+            raise TypeError("roster run record is missing")
+        step = next(s for s in run.data.steps if s.step_id == STEP)
+        judgment = canonical_json(
+            {
+                "kind": "roster_model_submission",
+                "response_ref": step.attempts[-1].response.model_dump(mode="json"),
+                "result_refs": [r.model_dump(mode="json") for r in refs],
+            }
+        )
+        if not any(
+            j.step_id == STEP and j.judgment == judgment
+            for j in run.data.model_judgments
         ):
-            review = ReviewService(ctx.space)
-            for ref in refs:
-                if isinstance(ctx.store.read_record(ref), QuestionRecord):
-                    while True:
-                        view = review.get_question(ref)
-                        if view.application and view.application.phase == "applied":
-                            break
-                        interrupt(
-                            {
-                                "question_ref": ref.model_dump(mode="json"),
-                                "step_id": STEP,
-                                "prompt": view.record.data.prompt,
-                            }
-                        )
+            append_run_revision(
+                ctx.space,
+                ctx.execution,
+                model_judgment=ModelJudgment(
+                    step_id=STEP, judgment=judgment, created_at=ctx.now()
+                ),
+            )
         return {"result_refs": [r.model_dump(mode="json") for r in refs]}
-
-    def apply_decision(self, ctx, decision, question):
-        from .flow import ExtractionFlow
-
-        return ExtractionFlow.apply_decision(self, ctx, decision, question)
 
     def waiting_step(self, payload):
         return payload.get("step_id")

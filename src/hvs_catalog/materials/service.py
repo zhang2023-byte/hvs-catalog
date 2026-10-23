@@ -1,9 +1,14 @@
-"""Fixed-PDF preparation using one local parser and the shared durable runtime."""
+"""Fixed-PDF preparation using an explicit parser and the shared durable runtime."""
 
 from __future__ import annotations
 
+import io
 import json
+import os
+import tempfile
+import zipfile
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from ..pipeline.acquisition.lifecycle import AcquisitionService
@@ -18,7 +23,7 @@ from ..runtime.execution import (
 )
 from ..workspace import Workspace, WorkspaceIntegrityError
 from .flow import FLOW_ID, FLOW_VERSION, MaterialsFlow, parser_fingerprint
-from .mineru import LocalMinerU
+from .mineru_official import OfficialMinerU
 
 __all__ = [
     "MaterialsPreparationError",
@@ -146,9 +151,9 @@ def _state_artifact_refs(state: dict) -> list[dict]:
 class MaterialsService:
     """Material-preparation service for initialized workspaces."""
 
-    def __init__(self, space: Workspace, *, runner: LocalMinerU | None = None):
+    def __init__(self, space: Workspace, *, runner: OfficialMinerU | None = None):
         self._space = space
-        self._runner = runner or LocalMinerU()
+        self._runner = runner or OfficialMinerU(space)
 
     # ---- Creation and advancement ----
 
@@ -162,7 +167,7 @@ class MaterialsService:
     ) -> tuple[PreparationHandle, PreparationReport]:
         """Create or reuse identical-request/input preparation execution and advance it.
 
-        Freeze the PDF source revision and local parser configuration. Any changed input under the same key rejects;
+        Freeze the PDF source revision and parser configuration. Any changed input under the same key rejects;
         changes require a new key. Accept no Gold or answer paths.
         """
         source, record = _resolve_source(
@@ -299,6 +304,87 @@ class MaterialsService:
             "problems": [],
             "verified_artifacts": [f.path for f in source.data.files],
         }
+
+    def export_literature(self, manifest: dict, destination: Path) -> None:
+        """Export native materials and the existing location index, with a gap inventory."""
+        destination = Path(destination)
+        destination.mkdir(parents=True, exist_ok=True)
+        inventory = []
+
+        def write(path, payload, *, replace=False):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if path.exists() and not replace:
+                if path.read_bytes() != payload:
+                    raise MaterialsPreparationError(f"已有材料不同，不能覆盖：{path}")
+                return
+            fd, temporary = tempfile.mkstemp(dir=path.parent)
+            try:
+                with os.fdopen(fd, "wb") as stream:
+                    stream.write(payload)
+                os.replace(temporary, path)
+            finally:
+                Path(temporary).unlink(missing_ok=True)
+
+        for paper in manifest["papers"]:
+            preparation = paper["preparation"]
+            item = {
+                "arxiv_id": paper["arxiv_id"],
+                "versioned_id": paper["download"]["versioned_id"],
+                "state": preparation["state"],
+                "errors": preparation["errors"],
+                "gaps": [],
+            }
+            inventory.append(item)
+            folder = destination / paper["arxiv_id"].replace("/", "_")
+            input_ref = paper["download"]["source_ref"]
+            if input_ref is not None:
+                basis = self._space.store().read_record(
+                    RecordRef.model_validate(input_ref)
+                )
+                pdf = next(f for f in basis.data.files if f.role == "pdf")
+                write(
+                    folder / "arxiv.pdf",
+                    self._space.read_file(
+                        ArtifactRef(path=pdf.path, sha256=pdf.sha256)
+                    ),
+                )
+                item["pdf_sha256"] = pdf.sha256
+            if preparation["state"] != "finished":
+                if paper.get("issue"):
+                    item["errors"] = [*item["errors"], paper["issue"]["message"]]
+                continue
+            bundle = self.get_prepared_input(preparation["execution_id"])
+            source = self._space.store().read_record(
+                RecordRef.model_validate(bundle["prepared_source_ref"])
+            )
+            item["gaps"] = bundle["gaps"]
+            for role, name in (
+                ("parser_output", "mineru.zip"),
+                ("pdf_index", "pdf-blocks.json"),
+            ):
+                file = next(f for f in source.data.files if f.role == role)
+                content = self._space.read_file(
+                    ArtifactRef(path=file.path, sha256=file.sha256)
+                )
+                write(folder / name, content)
+                if role == "parser_output":
+                    with zipfile.ZipFile(io.BytesIO(content)) as archive:
+                        for member in archive.infolist():
+                            # The fixed PDF above remains the acquisition source of truth.
+                            if not member.is_dir() and not member.filename.endswith(
+                                "_origin.pdf"
+                            ):
+                                write(folder / member.filename, archive.read(member))
+        summary = {
+            "batch_id": manifest["batch_id"],
+            "quality_review": "structural gaps only; transcription accuracy not reviewed",
+            "papers": inventory,
+        }
+        write(
+            destination / "summary.json",
+            json.dumps(summary, ensure_ascii=False, indent=2).encode(),
+            replace=True,
+        )
 
     # ---- Internal helpers ----
 

@@ -2,6 +2,7 @@
 
 import base64
 import copy
+import hashlib
 import io
 import json
 import zipfile
@@ -39,8 +40,13 @@ HALLUCINATION = "Generated claim: the velocity is 999999 km/s."
 TABLE = "<table><tr><td>A</td><td>42</td></tr></table>"
 
 
-def image_zip(*, missing=False, caption=True):
-    body = {"type": "chart_body", "image_path": IMAGE, "content": HALLUCINATION}
+def image_zip(*, missing=False, caption=True, footnote=False):
+    body = {
+        "type": "chart_body",
+        "bbox": [0, 0.2, 1, 0.5],
+        "image_path": IMAGE,
+        "content": HALLUCINATION,
+    }
     blocks = [
         {
             "index": 0,
@@ -53,13 +59,36 @@ def image_zip(*, missing=False, caption=True):
             "type": "chart",
             "bbox": [0, 0.2, 1, 0.5],
             "content": [body]
-            + ([{"type": "chart_caption", "content": CAPTION}] if caption else []),
+            + (
+                [
+                    {
+                        "type": "chart_caption",
+                        "bbox": [0, 0.52, 1, 0.58],
+                        "content": CAPTION,
+                    }
+                ]
+                if caption
+                else []
+            ),
         },
         {
             "index": 2,
             "type": "table",
             "bbox": [0, 0.6, 1, 0.9],
-            "content": [{"type": "table_body", "content": TABLE}],
+            "content": [
+                {"type": "table_body", "bbox": [0, 0.6, 1, 0.9], "content": TABLE}
+            ]
+            + (
+                [
+                    {
+                        "type": "table_footnote",
+                        "bbox": [0, 0.92, 1, 0.95],
+                        "content": "RV in km/s.",
+                    }
+                ]
+                if footnote
+                else []
+            ),
         },
     ]
     doc = {
@@ -108,8 +137,90 @@ def test_caption_and_table_preserved_but_generated_description_excluded():
     uncaptained = read_result(image_zip(caption=False), 1)
     assert uncaptained["blocks"][1]["text"] == ""
     assert uncaptained["blocks"][1]["image_files"] == [IMAGE]
-    with pytest.raises(ValueError, match="absent"):
-        read_result(image_zip(missing=True), 1)
+    missing = read_result(image_zip(missing=True), 1)
+    assert any("absent" in gap for gap in missing["gaps"])
+    assert missing["blocks"][1]["image_files"] == []
+
+
+def test_composite_regions_cover_author_text_without_moving_the_body():
+    parsed = read_result(image_zip(footnote=True), 1)
+    chart, table = parsed["blocks"][1:]
+    assert chart["bbox"] == [0, 0.2, 1, 0.58]
+    assert chart["body_bbox"] == [0, 0.2, 1, 0.5]
+    assert chart["regions"] == [
+        {
+            "type": "chart_body",
+            "bbox": [0, 0.2, 1, 0.5],
+            "text": "",
+            "image_files": [IMAGE],
+        },
+        {
+            "type": "chart_caption",
+            "bbox": [0, 0.52, 1, 0.58],
+            "text": CAPTION,
+            "image_files": [],
+        },
+    ]
+    assert table["bbox"] == [0, 0.6, 1, 0.95]
+    assert table["text"] == TABLE + "\nRV in km/s."
+    assert table["regions"][1]["bbox"] == [0, 0.92, 1, 0.95]
+    assert HALLUCINATION not in json.dumps(parsed["blocks"])
+
+
+def test_caption_and_image_evidence_use_their_respective_regions(image_space):
+    space, _, _, source = image_space
+    text = pdf_evidence_block(source, space.root, "raw", 1, "p1-b1")
+    image = pdf_evidence_block(
+        source, space.root, "raw", 1, "p1-b1", require_image=True
+    )
+    assert text["bbox"] == [0, 0.52, 1, 0.58]
+    assert text["text"] == CAPTION and text["image_files"] == [IMAGE]
+    assert image["bbox"] == [0, 0.2, 1, 0.5]
+    assert text["body_bbox"] == image["body_bbox"] == [0, 0.2, 1, 0.5]
+    text["regions"][1]["bbox"][1] = 0
+    assert pdf_evidence_block(source, space.root, "raw", 1, "p1-b1")["bbox"] == [
+        0,
+        0.52,
+        1,
+        0.58,
+    ]
+
+
+def test_legacy_composite_evidence_keeps_its_fixed_bbox(image_space):
+    space, _, _, source = image_space
+    source = source.model_copy(deep=True)
+    file = next(f for f in source.data.files if f.role == "pdf_index")
+    path = space.root / file.path
+    mapping = json.loads(path.read_text())
+    chart = mapping["blocks"][1]
+    chart["bbox"] = chart.pop("body_bbox")
+    chart.pop("regions")
+    payload = json.dumps(mapping).encode()
+    path.write_bytes(payload)
+    file.sha256 = hashlib.sha256(payload).hexdigest()
+    assert pdf_evidence_block(source, space.root, "raw", 1, "p1-b1")["bbox"] == [
+        0,
+        0.2,
+        1,
+        0.5,
+    ]
+    assert pdf_evidence_block(
+        source, space.root, "raw", 1, "p1-b1", require_image=True
+    )["bbox"] == [0, 0.2, 1, 0.5]
+
+
+@pytest.mark.parametrize("bbox", [[0, 0, 2, 1], [0, 0.5, 1, 0.2], None])
+def test_invalid_caption_coordinates_are_rejected(bbox):
+    with zipfile.ZipFile(io.BytesIO(image_zip())) as z:
+        doc = json.loads(z.read("middle.json"))
+    doc["pages"][0]["blocks"][1]["content"][1]["bbox"] = bbox
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as z:
+        z.writestr("middle.json", json.dumps(doc))
+        z.writestr("paper.md", CAPTION)
+        z.writestr(IMAGE, PNG)
+    with pytest.raises(ValueError, match="bounding box"):
+        read_result(buffer.getvalue(), 1)
 
 
 def test_image_bound_to_pdf_and_sent_as_image_not_markdown_link(image_space):
@@ -119,7 +230,23 @@ def test_image_bound_to_pdf_and_sent_as_image_not_markdown_link(image_space):
     assert CAPTION in inputs.manuscript and TABLE in inputs.manuscript
     assert len(inputs.images) == 1
     assert base64.b64decode(inputs.images[0].image_url.url.split(",", 1)[1]) == PNG
-    assert "PAGE 1 BLOCK p1-b1" in inputs.images[0].label
+    assert inputs.images[0].label == "LOCATION I:p1-b1"
+    assert "LOCATION T:p1-b1 (chart)\n" + CAPTION in inputs.manuscript
+    assert "PAGE 1 BLOCK" not in inputs.manuscript
+    request = (
+        ExtractionConfig()
+        .blueprints()["roster"]
+        .request(ModelConfig(model="deepseek-v4.1-flash"), inputs)
+    )
+    content = TokenDanceAdapter().prepare(request)["payload"]["messages"][1]["content"]
+    assert [part["type"] for part in content] == ["text", "text", "image_url"]
+    assert "SUPPLIED CONTEXT" not in content[0]["text"]
+    assert content[1] == {"type": "text", "text": "LOCATION I:p1-b1"}
+    assert content[2]["image_url"]["url"] == inputs.images[0].image_url.url
+    assert inputs.citation_locations["I:p1-b1"] == {
+        "file_id": "raw",
+        "locator": {"kind": "pdf_image", "page": 1, "block_id": "p1-b1"},
+    }
     assert pdf_evidence_block(source, space.root, "raw", 1, "p1-b1", require_image=True)
     with pytest.raises(ValueError, match="no supplied image"):
         pdf_evidence_block(source, space.root, "raw", 1, "p1-b0", require_image=True)

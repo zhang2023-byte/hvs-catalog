@@ -14,6 +14,7 @@ from .common import (
     build_record,
     canonical_json,
 )
+from .identifiers import normalize_catalog_identifier
 from .paper import (
     ConditionalAssessment,
     ContributionSummary,
@@ -25,7 +26,6 @@ from .paper import (
     MeasuredValue,
     ObjectContribution,
     PaperBoundness,
-    PrecedentSnapshotRef,
     PrecedentUse,
     QuantileReport,
     QuantityConflict,
@@ -69,7 +69,6 @@ class StepContext:
     object_ids: tuple[str, ...] = ()
     existing_evidence: tuple[EvidenceRecord, ...] = ()
     existing_questions: dict[str, RecordRef] = field(default_factory=dict)
-    precedents: dict[str, PrecedentSnapshotRef] = field(default_factory=dict)
     id_prefix: str = "record"
     execution_id: str | None = None
     rules_ref: RulesRef | None = None
@@ -590,20 +589,26 @@ def convert_roster_submission(
     for entry_sub in submission.entries:
         item_id = numbering.next_id("roster")
         identifiers: list[RosterIdentifier] = []
+        by_value: dict[str, RosterIdentifier] = {}
         for identifier in entry_sub.identifiers:
-            owner = identifier_owner.get(identifier.value)
-            if owner is not None:
+            value = normalize_catalog_identifier(identifier.value)
+            owner = identifier_owner.get(value)
+            if owner is not None and owner != item_id:
                 raise SubmissionError(
-                    f"名称 {identifier.value!r} 同时出现在 {owner} 和 {item_id}，"
+                    f"名称 {value!r} 同时出现在 {owner} 和 {item_id}，"
                     "同一名称只能属于一个对象"
                 )
-            identifier_owner[identifier.value] = item_id
-            identifiers.append(
-                RosterIdentifier(
-                    value=identifier.value,
-                    evidence_refs=_refs(identifier.evidence, pool),
+            identifier_owner[value] = item_id
+            refs = _refs(identifier.evidence, pool)
+            if value in by_value:
+                previous = by_value[value]
+                previous.evidence_refs.extend(
+                    ref for ref in refs if ref not in previous.evidence_refs
                 )
-            )
+                continue
+            normalized = RosterIdentifier(value=value, evidence_refs=refs)
+            by_value[value] = normalized
+            identifiers.append(normalized)
         contribution_identifiers = [
             IdentifierEntry(value=item.value, evidence_refs=item.evidence_refs)
             for item in identifiers
@@ -668,7 +673,7 @@ def convert_roster_submission(
     for group in submission.unresolved_groups:
         member_ids = []
         for value in group.member_identifier_values:
-            member = identifier_owner.get(value)
+            member = identifier_owner.get(normalize_catalog_identifier(value))
             if member is None:
                 raise SubmissionError(
                     f"未列清范围的已明确成员 {value!r} 不在名单条目中"
@@ -955,32 +960,14 @@ def _convert_object_quantities(
         for entry in coverage
     ]
 
-    precedent_uses: list[PrecedentUse] = []
-    if not context.legacy_questions and obj.precedent_uses:
+    if obj.precedent_uses:
         raise SubmissionError("Precedent input is retired")
-    for use in obj.precedent_uses:
-        snapshot = context.precedents.get(use.precedent_id)
-        if snapshot is None:
-            raise SubmissionError(f"判例 {use.precedent_id} 不在本次输入的判例快照中")
-        precedent_uses.append(
-            PrecedentUse(
-                precedent_ref=snapshot,
-                applies_to=[
-                    ItemRef(
-                        record_id=context.paper_ref.record_id,
-                        revision=context.paper_ref.revision,
-                        item_id=item_id,
-                    )
-                ],
-                explanation=use.explanation,
-            )
-        )
     return QuantityObjectUpdate(
         item_id=item_id,
         quantities=groups,
         quantity_conflicts=conflicts,
         quantity_coverage=coverage,
-        precedent_uses=precedent_uses,
+        precedent_uses=[],
         author_errors=author_errors,
     )
 

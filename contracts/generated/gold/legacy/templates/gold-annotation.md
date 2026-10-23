@@ -5,7 +5,7 @@ This is a complete synthetic JSON example of a v1 working draft, not an approved
 
 ## Instructions
 
-> Annotate one paper from its fixed PDF. Record the paper's own judgments and printed values verbatim: keep identifiers, numeric strings, units, conditions and error forms exactly as printed; never convert, complete, or average them. Cite where in the PDF you saw each statement using the registered PDF file, a free-text location description, an optional 1-based PDF page ordinal (the position in the file, not the printed page number), and an optional verbatim quote. Bind every piece of evidence to a registered file with its content hash. Mark unresolved science (author status, competing values) as pending with a reason instead of inventing an answer. Technical identifiers (contribution, conflict, exclusion, pending ids) are assigned by the tool; supply the scientific content and known attribution/material facts explicitly.
+> Annotate one paper from its fixed PDF. Record the paper's own judgments and printed values: keep numeric strings, units, conditions and error forms exactly as printed; never convert, complete, or average them. Record catalog and survey identifiers with the explicit qualifiers required by S02, preserving their bodies and the separate original evidence for each part. Preserve other names as printed; do not invent missing qualifiers or aliases. Cite where in the PDF you saw each statement using the registered PDF file, a free-text location description, an optional 1-based PDF page ordinal (the position in the file, not the printed page number), and an optional verbatim quote. Bind every piece of evidence to a registered file with its content hash. Mark unresolved science (author status, competing values) as pending with a reason instead of inventing an answer. Technical identifiers (contribution, conflict, exclusion, pending ids) are assigned by the tool; supply the scientific content and known attribution/material facts explicitly.
 
 ## Authorship and approval
 
@@ -56,8 +56,8 @@ The JSON reader assigns omitted contribution_id, conflict_id, exclusion_id and i
     "version": null
   },
   "rules": {
-    "version": "0.3.0",
-    "sha256": "1fb10e90d3659e646a1bf75c2a7e24c0fbae73988f607e4714159f6e53bbfa68"
+    "version": "0.5.0",
+    "sha256": "1ec60683b208d7930e9f29cd9f301c132dd545cac84f256f65f8ea480f53b9f9"
   },
   "files": [
     {

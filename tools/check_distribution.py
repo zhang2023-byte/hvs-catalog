@@ -49,6 +49,7 @@ from installed_extraction_checks import verify_installed_extraction
 from installed_llm_checks import verify_installed_llm
 from installed_pdf_fixture import PDF_FIXTURE
 from installed_pipeline_checks import verify_pipeline_and_scoring
+from installed_preparation_checks import verify_preparation_batches
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -71,7 +72,7 @@ FORBIDDEN_SEGMENTS = frozenset(
     }
 )
 
-# Seven explicitly retired modules must never reappear; retain valid modules/package entry points.
+# Retired modules must never reappear; retain valid modules/package entry points.
 RETIRED_MODULE_PATHS = frozenset(
     {
         "hvs_catalog/demo/graph.py",
@@ -81,6 +82,10 @@ RETIRED_MODULE_PATHS = frozenset(
         "hvs_catalog/synthetic/runner.py",
         "hvs_catalog/synthetic/service.py",
         "hvs_catalog/evaluation/git_revision.py",
+        "hvs_catalog/materials/_mineru_worker.py",
+        "hvs_catalog/materials/_mineru_api_worker.py",
+        "hvs_catalog/materials/_mineru_table_worker.py",
+        "hvs_catalog/materials/cloud_tables.py",
     }
 )
 
@@ -1341,7 +1346,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(f"  - {violation}")
             return 1
         print(f"[通过] 发行内容检查：{wheels[0].name} 与 {sdists[0].name}")
-        print("[通过] 七个退役模块均不在 wheel/sdist 中")
+        print("[通过] 退役模块均不在 wheel/sdist 中")
 
         venv_dir = tmp / "venv"
         venv_command = ["uv", "venv", venv_dir]
@@ -1389,6 +1394,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             for problem in problems:
                 print(f"  - {problem}")
             return 1
+        problems = verify_preparation_batches(bin_python, work_dir, script)
+        if problems:
+            print("[失败] 仓库外批量准备与阶段隔离走查未通过：")
+            for problem in problems:
+                print(f"  - {problem}")
+            return 1
         problems = verify_pipeline_and_scoring(venv_dir, work_dir, script)
         if problems:
             print("[失败] 仓库外合成提取与评分走查未通过：")
@@ -1416,9 +1427,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "完成后丢失返回的重复核对）；合成提取与评分走查通过"
         "（包来源与方法查询、3×2 提取与评分用例、重复评分一致与篡改"
         "拒绝、跨进程暂停决定恢复、两组对照实验隔离与专家用时边界）；"
-        "材料准备走查通过（合成PDF导入、本地解析器替身、准备、无模型消费核对）；"
+        "材料准备走查通过（合成PDF导入、解析服务替身、准备、无模型消费核对）；"
         "模型接口与 CLI 走查通过（四模型 HTTP/SSE、工具输出、持久保存、恢复复用及许可随包）；"
         "提取配置与提示走查通过（英文资源、完整预览、逐步模型与跨进程模拟恢复）；"
+        "批量准备走查通过（分阶段入口、跨词去重、跨进程接续和清单导出）；"
         "获取子系统 CLI 走查通过（文档化公开初始化、导入/重放、"
         "状态人读+JSON、材料输出、未就绪/未初始化/缺检索条件/缺来源"
         "声明的错误码边界；安装后 discover/fetch/revisions 的离线合成"

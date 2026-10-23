@@ -280,9 +280,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     from .cli_acquisition import build_acquisition_parser
     from .cli_materials import build_materials_parser
+    from .cli_preparation import build_preparation_parser
 
     build_acquisition_parser(commands)
     build_materials_parser(commands)
+    build_preparation_parser(commands)
     from .cli_llm import add_model_commands
 
     add_model_commands(commands)
@@ -735,6 +737,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         from .cli_materials import run_materials_command
 
         return run_materials_command(args)
+    if args.command == "prepare":
+        from .cli_preparation import run_preparation_command
+
+        return run_preparation_command(args)
     if args.command == "models":
         from .cli_llm import run_model_command
 

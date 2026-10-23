@@ -8,20 +8,18 @@ import re
 from pathlib import Path
 
 from langgraph.graph import END, START, StateGraph
-from langgraph.types import interrupt
 
 from ..llm.config import CallRequest, Message
 from ..llm.managed import CallFailure, CallService, execute_model_call
 from ..llm.prompts import PromptBlueprint, PromptTarget
 from ..records import StepContext, convert_quantity_submission, validate_collection
-from ..records.common import RecordRef, build_record, canonical_json, sha256_of
+from ..records.common import RecordRef, canonical_json, sha256_of
 from ..records.paper import PaperRecord
 from ..records.quantity_input import (
     bind_quantity_input,
     canonicalize_limit_operands,
     expand_object_quantity_input,
 )
-from ..records.questions import QuestionRecord, compute_question_fingerprint
 from ..records.rules import quantity_paths
 from ..records.runs import ModelJudgment
 from ..records.submission import QuantitySubmission, SubmissionError, ValueSubmission
@@ -117,7 +115,8 @@ def refresh_saved_partials(space, execution_id, *, object_ids):
         blueprint = PromptBlueprint.model_validate(
             json.loads(space.read_file(handle.input_snapshot.prompt_refs[0]))[
                 "quantities"
-            ]
+            ],
+            context={"historical": True},
         )
         errors = []
         for entry in selected:
@@ -162,7 +161,6 @@ def refresh_saved_partials(space, execution_id, *, object_ids):
 class PDFExtractionFlow(RosterFlow):
     """Preserve each successful object before reviewing or failing another one."""
 
-    defer_review = True
     defer_partial_failure = True
 
     def __init__(self, *, mode):
@@ -262,7 +260,8 @@ class PDFExtractionFlow(RosterFlow):
         snapshot = ctx.execution.input_snapshot
         config = stored_configuration(snapshot)
         blueprint = PromptBlueprint.model_validate(
-            json.loads(ctx.space.read_file(snapshot.prompt_refs[0]))["quantities"]
+            json.loads(ctx.space.read_file(snapshot.prompt_refs[0]))["quantities"],
+            context={"historical": True},
         )
         errors = (
             ["Roster extraction incomplete: " + state["roster_error"]]
@@ -307,25 +306,6 @@ class PDFExtractionFlow(RosterFlow):
             raise WaitingForCall()
         if errors:
             raise CallFailure("Quantity extraction incomplete: " + "; ".join(errors))
-        if snapshot.expert_adjudication:
-            review = ReviewService(ctx.space)
-            for view in review.list_questions(execution_id=ctx.execution.execution_id):
-                while True:
-                    current = review.get_question(view.question_ref)
-                    if current.application and current.application.phase == "applied":
-                        break
-                    interrupt(
-                        {
-                            "question_ref": view.question_ref.model_dump(mode="json"),
-                            "step_id": "quantities",
-                            "prompt": current.record.data.prompt,
-                        }
-                    )
-            # A roster decision may have supplied new eligible objects. Reenter
-            # the node with current revisions; successful object calls are reused.
-            current_roster = ctx.store.read_record_current(roster.record_id)
-            if current_roster.revision != roster.revision:
-                return self._quantities(ctx, state)
         paper = self._assemble(ctx)
         digest = sha256_of(paper.data.model_dump(mode="json"))
         if ctx.reuse_step("quantities", digest) is None:
@@ -345,9 +325,7 @@ class PDFExtractionFlow(RosterFlow):
             digest = sha256_of({"request_digest": digest, "object_retry": token})
         if "measurements" in payload:
             payload = expand_object_quantity_input(payload, item_id)
-        if not ctx.execution.input_snapshot.expert_adjudication and payload.get(
-            "questions", []
-        ):
+        if payload.get("questions", []):
             raise SubmissionError(
                 "Automatic extraction must record a model judgment, not request expert interpretation"
             )
@@ -469,60 +447,6 @@ class PDFExtractionFlow(RosterFlow):
         questions = [
             _replace_question_refs(q, replacements) for q in converted.questions
         ]
-        if ctx.execution.input_snapshot.expert_adjudication and len(questions) > 1:
-            # One complete object revision must resolve its dependent questions
-            # together; sequential patches against revision 1 would become stale.
-            content = _question_content(questions[0])
-            content = type(content)(
-                category="interpretation",
-                target_refs=content.target_refs,
-                source_refs=content.source_refs,
-                rules_ref=content.rules_ref,
-                prompt="Resolve these linked numerical questions together in one complete object revision:\n"
-                + "\n".join(
-                    f"{i}. {q.data.prompt}" for i, q in enumerate(questions, 1)
-                ),
-                evidence_refs=list(
-                    {
-                        canonical_json(r.model_dump()): r
-                        for q in questions
-                        for r in q.data.evidence_refs
-                    }.values()
-                ),
-                gap_refs=list(
-                    {
-                        canonical_json(r.model_dump()): r
-                        for q in questions
-                        for r in q.data.gap_refs
-                    }.values()
-                ),
-                context_refs=[q.ref() for q in questions],
-            )
-            data = content.content_payload()
-            data.update(
-                fingerprint=compute_question_fingerprint(
-                    category=content.category,
-                    target_refs=content.target_refs,
-                    evidence_refs=content.evidence_refs,
-                    source_refs=content.source_refs,
-                    rules_ref=content.rules_ref,
-                ),
-                status="open",
-                decision_refs=[],
-            )
-            questions.append(
-                build_record(
-                    QuestionRecord,
-                    record_id=derive_question_id(
-                        ctx.execution.execution_id,
-                        content,
-                        space_id=ctx.space.identity.space_id,
-                    ),
-                    execution_id=ctx.execution.execution_id,
-                    created_at=ctx.now(),
-                    data=data,
-                )
-            )
         # Validate the real saved-reference closure, including prior roster evidence.
         from ..workspace.store import record_closure
 
@@ -632,9 +556,7 @@ class PDFExtractionFlow(RosterFlow):
                 if questions:
                     ReviewService(ctx.space).create_questions(
                         execution_id=ctx.execution.execution_id,
-                        step_id=step_id
-                        if ctx.execution.input_snapshot.expert_adjudication
-                        else "scientific-conflict:" + step_id,
+                        step_id="scientific-conflict:" + step_id,
                         request_key=f"{ctx.execution.execution_id}:{step_id}:questions"
                         + (
                             ":" + object_retry_token(ctx, step_id)
@@ -643,10 +565,6 @@ class PDFExtractionFlow(RosterFlow):
                         ),
                         questions=questions,
                         records=records,
-                        context_question_ids=tuple(q.record_id for q in questions[:-1])
-                        if ctx.execution.input_snapshot.expert_adjudication
-                        and len(questions) > 1
-                        else (),
                     )
                     committed = []
                 else:
@@ -881,16 +799,10 @@ class PDFExtractionFlow(RosterFlow):
         if questions:
             ReviewService(ctx.space).create_questions(
                 execution_id=ctx.execution.execution_id,
-                step_id=partial_step
-                if ctx.execution.input_snapshot.expert_adjudication
-                else "scientific-conflict:" + partial_step,
+                step_id="scientific-conflict:" + partial_step,
                 request_key=f"{ctx.execution.execution_id}:{partial_step}:questions",
                 questions=questions,
                 records=records,
-                context_question_ids=tuple(q.record_id for q in questions[:-1])
-                if ctx.execution.input_snapshot.expert_adjudication
-                and len(questions) > 1
-                else (),
             )
             committed = []
         else:

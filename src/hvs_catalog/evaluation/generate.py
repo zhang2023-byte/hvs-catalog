@@ -68,8 +68,11 @@ GOLD_OUTPUT_DIRNAME = "gold"
 
 _ANNOTATION_INSTRUCTIONS = (
     "Annotate one paper from its fixed PDF. Record the paper's own judgments and "
-    "printed values verbatim: keep identifiers, numeric strings, units, conditions "
-    "and error forms exactly as printed; never convert, complete, or average them. "
+    "printed values: keep numeric strings, units, conditions and error forms "
+    "exactly as printed; never convert, complete, or average them. Record catalog "
+    "and survey identifiers with the explicit qualifiers required by S02, "
+    "preserving their bodies and the separate original evidence for each part. "
+    "Preserve other names as printed; do not invent missing qualifiers or aliases. "
     "Cite where in the PDF you saw each statement using the registered PDF file, a "
     "free-text location description, an optional 1-based PDF page ordinal (the "
     "position in the file, not the printed page number), and an optional verbatim "

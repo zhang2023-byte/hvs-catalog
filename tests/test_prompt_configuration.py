@@ -8,10 +8,8 @@ from pydantic import ValidationError
 
 from hvs_catalog.llm import ModelConfig, prompts
 from hvs_catalog.llm.prompts import (
-    PrecedentInput,
     PromptGap,
     PromptInput,
-    PromptQuestion,
     PromptTarget,
 )
 from hvs_catalog.pipeline import (
@@ -25,7 +23,9 @@ def test_defaults_and_complete_step_override():
     config = ExtractionConfig(
         step_models={"quantities": ModelConfig(model="mimo-v2.6-flash")}
     )
-    assert config.method == "roster" and not config.expert_adjudication
+    assert (
+        config.method == "roster" and "expert_adjudication" not in config.model_dump()
+    )
     assert config.model_for("roster").parameters == {
         "max_tokens": 393216,
         "thinking_type": "enabled",
@@ -71,15 +71,9 @@ def test_protocol_parameter_and_daily_ai_boundaries():
         )
     with pytest.raises(ValidationError, match="retired"):
         ExtractionConfig(expert_adjudication=True)
-    for method in ("roster",):
-        assert (
-            len(
-                check_extraction_config(
-                    ExtractionConfig(mode="evaluation", expert_adjudication=False)
-                )["steps"]
-            )
-            >= 2
-        )
+    assert (
+        len(check_extraction_config(ExtractionConfig(mode="evaluation"))["steps"]) == 2
+    )
 
 
 def test_science_briefs_full_explanations_and_selected_definitions():
@@ -136,20 +130,32 @@ def test_fixed_related_examples_shared_across_steps():
         assert blueprint.schema_ == plans[step].schema_
 
 
-def test_optional_model_guidance_is_independent_of_science(monkeypatch):
-    source = copy.deepcopy(prompts.prompt_resources())
-    source["models"]["deepseek-v4.1-flash"] = {
-        "text": "Use concise English phrasing in free-text explanations."
+def test_models_share_task_instructions_and_keep_protocol_parameters():
+    default = ExtractionConfig()
+    alternate = ExtractionConfig(
+        step_models={"quantities": ModelConfig(model="mimo-v2.6-flash")}
+    )
+    assert alternate.blueprints() == default.blueprints()
+    assert alternate.model_for("quantities") != default.model_for("quantities")
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_retired_model_guidance_is_read_only(enabled):
+    raw = {
+        **ExtractionConfig().model_dump(mode="json"),
+        "use_model_supplements": enabled,
     }
-    monkeypatch.setattr(prompts, "prompt_resources", lambda: source)
-    enabled = ExtractionConfig().blueprints()["roster"]
-    disabled = ExtractionConfig(use_model_supplements=False).blueprints()["roster"]
-    assert "Use concise English phrasing" in enabled.system
-    assert "Use concise English phrasing" not in disabled.system
-    for row in prompts.science_content()["rules"]:
-        assert row["summary"] in disabled.system
-    assert enabled.examples == disabled.examples
-    assert enabled.schema_ == disabled.schema_
+    with pytest.raises(ValidationError, match="Extra inputs"):
+        ExtractionConfig.model_validate(raw)
+    from types import SimpleNamespace
+
+    from hvs_catalog.pipeline.configuration import stored_configuration
+
+    historical = stored_configuration(
+        SimpleNamespace(options={"extraction_config": json.dumps(raw)})
+    )
+    assert historical.use_model_supplements is enabled
+    assert historical.blueprints() == ExtractionConfig().blueprints()
 
 
 def test_missing_and_non_english_instruction_sources_fail(monkeypatch):
@@ -183,7 +189,11 @@ def test_daily_and_evaluation_share_automatic_input(method, step):
     assert "Provided or assigned by the application" not in daily.system
 
 
-def test_supplied_gap_scope_and_question_evidence_are_preserved():
+@pytest.mark.parametrize(
+    ("with_target", "with_gap"),
+    [(False, False), (True, False), (False, True), (True, True)],
+)
+def test_nonempty_context_and_original_material_are_preserved(with_target, with_gap):
     gap = PromptGap(
         gap_id="gap-supplement",
         description="The supplement containing the distance measurement is missing.",
@@ -200,62 +210,92 @@ def test_supplied_gap_scope_and_question_evidence_are_preserved():
             ],
         },
     )
-    question = PromptQuestion(
-        question_id="question-distance",
-        prompt="Does this distance denote the heliocentric or Galactocentric distance?",
-        category="interpretation",
-        target_ids=["object-1"],
-        evidence=[
-            {
-                "file_id": "paper",
-                "locator": {"kind": "text", "start_line": 1, "end_line": 1},
-                "excerpt": "原文：distance = 10 kpc",
-            }
-        ],
-    )
     inputs = PromptInput(
         manuscript="FILE paper\n1|原文：distance = 10 kpc",
-        targets=[PromptTarget(object_id="object-1", identifiers=["A"])],
-        material_gaps=[gap],
-        open_questions=[question],
+        targets=[PromptTarget(object_id="object-1", identifiers=["A"])]
+        if with_target
+        else [],
+        material_gaps=[gap] if with_gap else [],
     )
-    with pytest.raises(ValueError, match="retired"):
-        preview_extraction_prompt(ExtractionConfig(), "quantities", inputs)
     preview = preview_extraction_prompt(
-        ExtractionConfig(),
-        "quantities",
-        inputs.model_copy(update={"open_questions": []}),
+        ExtractionConfig(), "quantities" if with_target else "roster", inputs
     )
-    context = preview["request"]["messages"][1]["content"]
-    assert "gap-supplement" in context and "question-distance" not in context
-    assert '"quantity": "observed_phase_space.distance"' in context
-    assert "原文：distance = 10 kpc" in context
-    with pytest.raises(ValidationError, match="English"):
-        PromptQuestion(question_id="bad", prompt="请判断距离")
+    text = preview["request"]["messages"][1]["content"]
+    assert inputs.manuscript in text
+    marker = "===== SUPPLIED CONTEXT =====\n"
+    if with_target or with_gap:
+        context = json.loads(text.split(marker, 1)[1])
+        assert set(context) == (
+            ({"targets"} if with_target else set())
+            | ({"material_gaps"} if with_gap else set())
+        )
+        if with_target:
+            assert context["targets"] == [
+                {"object_id": "object-1", "identifiers": ["A"]}
+            ]
+        if with_gap:
+            assert context["material_gaps"] == [
+                {
+                    "gap_id": "gap-supplement",
+                    "description": "The supplement containing the distance measurement is missing.",
+                    "reason": "missing",
+                    "file_id": "supplement",
+                    "affected_targets": {
+                        "scope": "known",
+                        "items": [
+                            {
+                                "item_id": "object-1",
+                                "quantity": "observed_phase_space.distance",
+                            }
+                        ],
+                    },
+                }
+            ]
+    else:
+        assert text == "===== PAPER MATERIALS =====\n" + inputs.manuscript
     with pytest.raises(ValidationError, match="duplicate supplied material gaps"):
         PromptInput(manuscript="Synthetic paper.", material_gaps=[gap, gap])
 
 
-def test_original_materials_preserved_and_precedent_maintenance_hidden():
-    precedent = PrecedentInput(
-        precedent_id="SYN-P1",
-        version="synthetic-version-8",
-        approved=True,
-        explanation="Use the authors' explicit synthesis.",
-        conditions="The synthesis applies to the supplied object.",
-        boundaries="Do not transfer a sample maximum to every member.",
-    )
+def test_original_materials_preserved_and_retired_inputs_rejected():
     source = "FILE synthetic.tex\n1|原文：银河系候选；α = 10°"
     with pytest.raises(ValidationError, match="retired"):
-        ExtractionConfig(precedents=[precedent])
+        ExtractionConfig(precedents=[{"precedent_id": "SYN-P1"}])
+    with pytest.raises(ValidationError, match="Extra inputs"):
+        PromptInput(manuscript=source, open_questions=[])
     preview = preview_extraction_prompt(
         ExtractionConfig(), "roster", PromptInput(manuscript=source)
     )
     assert source in preview["request"]["messages"][1]["content"]
     assert preview["prepared"]["payload"]["model"] == "deepseek-v4.1-flash"
-    for bad in ({"approved": False}, {"explanation": ""}, {"language": "zh"}):
-        with pytest.raises(ValidationError):
-            PrecedentInput.model_validate({**precedent.model_dump(), **bad})
+
+
+def test_historical_empty_prompt_fields_preserve_requests():
+    from hvs_catalog.llm.prompts import PromptBlueprint
+
+    config = ExtractionConfig()
+    inputs = PromptInput(manuscript="Synthetic paper with original source text.")
+    blueprint = config.blueprints()["roster"]
+    old_inputs = {**inputs.model_dump(), "open_questions": []}
+    old_blueprint = {**blueprint.model_dump(by_alias=True), "precedents": []}
+    historical = {"historical": True}
+    restored_inputs = PromptInput.model_validate(old_inputs, context=historical)
+    restored_blueprint = PromptBlueprint.model_validate(
+        old_blueprint, context=historical
+    )
+    assert restored_blueprint.request(config.model_for("roster"), restored_inputs) == (
+        blueprint.request(config.model_for("roster"), inputs)
+    )
+    with pytest.raises(ValidationError, match="retired"):
+        PromptInput.model_validate(
+            {**old_inputs, "open_questions": [{"question_id": "retired"}]},
+            context=historical,
+        )
+    with pytest.raises(ValidationError, match="retired"):
+        PromptBlueprint.model_validate(
+            {**old_blueprint, "precedents": [{"precedent_id": "retired"}]},
+            context=historical,
+        )
 
 
 def test_single_roster_and_quantity_contract():

@@ -11,10 +11,11 @@ from materials_helpers import FakeMinerU, make_pdf, mineru_zip, prepared_space
 from test_acquisition_lifecycle import FakeArxivService
 
 from hvs_catalog.materials import MaterialsService
-from hvs_catalog.materials.mineru import LocalMinerU, MinerUError, read_result
+from hvs_catalog.materials.mineru import MinerUError, read_result
 from hvs_catalog.pipeline.acquisition import AcquisitionService
 from hvs_catalog.records.common import RecordRef
 from hvs_catalog.records.pdf import pdf_evidence_block, pdf_page_count
+from hvs_catalog.runtime import get_execution
 from hvs_catalog.workspace import (
     WorkspaceConflictError,
     backup_workspace,
@@ -135,7 +136,9 @@ def test_failed_parser_durable_no_empty_success(tmp_path):
 
     class Broken(FakeMinerU):
         def parse(self, *args):
-            raise MinerUError("parser process failed")
+            raise MinerUError(
+                "parser process failed", artifacts={"hvs-parser.log": b"length stop"}
+            )
 
     service = MaterialsService(space, runner=Broken())
     handle, report = service.prepare_materials(
@@ -146,7 +149,19 @@ def test_failed_parser_durable_no_empty_success(tmp_path):
     )
     assert service.get_preparation(handle.execution_id)["state"] == "failed"
     assert space.store().read_record(source.material_ref)
+    execution = get_execution(space, handle.execution_id)
+    run = space.store().read_record_current(execution.run_ref.record_id)
+    assert len(run.data.artifacts) == 1
+    ref = run.data.artifacts[0]
+    assert space.read_file(ref) == b"length stop"
+    backup_workspace(space, tmp_path / "failed-backup")
     space.close()
+    restore_workspace(tmp_path / "failed-backup", tmp_path / "failed-restored")
+    restored = open_workspace(tmp_path / "failed-restored")
+    try:
+        assert restored.read_file(ref) == b"length stop"
+    finally:
+        restored.close()
 
 
 @pytest.mark.parametrize("payload", [b"", b"<html>error</html>", b"%PDF-1.7\nbroken"])
@@ -182,26 +197,3 @@ def test_invalid_parser_mapping_rejected(change):
         z.writestr("paper.md", "text")
     with pytest.raises(MinerUError):
         read_result(buffer.getvalue(), 1)
-
-
-@pytest.mark.integration
-def test_parser_cli_runs_all_pages_in_real_subprocess(tmp_path):
-    exe = tmp_path / "mineru-kit"
-    raw = tmp_path / "result.zip"
-    raw.write_bytes(mineru_zip("S5-HVS1"))
-    exe.write_text(
-        "#!/usr/bin/env python3\nimport sys,shutil\nfrom pathlib import Path\n"
-        'if sys.argv[1:]==["--version"]:print("mineru-kit 4.0.0")\n'
-        'elif sys.argv[1:4]==["models","verify","--tier"]:assert sys.argv[4]=="standard"\n'
-        'else:\n assert "--pages" in sys.argv and sys.argv[sys.argv.index("--pages")+1]=="all"\n'
-        ' assert Path(sys.argv[2]).suffix==".pdf"\n'
-        ' assert sys.argv[sys.argv.index("--tier")+1]=="advanced"\n'
-        f' shutil.copyfile({str(raw)!r},sys.argv[sys.argv.index("-o")+1])\n'
-    )
-    exe.chmod(0o755)
-    pdf = tmp_path / "source.bin"
-    pdf.write_bytes(make_pdf())
-    parser = LocalMinerU(str(exe))
-    assert parser.fingerprint()["tier"] == "advanced"
-    payload, parsed = parser.parse(pdf, 1)
-    assert payload == raw.read_bytes() and parsed["blocks"][0]["text"] == "S5-HVS1"

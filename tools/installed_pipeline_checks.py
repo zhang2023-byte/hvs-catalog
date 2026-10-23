@@ -307,8 +307,8 @@ def materials_check_problems(payload: object) -> list[str]:
     fingerprint = payload.get("parser_fingerprint")
     if not isinstance(fingerprint, str) or len(fingerprint) != 64:
         problems.append("安装后的PDF解析实现没有有效冻结指纹")
-    if payload.get("flow_version") != "1":
-        problems.append("安装后的PDF材料流程不是当前版本1")
+    if payload.get("flow_version") != "2":
+        problems.append("安装后的PDF材料流程不是当前版本2")
     if int(summary.get("pages") or 0) < 1 or int(summary.get("blocks") or 0) < 1:
         problems.append("合成PDF应提供页与内容块")
     if payload.get("consume_ok") is not True:

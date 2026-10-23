@@ -267,7 +267,7 @@ def test_zero_exit_with_bad_artifact_reports_context(
                 "consume_problems": [],
                 "observer_installed": True,
                 "parser_fingerprint": "a" * 64,
-                "flow_version": "1",
+                "flow_version": "2",
             }
         else:
             pytest.fail(f"unexpected command: {command}")

@@ -178,7 +178,7 @@ if phase=='create':
     source=AcquisitionService(space).import_local_pdf(pdf,arxiv_id='2501.01111v1',provenance='Independent fictional installed-package fixture.')
     prep,report=MaterialsService(space,runner=Parser()).prepare_materials(request_key='prepare',paper=source.canonical_id)
     assert report.outcome=='finished',report.errors
-    config=ExtractionConfig(mode='evaluation',expert_adjudication=False,runtime=RuntimeConfig(quota_store=root.parent/'pdf-quota.sqlite'))
+    config=ExtractionConfig(mode='evaluation',runtime=RuntimeConfig(quota_store=root.parent/'pdf-quota.sqlite'))
     handle=start_pdf_extraction(space,preparation_execution_id=prep.execution_id,request_key='extract',configuration=config)
     (root.parent/'pdf-execution.json').write_text(json.dumps({'execution':handle.execution_id,'config':config.model_dump(mode='json')}))
     space.close()

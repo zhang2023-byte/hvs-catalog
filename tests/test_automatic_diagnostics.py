@@ -140,6 +140,11 @@ def test_legacy_configuration_can_be_read_but_cannot_resume():
     assert stored_configuration(snapshot).expert_adjudication
     with pytest.raises(ValueError, match="read-only"):
         validate_configuration_snapshot(snapshot)
+    # Conflicting legacy metadata must not restore expert execution by projecting
+    # the active configuration to its single automatic request form.
+    snapshot.expert_adjudication = False
+    with pytest.raises(ValueError, match="read-only"):
+        validate_configuration_snapshot(snapshot)
     raw["expert_adjudication"] = False
     snapshot.options["extraction_config"] = json.dumps(raw)
     snapshot.expert_adjudication = False

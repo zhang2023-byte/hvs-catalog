@@ -643,6 +643,52 @@ def test_roster_conversion(gap_source):
     assert result.roster.method == "roster"
 
 
+def test_catalog_format_merges_only_same_entry_and_retains_raw_evidence(gap_source):
+    payload = roster_submission()
+    entry = payload["entries"][0]
+    first = copy.deepcopy(entry["identifiers"][0])
+    first["value"] = "Gaia source ID 0123456789012345678"
+    second = {
+        "value": "Gaia 0123456789012345678",
+        "evidence": [entry["contribution"]["summary"]["evidence"][1]],
+    }
+    entry["identifiers"] = [first, second]
+    payload["unresolved_groups"] = [
+        {
+            "original_range": "named stars",
+            "evidence": first["evidence"],
+            "member_identifier_values": [first["value"]],
+            "reason": "Other members unreadable.",
+        }
+    ]
+    submission = RosterSubmission.model_validate(payload)
+    before = submission.model_dump()
+    result = convert_roster_submission(roster_context(gap_source), submission)
+    saved = result.roster.entries[0]
+    assert [identifier.value for identifier in saved.identifiers] == [
+        "Gaia 0123456789012345678"
+    ]
+    assert len(saved.identifiers[0].evidence_refs) == 2
+    assert result.contributions[0].identifiers[0].value == "Gaia 0123456789012345678"
+    assert result.roster.unresolved_groups[0].known_member_item_ids == [saved.item_id]
+    assert submission.model_dump() == before
+    excerpts = {record.data.excerpt for record in result.evidence}
+    assert first["evidence"][0]["source"]["excerpt"] in excerpts
+    assert second["evidence"][0]["source"]["excerpt"] in excerpts
+
+
+def test_catalog_format_does_not_merge_distinct_roster_entries(gap_source):
+    payload = roster_submission()
+    payload["entries"][0]["identifiers"][0]["value"] = "Gaia ID 0123456789012345678"
+    other = copy.deepcopy(payload["entries"][0])
+    other["identifiers"][0]["value"] = "Gaia 0123456789012345678"
+    payload["entries"].append(other)
+    with pytest.raises(ValueError, match="同一名称只能属于一个对象"):
+        convert_roster_submission(
+            roster_context(gap_source), RosterSubmission.model_validate(payload)
+        )
+
+
 def test_roster_pending_assessment_creates_question(gap_source):
     payload = roster_submission()
     payload["entries"][0]["contribution"]["boundness"] = {

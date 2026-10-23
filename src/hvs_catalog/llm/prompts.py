@@ -5,10 +5,9 @@ from __future__ import annotations
 import json
 import re
 import tomllib
-from collections.abc import Sequence
 from importlib import resources
 
-from pydantic import Field, model_validator
+from pydantic import Field, ValidationInfo, model_validator
 
 from ..records.common import Config
 from ..records.generate import (
@@ -17,15 +16,9 @@ from ..records.generate import (
 )
 from ..records.paper import ContributionType
 from ..records.quantity_input import quantity_input_schema
-from ..records.questions import QuestionCategory
 from ..records.roster_input import roster_input_schema
 from ..records.rules import AuthorStatus, rules_bytes
 from ..records.source import AffectedTargets, GapReason
-from ..records.submission import (
-    InlineSource,
-    QuantitySubmission,
-    RosterSubmission,
-)
 from .config import (
     CallRequest,
     ImageContent,
@@ -44,29 +37,6 @@ def english_text(value: object, *, location: str) -> str:
     if re.search(r"[\u3400-\u9fff\u3040-\u30ff\uac00-\ud7af]", value):
         raise ValueError(f"English instruction required: {location}")
     return value
-
-
-class PrecedentInput(Config):
-    """Explicitly supplied approved English precedent, without library lookup."""
-
-    precedent_id: str = Field(min_length=1)
-    version: str = Field(min_length=1)
-    language: str = "en"
-    approved: bool
-    explanation: str
-    conditions: str
-    boundaries: str
-
-    @model_validator(mode="after")
-    def _approved_english(self):
-        if self.language != "en" or self.approved is not True:
-            raise ValueError("precedents require approved English content")
-        for name in ("explanation", "conditions", "boundaries"):
-            english_text(getattr(self, name), location=f"precedent.{name}")
-        return self
-
-    def visible(self) -> dict:
-        return self.model_dump(exclude={"version", "approved", "language"})
 
 
 class PromptTarget(Config):
@@ -103,20 +73,6 @@ class PromptGap(Config):
         return self
 
 
-class PromptQuestion(Config):
-    question_id: str = Field(min_length=1)
-    prompt: str
-    category: QuestionCategory | None = None
-    target_ids: list[str] = Field(default_factory=list)
-    gap_ids: list[str] = Field(default_factory=list)
-    evidence: list[InlineSource] = Field(default_factory=list)
-
-    @model_validator(mode="after")
-    def _english_prompt(self):
-        english_text(self.prompt, location="open_question.prompt")
-        return self
-
-
 class PromptImage(Config):
     label: str = Field(min_length=1)
     image_url: ImageURL
@@ -130,16 +86,20 @@ class PromptInput(Config):
     citation_locations: dict[str, dict] = Field(default_factory=dict)
     targets: list[PromptTarget] = Field(default_factory=list)
     material_gaps: list[PromptGap] = Field(default_factory=list)
-    open_questions: list[PromptQuestion] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _stored_empty_questions(cls, value, info: ValidationInfo):
+        if isinstance(value, dict) and info.context and info.context.get("historical"):
+            value = dict(value)
+            if value.pop("open_questions", []) != []:
+                raise ValueError("expert question inputs are retired")
+        return value
 
     @model_validator(mode="after")
     def _english_context(self):
-        for values, name, attribute in (
-            (self.material_gaps, "material gaps", "gap_id"),
-            (self.open_questions, "open questions", "question_id"),
-        ):
-            if len({getattr(value, attribute) for value in values}) != len(values):
-                raise ValueError(f"duplicate supplied {name}")
+        if len({gap.gap_id for gap in self.material_gaps}) != len(self.material_gaps):
+            raise ValueError("duplicate supplied material gaps")
         if len({(target.item_id, target.object_id) for target in self.targets}) != len(
             self.targets
         ):
@@ -148,8 +108,8 @@ class PromptInput(Config):
 
 
 FORMATS = {
-    "roster": (RosterSubmission, render_roster_template),
-    "quantity": (QuantitySubmission, render_quantity_template),
+    "roster": render_roster_template,
+    "quantity": render_quantity_template,
 }
 
 
@@ -173,7 +133,7 @@ def science_content() -> dict:
 
 
 def _filling_format(kind: str) -> tuple[str, dict]:
-    _model, render = FORMATS[kind]
+    render = FORMATS[kind]
     text = render().replace("<!-- Generated -->\n", "")
     # Only the scientific filling sections are sent; application bookkeeping is hidden.
     if "## Provided by the application" in text:
@@ -204,36 +164,36 @@ class PromptBlueprint(Config):
     explanation_ids: list[str]
     definition_groups: list[str]
     examples: list[dict]
-    precedents: list[PrecedentInput] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _stored_empty_precedents(cls, value, info: ValidationInfo):
+        if isinstance(value, dict) and info.context and info.context.get("historical"):
+            value = dict(value)
+            if value.pop("precedents", []) != []:
+                raise ValueError("precedent inputs are retired")
+        return value
 
     def request(self, model: ModelConfig, inputs: PromptInput) -> CallRequest:
         inputs = PromptInput.model_validate(inputs.model_dump())
-        if self.precedents or inputs.open_questions:
-            raise ValueError("expert question and precedent inputs are retired")
         if self.step_id == "quantities" and (
             not inputs.targets or any(t.object_id is None for t in inputs.targets)
         ):
             raise ValueError("quantity extraction requires supplied roster objects")
         if self.step_id == "quantities" and len(inputs.targets) != 1:
             raise ValueError("quantity extraction requires exactly one supplied object")
-        user = (
-            "===== PAPER MATERIALS =====\n"
-            + inputs.manuscript
-            + "\n\n===== SUPPLIED CONTEXT =====\n"
-            + json.dumps(
-                inputs.model_dump(
-                    exclude={
-                        "manuscript",
-                        "images",
-                        "citation_locations",
-                        "open_questions",
-                    },
-                    exclude_none=True,
-                ),
-                ensure_ascii=False,
-                indent=2,
+        context = {
+            name: value
+            for name, value in inputs.model_dump(
+                include={"targets", "material_gaps"}, exclude_none=True
+            ).items()
+            if value
+        }
+        user = "===== PAPER MATERIALS =====\n" + inputs.manuscript
+        if context:
+            user += "\n\n===== SUPPLIED CONTEXT =====\n" + json.dumps(
+                context, ensure_ascii=False, indent=2
             )
-        )
         content = user
         if inputs.images:
             content = [TextContent(text=user)]
@@ -273,14 +233,8 @@ def bind_material_gaps(
 def assemble_blueprint(
     step_id: str,
     *,
-    model: ModelConfig,
-    expert_adjudication: bool = False,
     example_ids: list[str] | None = None,
-    use_model_supplements: bool = True,
-    precedents: Sequence[PrecedentInput] = (),
 ) -> PromptBlueprint:
-    if expert_adjudication or precedents:
-        raise ValueError("expert adjudication and precedent inputs are retired")
     sources, science = prompt_resources(), science_content()
     if step_id not in sources["steps"]:
         raise ValueError(f"step has no model prompt: {step_id}")
@@ -304,7 +258,7 @@ def assemble_blueprint(
             "Fill only the current step's scientific fields; other steps handle the remaining tasks."
         ),
         (
-            "PDF blocks identify the source file, one-based page, and block_id. "
+            "PDF location IDs use p for the one-based page and b for the block index. "
             "Use the supplied evidence locations in the current filling format. Read each table together with its captions, "
             "column headings, notes and surrounding paragraphs. Parsed content is a reading aid; "
             "the original PDF remains authoritative. Quote block text verbatim. "
@@ -357,12 +311,6 @@ def assemble_blueprint(
     filling, schema = _filling_format(step["format"])
     blocks.append(english_text(filling, location=step_id + ".filling"))
     system = "\n\n".join(blocks)
-    if use_model_supplements:
-        supplement = sources.get("models", {}).get(model.model)
-        if supplement is not None:
-            system += "\n\n# Model expression guidance\n" + english_text(
-                supplement.get("text"), location=model.model + ".supplement"
-            )
     system += f"\n\nUse the tool supplied for this turn exactly once. Initially submit_{step_id} receives the scientific fields; a later repair tool accepts only the requested replacements. Return no additional wrapper or commentary."
     return PromptBlueprint(
         step_id=step_id,

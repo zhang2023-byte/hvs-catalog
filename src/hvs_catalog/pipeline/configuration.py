@@ -10,7 +10,6 @@ from pydantic import Field, ValidationInfo, model_validator
 
 from ..llm import ModelConfig, RuntimeConfig, TokenDanceAdapter
 from ..llm.prompts import (
-    PrecedentInput,
     PromptBlueprint,
     PromptGap,
     PromptInput,
@@ -29,7 +28,6 @@ class ExtractionConfig(Config):
         return "roster"
 
     mode: Literal["daily", "evaluation", "synthetic"] = "daily"
-    expert_adjudication: bool = False
     parallelism: int = Field(default=100, ge=1, strict=True)
     max_format_corrections: int = Field(default=2, ge=0, le=2, strict=True)
     default_model: ModelConfig = Field(
@@ -55,8 +53,6 @@ class ExtractionConfig(Config):
         }
     )
     examples: dict[str, list[str]] = Field(default_factory=dict)
-    use_model_supplements: bool = True
-    precedents: list[PrecedentInput] = Field(default_factory=list)
     runtime: RuntimeConfig = Field(
         default_factory=lambda: RuntimeConfig(retry_post_send_network_errors=True)
     )
@@ -70,22 +66,14 @@ class ExtractionConfig(Config):
                 value["step_models"] = {}
             if info.context and info.context.get("historical"):
                 value.setdefault("max_format_corrections", 2)
+            elif "expert_adjudication" in value or "precedents" in value:
+                raise ValueError("expert adjudication and precedent inputs are retired")
         return value
 
     @model_validator(mode="after")
     def _supported(self, info: ValidationInfo):
         TokenDanceAdapter().validate_runtime(self.runtime)
-        historical = bool(info.context and info.context.get("historical"))
-        if self.expert_adjudication and not historical:
-            raise ValueError(
-                "expert adjudication is retired; extraction uses one automatic scientific rule set"
-            )
-        if self.precedents and not historical:
-            raise ValueError("precedent input is retired")
-        from .methods import DEFAULT_REGISTRY
-
-        steps = DEFAULT_REGISTRY.get(self.method).spec.step_ids()
-        allowed = set(steps) - {"finalize"}
+        allowed = set(self.model_steps())
         for name in {*self.step_models, *self.examples}:
             if name not in allowed:
                 raise ValueError(f"unknown or non-model step for {self.method}: {name}")
@@ -95,19 +83,10 @@ class ExtractionConfig(Config):
                     "extraction configuration currently supports Token Dance profiles only"
                 )
             ModelConfig.model_validate(model.model_dump())
-        ids = [p.precedent_id for p in self.precedents]
-        if len(ids) != len(set(ids)):
-            raise ValueError("duplicate precedent identifiers")
         return self
 
     def model_steps(self) -> tuple[str, ...]:
-        from .methods import DEFAULT_REGISTRY
-
-        return tuple(
-            s
-            for s in DEFAULT_REGISTRY.get(self.method).spec.step_ids()
-            if s != "finalize"
-        )
+        return ("roster", "quantities")
 
     def model_for(self, step_id: str) -> ModelConfig:
         if step_id not in self.model_steps():
@@ -120,11 +99,7 @@ class ExtractionConfig(Config):
         return {
             step: assemble_blueprint(
                 step,
-                model=self.model_for(step),
-                expert_adjudication=self.expert_adjudication,
                 example_ids=self.examples.get(step),
-                use_model_supplements=self.use_model_supplements,
-                precedents=self.precedents,
             )
             for step in self.model_steps()
         }
@@ -142,7 +117,6 @@ class ExtractionConfig(Config):
             mode=self.mode,
             method=self.method,
             source_refs=source_refs,
-            expert_adjudication=self.expert_adjudication,
             models=[
                 spec(self.default_model),
                 *[
@@ -196,7 +170,6 @@ def preview_extraction_prompt(
         "prepared": prepared,
         "request_sha256": sha256_of(request.model_dump(mode="json")),
         "examples": blueprint.examples,
-        "precedents": [p.model_dump() for p in blueprint.precedents],
     }
 
 
@@ -230,10 +203,20 @@ def freeze_configuration(space, config: ExtractionConfig, *, inputs=None) -> dic
     }
 
 
+class _HistoricalExtractionConfig(ExtractionConfig):
+    """Read old configuration metadata without restoring retired model inputs."""
+
+    expert_adjudication: bool = False
+    precedents: list[dict] = Field(default_factory=list)
+    use_model_supplements: bool = True
+
+
 def stored_configuration(snapshot) -> ExtractionConfig | None:
     raw = snapshot.options.get("extraction_config")
     return (
-        ExtractionConfig.model_validate_json(raw, context={"historical": True})
+        _HistoricalExtractionConfig.model_validate_json(
+            raw, context={"historical": True}
+        )
         if raw
         else None
     )
@@ -247,6 +230,7 @@ def validate_configuration_snapshot(snapshot) -> ExtractionConfig | None:
 
     if (
         snapshot.expert_adjudication
+        or config.expert_adjudication
         or config.precedents
         or snapshot.rules.model_dump() != current_rules_ref()
     ):
@@ -274,7 +258,9 @@ def configured_request(ctx, step_id: str, request: dict, state: dict) -> dict:
     blueprints = json.loads(
         ctx.space.read_file(ctx.execution.input_snapshot.prompt_refs[0])
     )
-    blueprint = PromptBlueprint.model_validate(blueprints[step_id])
+    blueprint = PromptBlueprint.model_validate(
+        blueprints[step_id], context={"historical": True}
+    )
     source = ctx.store.read_record(ctx.execution.input_snapshot.source_refs[0])
     blocks = []
     for file in source.data.files:

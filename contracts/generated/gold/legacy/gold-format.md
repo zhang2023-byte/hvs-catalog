@@ -13,7 +13,7 @@ Evidence keeps the expert's PDF discipline: a registered file with its content h
 
 ## Vocabulary
 
-Quantities reuse the 18 approved science rule paths at rules version `0.3.0`; the author overall assessment states are the current rule states (`no_overall_conclusion`, `unbound`, `possibly_unbound`, `possibly_bound`, `bound`). The legacy status vocabulary is preserved verbatim on migration via `legacy_status` (`unbound`, `possibly_unbound`, `bound`, `no_overall_conclusion`, `not_assessed`); `not_assessed` no longer exists in the current rules and is reported for expert review instead of being converted.
+Quantities reuse the 18 approved science rule paths at rules version `0.5.0`; the author overall assessment states are the current rule states (`no_overall_conclusion`, `unbound`, `possibly_unbound`, `possibly_bound`, `bound`). The legacy status vocabulary is preserved verbatim on migration via `legacy_status` (`unbound`, `possibly_unbound`, `bound`, `no_overall_conclusion`, `not_assessed`); `not_assessed` no longer exists in the current rules and is reported for expert review instead of being converted.
 
 | Vocabulary | Values |
 |---|---|

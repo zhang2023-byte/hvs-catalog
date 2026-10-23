@@ -8,7 +8,8 @@ import re
 import unicodedata
 from collections.abc import Iterable
 
-_GAIA = re.compile(r"Gaia (DR[123]|EDR3) (?:(?:Source )?ID |source_id )?(\d{15,22})")
+from ...records.identifiers import normalize_catalog_identifier
+
 _GAIA_COLUMN = re.compile(
     r"\bGaia\s+(DR[123]|EDR3)\s+(?:(?:Source\s+)?ID|source_id)\s+column\b"
 )
@@ -21,8 +22,7 @@ def normalize_identifier(text: str) -> str:
     normalized = " ".join(
         unicodedata.normalize("NFC", text).replace("−", "-").replace("–", "-").split()
     )
-    gaia = _GAIA.fullmatch(normalized)
-    return f"Gaia {gaia[1]} {gaia[2]}" if gaia else normalized
+    return normalize_catalog_identifier(normalized)
 
 
 def identifier_keys(identifiers: Iterable[str]) -> set[str]:

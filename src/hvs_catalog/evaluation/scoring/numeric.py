@@ -23,10 +23,10 @@ from .printed import (
 from .results import PairingDetail
 
 NUMERIC_SCHEME = {
-    "version": "8",
+    "version": "9",
     "symbolic_offsets": "a complete scalar plus/minus one unresolved ASCII identifier is structurally different from a supported scalar; no formula equivalence, substitution or arithmetic; other unsupported syntax remains undecidable",
     "integer_digit_spacing": "uniform single-digit spacing in one complete scalar integer; preserve signs, all digits and approximation; no grouping, list, decimal or exponent-fragment concatenation",
-    "objects": "paper-local identifiers and explicit aliases; NFC, Unicode minus/en dash, whitespace; retain explicit Gaia release/ID-column and HVS-column namespaces from the identifier's own saved Gold evidence; optional Gaia Source ID label and anchored a.k.a. declarations; never infer from row order, coordinates or values",
+    "objects": "paper-local identifiers and explicit aliases; NFC, Unicode minus/en dash, whitespace; shared catalog formatting removes field labels only from recognized explicit Gaia numeric, APOGEE 2M, SDSS J and LAMOST J forms, with or without an explicit release; preserve the body and never supply a catalog or release; retain legacy explicit Gaia release/ID-column and HVS-column namespaces from the identifier's own saved Gold evidence and anchored a.k.a. declarations; never infer from row order, coordinates or values",
     "pairing": "maximum complete numeric matching within matched object and quantity",
     "residual_pairing": "maximum undecidable pairs, then definite differences, sorted refs",
     "content": "value, errors/components, unit, limits, intervals/endpoints, coverage/quantiles",

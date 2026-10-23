@@ -538,9 +538,7 @@ def test_partial_group_and_conditional_judgment_preserved_without_expert(prepare
             "evidence": [evidence(15)],
         }
     ]
-    config = prepared[2].model_copy(
-        update={"mode": "evaluation", "expert_adjudication": False}
-    )
+    config = prepared[2].model_copy(update={"mode": "evaluation"})
     handle, report, adapter, service = run(prepared, [payload], config=config)
     assert report.outcome == "finished", report.errors
     roster, paper = results(prepared[0], handle.execution_id)
@@ -729,7 +727,8 @@ def test_original_range_reaches_model_without_generated_members(tmp_path):
             RecordRef.model_validate(bundle["prepared_source_ref"])
         )
         prompt = material_prompt(space, bundle, record).manuscript
-        assert "PAGE 1 BLOCK p1-b0" in prompt
+        assert "LOCATION T:p1-b0 (paragraph)\n" in prompt
+        assert "PAGE 1 BLOCK p1-b0" not in prompt
         assert "HVS1,4-5 and others" in prompt
         assert "APPLICATION GROUP MEMBERS" not in prompt
         assert '"members"' not in prompt
@@ -767,6 +766,27 @@ def test_missing_named_group_entry_can_be_appended_without_rewriting_science(pre
         == invalid["unresolved_groups"][0]["reason"]
     )
     assert "Append the omitted entry" in adapter.seen[1]["messages"][-1]["content"]
+
+
+def test_formatted_group_member_uses_existing_entry_without_repair(prepared):
+    payload = submission()
+    payload["entries"][0]["identifiers"][0]["value"] = "Gaia ID 0123456789012345678"
+    payload["unresolved_groups"] = [
+        {
+            "original_range": "Named star and others",
+            "evidence": [evidence(4)],
+            "member_identifier_values": ["Gaia 0123456789012345678"],
+            "reason": "The remaining objects are unnamed.",
+        }
+    ]
+    handle, report, adapter, _ = run(prepared, [payload])
+    assert report.outcome == "finished", report.errors
+    assert len(adapter.seen) == 1
+    roster, _ = results(prepared[0], handle.execution_id)
+    assert roster.data.entries[0].identifiers[0].value == "Gaia 0123456789012345678"
+    assert roster.data.unresolved_groups[0].known_member_item_ids == [
+        roster.data.entries[0].item_id
+    ]
 
 
 def test_format_correction_cannot_append_an_unrequested_scientific_object(prepared):

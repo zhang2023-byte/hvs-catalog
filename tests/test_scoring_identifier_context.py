@@ -52,6 +52,13 @@ def test_only_own_explicit_identifier_evidence_qualifies(value, evidence, expect
     ("gold", "prediction", "matches"),
     [
         ([f"Gaia DR2 {SOURCE_ID}"], f"Gaia DR2 Source ID {SOURCE_ID}", True),
+        ([f"Gaia {SOURCE_ID}"], f"Gaia source ID {SOURCE_ID}", True),
+        ([f"Gaia ID {SOURCE_ID}"], f"Gaia {SOURCE_ID}", True),
+        ([f"Gaia {SOURCE_ID}"], f"Gaia DR3 {SOURCE_ID}", False),
+        ([f"Gaia {SOURCE_ID}"], SOURCE_ID, False),
+        (["APOGEE DR17 2M01234567+1234567"], "APOGEE DR17 ID 2M01234567+1234567", True),
+        (["APOGEE DR17 2M01234567+1234567"], "APOGEE 2M01234567+1234567", False),
+        (["SDSS DR10 J012345.00+123456.0"], "LAMOST DR10 J012345.00+123456.0", False),
         ([f"Gaia DR2 {SOURCE_ID}"], f"Gaia DR3 {SOURCE_ID}", False),
         ([f"Gaia DR2 {SOURCE_ID}"], SOURCE_ID, False),
         ([f"Gaia DR2 {SOURCE_ID}"], "Gaia DR2 1234567890123456788", False),

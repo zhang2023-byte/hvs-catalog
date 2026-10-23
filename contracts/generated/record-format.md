@@ -5,7 +5,7 @@ This document is generated from the shared Pydantic definitions in `hvs_catalog.
 
 ### Record envelope
 
-Every record is a JSON object with the following outer fields; the payload lives under `data`. Field names, status codes and this documentation are English. New summaries, questions and precedent notes are English; printed identifiers, values and evidence excerpts retain their original form.
+Every record is a JSON object with the following outer fields; the payload lives under `data`. Field names, status codes and this documentation are English. New summaries, questions and precedent notes are English; Record identifiers as specified in S02; values and evidence excerpts retain their original form.
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
@@ -64,7 +64,7 @@ The quantity code is the legacy path of the approved science rules; the definiti
 | `possibly_bound` | The authors overall favor a Galactic bound interpretation while still considering an unbound interpretation possible. |
 | `bound` | The authors explicitly give an overall bound conclusion. Such an object is not included as candidates_found; an object eligible as follow_up of a historical candidate may have this state. |
 
-Rules version: `0.3.0` (sha256 `1fb10e90d3659e646a1bf75c2a7e24c0fbae73988f607e4714159f6e53bbfa68`).
+Rules version: `0.5.0` (sha256 `1ec60683b208d7930e9f29cd9f301c132dd545cac84f256f65f8ea480f53b9f9`).
 
 ## Field definitions
 
@@ -769,7 +769,7 @@ The checks below cannot be expressed as field constraints alone; they are implem
 
 Step submissions contain only the scientific fields of that step. The application supplies fixed paper and source context, object identifiers, record identifiers, references, revisions and all execution metadata; none of these are model-filled. The common instruction text sent with every step is:
 
-> Return only the scientific fields requested for this step. Write new summaries, interpretation rationales and diagnostic reasons in English; preserve printed identifiers, values, units, conditions and excerpts in their original form. Use only supplied paper materials. Provide required lists explicitly; an empty list does not establish that the paper reported nothing. Keep material gaps, parser errors, source errors, conflicting measurements and the authors' assessment distinct. Choose the best-supported interpretation under S07 and briefly record its evidence-based rationale. Source errors require original-paper evidence, definitions or explicit logical contradictions; unusual but possible values are not errors. Preserve errors and unexplained same-condition conflicts as diagnostics, omit affected claims, and continue independent results. Never invent a replacement value. Supply required evidence and use application-supplied identifiers. The application assigns persistent record identifiers, references and execution metadata.
+> Return only the scientific fields requested for this step. Write new summaries, interpretation rationales and diagnostic reasons in English. Record identifiers as specified in S02; preserve values, units, conditions and excerpts in their original form. Use only supplied paper materials. Provide required lists explicitly; an empty list does not establish that the paper reported nothing. Keep material gaps, parser errors, source errors, conflicting measurements and the authors' assessment distinct. Choose the best-supported interpretation under S07 and briefly record its evidence-based rationale. Source errors require original-paper evidence, definitions or explicit logical contradictions; unusual but possible values are not errors. Preserve errors and unexplained same-condition conflicts as diagnostics, omit affected claims, and continue independent results. Never invent a replacement value. Supply required evidence and use application-supplied identifiers. The application assigns persistent record identifiers, references and execution metadata.
 
 Numeric filling rules:
 

@@ -86,7 +86,7 @@ def test_model_combinations_actual_requests_and_per_step_usage(space, mode):
 
 def test_ai_interpretation_is_recorded_without_expert_and_remains_pending(space):
     source = import_mock_source(space, PAPER_C)
-    config = ExtractionConfig(mode="evaluation", expert_adjudication=False)
+    config = ExtractionConfig(mode="evaluation")
     handle = start_configured_extraction(
         space, configuration=config, source_refs=[source], request_key="unresolved-ai"
     )

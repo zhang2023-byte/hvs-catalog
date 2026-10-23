@@ -19,16 +19,21 @@ from ..records.common import (
 from ..records.pdf import pdf_page_count
 from ..records.source import SourceFile, SourcePackageRecord
 from ..runtime import DefaultFlowAdapter
-from .mineru import LocalMinerU
+from ..runtime.execution import append_run_revision
+from .mineru import MinerUError
+from .mineru_official import OfficialMinerU
 
 FLOW_ID = "hvs-pdf-prepare"
-FLOW_VERSION = "1"
+FLOW_VERSION = "2"
 STEP = "parse_pdf"
 
 
 def parser_fingerprint() -> str:
     return hashlib.sha256(
-        Path(__file__).read_bytes() + Path(__file__).with_name("mineru.py").read_bytes()
+        b"".join(
+            Path(__file__).with_name(name).read_bytes()
+            for name in ("flow.py", "mineru.py", "mineru_official.py")
+        )
     ).hexdigest()
 
 
@@ -44,7 +49,7 @@ class MaterialsFlow(DefaultFlowAdapter):
     mode = "daily"
 
     def __init__(self, *, runner=None):
-        self.runner = runner or LocalMinerU()
+        self.runner = runner
 
     def initial_state(self, ctx):
         return {"execution_id": ctx.execution.execution_id}
@@ -57,6 +62,8 @@ class MaterialsFlow(DefaultFlowAdapter):
         return graph.compile(checkpointer=ctx.checkpointer)
 
     def _prepare(self, ctx, state):
+        if self.runner is None:
+            self.runner = OfficialMinerU(ctx.space)
         request = json.loads(ctx.execution.input_snapshot.options["materials_request"])
         if request["parser_fingerprint"] != parser_fingerprint():
             raise ValueError("PDF adapter code changed; create a new preparation")
@@ -90,7 +97,22 @@ class MaterialsFlow(DefaultFlowAdapter):
         pdf = pdfs[0]
         pdf_bytes = ctx.space.read_file(ArtifactRef(path=pdf.path, sha256=pdf.sha256))
         pages = pdf_page_count(pdf_bytes)
-        raw, parsed = self.runner.parse(ctx.space.root / pdf.path, pages)
+        try:
+            raw, parsed = self.runner.parse(ctx.space.root / pdf.path, pages)
+        except MinerUError as exc:
+            artifacts = []
+            for name, content in exc.artifacts.items():
+                digest = hashlib.sha256(content).hexdigest()
+                artifacts.append(
+                    ctx.space.publish_run_file(
+                        ctx.execution.execution_id,
+                        f"outputs/parser-diagnostics/{digest}-{name}",
+                        content,
+                    )
+                )
+            if artifacts:
+                append_run_revision(ctx.space, ctx.execution, artifacts=artifacts)
+            raise
         files = [pdf.model_copy(update={"read_state": "ready"})]
 
         def publish(name, content, media, role, derived):
@@ -110,6 +132,8 @@ class MaterialsFlow(DefaultFlowAdapter):
             return ref
 
         publish("mineru.zip", raw, "application/zip", "parser_output", [pdf.file_id])
+        for name, (content, media) in parsed.get("additional_outputs", {}).items():
+            publish(name, content, media, "parser_output", [pdf.file_id])
         import io
         import zipfile
 

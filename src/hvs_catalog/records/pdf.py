@@ -78,7 +78,25 @@ def pdf_evidence_block(
                 raise ValueError("PDF image evidence is not bound to this original")
             if image_media_type(read(image)) != image.media_type:
                 raise ValueError("PDF image evidence MIME type is invalid")
-    return copy.deepcopy(blocks[0])
+    block = copy.deepcopy(blocks[0])
+    # Text evidence contains the complete author transcription, so its rectangle
+    # must cover every contributing text region. Image evidence keeps the body
+    # geometry. Old fixed indices retain their original location unchanged.
+    boxes = [
+        region["bbox"]
+        for region in block.get("regions", [])
+        if (region.get("image_files") if require_image else region.get("text"))
+    ]
+    if boxes:
+        block["bbox"] = [
+            min(b[0] for b in boxes),
+            min(b[1] for b in boxes),
+            max(b[2] for b in boxes),
+            max(b[3] for b in boxes),
+        ]
+    elif require_image:
+        block["bbox"] = block.get("body_bbox", block["bbox"])
+    return block
 
 
 def pdf_page_count(payload: bytes) -> int:

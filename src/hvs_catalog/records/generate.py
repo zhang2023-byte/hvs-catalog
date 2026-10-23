@@ -94,8 +94,9 @@ from .submission import (
 
 COMMON_INSTRUCTIONS = (
     "Return only the scientific fields requested for this step. Write new summaries, "
-    "interpretation rationales and diagnostic reasons in English; preserve printed identifiers, "
-    "values, units, conditions and excerpts in their original form. Use only supplied "
+    "interpretation rationales and diagnostic reasons in English. Record identifiers "
+    "as specified in S02; preserve values, units, conditions and excerpts in their "
+    "original form. Use only supplied "
     "paper materials. Provide required lists explicitly; an empty list does not establish "
     "that the paper reported nothing. Keep material gaps, parser errors, source errors, "
     "conflicting measurements and the authors' assessment distinct. Choose the "
@@ -417,7 +418,8 @@ def _envelope_section() -> list[str]:
             "Every record is a JSON object with the following outer fields; the payload "
             "lives under `data`. Field names, status codes and this documentation are "
             "English. New summaries, questions and precedent notes are English; "
-            "printed identifiers, values and evidence excerpts retain their original form."
+            "Record identifiers as specified in S02; values and evidence excerpts "
+            "retain their original form."
         ),
         "",
         "| Field | Type | Required | Notes |",
@@ -626,7 +628,7 @@ def render_roster_template() -> str:
                 ),
                 (
                     (
-                        "Entries: printed identifiers with inline evidence, disposition "
+                        "Entries: identifiers as specified in S02 with inline evidence, disposition "
                         "(`included` / `excluded` / `pending`), inclusion or exclusion evidence"
                     ),
                     "Roster entry numbering (`item_id`), contribution numbering",

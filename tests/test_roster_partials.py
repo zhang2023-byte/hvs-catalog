@@ -317,7 +317,10 @@ def test_partial_never_selects_ambiguous_owner_or_fakes_empty(prepared, kind):
             assert saved.data.entries[0].contribution_id.endswith("-" + str(index))
 
 
-def test_partial_group_preserves_printed_range_and_only_links_saved_members(prepared):
+@pytest.mark.parametrize("catalog_format", [False, True])
+def test_partial_group_preserves_printed_range_and_only_links_saved_members(
+    prepared, catalog_format
+):
     raw = json.loads(json.dumps(f.roster()))
     raw["entries"][1]["boundness_evidence"] = [bad_citation()]
     raw["unresolved_groups"] = [
@@ -328,6 +331,11 @@ def test_partial_group_preserves_printed_range_and_only_links_saved_members(prep
             "reason": "The unnamed remainder cannot be established.",
         }
     ]
+    if catalog_format:
+        raw["entries"][0]["identifiers"][0]["value"] = "Gaia ID 0123456789012345678"
+        raw["unresolved_groups"][0]["member_identifier_values"][0] = (
+            "Gaia 0123456789012345678"
+        )
     original = copy.deepcopy(raw)
     h, report, _ = begin(prepared, ScriptedAdapter([raw]), corrections=0)
     assert report.outcome == "failed" and raw == original

@@ -109,11 +109,7 @@ class Adapter(ScriptedAdapter):
         else:
             content = payload["messages"][1]["content"]
             text = content[0]["text"] if isinstance(content, list) else content
-            context = json.loads(
-                text.split("===== SUPPLIED CONTEXT =====\n", 1)[1].split(
-                    "\n\n===== APPROVED PRECEDENTS", 1
-                )[0]
-            )
+            context = json.loads(text.split("===== SUPPLIED CONTEXT =====\n", 1)[1])
             target = context["targets"][0]["object_id"]
             response = self.respond({**tool, "_object_id": target}, payload)
         self.seen.append(copy.deepcopy(payload))
@@ -130,16 +126,14 @@ def prepared_pdf(tmp_path):
     config = ExtractionConfig(
         mode="evaluation",
         max_format_corrections=2,
-        expert_adjudication=False,
         runtime=RuntimeConfig(quota_store=tmp_path / "quota.sqlite"),
     )
     yield space, prep.execution_id, config
     space.close()
 
 
-def start(prepared, adapter, expert=False, key="extract"):
+def start(prepared, adapter, key="extract"):
     space, prep, config = prepared
-    config = config.model_copy(update={"expert_adjudication": expert})
     handle = start_pdf_extraction(
         space, preparation_execution_id=prep, configuration=config, request_key=key
     )
@@ -229,7 +223,7 @@ def test_automatic_extraction_preserves_numbers_and_all_eighteen_completion_entr
             else quantities(object_id(tool))
         )
     )
-    handle, result, service = start(prepared_pdf, adapter, expert=False)
+    handle, result, service = start(prepared_pdf, adapter)
     assert result.outcome == "finished", result.errors
     contributions = paper(
         prepared_pdf[0], handle.execution_id
@@ -313,7 +307,7 @@ def test_bad_question_container_preserves_independent_complete_measurement(
         return payload
 
     adapter = Adapter(respond, names=("A",))
-    handle, result, _ = start(prepared_pdf, adapter, expert=False)
+    handle, result, _ = start(prepared_pdf, adapter)
     assert result.outcome == "failed"
     assert (
         len(adapter.seen) == 4
@@ -643,7 +637,7 @@ def test_annotated_citation_ids_are_bound_without_extra_model_calls(prepared_pdf
         return payload
 
     adapter = Adapter(respond, names=("A",))
-    handle, result, _ = start(prepared_pdf, adapter, expert=False)
+    handle, result, _ = start(prepared_pdf, adapter)
     assert result.outcome == "finished", result.errors
     assert len(adapter.seen) == 2
     space = prepared_pdf[0]
@@ -683,7 +677,7 @@ def test_example_id_cannot_be_used_as_unsupplied_precedent(prepared_pdf):
         return payload
 
     adapter = Adapter(respond, names=("A",))
-    handle, result, _ = start(prepared_pdf, adapter, expert=False)
+    handle, result, _ = start(prepared_pdf, adapter)
     assert result.outcome == "finished", result.errors
     assert len(adapter.seen) == 3
     contribution = paper(
@@ -964,7 +958,6 @@ def test_program_binds_known_material_gap_only_to_declared_affected_quantity(tmp
         assert prepared.outcome == "finished"
         config = ExtractionConfig(
             mode="evaluation",
-            expert_adjudication=False,
             runtime=RuntimeConfig(quota_store=tmp_path / "quota.sqlite"),
         )
 
