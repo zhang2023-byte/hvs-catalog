@@ -1,0 +1,107 @@
+{
+  "$defs": {
+    "SavedPaperInput": {
+      "additionalProperties": false,
+      "properties": {
+        "arxiv_id": {
+          "minLength": 1,
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "reference": {
+          "format": "path",
+          "title": "Reference",
+          "type": "string"
+        },
+        "workspace": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Workspace"
+        },
+        "execution_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execution Id"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "reference"
+      ],
+      "title": "SavedPaperInput",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "hvs.scoring-manifest",
+      "default": "hvs.scoring-manifest",
+      "title": "Format",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "scope": {
+      "default": "full",
+      "enum": [
+        "full",
+        "roster"
+      ],
+      "title": "Scope",
+      "type": "string"
+    },
+    "quantities": {
+      "items": {
+        "enum": [
+          "ra",
+          "dec",
+          "distance",
+          "parallax",
+          "proper_motion_ra",
+          "proper_motion_dec",
+          "radial_velocity",
+          "galactocentric_radius",
+          "galactic_rest_frame_velocity",
+          "bound_probability",
+          "unbound_probability"
+        ],
+        "type": "string"
+      },
+      "title": "Quantities",
+      "type": "array"
+    },
+    "papers": {
+      "items": {
+        "$ref": "#/$defs/SavedPaperInput"
+      },
+      "minItems": 1,
+      "title": "Papers",
+      "type": "array"
+    }
+  },
+  "required": [
+    "papers"
+  ],
+  "title": "SavedScoringInput",
+  "type": "object"
+}

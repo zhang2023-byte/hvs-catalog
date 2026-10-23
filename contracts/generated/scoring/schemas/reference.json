@@ -1,0 +1,439 @@
+{
+  "$defs": {
+    "GoldMaterial": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "const": "paper.pdf",
+          "default": "paper.pdf",
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha256"
+      ],
+      "title": "GoldMaterial",
+      "type": "object"
+    },
+    "GoldMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "arxiv_id": {
+          "description": "Bare arXiv identifier, without a version suffix.",
+          "pattern": "^(?:[0-9]{4}\\.[0-9]{4,5}|[a-zA-Z-]+(?:\\.[A-Z]{2})?/[0-9]{7})$",
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "version": {
+          "description": "arXiv paper version, such as v1; not a format version.",
+          "pattern": "^v[1-9][0-9]*$",
+          "title": "Version",
+          "type": "string"
+        },
+        "title": {
+          "description": "Paper title.",
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "authors": {
+          "description": "Paper authors in reported order.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        },
+        "format": {
+          "const": "hvs.gold-annotation",
+          "default": "hvs.gold-annotation",
+          "title": "Format",
+          "type": "string"
+        },
+        "format_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Format Version",
+          "type": "integer"
+        },
+        "rules": {
+          "$ref": "#/$defs/GoldRules"
+        },
+        "material": {
+          "$ref": "#/$defs/GoldMaterial"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "version",
+        "title",
+        "authors",
+        "rules",
+        "material"
+      ],
+      "title": "GoldMetadata",
+      "type": "object"
+    },
+    "GoldRules": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "sha256"
+      ],
+      "title": "GoldRules",
+      "type": "object"
+    },
+    "PdfContributionType": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "description": "Contribution category. Scientific inclusion rules are separate.",
+          "enum": [
+            "candidates_found",
+            "follow_up"
+          ],
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/PdfEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "PdfContributionType",
+      "type": "object"
+    },
+    "PdfEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "page": {
+          "description": "One-based file page ordinal, not printed page number.",
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "location": {
+          "description": "Visible table, section, object row or other precise location.",
+          "minLength": 1,
+          "title": "Location",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "location"
+      ],
+      "title": "PdfEvidence",
+      "type": "object"
+    },
+    "PdfIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "description": "Star identifier.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/PdfEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "PdfIdentifier",
+      "type": "object"
+    },
+    "PdfQuantity": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "description": "Short quantity identifier from the existing science definitions.",
+          "enum": [
+            "ra",
+            "dec",
+            "distance",
+            "parallax",
+            "proper_motion_ra",
+            "proper_motion_dec",
+            "radial_velocity",
+            "galactocentric_radius",
+            "galactic_rest_frame_velocity",
+            "bound_probability",
+            "unbound_probability"
+          ],
+          "title": "Quantity",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/PdfValue"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "values"
+      ],
+      "title": "PdfQuantity",
+      "type": "object"
+    },
+    "PdfStar": {
+      "additionalProperties": false,
+      "properties": {
+        "identifiers": {
+          "items": {
+            "$ref": "#/$defs/PdfIdentifier"
+          },
+          "minItems": 1,
+          "title": "Identifiers",
+          "type": "array"
+        },
+        "contribution_type": {
+          "$ref": "#/$defs/PdfContributionType"
+        },
+        "quantities": {
+          "items": {
+            "$ref": "#/$defs/PdfQuantity"
+          },
+          "title": "Quantities",
+          "type": "array"
+        }
+      },
+      "required": [
+        "identifiers",
+        "contribution_type",
+        "quantities"
+      ],
+      "title": "PdfStar",
+      "type": "object"
+    },
+    "PdfValue": {
+      "additionalProperties": false,
+      "dependentRequired": {
+        "lower_inclusive": [
+          "lower_bound"
+        ],
+        "upper_inclusive": [
+          "upper_bound"
+        ]
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "lower_error"
+            ]
+          },
+          {
+            "required": [
+              "upper_error"
+            ]
+          }
+        ],
+        "required": [
+          "error"
+        ]
+      },
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "lower_bound"
+                ]
+              },
+              {
+                "required": [
+                  "upper_bound"
+                ]
+              }
+            ]
+          },
+          "required": [
+            "value"
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "required": [
+                "lower_bound"
+              ]
+            },
+            {
+              "required": [
+                "upper_bound"
+              ]
+            }
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "value"
+                ]
+              },
+              {
+                "required": [
+                  "error"
+                ]
+              },
+              {
+                "required": [
+                  "lower_error"
+                ]
+              },
+              {
+                "required": [
+                  "upper_error"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "value": {
+          "description": "Reported point value.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "error": {
+          "description": "Reported symmetric error.",
+          "minLength": 1,
+          "title": "Error",
+          "type": "string"
+        },
+        "lower_error": {
+          "description": "Reported lower error, preserving its original sign.",
+          "minLength": 1,
+          "title": "Lower Error",
+          "type": "string"
+        },
+        "upper_error": {
+          "description": "Reported upper error, preserving its original sign.",
+          "minLength": 1,
+          "title": "Upper Error",
+          "type": "string"
+        },
+        "lower_bound": {
+          "description": "Reported lower limit or interval endpoint.",
+          "minLength": 1,
+          "title": "Lower Bound",
+          "type": "string"
+        },
+        "upper_bound": {
+          "description": "Reported upper limit or interval endpoint.",
+          "minLength": 1,
+          "title": "Upper Bound",
+          "type": "string"
+        },
+        "lower_inclusive": {
+          "description": "Whether the reported lower bound is included.",
+          "title": "Lower Inclusive",
+          "type": "boolean"
+        },
+        "upper_inclusive": {
+          "description": "Whether the reported upper bound is included.",
+          "title": "Upper Inclusive",
+          "type": "boolean"
+        },
+        "unit": {
+          "description": "Unit, when applicable.",
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "condition": {
+          "description": "Relevant method, model, reference frame, or statistical meaning.",
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/PdfEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evidence"
+      ],
+      "title": "PdfValue",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One complete reference answer bound to one original PDF and science rules.\n\nReview status is established by the repository workflow, not by a JSON flag.",
+  "properties": {
+    "metadata": {
+      "$ref": "#/$defs/GoldMetadata"
+    },
+    "stars": {
+      "items": {
+        "$ref": "#/$defs/PdfStar"
+      },
+      "title": "Stars",
+      "type": "array"
+    },
+    "notes": {
+      "description": "Brief notes about relevant exclusions, suspected errors, ambiguities, and handling decisions with their basis. Put the roster note first. Follow it with quantity notes in saved roster order. Prefix each quantity note with that star's first identifier and ': '. Omit empty notes. Use an empty array when no note is necessary. Notes do not replace field evidence.",
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "metadata",
+    "stars",
+    "notes"
+  ],
+  "title": "GoldAnnotation",
+  "type": "object"
+}

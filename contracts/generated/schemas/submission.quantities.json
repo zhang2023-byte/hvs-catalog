@@ -1,0 +1,255 @@
+{
+  "$defs": {
+    "ImageEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "location": {
+          "description": "Copy the complete I: location, such as I:p5-b6. Exclude LOCATION.",
+          "pattern": "^I:p[1-9][0-9]*-b[0-9]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location"
+      ],
+      "type": "object",
+      "description": "Evidence from an image. Do not include a quote field."
+    },
+    "Quantity": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "description": "The quantity identifier from the scientific rules.",
+          "enum": [
+            "ra",
+            "dec",
+            "distance",
+            "parallax",
+            "proper_motion_ra",
+            "proper_motion_dec",
+            "radial_velocity",
+            "galactocentric_radius",
+            "galactic_rest_frame_velocity",
+            "bound_probability",
+            "unbound_probability"
+          ],
+          "type": "string"
+        },
+        "values": {
+          "description": "The results for this quantity.",
+          "items": {
+            "$ref": "#/$defs/Value"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "values"
+      ],
+      "type": "object"
+    },
+    "Value": {
+      "additionalProperties": false,
+      "dependentRequired": {
+        "lower_inclusive": [
+          "lower_bound"
+        ],
+        "upper_inclusive": [
+          "upper_bound"
+        ]
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "lower_error"
+            ]
+          },
+          {
+            "required": [
+              "upper_error"
+            ]
+          }
+        ],
+        "required": [
+          "error"
+        ]
+      },
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "lower_bound"
+                ]
+              },
+              {
+                "required": [
+                  "upper_bound"
+                ]
+              }
+            ]
+          },
+          "required": [
+            "value"
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "required": [
+                "lower_bound"
+              ]
+            },
+            {
+              "required": [
+                "upper_bound"
+              ]
+            }
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "value"
+                ]
+              },
+              {
+                "required": [
+                  "error"
+                ]
+              },
+              {
+                "required": [
+                  "lower_error"
+                ]
+              },
+              {
+                "required": [
+                  "upper_error"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "value": {
+          "description": "Reported point value.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "error": {
+          "description": "Reported symmetric error.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "lower_error": {
+          "description": "Reported lower error.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "upper_error": {
+          "description": "Reported upper error.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "lower_bound": {
+          "description": "Reported lower limit or interval endpoint.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "upper_bound": {
+          "description": "Reported upper limit or interval endpoint.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "lower_inclusive": {
+          "description": "Include only when the paper explicitly includes or excludes the lower endpoint. Use true for inclusion and false for exclusion.",
+          "type": "boolean"
+        },
+        "upper_inclusive": {
+          "description": "Include only when the paper explicitly includes or excludes the upper endpoint. Use true for inclusion and false for exclusion.",
+          "type": "boolean"
+        },
+        "unit": {
+          "description": "Unit for this result.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "condition": {
+          "description": "Relevant method, model, reference frame, or statistical meaning. Include applicable confidence levels and quantiles when the paper reports them.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "evidence": {
+          "$ref": "#/$defs/EvidenceList",
+          "description": "Evidence for this result, including its numerical components, unit, and condition."
+        }
+      },
+      "required": [
+        "evidence"
+      ],
+      "type": "object",
+      "description": "For each result, provide either a point value with any reported errors or one or two bounds. Include only the error sides that the paper reports. Do not combine symmetric and asymmetric errors. Use both bound fields for a pure interval.\n\nPreserve signs, precision, trailing zeros, coordinate notation, and unevaluated expressions.\n\nOmit optional fields when the paper does not report the corresponding information. Do not use null, empty strings, or default values."
+    },
+    "TextEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "location": {
+          "description": "Copy the complete T: location, such as T:p3-b5. Exclude LOCATION and the block type.",
+          "pattern": "^T:p[1-9][0-9]*-b[0-9]+$",
+          "type": "string"
+        },
+        "quote": {
+          "description": "Copy a nonempty excerpt from the corresponding text block without changes. Keep its original language.",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "quote"
+      ],
+      "type": "object",
+      "description": "Evidence from text or a caption."
+    },
+    "EvidenceList": {
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/TextEvidence"
+          },
+          {
+            "$ref": "#/$defs/ImageEvidence"
+          }
+        ]
+      },
+      "minItems": 1,
+      "type": "array",
+      "description": "Use separate items for different locations."
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "quantities": {
+      "description": "One entry per quantity with at least one retained value. Use an empty array if no value meets the scientific rules.",
+      "items": {
+        "$ref": "#/$defs/Quantity"
+      },
+      "type": "array"
+    },
+    "notes": {
+      "description": "If a note discusses a passage or image, include its complete location. Use an empty string if no note is necessary.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "quantities",
+    "notes"
+  ],
+  "type": "object"
+}

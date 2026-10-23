@@ -172,19 +172,9 @@ class MaterialsFlow(DefaultFlowAdapter):
             "pdf_index",
             [pdf.file_id, "mineru.zip"],
         )
-        gaps = [
-            *basis.data.model_dump(mode="json")["gaps"],
-            *[
-                {
-                    "gap_id": f"pdf-gap-{i}",
-                    "reason": "unparsed",
-                    "description": message,
-                    "file_id": pdf.file_id,
-                    "mention_evidence_refs": [],
-                    "affected_targets": {"scope": "unknown", "items": []},
-                }
-                for i, message in enumerate(parsed["gaps"], 1)
-            ],
+        preparation_issues = [
+            *basis.data.preparation_issues,
+            *parsed["preparation_issues"],
         ]
         prepared_ref = RecordRef(
             record_id="pdf-prepared-" + ctx.execution.execution_id, revision=1
@@ -192,7 +182,7 @@ class MaterialsFlow(DefaultFlowAdapter):
         summary = {
             "pages": pages,
             "blocks": len(parsed["blocks"]),
-            "materials_complete": not gaps,
+            "materials_complete": not preparation_issues,
             "parser": request["parser"],
             "pdf_sha256": pdf.sha256,
         }
@@ -202,7 +192,7 @@ class MaterialsFlow(DefaultFlowAdapter):
             "body": {"status": "organized"},
             "pdf_file_id": pdf.file_id,
             "summary": summary,
-            "gaps": gaps,
+            "preparation_issues": preparation_issues,
         }
         bundle_ref = publish(
             "prepared-input.json",
@@ -212,7 +202,10 @@ class MaterialsFlow(DefaultFlowAdapter):
             [pdf.file_id],
         )
         data = basis.data.model_dump(mode="json")
-        data.update(files=[f.model_dump(mode="json") for f in files], gaps=gaps)
+        data.update(
+            files=[f.model_dump(mode="json") for f in files],
+            preparation_issues=preparation_issues,
+        )
         record = build_record(
             SourcePackageRecord,
             record_id=prepared_ref.record_id,

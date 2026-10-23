@@ -1,27 +1,12 @@
-<!-- Generated -->
-# Generated data contracts
+# Current contracts
 
-Shared record contracts are generated from `hvs_catalog.records`.
-The [Gold contracts](gold/README.md) in `gold/` are generated from
-`hvs_catalog.evaluation`. Regenerate both with
-`uv run python tools/render_record_contracts.py` and check with
-`--check`. Do not edit by hand.
+The approved prompts and tool definitions are generated from the project sources.
 
-- `record-format.md` — full record format documentation
-- `schemas/submission.roster.json`, `schemas/submission.quantity.json` — step filling formats
-- `templates/roster-extraction.md`, `templates/quantity-extraction.md` — English step filling templates
-  covering extractor and application responsibilities. Prompt assembly sends only
-  scientific filling sections and the corresponding submission schema.
+| Stage | System prompt | Tool definition | Submission schema | Execution |
+|---|---|---|---|---|
+| Roster | [System](prompts/roster.md) | [Tool](tools/submit_roster.json) | [Schema](schemas/submission.roster.json) | Available |
+| Quantities | [System](prompts/quantities.md) | [Tool](tools/submit_quantities.json) | [Schema](schemas/submission.quantities.json) | Available |
 
-Per record type:
+Both stages use the same frozen paper material. Quantity requests add a second user message with target identifiers.
 
-- `schemas/record.decision.json` — `decision` records
-- `schemas/record.evidence.json` — `evidence` records
-- `schemas/record.external_record.json` — `external_record` records
-- `schemas/record.object.json` — `object` records
-- `schemas/record.paper.json` — `paper` records
-- `schemas/record.question.json` — `question` records
-- `schemas/record.release.json` — `release` records
-- `schemas/record.roster.json` — `roster` records
-- `schemas/record.run.json` — `run` records
-- `schemas/record.source_package.json` — `source_package` records
+The final scientific result uses [literature_contribution.json](schemas/literature_contribution.json). The [run summary](schemas/extraction_run.json) records status and exact references. Its [fictional example](examples/run.json) uses placeholder references. The [input schema](schemas/extraction_input.json) defines the frozen input. The [scoring contract](scoring/README.md) defines fixed references, manifests and offline replay. [Gold tools](gold/README.md) use original-PDF evidence and current scientific fields.

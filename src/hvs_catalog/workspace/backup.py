@@ -169,6 +169,7 @@ def checkpoint_state_problems(
         if execution_id is not None
         else {row.execution_id for row in store.list_executions()}
     )
+    from ..runtime import get_execution
     from .retention import retained_result
 
     closed = {key for key in executions if retained_result(space, key) is not None}
@@ -226,7 +227,12 @@ def checkpoint_state_problems(
                         f"检查点引用的业务结果缺失：{ref.record_id} v{ref.revision}"
                     )
                 elif (
-                    record.execution_id is not None and record.execution_id != thread_id
+                    record.execution_id is not None
+                    and record.execution_id != thread_id
+                    and get_execution(space, thread_id).input_snapshot.options.get(
+                        "roster_ref"
+                    )
+                    != ref.model_dump_json()
                 ):
                     problems.append(
                         f"检查点引用了其他执行的记录：{ref.record_id}"

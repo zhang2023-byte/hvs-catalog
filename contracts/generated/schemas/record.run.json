@@ -204,7 +204,8 @@
         },
         "precedent_refs": {
           "items": {
-            "$ref": "#/$defs/PrecedentSnapshotRef"
+            "additionalProperties": true,
+            "type": "object"
           },
           "minItems": 0,
           "title": "Precedent Refs",
@@ -313,56 +314,6 @@
         "parameters"
       ],
       "title": "ModelSpec",
-      "type": "object"
-    },
-    "PrecedentApproval": {
-      "additionalProperties": false,
-      "properties": {
-        "approved_by": {
-          "minLength": 1,
-          "title": "Approved By",
-          "type": "string"
-        },
-        "approved_at": {
-          "format": "date-time",
-          "title": "Approved At",
-          "type": "string"
-        }
-      },
-      "required": [
-        "approved_by",
-        "approved_at"
-      ],
-      "title": "PrecedentApproval",
-      "type": "object"
-    },
-    "PrecedentSnapshotRef": {
-      "additionalProperties": false,
-      "properties": {
-        "precedent_id": {
-          "minLength": 1,
-          "title": "Precedent Id",
-          "type": "string"
-        },
-        "version": {
-          "minLength": 1,
-          "title": "Version",
-          "type": "string"
-        },
-        "text": {
-          "$ref": "#/$defs/ArtifactRef"
-        },
-        "approval": {
-          "$ref": "#/$defs/PrecedentApproval"
-        }
-      },
-      "required": [
-        "precedent_id",
-        "version",
-        "text",
-        "approval"
-      ],
-      "title": "PrecedentSnapshotRef",
       "type": "object"
     },
     "RecordRef": {

@@ -131,7 +131,7 @@ def _collection_with_table(
                     derived_from=[],
                 )
             ],
-            gaps=[],
+            preparation_issues=[],
         ),
     )
     evidence = build_record(

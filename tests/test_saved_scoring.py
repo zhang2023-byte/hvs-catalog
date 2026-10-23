@@ -1,189 +1,314 @@
-"""Saved full PDF extraction, independent Gold, read-only scoring and portable replay."""
+"""The formal extraction path feeds frozen scoring without new model requests."""
 
-import hashlib
 import json
-import sqlite3
 import subprocess
 import sys
 
 import pytest
-from evaluation_helpers import build_fresh_draft
-from gold_save_helpers import authorize
 from materials_helpers import PAPER
-from test_pdf_quantities import (
-    Adapter,
-    object_id,
-    quantities,
-    start,
-)
-from test_pdf_quantities import prepared_pdf as _prepared_pdf_fixture
+from scoring_helpers import document, group, plan, prediction, reference, star
+from test_quantities import quantities, run_full, value
+from test_roster import ScriptedAdapter, submission
 
-from hvs_catalog.cli import main
-from hvs_catalog.evaluation import (
-    GoldTarget,
-    approved_save,
-    check_save,
-    compact_gold_annotation,
-    parse_gold_annotation,
-    write_compact_gold_pair,
-)
 from hvs_catalog.evaluation.adapt import prediction_from_execution
-from hvs_catalog.evaluation.compact import CompactGoldPair, CompactRevision
-from hvs_catalog.evaluation.saved import SavedScoringInput, prepare_saved_scoring
-from hvs_catalog.workspace import open_workspace
-
-prepared_pdf = _prepared_pdf_fixture
-
-
-def test_prediction_uses_execution_bound_revision_not_later_record(prepared_pdf):
-    from hvs_catalog.pipeline import execution_result_refs
-    from hvs_catalog.records.paper import PaperRecord
-    from hvs_catalog.workspace import CommitRequest
-
-    space, _, _ = prepared_pdf
-    handle, result, _ = start(
-        prepared_pdf, Adapter(lambda tool, _: quantities(object_id(tool)), names=("A",))
-    )
-    assert result.outcome == "finished"
-    before = prediction_from_execution(space, handle.execution_id)
-    ref = next(
-        r
-        for r in execution_result_refs(space, handle.execution_id)
-        if isinstance(space.store().read_record(r), PaperRecord)
-    )
-    paper = space.store().read_record(ref)
-    later = paper.model_copy(
-        update={
-            "revision": paper.revision + 1,
-            "data": paper.data.model_copy(
-                update={
-                    "object_contributions": [
-                        obj.model_copy(update={"quantities": []})
-                        for obj in paper.data.object_contributions
-                    ]
-                }
-            ),
-        }
-    )
-    space.store().commit(
-        CommitRequest(
-            operation_key="synthetic-later-paper",
-            kind="synthetic-interference",
-            new_records=[later],
-            expected_revisions={paper.record_id: paper.revision},
-        )
-    )
-    assert space.store().read_record_current(paper.record_id) == later
-    assert prediction_from_execution(space, handle.execution_id) == before
+from hvs_catalog.evaluation.bundle import (
+    load_scoring_bundle,
+    save_scoring_bundle,
+    score_scoring_bundle,
+)
+from hvs_catalog.evaluation.saved import score_saved_manifest
+from hvs_catalog.evaluation.scoring import score_batch
+from hvs_catalog.llm.managed import CallService
+from hvs_catalog.pipeline import resume_extraction, start_extraction
+from hvs_catalog.workspace import WorkspaceIntegrityError
 
 
-@pytest.fixture
-def manifest(prepared_pdf, tmp_path):
-    space, _, _ = prepared_pdf
-    adapter = Adapter(lambda tool, _: quantities(object_id(tool)), names=("A",))
-    handle, result, _ = start(prepared_pdf, adapter)
-    assert result.outcome == "finished"
-    repo = tmp_path / "gold"
-    material = repo / "materials"
-    material.mkdir(parents=True)
-    pdf = (space.root.parent / "paper.pdf").read_bytes()
-    (material / "paper.pdf").write_bytes(pdf)
-    raw = build_fresh_draft(
-        pdf_sha256=hashlib.sha256(pdf).hexdigest(),
-        value="-430",
-        error="12",
-        page=1,
-        include_quote=False,
+def saved_reference(pred):
+    # Scientific expectations are explicit and do not come from prediction.content.
+    answer = document(
+        [star("A", [group("radial_velocity", {"value": "520", "unit": "km/s"})])],
+        paper=PAPER,
     )
-    raw["paper"]["arxiv_id"] = PAPER
-    raw["paper"]["version"] = "v1"
-    raw["contributions"][0]["identifiers"][0]["value"] = "A"
-    raw["contributions"][0]["paper_boundness"]["evidence"][0]["page"] = 1
-    draft = parse_gold_annotation(raw)
-    pair = compact_gold_annotation(
-        draft,
-        title="Synthetic full extraction",
-        original_annotator="synthetic-human",
-        reviewer="synthetic-human",
-        material_review={
-            "value": "checked",
-            "basis": "Synthetic same PDF",
-            "record_sha256": "a" * 64,
-        },
-        scope_review={
-            "value": "complete",
-            "basis": "Synthetic closed scope",
-            "record_sha256": "a" * 64,
-        },
-    )
-    pair_dir = repo / "pair"
-    write_compact_gold_pair(pair, pair_dir)
-    target = GoldTarget(repo / "data" / PAPER)
-    checked = check_save(pair_path=pair_dir, material_root=material, target=target)
-    approved_save(
-        pair_path=pair_dir,
-        material_root=material,
-        target=target,
-        approval=authorize(checked.binding),
-    )
-    for args in (
-        ("init", "-q"),
-        ("add", "data"),
-        (
-            "-c",
-            "user.name=Synthetic",
-            "-c",
-            "user.email=synthetic@example.invalid",
-            "commit",
-            "-qm",
-            "Synthetic Gold",
-        ),
-    ):
-        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
-    path = tmp_path / "manifest.json"
-    path.write_text(
+    return reference(answer, materials=pred.materials)
+
+
+def write_manifest(tmp_path, space, execution_id, ref, scope="full"):
+    path = tmp_path / "reference.json"
+    path.write_text(ref.model_dump_json(indent=2))
+    manifest = tmp_path / "score.json"
+    manifest.write_text(
         json.dumps(
             {
-                "gold_repository": str(repo),
+                "format": "hvs.scoring-manifest",
+                "version": 1,
+                "scope": scope,
+                **({"quantities": []} if scope == "roster" else {}),
                 "papers": [
                     {
-                        "paper_key": PAPER,
-                        "gold_target": str(target.root),
-                        "material_root": str(material),
+                        "arxiv_id": PAPER,
+                        "reference": path.name,
                         "workspace": str(space.root),
-                        "execution_id": handle.execution_id,
+                        "execution_id": execution_id,
                     }
                 ],
             }
         )
     )
-    return path, space, handle, adapter
+    return manifest
+
+
+def test_full_extraction_scores_and_replays_without_sources(prepared, tmp_path):
+    handle, _, adapter, _ = run_full(prepared, [submission(), quantities()])
+    space = prepared[0]
+    pred = prediction_from_execution(space, handle.execution_id)
+    assert pred.completion == "complete" and pred.delivered and pred.format_valid
+    assert pred.evidence_checks["checked"] == 3
+    path = write_manifest(tmp_path, space, handle.execution_id, saved_reference(pred))
+    report = score_saved_manifest(path, tmp_path / "scored")
+    assert report.micro.l1.tp == report.micro.l2.correct == 1
+    assert report.micro.l2.f1 == 1
+    assert len(adapter.seen) == 2
+    (tmp_path / "reference.json").unlink()
+    path.unlink()
+    space.close()
+    space.root.rename(tmp_path / "unavailable-workspace")
+    assert score_scoring_bundle(tmp_path / "scored/scoring-inputs.json") == report
+    for filename in (
+        "papers.csv",
+        "quantities.csv",
+        "differences.csv",
+        "scoring-report.json",
+    ):
+        assert (tmp_path / "scored" / filename).is_file()
+
+
+def test_partial_numerical_failure_keeps_l1_and_gold_denominator(prepared):
+    handle, _, _, _ = run_full(
+        prepared, [submission(), quantities([value(4)])], limit=0
+    )
+    pred = prediction_from_execution(prepared[0], handle.execution_id)
+    result = score_batch(plan(PAPER), [saved_reference(pred)], [pred]).papers[0]
+    assert pred.completion == "partial" and pred.format_valid
+    assert result.l1.tp == 1
+    assert (result.l2.correct, result.l2.predicted, result.l2.gold, result.l2.f1) == (
+        0,
+        0,
+        1,
+        0,
+    )
+
+
+def test_partial_snapshot_scores_only_retained_values(prepared):
+    handle, _, _, _ = run_full(
+        prepared,
+        [submission(), quantities([value(), value("999", "not in paper")])],
+        limit=0,
+    )
+    pred = prediction_from_execution(prepared[0], handle.execution_id)
+    result = score_batch(plan(PAPER), [saved_reference(pred)], [pred]).papers[0]
+    assert result.l2.correct == result.l2.predicted == result.l2.gold == 1
+    assert pred.completion == "partial"
+
+
+@pytest.mark.parametrize("valid", [True, False])
+def test_saved_empty_and_failed_remain_distinct(prepared, valid):
+    handle, _, _, _ = run_full(
+        prepared, [{"stars": [], "notes": "" if valid else None}], limit=0
+    )
+    pred = prediction_from_execution(prepared[0], handle.execution_id)
+    ref = reference(document(paper=PAPER), materials=pred.materials)
+    row = score_batch(plan(PAPER), [ref], [pred]).papers[0]
+    assert row.correct_empty is valid
+    assert row.l0.delivered == int(valid)
+    assert row.l0.completion_counts == {"complete" if valid else "failed": 1}
+
+
+def test_interrupt_after_roster_keeps_l1_without_publishing(prepared):
+    from pydantic import SecretStr
+
+    space, prep, config = prepared
+    handle = start_extraction(
+        space,
+        preparation_execution_id=prep,
+        request_key="interrupted",
+        configuration=config,
+    )
+
+    class StopAtQuantities(ScriptedAdapter):
+        def send(self, payload, runtime, credential):
+            if payload["tools"][0]["function"]["name"] == "submit_quantities":
+                raise RuntimeError("synthetic unknown-completion interruption")
+            return super().send(payload, runtime, credential)
+
+    service = CallService(
+        config.runtime,
+        credential=SecretStr("synthetic"),
+        adapter=StopAtQuantities([submission()]),
+    )
+    resume_extraction(space, handle.execution_id, service=service)
+    pred = prediction_from_execution(space, handle.execution_id)
+    assert not pred.delivered and pred.completion == "unfinished"
+    row = score_batch(plan(PAPER), [saved_reference(pred)], [pred]).papers[0]
+    assert row.l1.tp == 1 and row.l2.gold == 1 and row.l2.predicted == 0
+
+
+def test_saved_roster_scope_and_scoring_after_extraction_code_changes(
+    prepared, monkeypatch
+):
+    from test_roster import run
+
+    from hvs_catalog.pipeline import inputs
+
+    handle, _, _, _ = run(prepared, [submission()])
+    monkeypatch.setattr(inputs, "code_fingerprint", lambda: "different-code")
+    pred = prediction_from_execution(prepared[0], handle.execution_id)
+    row = score_batch(
+        plan(PAPER, scope="roster"), [saved_reference(pred)], [pred]
+    ).papers[0]
+    assert row.l1.tp == 1 and row.l2 is None and row.l0.delivered == 1
+
+
+def test_new_execution_without_snapshots_is_undelivered(prepared):
+    space, prep, config = prepared
+    handle = start_extraction(
+        space,
+        preparation_execution_id=prep,
+        request_key="not-run",
+        configuration=config,
+    )
+    pred = prediction_from_execution(space, handle.execution_id)
+    assert (
+        pred.completion == "unfinished"
+        and pred.content.stars == []
+        and not pred.delivered
+    )
+
+
+def test_explicit_reused_roster_is_read_from_its_original_execution(prepared):
+    from pydantic import SecretStr
+    from test_roster import run
+
+    from hvs_catalog.pipeline.roster import saved_roster
+
+    space, _, config = prepared
+    original, _, _, _ = run(prepared, [submission()])
+    roster = saved_roster(space, original.execution_id)
+    handle = start_extraction(
+        space, roster_ref=roster.ref(), request_key="score-reuse", configuration=config
+    )
+    adapter = ScriptedAdapter([quantities()])
+    resume_extraction(
+        space,
+        handle.execution_id,
+        service=CallService(
+            config.runtime, credential=SecretStr("synthetic"), adapter=adapter
+        ),
+    )
+    pred = prediction_from_execution(space, handle.execution_id)
+    row = score_batch(plan(PAPER), [saved_reference(pred)], [pred]).papers[0]
+    assert row.l1.tp == row.l2.correct == 1
+    assert (
+        pred.provenance["run"]["stages"]["roster"]["source_execution"]
+        == original.execution_id
+    )
+    assert len(adapter.seen) == 1
+
+
+def test_generated_scoring_contracts_match_current_models():
+    from pathlib import Path
+
+    from hvs_catalog.evaluation.generate_scoring import check_scoring_outputs
+
+    assert (
+        check_scoring_outputs(Path(__file__).parents[1] / "contracts/generated/scoring")
+        == []
+    )
+
+
+def test_corrupt_saved_science_is_not_silently_rescored(prepared):
+    handle, _, _, _ = run_full(prepared, [submission(), quantities()])
+    space = prepared[0]
+    pred = prediction_from_execution(space, handle.execution_id)
+    ref = pred.provenance["run"]["result_ref"]
+    (space.root / ref["path"]).write_text("{}")
+    with pytest.raises(WorkspaceIntegrityError, match="哈希|fingerprint|hash"):
+        prediction_from_execution(space, handle.execution_id)
+
+
+@pytest.mark.parametrize(
+    "field", ["predictions", "gold", "plan", "program", "version", "sha256"]
+)
+def test_bundle_tampering_is_rejected(tmp_path, field):
+    doc = document([star()])
+    path = tmp_path / "inputs.json"
+    save_scoring_bundle(
+        path, plan=plan(), gold=[reference(doc)], predictions=[prediction(doc)]
+    )
+    data = json.loads(path.read_text())
+    if field == "predictions":
+        data[field][0]["content"]["stars"] = []
+    elif field == "gold":
+        data[field][0]["stars"] = []
+    elif field == "plan":
+        data[field]["quantities"] = ["distance"]
+    elif field == "program":
+        data["plan"]["program"]["sha256"] = "0" * 64
+    elif field == "version":
+        data[field] = 1
+    else:
+        data[field] = "0" * 64
+    path.write_text(json.dumps(data))
+    with pytest.raises(ValueError):
+        load_scoring_bundle(path)
+
+
+def test_existing_outputs_are_preserved_and_json_is_strict(tmp_path):
+    doc = document([star()])
+    path = tmp_path / "inputs.json"
+    kwargs = {
+        "plan": plan(),
+        "gold": [reference(doc)],
+        "predictions": [prediction(doc)],
+    }
+    save_scoring_bundle(path, **kwargs)
+    before = path.read_bytes()
+    with pytest.raises(FileExistsError):
+        save_scoring_bundle(path, **kwargs)
+    assert path.read_bytes() == before
+    path.write_text('{"version":2,"version":2}')
+    with pytest.raises(ValueError, match="Duplicate JSON key"):
+        load_scoring_bundle(path)
 
 
 @pytest.mark.integration
-def test_saved_full_scoring_cli_and_fresh_process_replay(manifest, tmp_path, capsys):
-    path, space, _, adapter = manifest
-    before = (space.root / "business.db").read_bytes()
-    calls = len(adapter.seen)
-    output = tmp_path / "scoring"
-    assert main(["score", "run", "--manifest", str(path), "--output", str(output)]) == 0
-    stdout = capsys.readouterr().out
-    assert "L2 C=1 P=1 G=1" in stdout
-    assert "整批 final" in stdout
-    assert len(adapter.seen) == calls
-    assert (space.root / "business.db").read_bytes() == before
-    report = json.loads((output / "scoring-report.json").read_text())
-    assert len(report["papers"][0]["quantity_breakdown"]) == 18
-    assert {p.name for p in output.iterdir()} == {
-        "evaluation-inputs.json",
-        "scoring-report.json",
-        "metrics.csv",
-        "delivery.csv",
-        "pairings.csv",
-        "diagnostics.csv",
-    }
-    replay = tmp_path / "replay"
+def test_score_cli_uses_saved_execution_and_offline_replay(prepared, tmp_path):
+    handle, _, adapter, _ = run_full(prepared, [submission(), quantities()])
+    space = prepared[0]
+    pred = prediction_from_execution(space, handle.execution_id)
+    manifest = write_manifest(
+        tmp_path, space, handle.execution_id, saved_reference(pred)
+    )
+    output = tmp_path / "cli-report"
     result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "hvs_catalog",
+            "score",
+            "run",
+            "--manifest",
+            str(manifest),
+            "--output",
+            str(output),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "C=1 P=1 G=1" in result.stdout and "F1=1.0000" in result.stdout
+    again = subprocess.run(
         [
             sys.executable,
             "-m",
@@ -191,160 +316,62 @@ def test_saved_full_scoring_cli_and_fresh_process_replay(manifest, tmp_path, cap
             "score",
             "replay",
             "--inputs",
-            str(output / "evaluation-inputs.json"),
-            "--output",
-            str(replay),
+            str(output / "scoring-inputs.json"),
         ],
-        cwd=tmp_path,
         capture_output=True,
         text=True,
+        timeout=30,
         check=False,
     )
-    assert result.returncode == 0, result.stderr
-    assert json.loads((replay / "scoring-report.json").read_text()) == report
-    assert main(["score", "run", "--manifest", str(path), "--output", str(output)]) == 2
-    assert "非空" in capsys.readouterr().err
+    assert again.returncode == 0, again.stderr
+    assert result.stdout == again.stdout
+    assert len(adapter.seen) == 2
 
 
-def test_read_only_business_store_blocks_writes(manifest):
-    _, space, handle, _ = manifest
-    reader = open_workspace(space.root, read_only=True)
-    try:
-        assert prediction_from_execution(reader, handle.execution_id).objects
-        with (
-            pytest.raises(sqlite3.OperationalError, match="readonly"),
-            reader.store().transaction() as tx,
-        ):
-            tx.conn.execute("UPDATE meta SET value='forbidden'")
-    finally:
-        reader.close()
+def test_direct_annotation_provenance_records_exact_bytes_and_git_status(tmp_path):
+    import hashlib
 
+    from hvs_catalog.evaluation.saved import prepare_saved_scoring
 
-def test_saved_scoring_rejects_changed_extraction_material(manifest):
-    path, space, _, _ = manifest
-    data = SavedScoringInput.model_validate_json(path.read_bytes())
-    raw = next((space.root / "sources/packages").glob("*.bin"))
-    raw.write_bytes(raw.read_bytes() + b"changed")
-    with pytest.raises(ValueError, match="指纹不符"):
-        prepare_saved_scoring(data)
+    def git(*args):
+        return subprocess.run(
+            ["git", "-C", str(tmp_path), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
 
-
-@pytest.mark.parametrize("version", [PAPER + "v1", "arXiv:" + PAPER + "v1"])
-def test_saved_scoring_accepts_same_explicit_full_arxiv_version(
-    manifest, tmp_path, version
-):
-    path, _, _, _ = manifest
-    data = SavedScoringInput.model_validate_json(path.read_bytes())
-    item = data.papers[0]
-    target = GoldTarget(item.gold_target)
-    current, approval = target.read_current()
-    metadata = current.metadata.model_copy(
-        update={
-            "paper": current.metadata.paper.model_copy(update={"version": version}),
-            "revision": CompactRevision(
-                revised_by="synthetic-human",
-                decided_by="synthetic-human",
-                revised_at="2026-10-06",
-                basis="Synthetic explicit version spelling for scoring checks",
-                previous_answer_sha256=approval.binding.answer_sha256,
-            ),
+    git("init", "-q")
+    annotation = tmp_path / "annotation.json"
+    annotation.write_text(reference(document()).model_dump_json(indent=2) + "\n")
+    git("add", "annotation.json")
+    git(
+        "-c",
+        "user.name=Synthetic",
+        "-c",
+        "user.email=synthetic@example.invalid",
+        "commit",
+        "-qm",
+        "Synthetic reference",
+    )
+    manifest = tmp_path / "score.json"
+    manifest.write_text(
+        json.dumps(
+            {"papers": [{"arxiv_id": "2601.99999", "reference": "annotation.json"}]}
+        )
+    )
+    for dirty in (False, True):
+        if dirty:
+            annotation.write_text(annotation.read_text() + "\n")
+        frozen, gold, predictions = prepare_saved_scoring(manifest)
+        provenance = frozen.provenance["reference_files"][0]
+        assert (
+            provenance["sha256"] == hashlib.sha256(annotation.read_bytes()).hexdigest()
+        )
+        assert provenance["git"] == {
+            "commit": git("rev-parse", "HEAD"),
+            "path": "annotation.json",
+            "tracked": True,
+            "dirty": dirty,
         }
-    )
-    staged = tmp_path / "full-version-gold"
-    write_compact_gold_pair(CompactGoldPair(current.answer, metadata), staged)
-    checked = check_save(
-        pair_path=staged,
-        material_root=item.material_root,
-        target=target,
-        expected_old=approval.binding.pair_sha256,
-    )
-    approved_save(
-        pair_path=staged,
-        material_root=item.material_root,
-        target=target,
-        approval=authorize(checked.binding),
-    )
-    plan, gold, predictions = prepare_saved_scoring(data)
-    assert not plan.readiness_gaps
-    assert gold and predictions
-
-
-@pytest.mark.parametrize(
-    "version", ["v2", PAPER + "v2", "arXiv:" + PAPER + "v2", "arXiv:2304.11269v1"]
-)
-def test_saved_scoring_rejects_other_full_arxiv_version_or_paper(
-    manifest, tmp_path, version
-):
-    path, _, _, _ = manifest
-    data = SavedScoringInput.model_validate_json(path.read_bytes())
-    item = data.papers[0]
-    target = GoldTarget(item.gold_target)
-    current, approval = target.read_current()
-    metadata = current.metadata.model_copy(
-        update={
-            "paper": current.metadata.paper.model_copy(update={"version": version}),
-            "revision": CompactRevision(
-                revised_by="synthetic-human",
-                decided_by="synthetic-human",
-                revised_at="2026-10-06",
-                basis="Synthetic other version for rejection checks",
-                previous_answer_sha256=approval.binding.answer_sha256,
-            ),
-        }
-    )
-    staged = tmp_path / "other-version-gold"
-    write_compact_gold_pair(CompactGoldPair(current.answer, metadata), staged)
-    checked = check_save(
-        pair_path=staged,
-        material_root=item.material_root,
-        target=target,
-        expected_old=approval.binding.pair_sha256,
-    )
-    approved_save(
-        pair_path=staged,
-        material_root=item.material_root,
-        target=target,
-        approval=authorize(checked.binding),
-    )
-    with pytest.raises(ValueError, match="固定论文版本不符"):
-        prepare_saved_scoring(data)
-
-
-def test_gold_material_gap_is_reported_without_hiding_delivery(manifest, tmp_path):
-    path, _, _, _ = manifest
-    payload = json.loads(path.read_text())
-    payload["papers"][0]["material_root"] = str(tmp_path / "missing-pdf")
-    plan, gold, preds = prepare_saved_scoring(SavedScoringInput.model_validate(payload))
-    from hvs_catalog.evaluation.scoring import score_batch
-
-    report = score_batch(plan, gold, preds)
-    assert report.papers[0].l0.delivered == 1
-    assert report.papers[0].readiness == "blocked"
-    assert report.papers[0].l2 is None and report.batch_provisional
-
-
-def test_numeric_replay_rejects_other_program_version(manifest, tmp_path, monkeypatch):
-    from hvs_catalog.evaluation import saved
-    from hvs_catalog.evaluation.bundle import (
-        ScoringBundleError,
-        save_scoring_bundle,
-        score_scoring_bundle,
-    )
-    from hvs_catalog.evaluation.scoring import numeric_scoring_config
-
-    path, _, _, _ = manifest
-    plan, gold, preds = prepare_saved_scoring(
-        SavedScoringInput.model_validate_json(path.read_bytes())
-    )
-    bundle = tmp_path / "bundle.json"
-    save_scoring_bundle(
-        bundle,
-        plan=plan,
-        gold=gold,
-        predictions=preds,
-        auxiliary=numeric_scoring_config(),
-    )
-    other = plan.program_ref.model_copy(update={"fingerprint": "a" * 64})
-    monkeypatch.setattr(saved, "program_reference", lambda: other)
-    with pytest.raises(ScoringBundleError, match="程序与当前安装不符"):
-        score_scoring_bundle(bundle)
+        assert gold[0].metadata.arxiv_id == "2601.99999" and predictions == []

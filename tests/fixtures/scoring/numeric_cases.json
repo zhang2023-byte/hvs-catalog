@@ -1,25 +1,865 @@
 [
-  {"id":"complete-identical","gold":{"value":"8.2","error":"0.3","unit":"kpc"},"prediction":{"value":"8.2","error":"0.3","unit":"kpc"},"correct":1},
-  {"id":"wording-and-source-ignored","gold":{"value":"8.2","condition":"Model A","source":"this_paper","frame":"heliocentric"},"prediction":{"value":"8.2","condition":"Completely different model wording","source":"prior_work","source_note":"Literature","frame":"Galactocentric"},"correct":1},
-  {"id":"unicode-minus","gold":{"value":"−8.2"},"prediction":{"value":"-8.2"},"correct":1},
-  {"id":"approved-exponent-typesetting","gold":{"value":"1.20 × 10³"},"prediction":{"value":"1.20\\times10^{3}"},"correct":1},
-  {"id":"precision-retained","gold":{"value":"8.20"},"prediction":{"value":"8.2"},"correct":0},
-  {"id":"within-error-still-wrong","gold":{"value":"8.2","error":"0.3"},"prediction":{"value":"8.3","error":"0.3"},"correct":0},
-  {"id":"missing-error","gold":{"value":"8.2","error":"0.3"},"prediction":{"value":"8.2"},"correct":0},
-  {"id":"zero-error-not-missing","gold":{"value":"8.2","error":"0"},"prediction":{"value":"8.2"},"correct":0},
-  {"id":"asymmetric-sides","gold":{"value":"8.2","lower_error":"0.2","upper_error":"0.3"},"prediction":{"value":"8.2","lower_error":"0.3","upper_error":"0.2"},"correct":0},
-  {"id":"symmetric-form-preserved","gold":{"value":"8.2","error":"0.3"},"prediction":{"value":"8.2","lower_error":"0.3","upper_error":"0.3"},"correct":0},
-  {"id":"component-order-irrelevant","gold":{"value":"8.2","error_components":[{"name":"stat","error":"0.2"},{"name":"sys","error":"0.3"}]},"prediction":{"value":"8.2","error_components":[{"name":"sys","error":"0.3"},{"name":"stat","error":"0.2"}]},"correct":1},
-  {"id":"component-values-swapped","gold":{"value":"8.2","error_components":[{"name":"stat","error":"0.2"},{"name":"sys","error":"0.3"}]},"prediction":{"value":"8.2","error_components":[{"name":"stat","error":"0.3"},{"name":"sys","error":"0.2"}]},"correct":0},
-  {"id":"component-name-preserved","gold":{"value":"8.2","error_components":[{"name":"stat","error":"0.2"}]},"prediction":{"value":"8.2","error_components":[{"name":"sys","error":"0.2"}]},"correct":0},
-  {"id":"unit-conversion-forbidden","gold":{"value":"8.2","unit":"kpc"},"prediction":{"value":"8200","unit":"pc"},"correct":0},
-  {"id":"missing-unit","gold":{"value":"8.2","unit":"kpc"},"prediction":{"value":"8.2"},"correct":0},
-  {"id":"upper-versus-lower-limit","gold":{"value":"8.2","limit_kind":"upper_limit"},"prediction":{"value":"8.2","limit_kind":"lower_limit"},"correct":0},
-  {"id":"interval-no-center","gold":{"range_lower":"8","range_upper":"9","limit_kind":"range","interval_kind":"ordinary_range"},"prediction":{"range_lower":"8","range_upper":"9","limit_kind":"range","interval_kind":"ordinary_range"},"correct":1},
-  {"id":"endpoint-inclusion","gold":{"range_lower":"8","range_upper":"9","limit_kind":"range","interval_kind":"credible","lower_inclusive":true,"upper_inclusive":true},"prediction":{"range_lower":"8","range_upper":"9","limit_kind":"range","interval_kind":"credible","lower_inclusive":false,"upper_inclusive":true},"correct":0},
-  {"id":"confidence-versus-credible","gold":{"range_lower":"8","range_upper":"9","limit_kind":"range","interval_kind":"confidence"},"prediction":{"range_lower":"8","range_upper":"9","limit_kind":"range","interval_kind":"credible"},"correct":0},
-  {"id":"coverage-preserved","gold":{"range_lower":"8","range_upper":"9","limit_kind":"range","interval_kind":"confidence","coverage":["90","%"]},"prediction":{"range_lower":"8","range_upper":"9","limit_kind":"range","interval_kind":"confidence","coverage":["95","%"]},"correct":0},
-  {"id":"quantiles-preserved","gold":{"range_lower":"8","range_upper":"9","limit_kind":"range","interval_kind":"statistical_interval","lower_quantile":["16","%"],"upper_quantile":["84","%"]},"prediction":{"range_lower":"8","range_upper":"9","limit_kind":"range","interval_kind":"statistical_interval","lower_quantile":["5","%"],"upper_quantile":["95","%"]},"correct":0},
-  {"id":"unsupported-macro","gold":{"value":"\\mystery{8.2}"},"prediction":{"value":"8.2"},"correct":0,"provisional":true},
-  {"id":"identical-malformed-not-certified","gold":{"value":"8.2e+"},"prediction":{"value":"8.2e+"},"correct":0,"provisional":true}
+  {
+    "id": "exact",
+    "gold": {
+      "value": "8.2",
+      "error": "0.3",
+      "unit": "kpc"
+    },
+    "prediction": {
+      "value": "8.2",
+      "error": "0.3",
+      "unit": "kpc"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "condition-not-semantic",
+    "gold": {
+      "value": "8.2",
+      "condition": "Model A"
+    },
+    "prediction": {
+      "value": "8.2",
+      "condition": "Model B"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "unicode-minus",
+    "gold": {
+      "value": "−8.2"
+    },
+    "prediction": {
+      "value": "-8.2"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "exponent-typesetting",
+    "gold": {
+      "value": "1.20 × 10³"
+    },
+    "prediction": {
+      "value": "1.20\\times10^{3}"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "precision",
+    "gold": {
+      "value": "8.20"
+    },
+    "prediction": {
+      "value": "8.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "error-no-tolerance",
+    "gold": {
+      "value": "8.2",
+      "error": "0.3"
+    },
+    "prediction": {
+      "value": "8.3",
+      "error": "0.3"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "missing-error",
+    "gold": {
+      "value": "8.2",
+      "error": "0.3"
+    },
+    "prediction": {
+      "value": "8.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "zero-error",
+    "gold": {
+      "value": "8.2",
+      "error": "0"
+    },
+    "prediction": {
+      "value": "8.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "one-sided-error",
+    "gold": {
+      "value": "8.2",
+      "lower_error": "-0.2"
+    },
+    "prediction": {
+      "value": "8.2",
+      "lower_error": "0.2"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "asymmetric-signs",
+    "gold": {
+      "value": "8.2",
+      "lower_error": "−0.2",
+      "upper_error": "+0.3"
+    },
+    "prediction": {
+      "value": "8.2",
+      "lower_error": "0.2",
+      "upper_error": "0.3"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "asymmetric-direction",
+    "gold": {
+      "value": "8.2",
+      "lower_error": "-0.2"
+    },
+    "prediction": {
+      "value": "8.2",
+      "upper_error": "+0.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "asymmetric-negative-upper",
+    "gold": {
+      "value": "8.2",
+      "upper_error": "-0.3"
+    },
+    "prediction": {
+      "value": "8.2",
+      "upper_error": "0.3"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "symmetric-form",
+    "gold": {
+      "value": "8.2",
+      "error": "0.3"
+    },
+    "prediction": {
+      "value": "8.2",
+      "lower_error": "0.3",
+      "upper_error": "0.3"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "symmetric-sign",
+    "gold": {
+      "value": "8.2",
+      "error": "±0.3"
+    },
+    "prediction": {
+      "value": "8.2",
+      "error": "0.3"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "unit-conversion-forbidden",
+    "gold": {
+      "value": "8.2",
+      "unit": "kpc"
+    },
+    "prediction": {
+      "value": "8200",
+      "unit": "pc"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "missing-unit",
+    "gold": {
+      "value": "8.2",
+      "unit": "kpc"
+    },
+    "prediction": {
+      "value": "8.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "empty-unit-not-wildcard",
+    "gold": {
+      "value": "8.2",
+      "unit": " "
+    },
+    "prediction": {
+      "value": "8.2",
+      "unit": "kpc"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "empty-unit-absent",
+    "gold": {
+      "value": "8.2",
+      "unit": " "
+    },
+    "prediction": {
+      "value": "8.2"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "unit-notation",
+    "gold": {
+      "value": "520",
+      "unit": "km/s"
+    },
+    "prediction": {
+      "value": "520",
+      "unit": "km s⁻¹"
+    },
+    "correct": 1,
+    "quantity": "radial_velocity"
+  },
+  {
+    "id": "unit-escaped-power",
+    "gold": {
+      "value": "520",
+      "unit": "km/s"
+    },
+    "prediction": {
+      "value": "520",
+      "unit": "km s\\^{-1}"
+    },
+    "correct": 1,
+    "quantity": "radial_velocity"
+  },
+  {
+    "id": "unit-scale",
+    "gold": {
+      "value": "520",
+      "unit": "km/s"
+    },
+    "prediction": {
+      "value": "520",
+      "unit": "m/s"
+    },
+    "correct": 0,
+    "quantity": "radial_velocity"
+  },
+  {
+    "id": "degree-symbol",
+    "gold": {
+      "value": "12.0",
+      "unit": "deg"
+    },
+    "prediction": {
+      "value": "12.0",
+      "unit": "°"
+    },
+    "correct": 1,
+    "quantity": "ra"
+  },
+  {
+    "id": "error-unit-roles",
+    "gold": {
+      "value": "12.0",
+      "error": "1",
+      "unit": "deg ± mas"
+    },
+    "prediction": {
+      "value": "12.0",
+      "error": "1",
+      "unit": "deg; error mas"
+    },
+    "correct": 1,
+    "quantity": "ra"
+  },
+  {
+    "id": "error-unit-scale",
+    "gold": {
+      "value": "12.0",
+      "error": "1",
+      "unit": "deg; error mas"
+    },
+    "prediction": {
+      "value": "12.0",
+      "error": "1",
+      "unit": "deg; error arcsec"
+    },
+    "correct": 0,
+    "quantity": "ra"
+  },
+  {
+    "id": "error-unit-reversed",
+    "gold": {
+      "value": "12.0",
+      "error": "1",
+      "unit": "deg; error mas"
+    },
+    "prediction": {
+      "value": "12.0",
+      "error": "1",
+      "unit": "mas; error deg"
+    },
+    "correct": 0,
+    "quantity": "ra"
+  },
+  {
+    "id": "inline-error-unit",
+    "gold": {
+      "value": "12.0",
+      "error": "1 mas",
+      "unit": "deg"
+    },
+    "prediction": {
+      "value": "12.0",
+      "error": "1",
+      "unit": "deg; error mas"
+    },
+    "correct": 1,
+    "quantity": "ra"
+  },
+  {
+    "id": "inline-error-unit-wrong",
+    "gold": {
+      "value": "12.0",
+      "error": "1 arcsec",
+      "unit": "deg"
+    },
+    "prediction": {
+      "value": "12.0",
+      "error": "1",
+      "unit": "deg; error mas"
+    },
+    "correct": 0,
+    "quantity": "ra"
+  },
+  {
+    "id": "upper-lower-bound",
+    "gold": {
+      "upper_bound": "8.2"
+    },
+    "prediction": {
+      "lower_bound": "8.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "interval",
+    "gold": {
+      "lower_bound": "8",
+      "upper_bound": "9"
+    },
+    "prediction": {
+      "lower_bound": "8",
+      "upper_bound": "9"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "interval-versus-point",
+    "gold": {
+      "lower_bound": "8",
+      "upper_bound": "9"
+    },
+    "prediction": {
+      "value": "8.5"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "missing-bound",
+    "gold": {
+      "lower_bound": "8",
+      "upper_bound": "9"
+    },
+    "prediction": {
+      "upper_bound": "9"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "endpoint-inclusion",
+    "gold": {
+      "lower_bound": "8",
+      "lower_inclusive": true
+    },
+    "prediction": {
+      "lower_bound": "8",
+      "lower_inclusive": false
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "endpoint-unknown-not-false",
+    "gold": {
+      "upper_bound": "8"
+    },
+    "prediction": {
+      "upper_bound": "8",
+      "upper_inclusive": false
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "literal-upper-inclusion",
+    "gold": {
+      "upper_bound": "≤ 8"
+    },
+    "prediction": {
+      "upper_bound": "8",
+      "upper_inclusive": true
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "literal-lower-strict",
+    "gold": {
+      "lower_bound": "> 8"
+    },
+    "prediction": {
+      "lower_bound": "8",
+      "lower_inclusive": false
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "wrong-inequality-direction",
+    "gold": {
+      "lower_bound": "< 8"
+    },
+    "prediction": {
+      "lower_bound": "8",
+      "lower_inclusive": false
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "conflicting-explicit-flag",
+    "gold": {
+      "upper_bound": "≤ 8",
+      "upper_inclusive": false
+    },
+    "prediction": {
+      "upper_bound": "8",
+      "upper_inclusive": false
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "explicit-condition-inclusion",
+    "gold": {
+      "upper_bound": "8",
+      "condition": "Inclusive upper bound"
+    },
+    "prediction": {
+      "upper_bound": "8",
+      "upper_inclusive": true
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "literal-condition-inequality",
+    "gold": {
+      "upper_bound": "8",
+      "condition": "The reported constraint is d < 8 kpc."
+    },
+    "prediction": {
+      "upper_bound": "8",
+      "upper_inclusive": false
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "condition-other-operand",
+    "gold": {
+      "upper_bound": "8",
+      "condition": "The reported constraint is d < 9."
+    },
+    "prediction": {
+      "upper_bound": "8",
+      "upper_inclusive": false
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "condition-precision-preserved",
+    "gold": {
+      "upper_bound": "8",
+      "condition": "d < 8.0"
+    },
+    "prediction": {
+      "upper_bound": "8",
+      "upper_inclusive": false
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "statistical-context-not-scored",
+    "gold": {
+      "lower_bound": "8",
+      "upper_bound": "9",
+      "condition": "95% confidence interval"
+    },
+    "prediction": {
+      "lower_bound": "8",
+      "upper_bound": "9",
+      "condition": "90% credible interval"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "unsupported-expression-mismatch",
+    "gold": {
+      "value": "\\mystery{8.2}"
+    },
+    "prediction": {
+      "value": "8.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "identical-unsupported-expression",
+    "gold": {
+      "value": "\\mystery{8.2}"
+    },
+    "prediction": {
+      "value": "\\mystery{8.2}"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "identical-malformed-expression",
+    "gold": {
+      "value": "8.2e+"
+    },
+    "prediction": {
+      "value": "8.2e+"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "different-unsupported-expression",
+    "gold": {
+      "value": "8.2e+"
+    },
+    "prediction": {
+      "value": "8.2e-"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "unsupported-spacing",
+    "gold": {
+      "value": "a + b"
+    },
+    "prediction": {
+      "value": "a+b"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "symbolic-offset-no-calculation",
+    "gold": {
+      "value": "8.2 + x"
+    },
+    "prediction": {
+      "value": "8.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "approximation-symbols",
+    "gold": {
+      "value": "≈8.2"
+    },
+    "prediction": {
+      "value": "≃ 8.2"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "approximation-not-exact",
+    "gold": {
+      "value": "~8.2"
+    },
+    "prediction": {
+      "value": "8.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "explicit-condition-approximate",
+    "gold": {
+      "value": "8.2",
+      "condition": "Approximate value"
+    },
+    "prediction": {
+      "value": "about 8.2"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "literal-condition-approximate",
+    "gold": {
+      "value": "8.2",
+      "condition": "Reported as approximately 8.2"
+    },
+    "prediction": {
+      "value": "∼8.2"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "approximation-precision",
+    "gold": {
+      "value": "8.2",
+      "condition": "about 8.20"
+    },
+    "prediction": {
+      "value": "about 8.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "spaced-integer",
+    "gold": {
+      "value": "1 2 3"
+    },
+    "prediction": {
+      "value": "123"
+    },
+    "correct": 1,
+    "quantity": "distance"
+  },
+  {
+    "id": "spaced-integer-leading-zero",
+    "gold": {
+      "value": "0 1 2"
+    },
+    "prediction": {
+      "value": "12"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "spaced-groups",
+    "gold": {
+      "value": "12 34"
+    },
+    "prediction": {
+      "value": "1234"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "spaced-decimal",
+    "gold": {
+      "value": "8 . 2"
+    },
+    "prediction": {
+      "value": "8.2"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "fraction-unit",
+    "gold": {
+      "value": "0.5"
+    },
+    "prediction": {
+      "value": "0.5",
+      "unit": "dimensionless (fraction)"
+    },
+    "correct": 1,
+    "quantity": "unbound_probability"
+  },
+  {
+    "id": "percent-unit",
+    "gold": {
+      "value": "50",
+      "unit": "%"
+    },
+    "prediction": {
+      "value": "50%",
+      "unit": "per cent"
+    },
+    "correct": 1,
+    "quantity": "bound_probability"
+  },
+  {
+    "id": "percent-no-scale-conversion",
+    "gold": {
+      "value": "0.5"
+    },
+    "prediction": {
+      "value": "50",
+      "unit": "%"
+    },
+    "correct": 0,
+    "quantity": "bound_probability"
+  },
+  {
+    "id": "fraction-wrong-quantity",
+    "gold": {
+      "value": "0.5"
+    },
+    "prediction": {
+      "value": "0.5",
+      "unit": "fraction"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "percent-no-inferred-unit",
+    "gold": {
+      "value": "50%"
+    },
+    "prediction": {
+      "value": "50",
+      "unit": "%"
+    },
+    "correct": 0,
+    "quantity": "bound_probability"
+  },
+  {
+    "id": "colon-ra-format-label",
+    "gold": {
+      "value": "12:30:00"
+    },
+    "prediction": {
+      "value": "12:30:00",
+      "unit": "hms"
+    },
+    "correct": 1,
+    "quantity": "ra"
+  },
+  {
+    "id": "colon-dec-format-label",
+    "gold": {
+      "value": "-12:30:00"
+    },
+    "prediction": {
+      "value": "-12:30:00",
+      "unit": "dms"
+    },
+    "correct": 1,
+    "quantity": "dec"
+  },
+  {
+    "id": "colon-wrong-label",
+    "gold": {
+      "value": "12:30:00"
+    },
+    "prediction": {
+      "value": "12:30:00",
+      "unit": "dms"
+    },
+    "correct": 0,
+    "quantity": "ra"
+  },
+  {
+    "id": "colon-error-needs-unit",
+    "gold": {
+      "value": "12:30:00",
+      "error": "1"
+    },
+    "prediction": {
+      "value": "12:30:00",
+      "error": "1",
+      "unit": "hms"
+    },
+    "correct": 0,
+    "quantity": "ra"
+  },
+  {
+    "id": "coordinate-no-conversion",
+    "gold": {
+      "value": "12:00:00",
+      "unit": "hms"
+    },
+    "prediction": {
+      "value": "180",
+      "unit": "deg"
+    },
+    "correct": 0,
+    "quantity": "ra"
+  },
+  {
+    "id": "literal-period-preserves-precision",
+    "gold": {
+      "upper_bound": "8",
+      "condition": "d < 8."
+    },
+    "prediction": {
+      "upper_bound": "8",
+      "upper_inclusive": false
+    },
+    "correct": 0,
+    "quantity": "distance"
+  },
+  {
+    "id": "unsupported-error-sign-not-stripped",
+    "gold": {
+      "value": "8",
+      "lower_error": "-\\mystery"
+    },
+    "prediction": {
+      "value": "8",
+      "lower_error": "\\mystery"
+    },
+    "correct": 0,
+    "quantity": "distance"
+  }
 ]

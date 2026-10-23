@@ -19,9 +19,7 @@ from pathlib import Path
 
 from ..records.common import RecordRef, canonical_json, sha256_of
 from ..records.file_checks import file_digest, scoped_verification
-from ..records.paper import PaperRecord
 from ..records.registry import AnyRecord
-from ..records.roster import RosterRecord
 from ..records.serialize import parse_record
 from ..records.validate import (
     CollectionValidationError,
@@ -781,7 +779,6 @@ class RecordStore:
                         f"候选记录集合未通过校验：{exc}"
                     ) from exc
                 _check_run_artifacts(candidate, self.materials_root)
-                _check_current_outputs(tx, pending)
                 for record in pending:
                     tx.insert_record(record)
                 for question_id, step_id in request.question_steps.items():
@@ -846,6 +843,7 @@ def walk_artifact_refs(value: object) -> list[dict]:
                 if key in {
                     "prepared_input",
                     "prepared_prompt",
+                    "extraction_input",
                     "llm_input",
                 } and isinstance(item, str):
                     from ..records.common import ArtifactRef
@@ -965,35 +963,3 @@ def _list_questions(
         )
         for row in rows
     ]
-
-
-def _check_current_outputs(tx: StoreTransaction, pending: list[AnyRecord]) -> None:
-    """Current step outputs must correspond: current papers reference current roster
-    revisions.
-
-    New current rosters require same-batch updates of papers still referencing old
-    rosters. Historical paper references cannot let incorrect new rosters pass.
-    """
-    rosters = {r.record_id: r.revision for r in pending if isinstance(r, RosterRecord)}
-    if not rosters:
-        return
-    papers = {r.record_id: r for r in pending if isinstance(r, PaperRecord)}
-    for roster_id, revision in rosters.items():
-        # Read only current papers referencing affected rosters, not all history.
-        rows = tx.conn.execute(
-            "SELECT r.payload FROM records r JOIN current_revisions c"
-            " ON r.record_id = c.record_id AND r.revision = c.revision"
-            " WHERE r.schema_name = 'paper'"
-            " AND json_extract(r.payload, '$.data.roster_ref.record_id') = ?",
-            (roster_id,),
-        ).fetchall()
-        affected = {r.record_id: r for r in (parse_record(row[0]) for row in rows)}
-        affected.update(papers)
-        for paper in affected.values():
-            ref = paper.data.roster_ref
-            if ref.record_id == roster_id and ref.revision != revision:
-                raise WorkspaceIntegrityError(
-                    f"声明的当前输出不一致：论文 {paper.record_id} 当前修订"
-                    f" v{paper.revision} 仍引用名单 {roster_id} v{ref.revision}"
-                    f"（当前修订 v{revision}）；新名单必须与引用它的论文贡献一起更新"
-                )

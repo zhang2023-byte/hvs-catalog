@@ -1,7 +1,7 @@
 """Generate documentation, schemas, and templates from shared definitions; --check reads
 only.
 
-Render records contracts and evaluation Gold contracts under the gold/ subtree together.
+Render current record, Gold and scoring contracts.
 """
 
 from __future__ import annotations
@@ -21,13 +21,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         from hvs_catalog.evaluation.generate import (
-            GOLD_OUTPUT_DIRNAME,
+            check_gold_outputs,
+            write_gold_outputs,
         )
-        from hvs_catalog.evaluation.generate import (
-            check_outputs as check_gold_outputs,
-        )
-        from hvs_catalog.evaluation.generate import (
-            write_outputs as write_gold_outputs,
+        from hvs_catalog.evaluation.generate_scoring import (
+            check_scoring_outputs,
+            write_scoring_outputs,
         )
         from hvs_catalog.records.generate import (
             check_outputs,
@@ -38,7 +37,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.check:
             problems = [
                 *check_outputs(output),
-                *check_gold_outputs(output / GOLD_OUTPUT_DIRNAME),
+                *check_scoring_outputs(output / "scoring"),
+                *check_gold_outputs(output / "gold"),
             ]
             if problems:
                 for problem in problems:
@@ -47,12 +47,20 @@ def main(argv: list[str] | None = None) -> int:
             print("生成说明检查通过，产物与共同定义一致。")
         else:
             outputs = write_outputs(output)
-            gold_outputs = write_gold_outputs(output / GOLD_OUTPUT_DIRNAME)
-            print(f"已生成 {len(outputs)} 个文件到 {output}")
-            print(
-                f"已生成 {len(gold_outputs)} 个 Gold 格式文件到 "
-                f"{output / GOLD_OUTPUT_DIRNAME}"
+            outputs.update(
+                {
+                    "scoring/" + name: text
+                    for name, text in write_scoring_outputs(output / "scoring").items()
+                }
             )
+            outputs.update(
+                {
+                    "gold/" + name: text
+                    for name, text in write_gold_outputs(output / "gold").items()
+                }
+            )
+            print(f"已生成 {len(outputs)} 个文件到 {output}")
+
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"无法生成数据格式说明：{exc}", file=sys.stderr)
         return 2

@@ -1,406 +1,274 @@
-"""Score explicit saved executions against approved Gold without extraction calls.
-
-Only manifest-selected targets are read. The portable bundle retains the complete
-plan, original numerical records, Gold commit/bytes, fixed material fingerprints,
-execution facts, and current program fingerprint. Replays need no private repository.
-"""
-
-from __future__ import annotations
+"""Score only explicitly selected references and saved executions."""
 
 import csv
 import hashlib
 import json
 import subprocess
-from importlib.metadata import version
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, model_validator
 
-from ..pipeline import get_extraction
-from ..pipeline.acquisition import parse_arxiv_identifier
-from ..records.common import Config, sha256_of
-from ..records.rules import load_rules, quantity_paths
-from ..runtime import get_execution
-from ..workspace import open_workspace, resolve_within
-from ..workspace.store import verify_artifact_refs
-from .adapt import (
-    GoldReadinessReview,
-    adapt_compact_gold_pair,
-    prediction_from_execution,
-)
-from .bundle import save_scoring_bundle, score_scoring_bundle
-from .compact import check_compact_gold_pair
-from .scoring import (
-    InputReference,
-    PaperEvaluationScope,
-    ScoringPlan,
-    ScoringReport,
-    auxiliary_config_digest,
-    gold_input_digest,
-    numeric_scheme_reference,
-    numeric_scoring_config,
-    score_batch,
-)
-from .store import GoldTarget
+from ..records.common import Config
+from ..records.literature_contribution import QuantityId
+from ..records.roster_validation import strict_json
+from ..records.rules import load_rules
+from ..workspace import open_workspace
+from .adapt import prediction_from_execution
+from .bundle import program_reference, save_scoring_bundle, score_scoring_bundle
+from .scoring import GoldReference, ScoringPlan, score_batch
 
 
 class SavedPaperInput(Config):
-    paper_key: str = Field(min_length=1)
-    gold_target: Path
-    material_root: Path
-    workspace: Path
-    execution_id: str = Field(min_length=1)
-    scoring_review: GoldReadinessReview | None = None
+    arxiv_id: str = Field(min_length=1)
+    reference: Path
+    workspace: Path | None = None
+    execution_id: str | None = None
+
+    @model_validator(mode="after")
+    def _execution(self):
+        if (self.workspace is None) != (self.execution_id is None):
+            raise ValueError("Provide both workspace and execution_id, or neither.")
+        return self
 
 
 class SavedScoringInput(Config):
-    gold_repository: Path
+    format: Literal["hvs.scoring-manifest"] = "hvs.scoring-manifest"
+    version: Literal[1] = 1
+    scope: Literal["full", "roster"] = "full"
+    quantities: list[QuantityId] = Field(
+        default_factory=lambda: [q.id for q in load_rules().quantities]
+    )
     papers: list[SavedPaperInput] = Field(min_length=1)
 
     @model_validator(mode="after")
     def _unique(self):
-        if len({p.paper_key for p in self.papers}) != len(self.papers):
-            raise ValueError("评分输入论文重复")
+        if len({p.arxiv_id for p in self.papers}) != len(self.papers):
+            raise ValueError("A paper appears more than once in the scoring manifest.")
         return self
 
 
-def _file_digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def _git_snapshot(path):
+    """Record observed source identity; a commit is not an approval declaration."""
 
+    def git(*args):
+        return subprocess.run(
+            ["git", "-C", str(path.parent), *args],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=10,
+        ).stdout.strip()
 
-def _same_paper_version(paper_key: str, left: str, right: str) -> bool:
-    """Compare explicit short and full arXiv versions without changing Gold."""
-    if left == right:
-        return True
     try:
-        identifiers = []
-        for value in (left, right):
-            value = value.removeprefix("arXiv:")
-            if value.startswith("v"):
-                value = paper_key + value
-            identifiers.append(parse_arxiv_identifier(value))
-    except ValueError:
-        return False
-    return (
-        all(
-            item.canonical_id == paper_key and item.version is not None
-            for item in identifiers
+        root = Path(git("rev-parse", "--show-toplevel"))
+        commit = git("rev-parse", "HEAD")
+        relative = path.relative_to(root).as_posix()
+        tracked = (
+            subprocess.run(
+                ["git", "-C", str(root), "ls-files", "--error-unmatch", "--", relative],
+                capture_output=True,
+                check=False,
+                timeout=10,
+            ).returncode
+            == 0
         )
-        and identifiers[0].version == identifiers[1].version
-    )
+        dirty = (
+            bool(git("status", "--porcelain", "--untracked-files=all", "--", str(path)))
+            or not tracked
+        )
+        return {"commit": commit, "path": relative, "tracked": tracked, "dirty": dirty}
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
 
 
-def _git(root: Path, *args: str) -> str:
-    result = subprocess.run(
-        ["git", "-C", str(root), *args],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return result.stdout.strip()
-
-
-def program_reference() -> InputReference:
-    """Fingerprint installed source and resources; no checkout path is embedded."""
-    root = Path(__file__).resolve().parents[1]
-    files = {
-        p.relative_to(root).as_posix(): _file_digest(p)
-        for p in sorted(root.rglob("*"))
-        if p.is_file() and p.suffix in {".py", ".toml", ".json", ".yaml"}
-    }
-    return InputReference(
-        name="hvs-catalog", version=version("hvs-catalog"), fingerprint=sha256_of(files)
-    )
-
-
-def _paths(manifest: SavedScoringInput, base: Path) -> SavedScoringInput:
-    data = manifest.model_dump(mode="python")
-    data["gold_repository"] = (base / manifest.gold_repository).resolve()
-    for row in data["papers"]:
-        for field in ("gold_target", "material_root", "workspace"):
-            row[field] = (base / row[field]).resolve()
-    return SavedScoringInput.model_validate(data)
-
-
-def prepare_saved_scoring(
-    manifest: SavedScoringInput,
-) -> tuple[ScoringPlan, list, list]:
-    """Validate exact Gold/PDF/execution bindings before any numerical comparison."""
-    repository = manifest.gold_repository.resolve()
-    commit = _git(repository, "rev-parse", "HEAD")
-    selected_paths = []
+def prepare_saved_scoring(path):
+    path = Path(path)
+    raw = path.read_bytes()
+    manifest = SavedScoringInput.model_validate(strict_json(raw.decode()))
+    gold, predictions, files = [], [], []
     for item in manifest.papers:
-        selected_paths.append(
-            item.gold_target.resolve().relative_to(repository).as_posix()
+        reference_path = (path.parent / item.reference).resolve()
+        reference_bytes = reference_path.read_bytes()
+        reference = GoldReference.model_validate(strict_json(reference_bytes.decode()))
+        if reference.metadata.arxiv_id != item.arxiv_id:
+            raise ValueError("A reference identifies a different planned paper.")
+        gold.append(reference)
+        files.append(
+            {
+                "path": str(reference_path),
+                "sha256": hashlib.sha256(reference_bytes).hexdigest(),
+                "git": _git_snapshot(reference_path),
+            }
         )
-    worktree_status = _git(repository, "status", "--porcelain", "--", *selected_paths)
-    gold, predictions, snapshots, gaps = [], [], [], {}
-    materials = []
-    for item in manifest.papers:
-        target = GoldTarget(item.gold_target)
-        current = target.read_current()
-        if current is None:
-            raise ValueError(f"{item.paper_key} 没有完整获准Gold")
-        pair, approval = current
-        if pair.answer.arxiv_id != item.paper_key:
-            raise ValueError("Gold论文与预定评分范围不符")
-        checked = check_compact_gold_pair(pair, material_root=item.material_root)
-        adaptation = adapt_compact_gold_pair(pair, scoring_review=item.scoring_review)
-        paper_gaps = list(adaptation.readiness_gaps)
-        paper_gaps.extend(
-            f"{p.code}:{p.subject}:{p.message}"
-            for p in checked.problems
-            if p.category in {"structure", "material"}
-            and p.code not in {"material_differences"}
-        )
-        space = open_workspace(item.workspace, read_only=True)
-        try:
-            handle = get_execution(space, item.execution_id)
-            status = get_extraction(space, item.execution_id)
-            run_record = space.store().read_record(handle.run_ref)
-            sources = [
-                space.store().read_record(ref)
-                for ref in handle.input_snapshot.source_refs
-            ]
-            source_files = []
-            fixed = set()
-            for source in sources:
-                if source.data.paper_key != item.paper_key or not _same_paper_version(
-                    item.paper_key,
-                    source.data.source_version,
-                    pair.metadata.paper.version,
-                ):
-                    raise ValueError("提取与Gold固定论文版本不符")
-                for file in source.data.files:
-                    path = resolve_within(space.root, file.path)
-                    actual = _file_digest(path)
-                    if actual != file.sha256:
-                        raise ValueError(f"提取固定材料指纹不符：{file.file_id}")
-                    source_files.append(file.model_dump(mode="json"))
-                    if file.role in {"pdf", "supplement"}:
-                        fixed.add(actual)
-            if {file.sha256 for file in pair.metadata.files} != fixed:
-                raise ValueError("Gold与提取PDF／附表范围不一致")
-            prediction = prediction_from_execution(space, item.execution_id)
-            archive_problems = verify_artifact_refs([run_record, *sources], space.root)
-            if archive_problems:
-                paper_gaps.extend("extraction_archive:" + p for p in archive_problems)
-            if prediction.paper_key != item.paper_key:
-                raise ValueError("预测论文与预定范围不符")
-            snapshots.append(
-                {
-                    "paper_key": item.paper_key,
-                    "gold_target": str(target.root),
-                    "gold_files": {
-                        name: _file_digest(target.root / name)
-                        for name in ("answer.json", "metadata.json", "approval.json")
-                    },
-                    "gold_binding": adaptation.binding,
-                    "gold_answer": pair.answer.model_dump(mode="json"),
-                    "gold_metadata": pair.metadata.model_dump(
-                        mode="json", by_alias=True
-                    ),
-                    "save_approval_binding": approval.binding.model_dump(mode="json"),
-                    "pdf_checks": checked.model_dump(mode="json"),
-                    "workspace": str(space.root),
-                    "execution_id": item.execution_id,
-                    "extraction_input_digest": handle.input_digest,
-                    "source_files": source_files,
-                    "run_facts": status,
-                    "run_record": run_record.model_dump(mode="json"),
-                }
+        if item.workspace is not None:
+            space = open_workspace(
+                (path.parent / item.workspace).resolve(), read_only=True
             )
-        finally:
-            space.store().close()
-        if paper_gaps:
-            gaps[item.paper_key] = sorted(set(paper_gaps))
-        gold.extend(adaptation.entries)
-        predictions.append(prediction)
-        materials.append({"paper_key": item.paper_key, "files": source_files})
-    rules = load_rules()
-    config = numeric_scoring_config()
+            try:
+                prediction = prediction_from_execution(space, item.execution_id)
+            finally:
+                space.close()
+            if prediction.content.metadata.arxiv_id != item.arxiv_id:
+                raise ValueError("An execution identifies a different planned paper.")
+            predictions.append(prediction)
     plan = ScoringPlan(
-        comparison_mode="numeric",
-        paper_keys=[p.paper_key for p in manifest.papers],
-        scopes=[
-            PaperEvaluationScope(
-                paper_key=p.paper_key, quantity_paths=list(quantity_paths())
-            )
-            for p in manifest.papers
-        ],
-        gold_ref=InputReference(
-            name="approved-gold", version=commit, fingerprint=gold_input_digest(gold)
-        ),
-        materials_ref=InputReference(
-            name="fixed-pdf-and-parser-output",
-            version="1",
-            fingerprint=sha256_of(materials),
-        ),
-        science_rules_ref=InputReference(
-            name="science-rules", version=rules.version, fingerprint=rules.sha256
-        ),
-        scoring_scheme_ref=numeric_scheme_reference(),
-        program_ref=program_reference(),
-        auxiliary_ref=InputReference(
-            name="no-auxiliary-model",
-            version="1",
-            fingerprint=auxiliary_config_digest(config),
-        ),
-        readiness_gaps=gaps,
-        input_snapshot={
-            "gold_repository": str(repository),
-            "gold_commit": commit,
-            "gold_selected_worktree_status": worktree_status,
-            "papers": snapshots,
+        papers=[p.arxiv_id for p in manifest.papers],
+        scope=manifest.scope,
+        quantities=manifest.quantities,
+        program=program_reference(),
+        provenance={
+            "manifest": {
+                "path": str(path.resolve()),
+                "sha256": hashlib.sha256(raw).hexdigest(),
+            },
+            "reference_files": files,
         },
     )
     return plan, gold, predictions
 
 
-def export_scoring_report(report: ScoringReport, output: Path) -> None:
-    """Export per-paper/quantity metrics, one-to-one pairings, and diagnostic failures."""
-    output.mkdir(parents=True, exist_ok=True)
-    (output / "scoring-report.json").write_text(
-        report.model_dump_json(indent=2) + "\n", encoding="utf-8"
-    )
-    with (output / "delivery.csv").open("w", newline="", encoding="utf-8") as stream:
+def _write_report(report, output):
+    with (output / "scoring-report.json").open("x", encoding="utf-8") as stream:
+        stream.write(report.model_dump_json(indent=2) + "\n")
+    with (output / "papers.csv").open("x", encoding="utf-8", newline="") as stream:
         writer = csv.writer(stream)
         writer.writerow(
             [
-                "paper",
-                "planned",
+                "arxiv_id",
+                "version",
+                "execution_state",
+                "completion",
                 "delivered",
                 "format_valid",
-                "delivered_over_planned",
-                "valid_over_delivered",
-                "valid_over_planned",
-                "completion",
-                "execution_state",
-                "science_state",
-                "pending_questions",
-                "errors",
+                "tp",
+                "fp",
+                "fn",
+                "l1_precision",
+                "l1_recall",
+                "l1_f1",
+                "correct",
+                "predicted",
+                "gold",
+                "l2_precision",
+                "l2_recall",
+                "l2_f1",
+                "contribution_correct",
+                "matched_stars",
+                "contribution_accuracy",
+                "missing_identifiers",
+                "extra_identifiers",
+                "correct_empty",
             ]
         )
         for p in report.papers:
-            m = p.l0
+            d = p.roster_details
             writer.writerow(
                 [
-                    p.paper_key,
-                    m.planned,
-                    m.delivered,
-                    m.format_valid,
-                    m.delivered_over_planned,
-                    m.valid_over_delivered,
-                    m.valid_over_planned,
-                    json.dumps(m.completion_counts),
+                    p.arxiv_id,
+                    p.version,
                     p.execution_state,
-                    p.science_state,
-                    p.pending_questions,
-                    ";".join(p.prediction_errors),
+                    next(iter(p.l0.completion_counts)),
+                    p.l0.delivered,
+                    p.l0.format_valid,
+                    p.l1.tp,
+                    p.l1.fp,
+                    p.l1.fn,
+                    p.l1.precision,
+                    p.l1.recall,
+                    p.l1.f1,
+                    *(
+                        [
+                            p.l2.correct,
+                            p.l2.predicted,
+                            p.l2.gold,
+                            p.l2.precision,
+                            p.l2.recall,
+                            p.l2.f1,
+                        ]
+                        if p.l2
+                        else [None] * 6
+                    ),
+                    d.contribution_correct,
+                    d.matched_stars,
+                    d.contribution_accuracy,
+                    d.missing_identifiers,
+                    d.extra_identifiers,
+                    p.correct_empty,
                 ]
             )
-    with (output / "metrics.csv").open("w", newline="", encoding="utf-8") as stream:
+    with (output / "quantities.csv").open("x", encoding="utf-8", newline="") as stream:
         writer = csv.writer(stream)
         writer.writerow(
             [
-                "paper",
-                "layer",
+                "arxiv_id",
                 "quantity",
-                "matched",
+                "correct",
                 "predicted",
                 "gold",
                 "precision",
                 "recall",
                 "f1",
-                "readiness",
             ]
         )
-        for paper in report.papers:
-            if paper.l1:
-                m = paper.l1
+        for p in report.papers:
+            for quantity, metrics in p.quantities.items():
                 writer.writerow(
                     [
-                        paper.paper_key,
-                        "L1",
-                        "",
-                        m.tp,
-                        m.tp + m.fp,
-                        m.tp + m.fn,
-                        m.precision,
-                        m.recall,
-                        m.f1,
-                        paper.readiness,
+                        p.arxiv_id,
+                        quantity,
+                        metrics.correct,
+                        metrics.predicted,
+                        metrics.gold,
+                        metrics.precision,
+                        metrics.recall,
+                        metrics.f1,
                     ]
                 )
-            rows = [("", paper.l2)] + [
-                (row.quantity_path, row.metrics) for row in paper.quantity_breakdown
+    with (output / "differences.csv").open("x", encoding="utf-8", newline="") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(
+            [
+                "arxiv_id",
+                "layer",
+                "status",
+                "quantity",
+                "gold_path",
+                "prediction_path",
+                "fields",
+                "basis",
             ]
-            for path, m in rows:
-                if m:
-                    writer.writerow(
-                        [
-                            paper.paper_key,
-                            "L2",
-                            path,
-                            m.correct,
-                            m.predicted,
-                            m.gold,
-                            m.precision,
-                            m.recall,
-                            m.f1,
-                            paper.readiness,
-                        ]
-                    )
-    for filename, fields, rows in (
-        (
-            "pairings.csv",
-            ["paper", "layer", "status", "gold_ref", "prediction_ref", "fields"],
-            [
-                [
-                    p.paper_key,
-                    r.layer,
-                    r.status,
-                    r.gold_ref,
-                    r.prediction_ref,
-                    ";".join(r.fields),
-                ]
-                for p in report.papers
-                for r in p.pairings
-            ],
-        ),
-        (
-            "diagnostics.csv",
-            ["paper", "code", "message", "refs"],
-            [
-                [p.paper_key, r.code, r.message, ";".join(r.refs)]
-                for p in report.papers
-                for r in [*p.diagnostics, *p.unresolved]
-            ],
-        ),
-    ):
-        with (output / filename).open("w", newline="", encoding="utf-8") as stream:
-            writer = csv.writer(stream)
-            writer.writerow(fields)
-            writer.writerows(rows)
+        )
+        for p in report.papers:
+            for row in p.pairings:
+                writer.writerow(
+                    [
+                        p.arxiv_id,
+                        row.layer,
+                        row.status,
+                        row.quantity,
+                        row.gold_path,
+                        row.prediction_path,
+                        ";".join(row.fields),
+                        json.dumps(row.basis, ensure_ascii=False),
+                    ]
+                )
 
 
-def score_saved_manifest(path: Path, output: Path) -> ScoringReport:
-    manifest = _paths(
-        SavedScoringInput.model_validate_json(path.read_bytes()), path.parent
-    )
-    plan, gold, predictions = prepare_saved_scoring(manifest)
+def export_scoring_report(report, output):
+    output = Path(output)
+    output.mkdir(parents=True, exist_ok=False)
+    _write_report(report, output)
+
+
+def score_saved_manifest(path, output):
+    plan, gold, predictions = prepare_saved_scoring(path)
     report = score_batch(plan, gold, predictions)
-    if output.exists() and any(output.iterdir()):
-        raise ValueError("评分输出目录非空；请指定新目录，保留既有快照")
-    bundle = output / "evaluation-inputs.json"
-    save_scoring_bundle(
-        bundle,
-        plan=plan,
-        gold=gold,
-        predictions=predictions,
-        auxiliary=numeric_scoring_config(),
-    )
+    output = Path(output)
+    output.mkdir(parents=True, exist_ok=False)
+    bundle = output / "scoring-inputs.json"
+    save_scoring_bundle(bundle, plan=plan, gold=gold, predictions=predictions)
     if score_scoring_bundle(bundle) != report:
-        raise ValueError("保存后重评分不一致")
-    export_scoring_report(report, output)
+        raise ValueError("Saved scoring inputs did not reproduce the original report.")
+    _write_report(report, output)
     return report

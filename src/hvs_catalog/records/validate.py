@@ -1,11 +1,9 @@
-"""Cross-record checks for references, versions, paper ownership, roster correspondence,
-and material locations.
-"""
+"""Validate fixed source references, runtime records, and immutable roster snapshots."""
 
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -14,40 +12,15 @@ from pydantic import BaseModel
 
 from .common import ArtifactRef, GapRef, ItemRef, RecordRef
 from .file_checks import file_digest, scoped_verification
-from .objects import ExternalRecord, ObjectChange, ObjectRecord
-from .paper import (
-    CoverageReport,
-    MeasuredValue,
-    ObjectContribution,
-    PaperRecord,
-    QuantileReport,
-)
-from .patches import (
-    UNSUPPORTED_ITEM_TARGET,
-    PatchApplicationError,
-    apply_item_changes,
-    locate_patch_item,
-)
-from .questions import (
-    DecisionPatch,
-    DecisionRecord,
-    QuestionRecord,
-    compute_question_fingerprint,
-)
+from .objects import ExternalRecord
+from .quantities import QuantityRecord
 from .registry import AnyRecord
-from .roster import RosterEntry, RosterRecord
-from .runs import ReleaseRecord, RunRecord
-from .source import (
-    DataElementLocator,
-    EvidenceRecord,
-    SourcePackageRecord,
-    gaps_affecting_quantity,
-    gaps_affecting_roster,
-)
-from .submission import SubmissionError  # noqa: F401  public exception type
+from .roster import RosterRecord
+from .runs import RunRecord
+from .source import DataElementLocator, EvidenceRecord, SourcePackageRecord
 
 
-@dataclass(frozen=True)
+@dataclass
 class ValidationIssue:
     where: str
     message: str
@@ -103,830 +76,6 @@ def iter_record_refs(value: Any):
             yield ref.source_ref
 
 
-def _check_evidence_ref(
-    ref: RecordRef,
-    *,
-    index: _Index,
-    issues: list[ValidationIssue],
-    where: str,
-    field: str,
-    paper_keys: set[str] | None,
-) -> EvidenceRecord | None:
-    """Verify one evidence reference's exact revision, type, and paper ownership.
-
-    Return resolved evidence or None when absent; general resolution already reports
-    missing targets.
-    """
-    target = index.resolve(ref)
-    if target is None:
-        return None
-    if not isinstance(target, EvidenceRecord):
-        issues.append(
-            ValidationIssue(
-                where,
-                f"{field} 应指向 evidence 记录，"
-                f"实际是 {target.RECORD_NAME}（{ref.record_id} v{ref.revision}）",
-            )
-        )
-        return None
-    if paper_keys is not None and target.data.paper_key not in paper_keys:
-        issues.append(
-            ValidationIssue(
-                where,
-                f"{field} 指向另一篇论文的证据：{ref.record_id} v{ref.revision}"
-                f"（{target.data.paper_key}）",
-            )
-        )
-        return None
-    return target
-
-
-def _check_evidence_refs(
-    refs: Iterable[RecordRef],
-    *,
-    index: _Index,
-    issues: list[ValidationIssue],
-    where: str,
-    field: str,
-    paper_keys: set[str] | None,
-) -> None:
-    for ref in refs:
-        _check_evidence_ref(
-            ref,
-            index=index,
-            issues=issues,
-            where=where,
-            field=field,
-            paper_keys=paper_keys,
-        )
-
-
-def _fragment_checks(
-    parts: list[Any],
-    *,
-    index: _Index,
-    issues: list[ValidationIssue],
-    where: str,
-    field: str,
-    paper_keys: set[str] | None,
-) -> None:
-    """Numeric components retain valid evidence references; containment is not checked."""
-    for part in parts:
-        evidence = _check_evidence_ref(
-            part.evidence_ref,
-            index=index,
-            issues=issues,
-            where=where,
-            field=field,
-            paper_keys=paper_keys,
-        )
-        if evidence is None:
-            continue  # Missing/type/ownership errors were reported above.
-
-
-def _value_fragment_checks(
-    values: list[MeasuredValue],
-    *,
-    index: _Index,
-    issues: list[ValidationIssue],
-    where: str,
-    paper_keys: set[str],
-) -> None:
-    for value in values:
-        spot = f"{where} 数值 {value.value_id}"
-        _fragment_checks(
-            value.direct_evidence,
-            index=index,
-            issues=issues,
-            where=spot,
-            field="直接证据",
-            paper_keys=paper_keys,
-        )
-        reports: list[tuple[str, CoverageReport | QuantileReport]] = []
-        if value.coverage is not None:
-            reports.append(("覆盖概率", value.coverage))
-        if value.lower_quantile is not None:
-            reports.append(("下分位点", value.lower_quantile))
-        if value.upper_quantile is not None:
-            reports.append(("上分位点", value.upper_quantile))
-        for label, report in reports:
-            _fragment_checks(
-                report.direct_evidence,
-                index=index,
-                issues=issues,
-                where=f"{spot} {label}",
-                field=label,
-                paper_keys=paper_keys,
-            )
-        for component in value.error_components:
-            _fragment_checks(
-                component.direct_evidence,
-                index=index,
-                issues=issues,
-                where=f"{spot} 分量 {component.name}",
-                field="分量证据",
-                paper_keys=paper_keys,
-            )
-        _check_evidence_refs(
-            value.context_evidence_refs,
-            index=index,
-            issues=issues,
-            where=spot,
-            field="语境证据",
-            paper_keys=paper_keys,
-        )
-
-
-def _item_ids(record: AnyRecord) -> set[str] | None:
-    if isinstance(record, PaperRecord):
-        return {c.item_id for c in record.data.object_contributions}
-    if isinstance(record, RosterRecord):
-        return {e.item_id for e in record.data.entries}
-    return None
-
-
-def _source_paper_keys(
-    source_refs: Iterable[RecordRef], index: _Index
-) -> set[str] | None:
-    """Derive paper keys from source references; None means all unresolved and already
-    reported elsewhere.
-    """
-    keys: set[str] = set()
-    resolved_any = False
-    for ref in source_refs:
-        target = index.resolve(ref)
-        if isinstance(target, SourcePackageRecord):
-            resolved_any = True
-            keys.add(target.data.paper_key)
-    return keys if resolved_any else None
-
-
-def _check_coverage_against_source(
-    *,
-    where: str,
-    state: str,
-    checked_file_ids: list[str],
-    gap_refs: list[GapRef],
-    source: SourcePackageRecord,
-    affecting: list[str],
-) -> list[ValidationIssue]:
-    """Check completion against source-package constraints through shared
-    conversion/direct-load rules.
-    """
-    issues: list[ValidationIssue] = []
-    known_files = {file.file_id for file in source.data.files}
-    unknown_files = [
-        file_id for file_id in checked_file_ids if file_id not in known_files
-    ]
-    if unknown_files:
-        issues.append(
-            ValidationIssue(where, f"已检查文件不在来源包中：{sorted(unknown_files)}")
-        )
-    listed = {gap_ref.gap_id for gap_ref in gap_refs}
-    wrong_source = [
-        gap_ref.gap_id for gap_ref in gap_refs if gap_ref.source_ref != source.ref()
-    ]
-    if wrong_source:
-        issues.append(
-            ValidationIssue(
-                where, f"缺口引用不属于该论文的来源包：{sorted(wrong_source)}"
-            )
-        )
-    unrelated = sorted(listed - set(affecting))
-    if unrelated:
-        issues.append(
-            ValidationIssue(
-                where,
-                f"引用了按影响范围与此目标无关的缺口：{unrelated}",
-            )
-        )
-    if state == "complete" and affecting:
-        issues.append(
-            ValidationIssue(
-                where,
-                f"完成声明与已知材料缺口矛盾：{sorted(affecting)}",
-            )
-        )
-    elif state == "partial":
-        missing = sorted(set(affecting) - listed)
-        if missing:
-            issues.append(
-                ValidationIssue(where, f"部分检查声明缺少影响该目标的缺口：{missing}")
-            )
-    return issues
-
-
-def _check_contribution(
-    contribution: ObjectContribution,
-    *,
-    index: _Index,
-    issues: list[ValidationIssue],
-    spot: str,
-    keys: set[str],
-    source: SourcePackageRecord | None,
-) -> None:
-    """Check contribution evidence, numeric fragments, and completion for
-    conversion/patches.
-    """
-    for identifier in contribution.identifiers:
-        _check_evidence_refs(
-            identifier.evidence_refs,
-            index=index,
-            issues=issues,
-            where=f"{spot} 标识符 {identifier.value}",
-            field="标识符证据",
-            paper_keys=keys,
-        )
-    _check_evidence_refs(
-        contribution.contribution_summary.evidence_refs,
-        index=index,
-        issues=issues,
-        where=f"{spot} 研究摘要",
-        field="摘要证据",
-        paper_keys=keys,
-    )
-    _check_evidence_refs(
-        contribution.contribution_type.evidence_refs,
-        index=index,
-        issues=issues,
-        where=f"{spot} 贡献类型",
-        field="类型证据",
-        paper_keys=keys,
-    )
-    _check_evidence_refs(
-        contribution.paper_boundness.evidence_refs,
-        index=index,
-        issues=issues,
-        where=f"{spot} 作者判断",
-        field="判断证据",
-        paper_keys=keys,
-    )
-    for error in [
-        *contribution.author_errors,
-        *contribution.paper_boundness.author_errors,
-    ]:
-        _check_evidence_refs(
-            error.evidence_refs,
-            index=index,
-            issues=issues,
-            where=f"{spot} 原文错误 {error.error_id}",
-            field="原文错误证据",
-            paper_keys=keys,
-        )
-    for assessment in contribution.conditional_assessments:
-        _check_evidence_refs(
-            assessment.evidence_refs,
-            index=index,
-            issues=issues,
-            where=f"{spot} 条件判断",
-            field="条件判断证据",
-            paper_keys=keys,
-        )
-    for group in contribution.quantities:
-        _value_fragment_checks(
-            group.values,
-            index=index,
-            issues=issues,
-            where=f"{spot} {group.quantity}",
-            paper_keys=keys,
-        )
-    for conflict in contribution.quantity_conflicts:
-        _value_fragment_checks(
-            conflict.alternatives,
-            index=index,
-            issues=issues,
-            where=f"{spot} 冲突 {conflict.conflict_id}",
-            paper_keys=keys,
-        )
-    for entry in contribution.quantity_coverage:
-        for ref in entry.issue_refs:
-            target = index.resolve(ref)
-            if target is not None and not isinstance(target, QuestionRecord):
-                issues.append(
-                    ValidationIssue(
-                        spot,
-                        f"coverage issue_refs 应指向 question 记录，"
-                        f"实际是 {target.RECORD_NAME} ({ref.record_id})",
-                    )
-                )
-        if source is not None:
-            issues.extend(
-                _check_coverage_against_source(
-                    where=f"{spot} 完成声明 {entry.quantity}",
-                    state=entry.state,
-                    checked_file_ids=entry.checked_file_ids,
-                    gap_refs=entry.gap_refs,
-                    source=source,
-                    affecting=gaps_affecting_quantity(
-                        source.data.gaps,
-                        contribution.item_id,
-                        entry.quantity,
-                    ),
-                )
-            )
-
-
-def _check_roster_entry(
-    entry: RosterEntry,
-    *,
-    index: _Index,
-    issues: list[ValidationIssue],
-    where: str,
-    keys: set[str],
-) -> None:
-    """Check roster evidence/question references for records/patches."""
-    for identifier in entry.identifiers:
-        _check_evidence_refs(
-            identifier.evidence_refs,
-            index=index,
-            issues=issues,
-            where=f"{where} 条目 {entry.item_id} 标识符",
-            field="标识符证据",
-            paper_keys=keys,
-        )
-    _check_evidence_refs(
-        entry.evidence_refs,
-        index=index,
-        issues=issues,
-        where=f"{where} 条目 {entry.item_id}",
-        field="条目证据",
-        paper_keys=keys,
-    )
-    for error in entry.author_errors:
-        _check_evidence_refs(
-            error.evidence_refs,
-            index=index,
-            issues=issues,
-            where=f"{where} 条目 {entry.item_id} 原文错误 {error.error_id}",
-            field="原文错误证据",
-            paper_keys=keys,
-        )
-    for ref in entry.issue_refs:
-        target = index.resolve(ref)
-        if target is not None and not isinstance(target, QuestionRecord):
-            issues.append(
-                ValidationIssue(
-                    where,
-                    f"条目 {entry.item_id} issue_refs 应指向 question 记录，"
-                    f"实际是 {target.RECORD_NAME} ({ref.record_id})",
-                )
-            )
-
-
-def _check_typed_refs(
-    record: AnyRecord, index: _Index, issues: list[ValidationIssue]
-) -> None:
-    """Verify target record types/content correspondence by field responsibilities."""
-
-    def expect(ref: RecordRef, types: tuple[type[AnyRecord], ...], field: str) -> None:
-        target = index.resolve(ref)
-        if target is None:
-            return  # General resolution already reported missing references.
-        if not isinstance(target, types):
-            names = "/".join(t.RECORD_NAME for t in types)
-            issues.append(
-                ValidationIssue(
-                    f"{record.record_id}",
-                    f"{field} 应指向 {names} 记录，实际是 {target.RECORD_NAME} ({ref.record_id})",
-                )
-            )
-
-    where = record.record_id
-    if isinstance(record, SourcePackageRecord):
-        for gap in record.data.gaps:
-            _check_evidence_refs(
-                gap.mention_evidence_refs,
-                index=index,
-                issues=issues,
-                where=where,
-                field=f"缺口 {gap.gap_id} 提及证据",
-                paper_keys={record.data.paper_key},
-            )
-    elif isinstance(record, EvidenceRecord):
-        expect(record.data.source_ref, (SourcePackageRecord,), "source_ref")
-        target = index.resolve(record.data.source_ref)
-        if isinstance(target, SourcePackageRecord):
-            if record.data.file_id not in {f.file_id for f in target.data.files}:
-                issues.append(
-                    ValidationIssue(
-                        where, f"证据文件 {record.data.file_id} 不在来源包中"
-                    )
-                )
-            if record.data.paper_key != target.data.paper_key:
-                issues.append(ValidationIssue(where, "证据与来源包的 paper_key 不一致"))
-    elif isinstance(record, PaperRecord):
-        expect(record.data.source_ref, (SourcePackageRecord,), "source_ref")
-        expect(record.data.roster_ref, (RosterRecord,), "roster_ref")
-        for field, ref in (
-            ("source_ref", record.data.source_ref),
-            ("roster_ref", record.data.roster_ref),
-        ):
-            target = index.resolve(ref)
-            if target is not None and target.data.paper_key != record.data.paper_key:
-                issues.append(ValidationIssue(where, f"{field} 指向另一篇论文的记录"))
-        roster = index.resolve(record.data.roster_ref)
-        if isinstance(roster, RosterRecord):
-            _check_roster_binding(record, roster, issues)
-        source = index.resolve(record.data.source_ref)
-        keys = {record.data.paper_key}
-        for contribution in record.data.object_contributions:
-            _check_contribution(
-                contribution,
-                index=index,
-                issues=issues,
-                spot=f"{where} 贡献 {contribution.item_id}",
-                keys=keys,
-                source=source if isinstance(source, SourcePackageRecord) else None,
-            )
-    elif isinstance(record, RosterRecord):
-        expect(record.data.source_ref, (SourcePackageRecord,), "source_ref")
-        source = index.resolve(record.data.source_ref)
-        if (
-            isinstance(source, SourcePackageRecord)
-            and source.data.paper_key != record.data.paper_key
-        ):
-            issues.append(ValidationIssue(where, "名单与来源包的 paper_key 不一致"))
-        keys = {record.data.paper_key}
-        for entry in record.data.entries:
-            _check_roster_entry(
-                entry, index=index, issues=issues, where=where, keys=keys
-            )
-        for group in record.data.unresolved_groups:
-            _check_evidence_refs(
-                group.evidence_refs,
-                index=index,
-                issues=issues,
-                where=f"{where} 未列清范围 {group.group_id}",
-                field="范围证据",
-                paper_keys=keys,
-            )
-        if isinstance(source, SourcePackageRecord):
-            issues.extend(
-                _check_coverage_against_source(
-                    where=f"{where} 名单材料范围",
-                    state=record.data.coverage.state,
-                    checked_file_ids=record.data.coverage.checked_file_ids,
-                    gap_refs=record.data.coverage.gap_refs,
-                    source=source,
-                    affecting=gaps_affecting_roster(source.data.gaps),
-                )
-            )
-    elif isinstance(record, QuestionRecord):
-        for ref in record.data.source_refs:
-            expect(ref, (SourcePackageRecord,), "source_refs")
-        for ref in record.data.decision_refs:
-            expect(ref, (DecisionRecord,), "decision_refs")
-        keys = _source_paper_keys(record.data.source_refs, index)
-        _check_evidence_refs(
-            record.data.evidence_refs,
-            index=index,
-            issues=issues,
-            where=where,
-            field="问题证据",
-            paper_keys=keys,
-        )
-        for target_ref in record.data.target_refs:
-            target = index.resolve(target_ref)
-            if target is None:
-                continue
-            if (
-                isinstance(target, PaperRecord)
-                and keys is not None
-                and target.data.paper_key not in keys
-            ):
-                issues.append(
-                    ValidationIssue(
-                        where,
-                        f"问题目标 {target_ref.record_id} 与其材料不属于同一篇论文",
-                    )
-                )
-            items = _item_ids(target)
-            if items is not None and target_ref.item_id not in items:
-                issues.append(
-                    ValidationIssue(
-                        where,
-                        f"问题目标条目 {target_ref.item_id} 不在 {target.RECORD_NAME} 记录中",
-                    )
-                )
-    elif isinstance(record, DecisionRecord):
-        expect(record.data.question_ref, (QuestionRecord,), "question_ref")
-        question = index.resolve(record.data.question_ref)
-        if isinstance(question, QuestionRecord):
-            recomputed = compute_question_fingerprint(
-                category=question.data.category,
-                target_refs=question.data.target_refs,
-                evidence_refs=question.data.evidence_refs,
-                source_refs=question.data.source_refs,
-                rules_ref=question.data.rules_ref,
-            )
-            if question.data.fingerprint != recomputed:
-                issues.append(
-                    ValidationIssue(
-                        question.record_id,
-                        "问题指纹与实际固定内容不一致，保存的指纹必须按当前内容重新计算",
-                    )
-                )
-            if record.data.question_fingerprint != recomputed:
-                issues.append(
-                    ValidationIssue(
-                        where,
-                        "决定的指纹与问题当前修订不一致，旧决定不能套用新问题",
-                    )
-                )
-            keys = _source_paper_keys(question.data.source_refs, index)
-            _check_evidence_refs(
-                record.data.evidence_refs,
-                index=index,
-                issues=issues,
-                where=where,
-                field="决定证据",
-                paper_keys=keys,
-            )
-            if record.data.result_patch is not None:
-                _check_patch(
-                    record,
-                    question=question,
-                    patch=record.data.result_patch,
-                    index=index,
-                    issues=issues,
-                )
-    elif isinstance(record, ObjectRecord):
-        for link in record.data.contribution_links:
-            target = index.resolve(link.target_ref)
-            if isinstance(target, PaperRecord):
-                items = _item_ids(target)
-                if items is not None and link.item_id not in items:
-                    issues.append(
-                        ValidationIssue(
-                            where,
-                            f"对象关联的条目 {link.item_id} 不在论文 {target.record_id} 中",
-                        )
-                    )
-                _check_evidence_refs(
-                    link.evidence_refs,
-                    index=index,
-                    issues=issues,
-                    where=f"{where} 贡献关联",
-                    field="关联证据",
-                    paper_keys={target.data.paper_key},
-                )
-            elif target is not None:
-                issues.append(
-                    ValidationIssue(
-                        where,
-                        f"对象贡献关联应指向 paper 记录，实际是 {target.RECORD_NAME}",
-                    )
-                )
-            for ref in link.decision_refs:
-                expect(ref, (DecisionRecord,), "贡献关联 decision_refs")
-        for link in record.data.external_links:
-            target = index.resolve(link.target_ref)
-            expect(link.target_ref, (ExternalRecord,), "external_links")
-            if isinstance(target, ExternalRecord):
-                entry_ids = {e.entry_id for e in target.data.entries}
-                if link.entry_id not in entry_ids:
-                    issues.append(
-                        ValidationIssue(
-                            where,
-                            f"外部关联条目 {link.entry_id} 不在 {target.record_id} 中",
-                        )
-                    )
-            _check_evidence_refs(
-                link.evidence_refs,
-                index=index,
-                issues=issues,
-                where=f"{where} 外部关联",
-                field="关联证据",
-                paper_keys=None,
-            )
-            for ref in link.decision_refs:
-                expect(ref, (DecisionRecord,), "外部关联 decision_refs")
-        for change in record.data.changes:
-            _check_object_change(change, index, where, issues)
-    elif isinstance(record, RunRecord):
-        for ref in record.data.input_snapshot.source_refs:
-            expect(ref, (SourcePackageRecord,), "input_snapshot source_refs")
-        for ref in record.data.input_snapshot.existing_decision_refs:
-            expect(ref, (DecisionRecord,), "existing_decision_refs")
-    elif isinstance(record, ReleaseRecord):
-        for ref in record.data.source_run_refs:
-            expect(ref, (RunRecord,), "source_run_refs")
-
-
-def _check_object_change(
-    change: ObjectChange,
-    index: _Index,
-    where: str,
-    issues: list[ValidationIssue],
-) -> None:
-    for ref in [*change.before_refs, *change.after_refs]:
-        target = index.resolve(ref)
-        if target is not None and not isinstance(target, ObjectRecord):
-            issues.append(
-                ValidationIssue(
-                    where,
-                    f"对象变更 {change.change_id} 的前后引用应指向 object 记录，"
-                    f"实际是 {target.RECORD_NAME}",
-                )
-            )
-
-
-def _check_ref_targets(
-    where: str, value: Any, index: _Index, issues: list[ValidationIssue]
-) -> None:
-    """Verify every data reference target exists, sharing record/patch checks."""
-    for _, ref in _iter_refs(value):
-        if isinstance(ref, (RecordRef, ItemRef)):
-            if index.resolve(ref) is None:
-                issues.append(
-                    ValidationIssue(
-                        where,
-                        f"引用的记录不存在：{ref.record_id} v{ref.revision}",
-                    )
-                )
-        elif isinstance(ref, GapRef):
-            target = index.resolve(ref.source_ref)
-            if not isinstance(target, SourcePackageRecord):
-                issues.append(
-                    ValidationIssue(
-                        where,
-                        f"缺口引用不指向来源包：{ref.source_ref.record_id}",
-                    )
-                )
-            elif ref.gap_id not in {g.gap_id for g in target.data.gaps}:
-                issues.append(
-                    ValidationIssue(
-                        where,
-                        f"来源包中不存在缺口：{ref.gap_id}",
-                    )
-                )
-
-
-def _check_patch(
-    decision: DecisionRecord,
-    *,
-    question: QuestionRecord,
-    patch: DecisionPatch,
-    index: _Index,
-    issues: list[ValidationIssue],
-) -> None:
-    """Patch targets must lie within question scope; validate final item states/references
-    together.
-
-    Reuse records.patches pure target/field interpretation with actual application.
-    Validate declarations only, without persistence/new revisions.
-    """
-    where = decision.record_id
-    allowed = {
-        (ref.record_id, ref.revision, ref.item_id) for ref in question.data.target_refs
-    }
-    key = (patch.target.record_id, patch.target.revision, patch.target.item_id)
-    if key not in allowed:
-        issues.append(
-            ValidationIssue(
-                where,
-                f"补丁目标 {patch.target.record_id} v{patch.target.revision} "
-                f"条目 {patch.target.item_id} 不在问题 {question.record_id} 的目标范围内",
-            )
-        )
-        return
-    target_record = index.resolve(patch.target)
-    if target_record is None:
-        return  # General resolution already reported missing targets.
-    item = locate_patch_item(target_record, patch.target.item_id)
-    if item is UNSUPPORTED_ITEM_TARGET:
-        issues.append(
-            ValidationIssue(
-                where,
-                f"补丁目标记录 {target_record.record_id}（{target_record.RECORD_NAME}）"
-                "不支持条目级修改",
-            )
-        )
-        return
-    if item is None:
-        issues.append(
-            ValidationIssue(
-                where,
-                f"补丁目标条目 {patch.target.item_id} 不在 "
-                f"{target_record.RECORD_NAME} 记录 {target_record.record_id} 中",
-            )
-        )
-        return
-    try:
-        patched = apply_item_changes(item, patch.changes)
-    except PatchApplicationError as exc:
-        issues.extend(ValidationIssue(where, reason) for reason in exc.reasons)
-        return
-    # Apply identical science-reference checks to patches and ordinary record paths.
-    _check_ref_targets(f"{where} 补丁", patched, index, issues)
-    keys = {target_record.data.paper_key}
-    if isinstance(patched, ObjectContribution) and isinstance(
-        target_record, PaperRecord
-    ):
-        source = index.resolve(target_record.data.source_ref)
-        _check_contribution(
-            patched,
-            index=index,
-            issues=issues,
-            spot=f"{where} 补丁 贡献 {patched.item_id}",
-            keys=keys,
-            source=source if isinstance(source, SourcePackageRecord) else None,
-        )
-    elif isinstance(patched, RosterEntry):
-        _check_roster_entry(
-            patched, index=index, issues=issues, where=f"{where} 补丁", keys=keys
-        )
-
-
-def _check_roster_binding(
-    paper: PaperRecord, roster: RosterRecord, issues: list[ValidationIssue]
-) -> None:
-    where = f"{paper.record_id} 名单对应"
-    entries = {entry.item_id: entry for entry in roster.data.entries}
-    contributions = {c.roster_item_id: c for c in paper.data.object_contributions}
-    for entry in roster.data.entries:
-        if entry.disposition != "included":
-            if entry.contribution_id is not None:
-                issues.append(
-                    ValidationIssue(
-                        where,
-                        f"非收录条目 {entry.item_id} 不应携带贡献编号",
-                    )
-                )
-            continue
-        contribution = contributions.get(entry.item_id)
-        if contribution is None or contribution.item_id != entry.contribution_id:
-            issues.append(
-                ValidationIssue(
-                    where,
-                    f"收录条目 {entry.item_id} 没有一一对应的贡献",
-                )
-            )
-    for contribution in paper.data.object_contributions:
-        entry = entries.get(contribution.roster_item_id)
-        if entry is None:
-            issues.append(
-                ValidationIssue(
-                    where,
-                    f"贡献 {contribution.item_id} 引用的名单条目不存在",
-                )
-            )
-        elif (
-            entry.disposition != "included"
-            or entry.contribution_id != contribution.item_id
-        ):
-            issues.append(
-                ValidationIssue(
-                    where,
-                    f"贡献 {contribution.item_id} 与名单条目 {entry.item_id} 不对应",
-                )
-            )
-
-
-def _check_materials(
-    records: list[AnyRecord],
-    index: _Index,
-    materials_root: Path,
-    issues: list[ValidationIssue],
-) -> None:
-    for record in records:
-        if isinstance(record, ExternalRecord):
-            # External responses are paper materials; archived run requests/responses belong to runs
-            # and are verified by workspace saves/recovery, not this material root.
-            for _, ref in _iter_refs(record.data):
-                if isinstance(ref, ArtifactRef):
-                    _check_artifact(record.record_id, ref, materials_root, issues)
-    for record in records:
-        if isinstance(record, SourcePackageRecord):
-            for file in record.data.files:
-                path = (materials_root / file.path).resolve()
-                try:
-                    path.relative_to(materials_root.resolve())
-                except ValueError:
-                    issues.append(
-                        ValidationIssue(record.record_id, f"文件路径越界：{file.path}")
-                    )
-                    continue
-                if not path.is_file():
-                    issues.append(
-                        ValidationIssue(
-                            record.record_id,
-                            f"材料文件缺失：{file.path}",
-                        )
-                    )
-                    continue
-                digest = file_digest(path)
-                if digest != file.sha256:
-                    issues.append(
-                        ValidationIssue(
-                            record.record_id,
-                            f"材料文件哈希改变：{file.path}",
-                        )
-                    )
-        elif isinstance(record, EvidenceRecord):
-            _check_locator(record, index, materials_root, issues)
-
-
 def _check_artifact(
     where: str, ref: ArtifactRef, materials_root: Path, issues: list[ValidationIssue]
 ) -> None:
@@ -975,7 +124,9 @@ def _check_locator(
                 locator.block_id,
                 require_image=locator.kind == "pdf_image",
             )
-            if locator.kind == "pdf" and record.data.excerpt != block["text"]:
+            if locator.kind == "pdf" and (
+                not record.data.excerpt or record.data.excerpt not in block["text"]
+            ):
                 issues.append(
                     ValidationIssue(
                         where, "PDF excerpt differs from the fixed parser block"
@@ -1076,7 +227,7 @@ def _check_locator(
         try:
             document = json.loads(path.read_text(encoding="utf-8"))
             value = _resolve_json_pointer(document, locator.selector.value)
-        except (json.JSONDecodeError, LookupError, ValueError) as exc:
+        except (json.JSONDecodeError, LookupError, ValueError, TypeError) as exc:
             issues.append(ValidationIssue(where, f"JSON 定位无法解析：{exc}"))
             return
         expected = (
@@ -1111,41 +262,226 @@ def _resolve_json_pointer(document: Any, pointer: str) -> Any:
 
 
 @scoped_verification
-def validate_collection(
-    records: list[AnyRecord], materials_root: Path | str | None = None
-) -> list[ValidationIssue]:
-    """Validate collections; raise CollectionValidationError on issues, otherwise return an
-    empty list.
-    """
-    issues: list[ValidationIssue] = []
-
+def validate_collection(records, materials_root=None):
+    issues = []
     index = _Index(records)
-    seen: set[tuple[str, int]] = set()
-    last_revision: dict[str, int] = {}
+    seen = set()
     for record in records:
         key = (record.record_id, record.revision)
         if key in seen:
             issues.append(
-                ValidationIssue(record.record_id, f"修订 {record.revision} 重复保存")
+                ValidationIssue(record.record_id, "Duplicate record revision")
             )
         seen.add(key)
-        previous = last_revision.get(record.record_id)
-        if previous is not None and record.revision <= previous:
+        for ref in iter_record_refs(record.data):
+            if index.resolve(ref) is None:
+                issues.append(
+                    ValidationIssue(
+                        record.record_id,
+                        f"Missing record: {ref.record_id} v{ref.revision}",
+                    )
+                )
+        source = (
+            index.resolve(record.data.source_ref)
+            if isinstance(record, (EvidenceRecord, RosterRecord, QuantityRecord))
+            else None
+        )
+        if isinstance(
+            record, (EvidenceRecord, RosterRecord, QuantityRecord)
+        ) and not isinstance(source, SourcePackageRecord):
             issues.append(
                 ValidationIssue(
-                    record.record_id,
-                    f"修订 {record.revision} 未递增（前一修订为 {previous}）",
+                    record.record_id, "source_ref must identify a source package"
                 )
             )
-        last_revision[record.record_id] = record.revision
-
-    for record in records:
-        _check_ref_targets(record.record_id, record.data, index, issues)
-        _check_typed_refs(record, index, issues)
-
-    if materials_root is not None:
-        _check_materials(records, index, Path(materials_root), issues)
-
+        if isinstance(record, RunRecord):
+            for ref in record.data.input_snapshot.source_refs:
+                if not isinstance(index.resolve(ref), SourcePackageRecord):
+                    issues.append(
+                        ValidationIssue(
+                            record.record_id, "Run input must identify a source package"
+                        )
+                    )
+        if (
+            isinstance(record, EvidenceRecord)
+            and isinstance(source, SourcePackageRecord)
+            and (
+                record.data.paper_key != source.data.paper_key
+                or record.data.file_id not in {f.file_id for f in source.data.files}
+            )
+        ):
+            issues.append(
+                ValidationIssue(
+                    record.record_id, "Evidence does not belong to the fixed source"
+                )
+            )
+        if materials_root is not None:
+            root = Path(materials_root)
+            if isinstance(record, SourcePackageRecord):
+                for file in record.data.files:
+                    _check_artifact(
+                        record.record_id,
+                        ArtifactRef(path=file.path, sha256=file.sha256),
+                        root,
+                        issues,
+                    )
+            elif isinstance(record, ExternalRecord):
+                for _, ref in _iter_refs(record.data):
+                    if isinstance(ref, ArtifactRef):
+                        _check_artifact(record.record_id, ref, root, issues)
+            elif isinstance(record, EvidenceRecord):
+                _check_locator(record, index, root, issues)
+            elif isinstance(record, QuantityRecord) and isinstance(
+                source, SourcePackageRecord
+            ):
+                try:
+                    _check_quantity_snapshot(record, source, index, root)
+                except (ValueError, KeyError, OSError, TypeError) as exc:
+                    issues.append(ValidationIssue(record.record_id, str(exc)))
+            elif isinstance(record, RosterRecord) and isinstance(
+                source, SourcePackageRecord
+            ):
+                try:
+                    _check_roster_snapshot(record, source, root)
+                except (ValueError, KeyError, OSError, TypeError) as exc:
+                    issues.append(ValidationIssue(record.record_id, str(exc)))
     if issues:
         raise CollectionValidationError(issues)
     return issues
+
+
+def _check_submission_binding(record, files, *, roster=None):
+    from ..workspace.archives import read_json
+    from .common import sha256_of
+    from .roster_validation import strict_json
+
+    data = record.data
+    if data.response_ref is None:
+        return
+    step = (
+        "roster"
+        if roster is None
+        else f"quantities-{sha256_of(roster.ref().model_dump())[:12]}-{data.source_index}"
+    )
+    prefix = f"runs/{record.execution_id}/responses/{step}-{data.source_round:02d}"
+    if not re.fullmatch(
+        re.escape(prefix) + r"(?:-retry-[a-f0-9]+)?-attempt-\d{3}\.json",
+        data.response_ref.path,
+    ):
+        raise ValueError("The response differs from the snapshot target or round.")
+    request_path = data.response_ref.path.replace("/responses/", "/requests/", 1)
+    from ..workspace.layout import resolve_within
+
+    request_ref = ArtifactRef(
+        path=request_path, sha256=file_digest(resolve_within(files.root, request_path))
+    )
+    request = read_json(files, request_ref)
+    response = read_json(files, data.response_ref)
+    if response.get("request_sha256") != sha256_of(request):
+        raise ValueError("The response differs from its archived request.")
+    if roster is not None:
+        star = roster.data.stars[roster.data.source_indices.index(data.source_index)]
+        target = strict_json(request["payload"]["messages"][2]["content"])
+        if target != {"identifiers": [i.value for i in star.identifiers]}:
+            raise ValueError("The request target differs from the fixed roster.")
+
+
+def _check_roster_snapshot(record, source, root):
+    from ..workspace.archives import read_json
+    from ..workspace.layout import resolve_within
+    from .material import material_locations
+    from .roster_validation import check_response, select_partial
+
+    class Files:
+        def read_file(self, ref):
+            path = resolve_within(root, ref.path)
+            if file_digest(path) != ref.sha256:
+                raise ValueError("Artifact hash differs from the fixed reference")
+            return path.read_bytes()
+
+    space = Files()
+    space.root = root
+    _check_submission_binding(record, space)
+    data = record.data
+    material = read_json(space, data.material_ref)
+    locations = material_locations(source, root)
+    if material["citation_locations"] != locations:
+        raise ValueError("Saved material map differs from the fixed source")
+    if data.response_ref is None:
+        if data.status != "failed" or data.stars or data.notes is not None:
+            raise ValueError("A missing response cannot produce scientific content.")
+        return
+    response = read_json(space, data.response_ref)
+    check = check_response(response, locations)
+    if data.status == "complete":
+        if (
+            not check.passed
+            or {"stars": [s.model_dump() for s in data.stars], "notes": data.notes}
+            != check.payload
+        ):
+            raise ValueError("Saved roster differs from the accepted submission")
+        if data.source_indices != list(range(len(data.stars))):
+            raise ValueError("Complete roster indices differ from the submission")
+    elif check.readable:
+        stars, indices, rejected, notes = select_partial(check, locations)
+        if (data.stars, data.source_indices, data.rejected, data.notes) != (
+            stars,
+            indices,
+            rejected,
+            notes,
+        ):
+            raise ValueError(
+                "Saved partial roster differs from the selected submission"
+            )
+    elif data.stars or data.source_indices or data.notes != check.notes:
+        raise ValueError("Unreadable submissions cannot produce scientific content")
+
+
+def _check_quantity_snapshot(record, source, index, root):
+    from ..workspace.archives import read_json
+    from ..workspace.layout import resolve_within
+    from .material import material_locations
+    from .quantity_validation import check_response, select_partial
+
+    class Files:
+        def read_file(self, ref):
+            path = resolve_within(root, ref.path)
+            if file_digest(path) != ref.sha256:
+                raise ValueError("Artifact hash differs from its reference.")
+            return path.read_bytes()
+
+    data = record.data
+    roster = index.resolve(data.roster_ref)
+    if (
+        not isinstance(roster, RosterRecord)
+        or data.source_index not in roster.data.source_indices
+        or data.source_ref != roster.data.source_ref
+        or data.material_ref != roster.data.material_ref
+    ):
+        raise ValueError("Numerical target differs from the fixed roster.")
+    space = Files()
+    space.root = root
+    _check_submission_binding(record, space, roster=roster)
+    locations = material_locations(source, root)
+    if read_json(space, data.material_ref)["citation_locations"] != locations:
+        raise ValueError("Saved material differs from the fixed source.")
+    if data.response_ref is None:
+        if data.status != "failed" or data.quantities or data.notes is not None:
+            raise ValueError("A missing response cannot produce scientific content.")
+        return
+    check = check_response(read_json(space, data.response_ref), locations)
+    if data.status == "complete" and not check.passed:
+        raise ValueError("The saved submission did not pass all checks.")
+    if check.readable:
+        values, paths, rejected, notes = select_partial(check, locations)
+        if (data.quantities, data.source_paths, data.rejected, data.notes) != (
+            values,
+            paths,
+            rejected,
+            notes,
+        ):
+            raise ValueError(
+                "The numerical snapshot differs from the selected submission."
+            )
+    elif data.quantities or data.source_paths or data.notes != check.notes:
+        raise ValueError("An unreadable response cannot produce scientific content.")

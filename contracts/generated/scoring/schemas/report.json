@@ -1,0 +1,480 @@
+{
+  "$defs": {
+    "L0Metrics": {
+      "additionalProperties": false,
+      "properties": {
+        "planned": {
+          "title": "Planned",
+          "type": "integer"
+        },
+        "delivered": {
+          "title": "Delivered",
+          "type": "integer"
+        },
+        "format_valid": {
+          "title": "Format Valid",
+          "type": "integer"
+        },
+        "completion_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Completion Counts",
+          "type": "object"
+        },
+        "delivered_over_planned": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Delivered Over Planned"
+        },
+        "valid_over_delivered": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid Over Delivered"
+        },
+        "valid_over_planned": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid Over Planned"
+        }
+      },
+      "required": [
+        "planned",
+        "delivered",
+        "format_valid",
+        "completion_counts",
+        "delivered_over_planned",
+        "valid_over_delivered",
+        "valid_over_planned"
+      ],
+      "title": "L0Metrics",
+      "type": "object"
+    },
+    "L1Metrics": {
+      "additionalProperties": false,
+      "properties": {
+        "tp": {
+          "title": "Tp",
+          "type": "integer"
+        },
+        "fp": {
+          "title": "Fp",
+          "type": "integer"
+        },
+        "fn": {
+          "title": "Fn",
+          "type": "integer"
+        },
+        "precision": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Precision"
+        },
+        "recall": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Recall"
+        },
+        "f1": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "F1"
+        }
+      },
+      "required": [
+        "tp",
+        "fp",
+        "fn",
+        "precision",
+        "recall",
+        "f1"
+      ],
+      "title": "L1Metrics",
+      "type": "object"
+    },
+    "L2Metrics": {
+      "additionalProperties": false,
+      "properties": {
+        "correct": {
+          "title": "Correct",
+          "type": "integer"
+        },
+        "predicted": {
+          "title": "Predicted",
+          "type": "integer"
+        },
+        "gold": {
+          "title": "Gold",
+          "type": "integer"
+        },
+        "precision": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Precision"
+        },
+        "recall": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Recall"
+        },
+        "f1": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "F1"
+        }
+      },
+      "required": [
+        "correct",
+        "predicted",
+        "gold",
+        "precision",
+        "recall",
+        "f1"
+      ],
+      "title": "L2Metrics",
+      "type": "object"
+    },
+    "Metrics": {
+      "additionalProperties": false,
+      "properties": {
+        "l0": {
+          "$ref": "#/$defs/L0Metrics"
+        },
+        "l1": {
+          "$ref": "#/$defs/L1Metrics"
+        },
+        "l2": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/L2Metrics"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "roster_details": {
+          "$ref": "#/$defs/RosterDetails"
+        }
+      },
+      "required": [
+        "l0",
+        "l1",
+        "l2",
+        "roster_details"
+      ],
+      "title": "Metrics",
+      "type": "object"
+    },
+    "Pairing": {
+      "additionalProperties": false,
+      "properties": {
+        "layer": {
+          "enum": [
+            "star",
+            "identifier",
+            "contribution_type",
+            "value"
+          ],
+          "title": "Layer",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "matched",
+            "mismatch",
+            "missing",
+            "extra",
+            "duplicate",
+            "ambiguous_identity"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "gold_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gold Path"
+        },
+        "prediction_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prediction Path"
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantity"
+        },
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Fields",
+          "type": "array"
+        },
+        "basis": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Basis",
+          "type": "array"
+        }
+      },
+      "required": [
+        "layer",
+        "status"
+      ],
+      "title": "Pairing",
+      "type": "object"
+    },
+    "PaperResult": {
+      "additionalProperties": false,
+      "properties": {
+        "l0": {
+          "$ref": "#/$defs/L0Metrics"
+        },
+        "l1": {
+          "$ref": "#/$defs/L1Metrics"
+        },
+        "l2": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/L2Metrics"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "roster_details": {
+          "$ref": "#/$defs/RosterDetails"
+        },
+        "arxiv_id": {
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        },
+        "execution_state": {
+          "title": "Execution State",
+          "type": "string"
+        },
+        "correct_empty": {
+          "title": "Correct Empty",
+          "type": "boolean"
+        },
+        "quantities": {
+          "additionalProperties": {
+            "$ref": "#/$defs/L2Metrics"
+          },
+          "title": "Quantities",
+          "type": "object"
+        },
+        "pairings": {
+          "items": {
+            "$ref": "#/$defs/Pairing"
+          },
+          "title": "Pairings",
+          "type": "array"
+        },
+        "errors": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "evidence_checks": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Evidence Checks",
+          "type": "object"
+        }
+      },
+      "required": [
+        "l0",
+        "l1",
+        "l2",
+        "roster_details",
+        "arxiv_id",
+        "version",
+        "execution_state",
+        "correct_empty",
+        "quantities",
+        "pairings",
+        "errors",
+        "evidence_checks"
+      ],
+      "title": "PaperResult",
+      "type": "object"
+    },
+    "RosterDetails": {
+      "additionalProperties": false,
+      "properties": {
+        "matched_stars": {
+          "default": 0,
+          "title": "Matched Stars",
+          "type": "integer"
+        },
+        "contribution_correct": {
+          "default": 0,
+          "title": "Contribution Correct",
+          "type": "integer"
+        },
+        "contribution_accuracy": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contribution Accuracy"
+        },
+        "missing_identifiers": {
+          "default": 0,
+          "title": "Missing Identifiers",
+          "type": "integer"
+        },
+        "extra_identifiers": {
+          "default": 0,
+          "title": "Extra Identifiers",
+          "type": "integer"
+        }
+      },
+      "title": "RosterDetails",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "hvs.scoring-report",
+      "default": "hvs.scoring-report",
+      "title": "Format",
+      "type": "string"
+    },
+    "version": {
+      "const": 2,
+      "default": 2,
+      "title": "Version",
+      "type": "integer"
+    },
+    "input_sha256": {
+      "title": "Input Sha256",
+      "type": "string"
+    },
+    "scheme": {
+      "additionalProperties": true,
+      "title": "Scheme",
+      "type": "object"
+    },
+    "papers": {
+      "items": {
+        "$ref": "#/$defs/PaperResult"
+      },
+      "title": "Papers",
+      "type": "array"
+    },
+    "micro": {
+      "$ref": "#/$defs/Metrics"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "input_sha256",
+    "scheme",
+    "papers",
+    "micro",
+    "notes"
+  ],
+  "title": "ScoringReport",
+  "type": "object"
+}

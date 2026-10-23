@@ -1,640 +1,158 @@
-"""Shared extraction Python API for creation, advancement, and queries.
+"""Fixed-input extraction creation, advancement, and read-only status."""
 
-start_extraction creates/reuses runtime frozen-input/request-key executions.
-resume_extraction advances new runs, paused recovery, or idempotent completed reentry.
-get_extraction reads state/configuration/questions/model judgments/usage. Recovery uses
-saved snapshots only, never new requests; configuration changes require new
-keys/executions.
-"""
+from dataclasses import asdict, dataclass, field
 
-from __future__ import annotations
-
-import json
-from dataclasses import dataclass, field
-from typing import Any
-
-from ..records.common import ArtifactRef, RecordRef, canonical_json, sha256_of
-from ..records.runs import ModelSpec, RunRecord
-from ..review import ReviewService
-from ..review.service import QuestionView
-from ..runtime import ExecutionHandle, StepRunInfo, get_execution
-from ..runtime import (
-    build_input_snapshot as _build_input_snapshot,
-)
-from ..runtime import (
-    create_execution as _create_execution,
-)
-from ..runtime import (
-    resume_execution as _resume_execution,
-)
-from ..workspace import Workspace, WorkspaceIntegrityError
-from .params import ParameterPolicyError, effective_policy
-from .registry import PipelineRegistry
-from .request import ExtractionRequest
-
-__all__ = [
-    "ExtractionHandle",
-    "ExtractionReport",
-    "PipelineRequestError",
-    "get_extraction",
-    "list_methods",
-    "pending_questions",
-    "resume_extraction",
-    "start_extraction",
-    "supported_parameters",
-]
+from ..llm.managed import CallService
+from ..records.common import RecordRef
+from ..runtime import create_execution, get_execution, resume_execution
+from .configuration import ExtractionConfig, stored_configuration
+from .flow import ExtractionFlow
+from .inputs import freeze_input
 
 
 class PipelineRequestError(ValueError):
-    """Request violates entry contracts, including unknown methods/configuration/support
-    scope.
-    """
-
-
-@dataclass(frozen=True)
-class ExtractionHandle:
-    """start_extraction result: execution identity and echoed frozen configuration."""
-
-    execution_id: str
-    request_key: str
-    reused: bool
-    method: str
-    mode: str
-    expert_adjudication: bool
-    models: list[dict]
-    input_digest: str
-    flow_id: str
-    flow_version: str
-
-    def to_dict(self) -> dict:
-        return {
-            "execution_id": self.execution_id,
-            "request_key": self.request_key,
-            "reused": self.reused,
-            "method": self.method,
-            "mode": self.mode,
-            "expert_adjudication": self.expert_adjudication,
-            "models": list(self.models),
-            "input_digest": self.input_digest,
-            "flow_id": self.flow_id,
-            "flow_version": self.flow_version,
-        }
+    """The requested extraction input is invalid."""
 
 
 @dataclass
 class ExtractionReport:
-    """Advancement result: state, questions, steps, and original failures."""
-
     execution_id: str
-    outcome: str  # paused | finished | failed
-    mode: str  # fresh | resumed | already-finished
-    state: str  # Run-manifest state: running, waiting_review, finished, failed, and others.
+    outcome: str
+    mode: str
+    state: str
     config: dict
-    steps: list[StepRunInfo] = field(default_factory=list)
-    pending_question: dict | None = None
-    open_questions: int = 0
-    answered_questions: int = 0
-    model_judgments: int = 0
-    result_refs: list[dict] = field(default_factory=list)
+    steps: list = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    result_refs: list[dict] = field(default_factory=list)
     service_summary: dict | None = None
+    result_status: str | None = None
 
-    def to_dict(self) -> dict:
-        return {
-            "execution_id": self.execution_id,
-            "outcome": self.outcome,
-            "mode": self.mode,
-            "state": self.state,
-            "config": self.config,
-            "steps": [{"step_id": s.step_id, "reused": s.reused} for s in self.steps],
-            "pending_question": self.pending_question,
-            "open_questions": self.open_questions,
-            "answered_questions": self.answered_questions,
-            "model_judgments": self.model_judgments,
-            "result_refs": list(self.result_refs),
-            "errors": list(self.errors),
-            "service_summary": self.service_summary,
-        }
-
-
-def _validated_model_specs(registration, models, *, context: str) -> list[ModelSpec]:
-    """Validate restricted parameters before execution and return snapshot content copies.
-
-    ModelSpec copies make snapshots equal actual sent contents despite later caller
-    mutation. effective_policy treats undeclared policies as empty consistently with
-    flow validation.
-    """
-    declared = registration.spec.parameter_policy
-    policy = effective_policy(declared)
-    hint = (
-        f"方法 {registration.spec.method_id!r} 未声明模型参数支持集"
-        "（等同空策略，不接受任何参数）"
-        if declared is None
-        else f"方法 {registration.spec.method_id!r}"
-    )
-    validated: list[ModelSpec] = []
-    for item in models:
-        try:
-            parameters = policy.validate(
-                item.parameters,
-                context=f"{context}：{hint}（模型 {item.model}）",
-            )
-        except ParameterPolicyError as exc:
-            raise PipelineRequestError(
-                f"{context}：模型参数未通过受限策略校验，请求被拒绝：{exc}"
-            ) from exc
-        validated.append(
-            ModelSpec(
-                step_id=item.step_id,
-                provider=item.provider,
-                model=item.model,
-                parameters=parameters,
-            )
-        )
-    return validated
-
-
-def _check_stored_model_specs(registration, snapshot_models) -> None:
-    """Recovery validates saved parameters through the same policy without rewriting
-    snapshots.
-
-    Reject unsupported nested legacy/bypass parameters rather than rewriting data to
-    appear safe or sending unchecked content.
-    """
-    try:
-        _validated_model_specs(
-            registration, snapshot_models, context="执行固定的模型参数"
-        )
-    except PipelineRequestError as exc:
-        raise PipelineRequestError(
-            f"执行固定的模型参数未通过当前受限策略校验，恢复被拒绝：{exc}"
-        ) from exc
-
-
-def _default_registry(registry: PipelineRegistry | None) -> PipelineRegistry:
-    if registry is not None:
-        return registry
-    from .methods import DEFAULT_REGISTRY
-
-    return DEFAULT_REGISTRY
-
-
-def _validate_models(method_spec, request: ExtractionRequest) -> None:
-    for item in request.models:
-        if item.step_id is None:
-            continue
-        if not method_spec.has_step(item.step_id):
-            raise PipelineRequestError(
-                f"方法 {method_spec.method_id!r} 没有步骤 {item.step_id!r}；"
-                f"可用步骤：{', '.join(method_spec.step_ids())}。"
-                "给不存在或未启用的步骤设置模型时，运行前报错"
-            )
+    def to_dict(self):
+        return asdict(self)
 
 
 def start_extraction(
-    space: Workspace,
+    space,
     *,
-    request: ExtractionRequest,
-    request_key: str,
-    registry: PipelineRegistry | None = None,
+    preparation_execution_id=None,
+    roster_ref=None,
+    roster_execution_id=None,
+    request_key,
     configuration=None,
-    prepared_input: ArtifactRef | None = None,
-    extraction_scope: str = "roster",
-    roster_execution_id: str | None = None,
-) -> ExtractionHandle:
-    """Create/reuse extraction through strict requests.
+    scope="full",
+):
+    from .roster import saved_roster
 
-    Freeze methods, modes, default/step models, and review switches into
-    snapshots/digests. Changed same-key input rejects; new configuration requires new
-    keys. Requests have no Gold/scoring/answer paths.
-    """
-    if extraction_scope not in {"roster", "full"}:
-        raise PipelineRequestError("unknown prepared extraction scope")
-    registration = _default_registry(registry).get(request.method)
-    _validate_models(registration.spec, request)
-    frozen = {}
-    if configuration is None:
-        validated_models = _validated_model_specs(
-            registration, request.models, context="提取请求"
-        )
-    else:
-        from .configuration import ExtractionConfig, freeze_configuration
-
-        configuration = ExtractionConfig.model_validate(configuration.model_dump())
-        if (
-            configuration.request(request.source_refs).model_dump()
-            != request.model_dump()
-        ):
-            raise PipelineRequestError("提取请求与完整运行配置不一致")
-        validated_models = [
-            ModelSpec.model_validate(item.model_dump()) for item in request.models
-        ]
-    if prepared_input is not None:
-        from .roster import STEP, material_prompt, prepared_bundle
-
-        if (
-            configuration is None
-            or request.method != "roster"
-            or len(request.source_refs) != 1
-            or STEP not in registration.spec.model_steps
-        ):
-            raise PipelineRequestError(
-                "prepared roster requires a configured request with one source"
-            )
-        bundle, source = prepared_bundle(space, prepared_input, request.source_refs[0])
-        inputs = material_prompt(space, bundle, source)
-        rendered = inputs.model_dump(mode="json")
-        problems = []
-    else:
-        problems = registration.check_request(space, request)
-    if problems:
-        raise PipelineRequestError("提取请求未通过运行前检查：" + "；".join(problems))
-    if configuration is not None:
-        with space.lock():
-            frozen = freeze_configuration(
-                space,
-                configuration,
-                inputs=inputs if prepared_input is not None else None,
-            )
-    if prepared_input is not None:
-        with space.lock():
-            from ..workspace.archives import publish_json
-
-            rendered_ref = publish_json(
-                space,
-                f"runs/inputs/{sha256_of(rendered)}/shared-roster-material.json",
-                rendered,
-            )
-        frozen["options"].update(
-            {
-                "prepared_input": prepared_input.model_dump_json(),
-                "prepared_prompt": rendered_ref.model_dump_json(),
-                "extraction_scope": extraction_scope,
-            }
-        )
-    snapshot = _build_input_snapshot(
-        source_refs=list(request.source_refs),
-        method=request.method,
-        models=validated_models,
-        expert_adjudication=request.expert_adjudication,
-        existing_decision_refs=list(request.existing_decision_refs),
-        **frozen,
-    )
     if roster_execution_id is not None:
-        if prepared_input is None or extraction_scope != "full":
-            raise PipelineRequestError(
-                "roster reuse requires a prepared full extraction"
-            )
-        from .roster_reuse import freeze_roster
-
-        snapshot.options["reused_roster"] = canonical_json(
-            freeze_roster(space, roster_execution_id, snapshot)
+        if roster_ref is not None:
+            raise PipelineRequestError("Provide one roster selection.")
+        roster = saved_roster(space, roster_execution_id)
+        if roster is None:
+            raise PipelineRequestError("No saved roster is available.")
+        roster_ref = roster.ref()
+    if isinstance(roster_ref, dict):
+        roster_ref = RecordRef.model_validate(roster_ref)
+    config = configuration or ExtractionConfig()
+    config = ExtractionConfig.model_validate(config.model_dump())
+    with space.lock():
+        snapshot = freeze_input(
+            space, config, preparation_execution_id, roster_ref, scope
         )
-    if prepared_input is not None:
-        from .roster import RosterFlow
-
-        if extraction_scope == "full":
-            from .quantities import PDFExtractionFlow
-
-            flow = PDFExtractionFlow(mode=request.mode)
-        else:
-            flow = RosterFlow(mode=request.mode)
-    else:
-        flow = registration.build_flow(registration.spec, mode=request.mode)
-    handle, reused = _create_execution(
-        space,
-        request_key=request_key,
-        input_snapshot=snapshot,
-        flow=flow,
-    )
-    return ExtractionHandle(
-        execution_id=handle.execution_id,
-        request_key=request_key,
-        reused=reused,
-        method=request.method,
-        mode=request.mode,
-        expert_adjudication=request.expert_adjudication,
-        models=[item.model_dump(mode="json") for item in request.models],
-        input_digest=handle.input_digest,
-        flow_id=handle.flow_id,
-        flow_version=handle.flow_version,
-    )
-
-
-def resume_extraction(
-    space: Workspace,
-    execution_id: str,
-    *,
-    service: Any = None,
-    registry: PipelineRegistry | None = None,
-) -> ExtractionReport:
-    """Use the shared coordinator for prepared PDF runs, including single papers."""
-    handle = get_execution(space, execution_id)
-    if handle.input_snapshot.options.get("extraction_scope") in {"roster", "full"}:
-        from .batch import ExtractionTask, resume_extractions
-
-        return resume_extractions(
-            [ExtractionTask(space, execution_id, service)], registry=registry
-        )[0]
-    return _resume_extraction_once(
-        space, execution_id, service=service, registry=registry
-    )
-
-
-def _resume_extraction_once(
-    space: Workspace,
-    execution_id: str,
-    *,
-    service: Any = None,
-    registry: PipelineRegistry | None = None,
-) -> ExtractionReport:
-    """Advance extraction with saved fixed configuration only.
-
-    Share initial execution, paused recovery, and completed reentry; resolve frozen
-    registered methods and accept no new request contents.
-    """
-    handle = get_execution(space, execution_id)
-    registration = _default_registry(registry).get(handle.input_snapshot.method)
-    from .configuration import validate_configuration_snapshot
-
-    if validate_configuration_snapshot(handle.input_snapshot) is None:
-        _check_stored_model_specs(registration, handle.input_snapshot.models)
-    if handle.input_snapshot.options.get("extraction_scope") in {"roster", "full"}:
-        from ..llm.managed import CallService
-        from .configuration import stored_configuration
-        from .roster import RosterFlow
-
-        if handle.input_snapshot.options["extraction_scope"] == "full":
-            from .quantities import PDFExtractionFlow
-
-            flow = PDFExtractionFlow(mode=handle.mode)
-        else:
-            flow = RosterFlow(mode=handle.mode)
-        if service is None:
-            service = CallService(stored_configuration(handle.input_snapshot).runtime)
-    else:
-        flow = registration.build_flow(registration.spec, mode=handle.mode)
-    report = _resume_execution(space, execution_id, flow, service=service)
-    if report.outcome == "finished" and handle.input_snapshot.options.get(
-        "extraction_scope"
-    ) in {"roster", "full"}:
-        from ..workspace.retention import close_extraction
-
-        close_extraction(space, execution_id)
-    return _build_report(space, handle, report)
-
-
-def get_extraction(
-    space: Workspace, execution_id: str, *, registry: PipelineRegistry | None = None
-) -> dict:
-    """Read-only execution state/configuration/step/question/model-judgment/usage queries."""
-    handle = get_execution(space, execution_id)
-    run = _current_run(space, handle)
-    questions = ReviewService(space).list_questions(execution_id=execution_id)
-    usages = [attempt.usage for step in run.data.steps for attempt in step.attempts]
-    attempts_total = len(usages)
-    known_tokens = [
-        usage.tokens
-        for usage in usages
-        if usage is not None and usage.tokens is not None
-    ]
-    status = {
-        "execution_id": execution_id,
-        "state": run.data.state,
-        "config": _config_echo(handle),
-        "steps": [
-            {
-                "step_id": step.step_id,
-                "state": step.state,
-                "attempts": len(step.attempts),
-                "tokens": (
-                    sum(a.usage.tokens for a in step.attempts)
-                    if step.attempts
-                    and all(
-                        a.usage is not None and a.usage.tokens is not None
-                        for a in step.attempts
-                    )
-                    else None
-                ),
-                "result_refs": [
-                    ref.model_dump(mode="json") for ref in step.result_refs
-                ],
-            }
-            for step in run.data.steps
-        ],
-        "questions": [
-            {
-                "question_ref": view.question_ref.model_dump(mode="json"),
-                "status": view.status,
-                "answered_outcome": view.answered_outcome,
-                "needs_processing": view.needs_processing,
-                "created_at": view.record.created_at.isoformat(),
-                "decided_at": (
-                    view.decisions[-1].data.decided_at.isoformat()
-                    if view.decisions
-                    else None
-                ),
-            }
-            for view in questions
-        ],
-        "model_judgments": [
-            {
-                "step_id": judgment.step_id,
-                "judgment": judgment.judgment,
-                "created_at": judgment.created_at.isoformat(),
-            }
-            for judgment in run.data.model_judgments
-        ],
-        "result_refs": [ref.model_dump(mode="json") for ref in run.data.result_refs],
-        "errors": [error.message for error in run.data.errors],
-        "usage": {
-            "attempts": attempts_total,
-            # Unknown usage stays null, never fabricated zero.
-            "tokens": sum(known_tokens)
-            if len(known_tokens) == attempts_total
-            else None,
-        },
-        "input_digest": handle.input_digest,
-    }
-
-    from ..records.paper import PaperRecord
-    from ..records.roster import RosterRecord
-    from .completion import science_completion
-
-    records = [
-        space.store().read_record(ref)
-        for ref in execution_result_refs(space, execution_id)
-    ]
-    paper = next((r for r in records if isinstance(r, PaperRecord)), None)
-    roster = next((r for r in records if isinstance(r, RosterRecord)), None)
-    if paper is not None and roster is None:
-        roster = space.store().read_record(paper.data.roster_ref)
-    diagnostics = []
-
-    def retain(record, item_id, kind, field, diagnostic):
-        diagnostics.append(
-            {
-                "kind": kind,
-                "field": field,
-                "record_ref": record.ref().model_dump(mode="json"),
-                "item_id": item_id,
-                "source_ref": record.data.source_ref.model_dump(mode="json"),
-                **diagnostic.model_dump(mode="json"),
-            }
+        handle, _ = create_execution(
+            space,
+            request_key=request_key,
+            input_snapshot=snapshot,
+            flow=ExtractionFlow(mode=config.mode),
         )
+        from .results import PREFIX, publish_result
 
-    if roster is not None:
-        for entry in roster.data.entries:
-            for error in entry.author_errors:
-                retain(roster, entry.item_id, "author_error", "entries", error)
-    if paper is not None:
-        for contribution in paper.data.object_contributions:
-            for field, errors in (
-                ("quantities", contribution.author_errors),
-                ("paper_boundness", contribution.paper_boundness.author_errors),
-            ):
-                for error in errors:
-                    retain(paper, contribution.item_id, "author_error", field, error)
-            for conflict in contribution.quantity_conflicts:
-                if conflict.issue_ref is None:
-                    retain(
-                        paper,
-                        contribution.item_id,
-                        "numeric_conflict",
-                        "quantities",
-                        conflict,
-                    )
-    state, reasons = science_completion(status, roster, paper)
-    status.update(
-        diagnostics=diagnostics, science_completion={"state": state, "reasons": reasons}
+        if space.store().get_meta(PREFIX + handle.execution_id) is None:
+            publish_result(space, handle.execution_id)
+    return handle
+
+
+def resume_extraction(space, execution_id, *, service=None):
+    from .batch import ExtractionTask, resume_extractions
+
+    return resume_extractions([ExtractionTask(space, execution_id, service)])[0]
+
+
+def _resume_extraction_once(space, execution_id, *, service=None):
+    from ..workspace.retention import PREFIX, close_extraction
+    from .results import publish_result, result_status
+
+    handle = get_execution(space, execution_id)
+    config = stored_configuration(handle.input_snapshot)
+    service = service or CallService(config.runtime)
+    report = resume_execution(
+        space, execution_id, ExtractionFlow(mode=handle.mode), service=service
     )
-    from ..workspace.retention import PREFIX
-
-    if space.store().get_meta(PREFIX + execution_id) is not None:
-        status.update(retention="closed", resumable=False)
-    return status
-
-
-def pending_questions(
-    space: Workspace, execution_id: str | None = None
-) -> list[QuestionView]:
-    """List pending questions, equivalent to ReviewService.list_questions."""
-    return ReviewService(space).list_questions(execution_id=execution_id)
-
-
-def list_methods(registry: PipelineRegistry | None = None) -> list[dict]:
-    """List full-flow mock support and separately delivered real model steps."""
-    return [
-        {
-            "method_id": registration.spec.method_id,
-            "implementation": registration.spec.implementation,
-            "real_extraction": registration.spec.real_extraction,
-            "version": registration.spec.version,
-            "model_steps": list(registration.spec.model_steps),
-            "steps": [
-                {
-                    "step_id": step.step_id,
-                    "kind": step.kind,
-                    "title": step.title,
-                }
-                for step in registration.spec.steps
-            ],
-        }
-        for registration in _default_registry(registry).list_methods()
-    ]
-
-
-def supported_parameters(registry: PipelineRegistry | None = None) -> dict:
-    """List declared restricted parameter fields/types/ranges per method.
-
-    Undeclared methods are omitted and accept no parameters.
-    """
-    described: dict[str, list[dict]] = {}
-    for registration in _default_registry(registry).list_methods():
-        policy = registration.spec.parameter_policy
-        if policy is not None:
-            described[registration.spec.method_id] = policy.describe()
-    return described
-
-
-def _current_run(space: Workspace, handle: ExecutionHandle) -> RunRecord:
-    run = space.store().read_record_current(handle.run_ref.record_id)
-    if not isinstance(run, RunRecord):  # pragma: no cover - data should be consistent
-        raise WorkspaceIntegrityError(f"执行 {handle.execution_id} 的运行清单缺失")
-    return run
-
-
-def _config_echo(handle: ExecutionHandle) -> dict:
-    snapshot = handle.input_snapshot
-    return {
-        "method": snapshot.method,
-        "scope": snapshot.options.get("extraction_scope", "full"),
-        "mode": handle.mode,
-        "expert_adjudication": snapshot.expert_adjudication,
-        "models": [item.model_dump(mode="json") for item in snapshot.models],
-        "rules_version": snapshot.rules.version,
-        "configuration": (
-            json.loads(snapshot.options["extraction_config"])
-            if "extraction_config" in snapshot.options
-            else None
-        ),
-        "prompt_refs": [ref.model_dump(mode="json") for ref in snapshot.prompt_refs],
-        "example_refs": [ref.model_dump(mode="json") for ref in snapshot.example_refs],
-        "existing_decision_refs": [
-            ref.model_dump(mode="json") for ref in snapshot.existing_decision_refs
-        ],
-        "flow_id": handle.flow_id,
-        "flow_version": handle.flow_version,
-        "input_digest": handle.input_digest,
-    }
-
-
-def _build_report(
-    space: Workspace, handle: ExecutionHandle, report: Any
-) -> ExtractionReport:
-    run = _current_run(space, handle)
-    review = ReviewService(space)
-    questions = review.list_questions(execution_id=handle.execution_id)
-    pending = None
-    if report.pending_question is not None:
-        view: QuestionView = report.pending_question
-        pending = {
-            "question_ref": view.question_ref.model_dump(mode="json"),
-            "status": view.status,
-            "answered_outcome": view.answered_outcome,
-            "needs_processing": view.needs_processing,
-            "prompt": view.record.data.prompt,
-        }
+    if (
+        report.outcome != "running"
+        and space.store().get_meta(PREFIX + execution_id) is None
+    ):
+        publish_result(space, execution_id, hook=service.hook)
+        if (
+            report.outcome == "finished"
+            and result_status(space, execution_id) == "complete"
+        ):
+            close_extraction(space, execution_id)
+    status = get_extraction(space, execution_id)
     return ExtractionReport(
-        execution_id=handle.execution_id,
+        execution_id=execution_id,
         outcome=report.outcome,
         mode=report.mode,
-        state=run.data.state,
-        config=_config_echo(handle),
+        state=status["state"],
+        config=status["config"],
         steps=list(report.steps),
-        pending_question=pending,
-        open_questions=sum(1 for q in questions if q.status == "open"),
-        answered_questions=sum(1 for q in questions if q.status == "answered"),
-        model_judgments=len(run.data.model_judgments),
-        result_refs=[ref.model_dump(mode="json") for ref in run.data.result_refs],
         errors=list(report.errors),
+        result_refs=status["result_refs"],
         service_summary=report.service_summary,
+        result_status=status["result_status"],
     )
 
 
-def execution_result_refs(space: Workspace, execution_id: str) -> list[RecordRef]:
-    """Read all execution result references for stable scoring adaptation."""
-    handle = get_execution(space, execution_id)
-    run = _current_run(space, handle)
-    if handle.input_snapshot.options.get("extraction_scope") == "full":
-        assembly = next((s for s in run.data.steps if s.step_id == "assemble"), None)
-        if assembly and assembly.result_refs:
-            paper = space.store().read_record(assembly.result_refs[0])
-            return [paper.ref(), paper.data.roster_ref]
-    if handle.input_snapshot.options.get("extraction_scope") in {"roster", "full"}:
-        from .roster import roster_result_refs
+def get_extraction(space, execution_id):
+    from ..workspace.retention import PREFIX
+    from .results import current_result, result_status
+    from .roster import saved_roster
 
-        refs = roster_result_refs(space, execution_id)
-        if refs:
-            return refs
-    return list(run.data.result_refs)
+    handle = get_execution(space, execution_id)
+    run = space.store().read_record_current(handle.run_ref.record_id)
+    roster = saved_roster(space, execution_id)
+    usage = [
+        a.usage.tokens if a.usage else None for s in run.data.steps for a in s.attempts
+    ]
+    result = current_result(space, execution_id)
+    status = result_status(space, execution_id)
+    closed = space.store().get_meta(PREFIX + execution_id) is not None
+    return {
+        "execution_id": execution_id,
+        "state": run.data.state,
+        "config": stored_configuration(handle.input_snapshot).model_dump(mode="json"),
+        "steps": [s.model_dump(mode="json") for s in run.data.steps],
+        "result_refs": [r.model_dump() for r in run.data.result_refs],
+        "result_status": status,
+        "roster_status": roster.data.status if roster else "pending",
+        "diagnostics": [i.model_dump() for i in roster.data.issues] if roster else [],
+        "errors": [e.message for e in run.data.errors],
+        "usage": {
+            "attempts": len(usage),
+            "tokens": sum(usage) if all(v is not None for v in usage) else None,
+        },
+        "input_digest": handle.input_digest,
+        "science_completion": {
+            "state": status or "incomplete",
+            "reasons": [] if status == "complete" else ["extraction_incomplete"],
+        },
+        "run_ref": result[0].model_dump() if result else None,
+        "retention": "closed" if closed else "open",
+        "resumable": not closed,
+    }
+
+
+def execution_result_refs(space, execution_id):
+    handle = get_execution(space, execution_id)
+    return list(
+        space.store().read_record_current(handle.run_ref.record_id).data.result_refs
+    )

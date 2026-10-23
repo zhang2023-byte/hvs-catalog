@@ -131,12 +131,14 @@ def read_result(payload: bytes, page_count: int) -> dict:
         document = _layout_document(document)
     elif document.get("schema") != "docvortex.middle":
         raise MinerUError("Unsupported MinerU document schema")
-    blocks, pages, gaps, images = [], set(), [], {}
+    blocks, pages, preparation_issues, images = [], set(), [], {}
     if not markdown.strip():
-        gaps.append("Official Markdown is empty.")
+        preparation_issues.append("Official Markdown is empty.")
     for path in re.findall(r"!\[[^\]]*\]\(([^\s)]+)", markdown):
         if not path.startswith(("https://", "http://", "data:")) and path not in names:
-            gaps.append(f"Markdown image is absent from its archive: {path}.")
+            preparation_issues.append(
+                f"Markdown image is absent from its archive: {path}."
+            )
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
 
         def image_paths(node):
@@ -153,8 +155,8 @@ def read_result(payload: bytes, page_count: int) -> dict:
                     path = "images/" + path
                 if path not in names:
                     message = f"Parser image is absent from its archive: {path}."
-                    if message not in gaps:
-                        gaps.append(message)
+                    if message not in preparation_issues:
+                        preparation_issues.append(message)
                     continue
                 if path not in images:
                     content = archive.read(path)
@@ -230,18 +232,20 @@ def read_result(payload: bytes, page_count: int) -> dict:
                         )
                 blocks.append(adapted)
         if not any(b["page"] == number for b in blocks):
-            gaps.append(f"No readable content was returned for PDF page {number}.")
+            preparation_issues.append(
+                f"No readable content was returned for PDF page {number}."
+            )
     missing = sorted(set(range(1, page_count + 1)) - pages)
     if missing:
-        gaps.append(f"Parser omitted PDF pages: {missing}.")
+        preparation_issues.append(f"Parser omitted PDF pages: {missing}.")
     if document.get("is_full_document") is not True:
-        gaps.append("Parser did not declare a full-document result.")
+        preparation_issues.append("Parser did not declare a full-document result.")
     if not blocks:
         raise MinerUError("PDF parser returned no readable content")
     return {
         "blocks": blocks,
         "markdown": markdown,
-        "gaps": gaps,
+        "preparation_issues": preparation_issues,
         "page_count": page_count,
         "images": images,
     }

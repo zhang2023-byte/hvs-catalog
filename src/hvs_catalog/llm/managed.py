@@ -124,7 +124,7 @@ def _finalize(ctx, attempts, envelope, *, index=-1, step_id=STEP):
 
 
 def _archive_raw(ctx, envelope, name):
-    """Retain submissions and transport facts, discarding reasoning and wire bytes."""
+    """Retain submissions and transport facts, discarding redundant wire bytes."""
     exchange = envelope.get("exchange") or {}
     raw = exchange.pop("_raw_stream", None)
     if raw is not None:
@@ -132,14 +132,6 @@ def _archive_raw(ctx, envelope, name):
     exchange.pop("raw_response_ref", None)
     exchange["events"] = []
     exchange["text"] = ""
-    body = exchange.get("body") or {}
-    if isinstance(body, dict):
-        for choice in body.get("choices") or []:
-            message = choice.get("message") or {}
-            message.pop("reasoning_content", None)
-    result = envelope.get("result")
-    if isinstance(result, dict):
-        result.pop("reasoning_content", None)
 
 
 def _frozen_call_inputs(space, snapshot):
@@ -168,7 +160,15 @@ def _execute(ctx, service: CallService):
 
 
 FORMAT_ERRORS = frozenset(
-    {"missing_or_multiple_tool_calls", "wrong_tool", "invalid_tool_arguments"}
+    {
+        "missing_or_multiple_tool_calls",
+        "wrong_tool",
+        "invalid_tool_arguments",
+        "truncated",
+        "invalid_message",
+        "invalid_choices",
+        "invalid_finish_reason",
+    }
 )
 
 
@@ -208,11 +208,11 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
             raise CallFailure(
                 "completion_unknown; create a new request only after reviewing the uncertain call"
             )
-        envelope = json.loads(ctx.space.read_file(attempts[index].response))
+        envelope = read_json(ctx.space, attempts[index].response)
         _finalize(ctx, attempts, envelope, index=index, step_id=step_id)
     if index is not None:
         envelope = (
-            json.loads(ctx.space.read_file(attempts[index].response))
+            read_json(ctx.space, attempts[index].response)
             if attempts[index].response
             else None
         )
@@ -312,10 +312,10 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
                 }
             envelope["request_sha256"] = digest
             _archive_raw(ctx, envelope, f"responses/{prefix}attempt-{number:03d}.raw")
-            response_ref = ctx.space.publish_run_file(
-                ctx.execution.execution_id,
-                f"responses/{prefix}attempt-{number:03d}.json",
-                canonical_json(envelope).encode(),
+            response_ref = publish_json(
+                ctx.space,
+                f"runs/{ctx.execution.execution_id}/responses/{prefix}attempt-{number:03d}.json",
+                envelope,
             )
             exchange = envelope["exchange"]
             usage = token_usage(
@@ -384,7 +384,7 @@ def _execute_concurrent(ctx, service, request, prepared, step_id, call_key):
             raise CallFailure(
                 "completion_unknown; no live coordinator owns the pending call"
             )
-        envelope = json.loads(ctx.space.read_file(attempt.response))
+        envelope = read_json(ctx.space, attempt.response)
         if attempt.state == "pending":
             service.hook("after_archive")
             _finalize(ctx, attempts, envelope, index=index, step_id=step_id)
@@ -430,10 +430,10 @@ def _execute_concurrent(ctx, service, request, prepared, step_id, call_key):
             _archive_raw(
                 ctx, envelope, f"responses/{prefix}attempt-{len(indices) + 1:03d}.raw"
             )
-            response_ref = ctx.space.publish_run_file(
-                ctx.execution.execution_id,
-                f"responses/{prefix}attempt-{len(indices) + 1:03d}.json",
-                canonical_json(envelope).encode(),
+            response_ref = publish_json(
+                ctx.space,
+                f"runs/{ctx.execution.execution_id}/responses/{prefix}attempt-{len(indices) + 1:03d}.json",
+                envelope,
             )
             current = _attempts(ctx, step_id)
             index = next(i for i, a in enumerate(current) if a.request == request_ref)
@@ -570,7 +570,7 @@ def get_call(space: Workspace, execution_id: str) -> dict:
     attempts = [a for step in run.data.steps for a in step.attempts]
     response = None
     if attempts and attempts[-1].response:
-        response = json.loads(space.read_file(attempts[-1].response))
+        response = read_json(space, attempts[-1].response)
     return {
         "execution_id": execution_id,
         "state": run.data.state,

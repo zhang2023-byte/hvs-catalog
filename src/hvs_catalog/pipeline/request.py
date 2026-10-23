@@ -23,20 +23,12 @@ class StepModel(Config):
 
 
 class ExtractionRequest(Config):
-    """Shared execution request.
-
-    source_refs identifies fixed workspace packages; models requires exactly one default
-    plus optional overrides. Registered step existence is checked before running.
-    existing_decision_refs fixes applicable reusable decisions under architecture's
-    current-round disabled-group isolation rule.
-    """
+    """Fixed sources and one default model with optional stage overrides."""
 
     mode: RunMode
     method: str = Field(min_length=1)
     source_refs: list[RecordRef] = Field(min_length=1)
     models: list[StepModel] = Field(min_length=1)
-    expert_adjudication: bool = False
-    existing_decision_refs: list[RecordRef] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _single_default_and_unique_steps(self) -> ExtractionRequest:

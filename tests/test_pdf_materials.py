@@ -123,11 +123,11 @@ def test_prepare_replay_reopen_no_reparse_and_pdf_page_binding(tmp_path):
 def test_missing_page_retained_as_gap_not_successful_full_material(tmp_path):
     space, source = prepared_space(tmp_path)
     handle, report = MaterialsService(
-        space, runner=FakeMinerU(gaps=["PDF page 2 unreadable"])
+        space, runner=FakeMinerU(preparation_issues=["PDF page 2 unreadable"])
     ).prepare_materials(request_key="missing", paper=source.canonical_id)
     assert report.outcome == "finished"
     bundle = MaterialsService(space).get_prepared_input(handle.execution_id)
-    assert not bundle["summary"]["materials_complete"] and bundle["gaps"]
+    assert not bundle["summary"]["materials_complete"] and bundle["preparation_issues"]
     space.close()
 
 
@@ -175,8 +175,8 @@ def test_parser_full_document_and_table_symbols_preserved():
     raw = mineru_zip(table)
     result = read_result(raw, 2)
     assert result["blocks"][0]["text"] == table
-    assert result["gaps"] == ["Parser omitted PDF pages: [2]."]
-    assert read_result(mineru_zip("text", full=False), 1)["gaps"]
+    assert result["preparation_issues"] == ["Parser omitted PDF pages: [2]."]
+    assert read_result(mineru_zip("text", full=False), 1)["preparation_issues"]
 
 
 @pytest.mark.parametrize("change", ["page", "bbox", "duplicate", "schema"])

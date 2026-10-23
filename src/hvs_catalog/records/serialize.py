@@ -18,6 +18,13 @@ def parse_record(payload: str | dict[str, object]) -> AnyRecord:
     name = tag.get("name") if isinstance(tag, dict) else None
     if not isinstance(name, str) or name not in RECORD_MODELS:
         raise RecordFormatError(f"未知记录类型：{name!r}")
+    if name == "source_package" and "gaps" in obj.get("data", {}):
+        # Read existing preparation metadata without changing its stored bytes.
+        # Only parser descriptions survive in the current source view.
+        data = dict(obj["data"])
+        gaps = data.pop("gaps")
+        data["preparation_issues"] = [g["description"] for g in gaps]
+        obj = {**obj, "data": data}
     return RECORD_MODELS[name].model_validate(obj)
 
 

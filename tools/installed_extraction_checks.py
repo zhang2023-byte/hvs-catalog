@@ -1,296 +1,155 @@
-"""Exercise configuration/prompts and saved mock recovery from an installed wheel."""
+"""Verify installed roster correction, process recovery, backups, and capability guards."""
 
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 
-DRIVER = r"""
-import json, sys
-from pathlib import Path
-from hvs_catalog.llm import ModelConfig
-from hvs_catalog.llm.prompts import PromptInput
-from pydantic import ValidationError
-from hvs_catalog.pipeline import (
-    PAPER_A, PAPER_B, ExtractionConfig, PipelineMockService, check_extraction_config,
-    get_extraction, import_mock_source, preview_extraction_prompt, resume_extraction,
-    start_configured_extraction,
-)
-from hvs_catalog.workspace import initialize_workspace, open_workspace
+from installed_pdf_fixture import PDF_FIXTURE
 
-root, phase = Path(sys.argv[1]), sys.argv[2]
-if phase == "create":
-    try:
-        ExtractionConfig(precedents=[{"precedent_id": "SYN-P1", "version": "synthetic-1", "explanation": "Record the explicit author synthesis.", "conditions": "An explicit synthesis is present.", "boundaries": "Do not infer it by counting models."}])
-    except ValidationError:
-        pass
-    else:
-        raise AssertionError("A precedent requires an explicit approved declaration.")
-    config = ExtractionConfig(step_models={
-        "roster": ModelConfig(model="qwen3.8-flash"),
-        "quantities": ModelConfig(model="mimo-v2.6-flash"),
-    })
-    assert len(check_extraction_config(config)["steps"]) == 2
-    preview = preview_extraction_prompt(ExtractionConfig(), "roster", PromptInput(manuscript="FILE synthetic.tex\n1|Synthetic A is unbound."))
-    assert preview["prepared"]["payload"]["provider"]["only"] == ["deepseek"]
-    assert "S07" in preview["request"]["messages"][0]["content"]
-    (root.parent / "config.json").write_text(config.model_dump_json())
-    (root.parent / "input.json").write_text('{"manuscript":"FILE synthetic.tex\\n1|A is unbound."}')
-    space = initialize_workspace(root)
-    source = import_mock_source(space, PAPER_B)
-    handle = start_configured_extraction(space, configuration=config, source_refs=[source], request_key="installed-combination")
-    assert resume_extraction(space, handle.execution_id, service=PipelineMockService()).outcome == "finished"
-    status = get_extraction(space, handle.execution_id)
-    assert status["usage"]["tokens"] == 320
-    source = import_mock_source(space, PAPER_A)
-    pending = start_configured_extraction(space, configuration=ExtractionConfig(), source_refs=[source], request_key="installed-pause")
-    assert resume_extraction(space, pending.execution_id, service=PipelineMockService()).outcome == "finished"
-    print(json.dumps({"execution_id": pending.execution_id}))
-    space.close()
-else:
-    space = open_workspace(root)
-    eid = sys.argv[3]
-    assert get_extraction(space, eid)["questions"] == []
-    assert resume_extraction(space, eid, service=PipelineMockService()).outcome == "finished"
-    assert get_extraction(space, eid)["usage"]["tokens"] == 320
-    space.close()
-"""
-
-
-def verify_installed_extraction(venv_dir, work_dir, script) -> list[str]:
-    python = venv_dir / ("Scripts" if os.name == "nt" else "bin") / "python"
-    root = work_dir / "configured-extraction" / "space"
-    root.parent.mkdir()
-    env = os.environ.copy()
-    env.pop("PYTHONPATH", None)
-
-    def run(args):
-        result = subprocess.run(
-            args,
-            cwd=work_dir,
-            env=env,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=120,
-        )
-        if result.returncode:
-            raise ValueError(result.stderr or result.stdout)
-        return json.loads(result.stdout) if result.stdout.strip() else None
-
-    try:
-        created = run([str(python), "-c", DRIVER, str(root), "create"])
-        run([str(python), "-c", DRIVER, str(root), "resume", created["execution_id"]])
-        default = run([str(script), "extract", "config"])
-        assert default["default_model"]["model"] == "deepseek-v4.1-flash"
-        checked = run(
-            [
-                str(script),
-                "extract",
-                "check",
-                "--config",
-                str(root.parent / "config.json"),
-            ]
-        )
-        assert "method" not in checked["configuration"]
-        preview = run(
-            [
-                str(script),
-                "extract",
-                "preview",
-                "--step",
-                "roster",
-                "--input",
-                str(root.parent / "input.json"),
-            ]
-        )
-        assert preview["request"]["tool"]["name"] == "submit_roster"
-        assert "A is unbound" in preview["request"]["messages"][1]["content"]
-    except (ValueError, AssertionError, subprocess.TimeoutExpired) as exc:
-        return [f"Installed extraction configuration/preview/recovery failed: {exc}"]
-    return verify_installed_pdf(venv_dir, work_dir, script)
-
-
-PDF_DRIVER = r"""
-import io, json, os, sys, zipfile
-from pathlib import Path
-from pypdf import PdfWriter
-from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+DRIVER = (
+    PDF_FIXTURE
+    + r'''
+import hashlib,subprocess,sys,threading
+from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pydantic import SecretStr
-from hvs_catalog.llm import RuntimeConfig, TokenDanceAdapter
-from hvs_catalog.llm.managed import CallService
-from hvs_catalog.materials import MaterialsService
-from hvs_catalog.materials.mineru import read_result
-from hvs_catalog.pipeline import ExtractionConfig, resume_extraction, start_pdf_extraction
+from hvs_catalog.workspace import initialize_workspace,open_workspace,backup_workspace,restore_workspace
 from hvs_catalog.pipeline.acquisition import AcquisitionService
-from hvs_catalog.evaluation.adapt import prediction_from_execution
-from hvs_catalog.workspace import initialize_workspace, open_workspace
-from hvs_catalog.workspace.backup import backup_workspace, restore_workspace
-
-root, phase = Path(sys.argv[1]), sys.argv[2]
-parallel = len(sys.argv)>3 and sys.argv[3]=='parallel'
-expected_calls = 3 if parallel else 2
-import threading
-b_started = threading.Event()
-text = ('This paper selects A and B as Galactic unbound candidates. A RV = -430 +/- 12 km/s.' if parallel else 'This paper selects A as a Galactic unbound candidate. A RV = -430 +/- 12 km/s.')
-quote = {'location':'T:p1-b0', 'quote':text}
-class Parser:
-    def fingerprint(self):
-        return {'name':'synthetic-parser','version':'4.0-test','tier':'standard','pages':'all','adapter':'1'}
-    def parse(self, path, count):
-        buffer=io.BytesIO()
-        with zipfile.ZipFile(buffer,'w') as z:
-            z.writestr('middle.json',json.dumps({'schema':'docvortex.middle','is_full_document':True,'pages':[{'page_idx':0,'blocks':[{'index':0,'type':'paragraph','bbox':[0.1,0.1,0.9,0.2],'content':text}]}]}))
-            z.writestr('manuscript.md',text)
-        raw=buffer.getvalue()
-        return raw,read_result(raw,count)
-class Adapter(TokenDanceAdapter):
-    def send(self,payload,runtime,credential):
-        tool=payload['tools'][0]['function']
-        if parallel and phase=='crash' and tool['name']=='submit_quantities':
-            if tool['parameters']['title'].endswith('2'):
-                b_started.set()
-            else:
-                assert b_started.wait(30), 'second object was not dispatched concurrently'
-        with (root.parent/'pdf-calls.jsonl').open('a') as out:
-            out.write(json.dumps({'tool':tool['name']})+'\n');out.flush();os.fsync(out.fileno())
-        if parallel and phase=='crash' and tool['name']=='submit_quantities' and tool['parameters']['title'].endswith('2'):
-            threading.Event().wait(60)
-        if tool['name']=='submit_roster':
-            result={'coverage':{'state':'complete','checked_file_ids':['raw']},'entries':[{'identifiers':[{'value':'A','evidence':[quote]}],'disposition':'included','evidence':[quote],'summary':'This paper selects A.','summary_evidence':[quote],'contribution_type':'candidates_found','type_evidence':[quote],'boundness':'unbound','boundness_evidence':[quote],'conditional_assessments':[]}],'unresolved_groups':[]}
-        else:
-            result={'measurements':[{'quantity':'observed_phase_space.radial_velocity','value':'-430','error':'12','unit':'km/s','limit_kind':'none','condition':'Reported heliocentric measurement','source':'this_paper','evidence':[quote]}],'quantity_conflicts':[],'coverage':{'common':{'state':'complete'},'exceptions':[]}}
-        if parallel and tool['name']=='submit_roster':
-            import copy
-            other=copy.deepcopy(result['entries'][0]);other['identifiers'][0]['value']='B';other['summary']='This paper selects B.';result['entries'].append(other)
-        arguments=json.dumps(result)+('}' if tool['name']=='submit_quantities' else '')
-        body={'choices':[{'finish_reason':'tool_calls','message':{'tool_calls':[{'id':'synthetic','type':'function','function':{'name':tool['name'],'arguments':arguments}}]}}],'usage':{'prompt_tokens':20,'completion_tokens':10,'total_tokens':30}}
-        return {'status':200,'headers':{},'body':body,'text':json.dumps(body),'events':[]}
-if phase=='create':
-    writer=PdfWriter();page=writer.add_blank_page(width=612,height=792)
-    font=DictionaryObject({NameObject('/Type'):NameObject('/Font'),NameObject('/Subtype'):NameObject('/Type1'),NameObject('/BaseFont'):NameObject('/Helvetica')})
-    page[NameObject('/Resources')]=DictionaryObject({NameObject('/Font'):DictionaryObject({NameObject('/F1'):writer._add_object(font)})})
-    stream=DecodedStreamObject();stream.set_data(('BT /F1 8 Tf 20 750 Td ('+text+') Tj ET').encode())
-    page[NameObject('/Contents')]=writer._add_object(stream)
-    pdf=root.parent/'paper.pdf';writer.write(pdf)
-    space=initialize_workspace(root)
-    source=AcquisitionService(space).import_local_pdf(pdf,arxiv_id='2501.01111v1',provenance='Independent fictional installed-package fixture.')
-    prep,report=MaterialsService(space,runner=Parser()).prepare_materials(request_key='prepare',paper=source.canonical_id)
+from hvs_catalog.materials import MaterialsService
+from hvs_catalog.pipeline import ExtractionConfig,start_extraction,resume_extraction
+from hvs_catalog.pipeline.roster import saved_roster,roster_targets
+from hvs_catalog.llm import RuntimeConfig
+from hvs_catalog.llm.managed import CallService
+from hvs_catalog.workspace.archives import read_json
+from hvs_catalog.runtime import get_execution
+import hvs_catalog.pipeline.roster as module
+root=Path(sys.argv[1]); root.mkdir(parents=True)
+script=Path(sys.argv[2]); seen=[]
+text='SYN-A and SYN-001 identify the same unbound candidate.'
+ev=[{'location':'T:p1-b0','quote':text}]
+payload={'stars':[{'identifiers':[{'value':x,'evidence':ev} for x in ('SYN-A','SYN-001')],'contribution_type':{'value':'candidates_found','evidence':ev}}],'notes':''}
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self,*args): pass
+    def do_POST(self):
+        request=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+        seen.append(request)
+        name=request['tools'][0]['function']['name']
+        result=({**payload,'notes':None} if len(seen)<3 else payload) if name=='submit_roster' else {'quantities':[{'quantity':'radial_velocity','values':[{'value':'520','evidence':ev}]}],'notes':'Numerical note.'}
+        delta={'reasoning_content':'Installed synthetic reasoning.','tool_calls':[{'index':0,'id':f'call-{len(seen)}','function':{'name':name,'arguments':json.dumps(result)}}]}
+        frame={'id':'wheel-call','choices':[{'index':0,'delta':delta,'finish_reason':'tool_calls'}],'usage':{'total_tokens':10}}
+        raw=('data: '+json.dumps(frame)+'\n\n').replace('\\n','\n').encode()
+        # Construct actual protocol delimiters, without relying on literal escapes.
+        raw=('data: '+json.dumps(frame)).encode()+bytes([10,10])+b'data: [DONE]'+bytes([10,10])
+        self.send_response(200);self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw)
+server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+try:
+    space=initialize_workspace(root/'space');pdf=root/'paper.pdf';pdf.write_bytes(make_pdf(text))
+    imported=AcquisitionService(space).import_local_pdf(pdf,arxiv_id='2501.03333',version=1,provenance='Synthetic installed roster fixture')
+    archive_fixture_metadata(space)
+    prep,report=MaterialsService(space,runner=FakeMinerU()).prepare_materials(request_key='prepare',paper=imported.canonical_id)
     assert report.outcome=='finished',report.errors
-    config=ExtractionConfig(mode='evaluation',runtime=RuntimeConfig(quota_store=root.parent/'pdf-quota.sqlite'))
-    handle=start_pdf_extraction(space,preparation_execution_id=prep.execution_id,request_key='extract',configuration=config)
-    (root.parent/'pdf-execution.json').write_text(json.dumps({'execution':handle.execution_id,'config':config.model_dump(mode='json')}))
-    space.close()
-elif phase=='backup':
-    space=open_workspace(root)
-    report=backup_workspace(space,root.parent/'pdf-backup')
-    assert not report.problems,report.problems
-    restored=restore_workspace(root.parent/'pdf-backup',root.parent/'restored')
-    restored.close();space.close()
-elif phase=='verify-backup':
-    from hvs_catalog.runtime.execution import get_execution
-    from hvs_catalog.records.common import ArtifactRef
-    space=open_workspace(root.parent/'restored')
-    report=backup_workspace(space,root.parent/'finished-backup')
-    assert not report.problems,report.problems
-    restored=restore_workspace(root.parent/'finished-backup',root.parent/'finished-restored')
-    saved=json.loads((root.parent/'pdf-execution.json').read_text())
-    handle=get_execution(restored,saved['execution'])
-    restored.read_file(ArtifactRef.model_validate_json(handle.input_snapshot.options['prepared_prompt']))
-    run=restored.store().read_record_current(handle.run_ref.record_id)
-    assert len(run.data.artifacts)==1
-    assert 'surplus root' in restored.read_file(run.data.artifacts[0]).decode()
-    assert len((root.parent/'pdf-calls.jsonl').read_text().splitlines())==expected_calls
-    restored.close();space.close()
-else:
-    saved=json.loads((root.parent/'pdf-execution.json').read_text());config=ExtractionConfig.model_validate(saved['config'])
-    space=open_workspace(root if phase=='crash' else root.parent/'restored')
-    def crash():
-        if phase=='crash' and len((root.parent/'pdf-calls.jsonl').read_text().splitlines())==expected_calls:os._exit(73)
-    service=CallService(config.runtime,credential=SecretStr('fixture-api-secret-6ab3b39c'),adapter=Adapter(),hooks={'after_archive':crash})
-    report=resume_extraction(space,saved['execution'],service=service)
-    assert report.outcome==('failed' if parallel else 'finished'),report.errors
-    if parallel:assert any('completion_unknown' in e for e in report.errors)
-    prediction=prediction_from_execution(space,saved['execution'])
-    assert prediction.format_valid and len(prediction.objects)==(2 if parallel else 1)
-    assert len((root.parent/'pdf-calls.jsonl').read_text().splitlines())==expected_calls
-    final=space.store().read_record_current('pdf-'+saved['execution']+'-paper')
-    value=final.data.object_contributions[0].quantities[0].values[0]
-    assert (value.value,value.error,value.unit)==('-430','12','km/s')
-    assert len(final.data.object_contributions[0].quantity_coverage)==18
-    space.close()
+    runtime=RuntimeConfig(base_url=f'http://127.0.0.1:{server.server_port}',quota_store=root/'quota.db')
+    config=ExtractionConfig(runtime=runtime)
+    handle=start_extraction(space,preparation_execution_id=prep.execution_id,request_key='extract',configuration=config)
+    code="""
+import os,sys
+from pathlib import Path
+from pydantic import SecretStr
+from hvs_catalog.workspace import open_workspace
+from hvs_catalog.runtime import get_execution
+from hvs_catalog.pipeline import resume_extraction
+from hvs_catalog.pipeline.configuration import stored_configuration
+from hvs_catalog.llm.managed import CallService
+space=open_workspace(Path(sys.argv[1]));eid=sys.argv[2];count=[0]
+def archived():
+    count[0]+=1
+    if count[0]==2: os._exit(70)
+resume_extraction(space,eid,service=CallService(stored_configuration(get_execution(space,eid).input_snapshot).runtime,credential=SecretStr('wheel-synthetic'),hooks={'after_archive':archived}))
 """
+    child=subprocess.run([sys.executable,'-c',code,str(space.root),handle.execution_id],check=False,capture_output=True,text=True,timeout=40)
+    assert child.returncode==70,child.stderr
+    report=resume_extraction(space,handle.execution_id,service=CallService(runtime,credential=SecretStr('wheel-synthetic')))
+    assert report.outcome=='finished',report.errors
+    assert [len(p['messages']) for p in seen]==[2,5,8,3]
+    assert seen[2]['messages'][2]['reasoning_content']=='Installed synthetic reasoning.'
+    assert seen[2]['messages'][5]['reasoning_content']=='Installed synthetic reasoning.'
+    assert saved_roster(space,handle.execution_id).data.stars[0].model_dump()==payload['stars'][0]
+    from hvs_catalog.pipeline.results import current_result
+    _, manifest=current_result(space,handle.execution_id)
+    science=json.loads(space.read_file(manifest.result_ref))
+    assert science['notes']==['SYN-A: Numerical note.']
+    assert science['stars'][0]['quantities'][0]['values'][0]['value']=='520'
+    assert manifest.usage.attempts==4
+    targets=roster_targets(space,handle.execution_id)
+    assert targets['targets'][0]['identifiers']==['SYN-A','SYN-001']
+    backup_workspace(space,root/'backup');restore_workspace(root/'backup',root/'restored')
+    restored=open_workspace(root/'restored')
+    assert roster_targets(restored,handle.execution_id)==targets
+    assert resume_extraction(restored,handle.execution_id).outcome=='finished'
+    assert len(seen)==4
+    from hvs_catalog.evaluation.adapt import prediction_from_execution
+    from hvs_catalog.evaluation.gold import write_annotation
+    from hvs_catalog.records.pdf_contribution import GoldAnnotation
+    from hvs_catalog.records.rules import current_rules_ref
+    predicted=prediction_from_execution(restored,handle.execution_id)
+    pdf_ev=[{'page':1,'location':'Synthetic candidate paragraph'}]
+    metadata={**science['metadata'],'rules':current_rules_ref(),'material':{'path':'paper.pdf','sha256':hashlib.sha256(pdf.read_bytes()).hexdigest()}}
+    gold=GoldAnnotation.model_validate({'metadata':metadata,'stars':[{'identifiers':[{'value':x,'evidence':pdf_ev} for x in ('SYN-A','SYN-001')],'contribution_type':{'value':'candidates_found','evidence':pdf_ev},'quantities':[{'quantity':'radial_velocity','values':[{'value':'520','evidence':pdf_ev}]}]}],'notes':[]})
+    draft=root/'gold-draft';draft.mkdir()
+    import shutil
+    shutil.copyfile(pdf,draft/'paper.pdf')
+    write_annotation(gold,draft/'annotation.json')
+    (root/'gold/data').mkdir(parents=True)
+    target=root/'gold/data/2501.03333'
+    def gold_cli(*args):
+        child=subprocess.run([str(script),'gold',*map(str,args)],check=False,capture_output=True,text=True,timeout=30)
+        assert child.returncode==0,child.stdout+child.stderr
+        return json.loads(child.stdout)
+    assert gold_cli('check','--annotation',draft/'annotation.json')['ready_for_review']
+    inspected=gold_cli('inspect-save','--annotation',draft/'annotation.json','--target',target)
+    saved=gold_cli('save','--annotation',draft/'annotation.json','--target',target,'--expected-new',inspected['annotation_sha256'])
+    assert gold_cli('read','--target',target)['annotation_sha256']==saved['annotation_sha256']
+    assert {p.name for p in target.iterdir()}=={'annotation.json','paper.pdf'}
+    (root/'score.json').write_text(json.dumps({'format':'hvs.scoring-manifest','version':1,'papers':[{'arxiv_id':'2501.03333','reference':str(target/'annotation.json'),'workspace':str(restored.root),'execution_id':handle.execution_id}]}))
+    scored=subprocess.run([str(script),'score','run','--manifest',str(root/'score.json'),'--output',str(root/'scored')],check=False,capture_output=True,text=True,timeout=30)
+    assert scored.returncode==0,scored.stdout+scored.stderr
+    replay=subprocess.run([str(script),'score','replay','--inputs',str(root/'scored/scoring-inputs.json')],check=False,capture_output=True,text=True,timeout=30)
+    assert replay.returncode==0,replay.stdout+replay.stderr
+    assert scored.stdout==replay.stdout and 'C=1 P=1 G=1' in replay.stdout
+    assert len(seen)==4
+    digest=hashlib.sha256(b'Installed synthetic reasoning.').hexdigest()
+    assert (restored.root/'runs/inputs/shared'/f'{digest}.txt').read_text()=='Installed synthetic reasoning.'
+    for args in [('gold','--help'),('extract','run','--space',str(root/'absent'),'--preparation','absent','--request-key','guard')]:
+        child=subprocess.run([str(script),*args],check=False,capture_output=True,text=True,timeout=30)
+        if args[0]=='extract':
+            assert child.returncode==2,child.stdout+child.stderr
+            assert not (root/'absent').exists()
+    assert Path(module.__file__).resolve().is_relative_to(Path(sys.prefix).resolve())
+    restored.close();space.close()
+    print('ROSTER_WHEEL_OK')
+finally:
+    server.shutdown();server.server_close();thread.join()
+'''
+)
 
 
-def verify_installed_pdf(venv_dir, work_dir, script) -> list[str]:
-    python = venv_dir / ("Scripts" if os.name == "nt" else "bin") / "python"
-    root = work_dir / "pdf-extraction" / "space"
-    root.parent.mkdir()
+def verify_installed_extraction(venv_dir, work_dir, script):
+    python = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     env = os.environ.copy()
-    env.pop("PYTHONPATH", None)
-    try:
-        for phase, code in (
-            ("create", 0),
-            ("crash", 73),
-            ("backup", 0),
-            ("recover", 0),
-            ("verify-backup", 0),
-        ):
-            result = subprocess.run(
-                [str(python), "-c", PDF_DRIVER, str(root), phase],
-                cwd=work_dir,
-                env=env,
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=120,
-            )
-            if result.returncode != code:
-                raise ValueError(result.stderr or result.stdout)
-        result = subprocess.run(
-            [str(script), "extract", "run", "--help"],
-            cwd=work_dir,
-            env=env,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=30,
-        )
-        if result.returncode or "--preparation" not in result.stdout:
-            raise ValueError("Installed PDF CLI is missing")
-        parallel_root = work_dir / "pdf-extraction-parallel" / "space"
-        parallel_root.parent.mkdir()
-        for phase, code in (
-            ("create", 0),
-            ("crash", 73),
-            ("backup", 0),
-            ("recover", 0),
-            ("verify-backup", 0),
-        ):
-            checked = subprocess.run(
-                [str(python), "-c", PDF_DRIVER, str(parallel_root), phase, "parallel"],
-                cwd=work_dir,
-                env=env,
-                capture_output=True,
-                text=True,
-                timeout=120,
-                check=False,
-            )
-            if checked.returncode != code:
-                raise ValueError(checked.stderr or checked.stdout)
-        checked = subprocess.run(
-            [str(script), "extract", "batch", "--help"],
-            cwd=work_dir,
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-        if checked.returncode or "--concurrency" not in checked.stdout:
-            raise ValueError("Installed parallel batch CLI is missing")
-
-    except (ValueError, subprocess.TimeoutExpired) as exc:
-        return [f"Installed PDF numerical extraction/process recovery failed: {exc}"]
+    for key in ("PYTHONPATH", "PYTHONHOME", "TOKENDANCE_API_KEY"):
+        env.pop(key, None)
+    env["PYTHONNOUSERSITE"] = "1"
+    result = subprocess.run(
+        [str(python), "-c", DRIVER, str(work_dir / "roster"), str(script)],
+        cwd=work_dir,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    if result.returncode or "ROSTER_WHEEL_OK" not in result.stdout:
+        return [
+            f"Installed roster check failed ({result.returncode}): {result.stdout}{result.stderr}"
+        ]
     return []

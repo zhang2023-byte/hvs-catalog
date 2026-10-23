@@ -1,4 +1,4 @@
-"""Native cloud batches, unchanged official content, structural gaps, and recovery."""
+"""Native cloud batches, unchanged official content, structural preparation_issues, and recovery."""
 
 import io
 import json
@@ -205,9 +205,9 @@ def test_native_layout_preserves_text_html_caption_and_coordinates():
     assert table["text"] == TABLE + "\nTable 1. Original caption."
     assert table["regions"][0]["bbox"] == [0.1, 0.3, 0.9, 0.7]
     assert table["regions"][1]["bbox"] == [0.1, 0.725, 0.9, 0.8]
-    assert result["gaps"] == ["Parser omitted PDF pages: [2]."]
+    assert result["preparation_issues"] == ["Parser omitted PDF pages: [2]."]
     assert "absent" in " ".join(
-        read_result(official_zip(missing_image=True), 1)["gaps"]
+        read_result(official_zip(missing_image=True), 1)["preparation_issues"]
     )
 
 
@@ -371,7 +371,7 @@ def test_structural_gap_finishes_without_repair_or_quality_gate(tmp_path, monkey
         ).prepare_materials(request_key="gap", paper=source.canonical_id)
         assert report.outcome == "finished" and not report.summary["materials_complete"]
         bundle = MaterialsService(space).get_prepared_input(handle.execution_id)
-        assert len(bundle["gaps"]) == 2
+        assert len(bundle["preparation_issues"]) == 2
         assert len([c for c in calls if c[0] == "POST"]) == 1
     space.close()
 
@@ -422,7 +422,7 @@ def test_archive_traversal_is_rejected_before_export():
         read_result(buffer.getvalue(), 1)
 
 
-def test_empty_markdown_and_unmapped_image_are_structural_gaps():
+def test_empty_markdown_and_unmapped_image_are_structural_preparation_issues():
     with zipfile.ZipFile(io.BytesIO(official_zip())) as archive:
         layout = archive.read("layout.json")
     for markdown, expected in (
@@ -434,7 +434,7 @@ def test_empty_markdown_and_unmapped_image_are_structural_gaps():
             archive.writestr("layout.json", layout)
             archive.writestr("full.md", markdown)
         result = read_result(buffer.getvalue(), 1)
-        assert expected in " ".join(result["gaps"])
+        assert expected in " ".join(result["preparation_issues"])
         assert result["blocks"][0]["text"] == TEXT
 
 
@@ -472,6 +472,6 @@ def test_native_image_names_resolve_without_changing_official_bytes():
         archive.writestr("images/two.png", PNG)
     raw = buffer.getvalue()
     parsed = read_result(raw, 1)
-    assert parsed["gaps"] == []
+    assert parsed["preparation_issues"] == []
     assert parsed["blocks"][-1]["image_files"] == ["images/one.png", "images/two.png"]
     assert zipfile.ZipFile(io.BytesIO(raw)).read("layout.json") == payload

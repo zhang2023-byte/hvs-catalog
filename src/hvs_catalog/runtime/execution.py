@@ -656,7 +656,7 @@ def verify_execution_inputs(space: Workspace, execution: ExecutionHandle) -> lis
             if digest != snapshot.rules.sha256:
                 problems.append("规则归档与快照声明的规则哈希不一致")
     prepared_refs = []
-    for name in ("prepared_input", "prepared_prompt"):
+    for name in ("prepared_input", "prepared_prompt", "extraction_input"):
         if name in snapshot.options:
             try:
                 prepared_refs.append(

@@ -22,3 +22,11 @@ def subprocess_test_helpers(monkeypatch):
     monkeypatch.setenv(
         "PYTHONPATH", helpers + (os.pathsep + current if current else "")
     )
+
+
+@pytest.fixture
+def prepared(tmp_path):
+    """Use the same fixed synthetic PDF for roster, recovery, and storage tests."""
+    from test_roster import prepared as roster_prepared
+
+    yield from roster_prepared.__wrapped__(tmp_path)

@@ -1,4 +1,4 @@
-"""Load quantities/author states from science sources without separate vocabularies."""
+"""Read the approved scientific source without a second vocabulary."""
 
 from __future__ import annotations
 
@@ -7,104 +7,62 @@ import tomllib
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib import resources
-from typing import Any, Literal
-
-RULES_RESOURCE = ("science", "rules.toml")
-EXPECTED_QUANTITY_COUNT = 18
-EXPECTED_STATE_COUNT = 5
 
 
 class RulesFormatError(ValueError):
-    """Science source lacks structure required by record formats."""
+    """The scientific source has an invalid structure."""
+
+
+@dataclass(frozen=True)
+class ScientificRule:
+    id: str
+    title: str
+    text: str
 
 
 @dataclass(frozen=True)
 class QuantityDefinition:
     id: str
-    name: str
     definition: str
-    legacy_path: str
-
-
-@dataclass(frozen=True)
-class StateDefinition:
-    id: str
-    name: str
-    definition: str
+    common_units: str
 
 
 @dataclass(frozen=True)
 class ScienceRules:
     version: str
     sha256: str
+    rules: tuple[ScientificRule, ...]
     quantities: tuple[QuantityDefinition, ...]
-    states: tuple[StateDefinition, ...]
-
-    @property
-    def quantity_paths(self) -> tuple[str, ...]:
-        return tuple(q.legacy_path for q in self.quantities)
-
-    @property
-    def state_ids(self) -> tuple[str, ...]:
-        return tuple(s.id for s in self.states)
 
 
 def rules_bytes() -> bytes:
     return (
-        resources.files("hvs_catalog.resources") / RULES_RESOURCE[0] / RULES_RESOURCE[1]
+        resources.files("hvs_catalog.resources") / "science" / "rules.toml"
     ).read_bytes()
 
 
-def _load(data: dict[str, Any], sha256: str) -> ScienceRules:
-    if data["instruction_language"] != "en":
-        raise RulesFormatError("提取指令必须使用英文")
+def _load(data: dict, sha256: str) -> ScienceRules:
+    if data.get("format_version") != 4 or data.get("instruction_language") != "en":
+        raise RulesFormatError("Unsupported scientific source format")
+    rules = tuple(ScientificRule(**row) for row in data["rules"])
+    if tuple(r.id for r in rules) != ("S01", "S02", "S03", "S04"):
+        raise RulesFormatError("The source must contain S01 through S04")
     quantities = tuple(
-        QuantityDefinition(
-            id=row["id"],
-            name=row["name"],
-            definition=row["definition"],
-            legacy_path=row["legacy_path"],
-        )
+        QuantityDefinition(qid, row["definition"], row["common_units"])
         for row in data["quantities"]
+        for qid in row["ids"]
     )
-    states = tuple(
-        StateDefinition(id=row["id"], name=row["name"], definition=row["definition"])
-        for row in data["states"]
-    )
-    if len(quantities) != EXPECTED_QUANTITY_COUNT:
-        raise RulesFormatError(f"物理量必须恰好 {EXPECTED_QUANTITY_COUNT} 项")
-    if len(states) != EXPECTED_STATE_COUNT:
-        raise RulesFormatError(f"作者状态必须恰好 {EXPECTED_STATE_COUNT} 种")
-    if len({q.legacy_path for q in quantities}) != len(quantities):
-        raise RulesFormatError("物理量编码重复")
-    version = data.get("version")
-    if not version or not isinstance(version, str):
-        raise RulesFormatError("规则版本必须是非空文本")
-    return ScienceRules(
-        version=version, sha256=sha256, quantities=quantities, states=states
-    )
+    if len({q.id for q in quantities}) != len(quantities) or not quantities:
+        raise RulesFormatError("Quantity identifiers must be unique")
+    if not isinstance(data.get("version"), str) or not data["version"]:
+        raise RulesFormatError("The scientific version must be a nonempty string")
+    return ScienceRules(data["version"], sha256, rules, quantities)
 
 
 @lru_cache(maxsize=1)
 def load_rules() -> ScienceRules:
     raw = rules_bytes()
-    return _load(tomllib.loads(raw.decode("utf-8")), hashlib.sha256(raw).hexdigest())
-
-
-def quantity_paths() -> tuple[str, ...]:
-    return load_rules().quantity_paths
-
-
-def author_state_ids() -> tuple[str, ...]:
-    return load_rules().state_ids
-
-
-# One rule-source author vocabulary serves displays, saved models, and submission models.
-AuthorStatus = Literal[author_state_ids()]
-
-
-def is_quantity_path(path: str) -> bool:
-    return path in load_rules().quantity_paths
+    return _load(tomllib.loads(raw.decode()), hashlib.sha256(raw).hexdigest())
 
 
 def current_rules_ref() -> dict[str, str]:

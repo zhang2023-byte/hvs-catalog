@@ -130,6 +130,13 @@ def build_acquisition_parser(commands: argparse._SubParsersAction) -> None:
     )
     fetch.set_defaults(handler=_run_fetch)
 
+    metadata = sub.add_parser(
+        "metadata", help="单独获取并归档固定版本元数据，不下载或解析 PDF"
+    )
+    metadata.add_argument("--space", required=True, type=Path)
+    metadata.add_argument("--id", required=True, help="含版本的 arXiv 标识")
+    metadata.set_defaults(handler=_run_metadata)
+
     revisions = sub.add_parser(
         "revisions",
         help="检查已收录论文是否有新版（独立于发现窗口）",
@@ -618,3 +625,20 @@ def _run_journal_import(args):
     finally:
         if "space" in locals():
             space.close()
+
+
+def _run_metadata(args):
+    try:
+        with open_workspace(args.space) as space:
+            ref = AcquisitionService(space).acquire_metadata(args.id)
+            print(ref.model_dump_json())
+        return EXIT_OK
+    except (
+        AcquisitionError,
+        ArxivProtocolError,
+        ArxivTransportError,
+        WorkspaceError,
+        ValueError,
+    ) as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_ERROR

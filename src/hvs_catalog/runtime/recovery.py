@@ -18,8 +18,7 @@ from uuid import uuid4
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 
-from ..records.common import RecordRef
-from ..records.patches import PatchApplicationError
+from ..records.common import PatchApplicationError, RecordRef
 from ..records.questions import DecisionRecord, QuestionRecord
 from ..records.runs import RunError, RunRecord, StepRecord
 from ..review import ReviewService
@@ -174,6 +173,15 @@ def _resume_locked(
                 raise RecoveryInconsistentError(
                     "检查点与业务记录不一致，停止该执行：" + "；".join(problems)
                 )
+
+        if (
+            getattr(flow, "replay_terminal", False)
+            and run.data.state == "running"
+            and snapshot.created_at is not None
+            and not snapshot.next
+        ):
+            saver.delete_thread(execution_id)
+            snapshot = graph.get_state(config)
 
         if run.data.state == "finished":
             # Completed runs still verify terminal state/original credentials; never fabricate missing credentials.
@@ -588,6 +596,8 @@ def _runtime_state_problems(
         elif (
             record.execution_id is not None
             and record.execution_id != execution.execution_id
+            and execution.input_snapshot.options.get("roster_ref")
+            != value.model_dump_json()
         ):
             problems.append(
                 f"检查点引用了其他执行的记录：{value.record_id}"

@@ -1,468 +1,136 @@
 {
   "$defs": {
-    "AuthorErrorSubmission": {
+    "ImageEvidence": {
       "additionalProperties": false,
-      "properties": {
-        "reason": {
-          "minLength": 1,
-          "title": "Reason",
-          "type": "string"
-        },
-        "raw_values": {
-          "items": {
-            "type": "string"
-          },
-          "minItems": 1,
-          "title": "Raw Values",
-          "type": "array"
-        },
-        "evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
-          },
-          "minItems": 1,
-          "title": "Evidence",
-          "type": "array"
-        }
-      },
-      "required": [
-        "reason",
-        "raw_values",
-        "evidence"
-      ],
-      "title": "AuthorErrorSubmission",
-      "type": "object"
-    },
-    "ConditionalAssessmentSubmission": {
-      "additionalProperties": false,
-      "properties": {
-        "condition": {
-          "minLength": 1,
-          "title": "Condition",
-          "type": "string"
-        },
-        "statement": {
-          "minLength": 1,
-          "title": "Statement",
-          "type": "string"
-        },
-        "evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
-          },
-          "minItems": 1,
-          "title": "Evidence",
-          "type": "array"
-        }
-      },
-      "required": [
-        "condition",
-        "statement",
-        "evidence"
-      ],
-      "title": "ConditionalAssessmentSubmission",
-      "type": "object"
-    },
-    "InlineEvidence": {
-      "type": "object",
       "properties": {
         "location": {
-          "type": "string",
-          "minLength": 1
-        },
-        "quote": {
-          "type": "string",
-          "minLength": 1
+          "description": "Copy the complete I: location, such as I:p5-b6. Exclude LOCATION.",
+          "pattern": "^I:p[1-9][0-9]*-b[0-9]+$",
+          "type": "string"
         }
       },
       "required": [
-        "location",
-        "quote"
+        "location"
       ],
-      "additionalProperties": false
+      "type": "object",
+      "description": "Evidence from an image. Do not include a quote field."
     },
-    "InlineIdentifier": {
+    "ContributionType": {
       "additionalProperties": false,
       "properties": {
         "value": {
-          "minLength": 1,
-          "title": "Value",
+          "description": "The contribution category defined in the scientific rules.",
+          "enum": [
+            "candidates_found",
+            "follow_up"
+          ],
           "type": "string"
         },
         "evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
-          },
-          "minItems": 1,
-          "title": "Evidence",
-          "type": "array"
+          "$ref": "#/$defs/EvidenceList",
+          "description": "Evidence for this contribution category."
         }
       },
       "required": [
         "value",
         "evidence"
       ],
-      "title": "InlineIdentifier",
       "type": "object"
     },
-    "RosterCoverageSubmission": {
+    "Identifier": {
       "additionalProperties": false,
       "properties": {
-        "state": {
-          "enum": [
-            "not_checked",
-            "partial",
-            "complete"
-          ],
-          "title": "State",
-          "type": "string"
-        },
-        "checked_file_ids": {
-          "items": {
-            "type": "string"
-          },
-          "minItems": 0,
-          "title": "Checked File Ids",
-          "type": "array"
-        },
-        "gap_ids": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Gap Ids",
-          "type": "array"
-        }
-      },
-      "required": [
-        "state",
-        "checked_file_ids"
-      ],
-      "title": "RosterCoverageSubmission",
-      "type": "object"
-    },
-    "RosterEntrySubmission": {
-      "additionalProperties": false,
-      "properties": {
-        "identifiers": {
-          "items": {
-            "$ref": "#/$defs/InlineIdentifier"
-          },
-          "minItems": 1,
-          "title": "Identifiers",
-          "type": "array"
-        },
-        "disposition": {
-          "enum": [
-            "included",
-            "excluded",
-            "pending"
-          ],
-          "title": "Disposition",
+        "value": {
+          "description": "The star identifier.",
+          "minLength": 1,
           "type": "string"
         },
         "evidence": {
+          "$ref": "#/$defs/EvidenceList",
+          "description": "Evidence for this star identifier."
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "type": "object"
+    },
+    "Star": {
+      "additionalProperties": false,
+      "properties": {
+        "identifiers": {
+          "description": "Star identifiers for this star.",
           "items": {
-            "$ref": "#/$defs/InlineEvidence"
-          },
-          "title": "Evidence",
-          "type": "array"
-        },
-        "gap_ids": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Gap Ids",
-          "type": "array"
-        },
-        "author_errors": {
-          "items": {
-            "$ref": "#/$defs/AuthorErrorSubmission"
-          },
-          "title": "Author Errors",
-          "type": "array"
-        },
-        "summary": {
-          "minLength": 1,
-          "title": "Text",
-          "type": "string"
-        },
-        "summary_evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
+            "$ref": "#/$defs/Identifier"
           },
           "minItems": 1,
-          "title": "Evidence",
           "type": "array"
         },
         "contribution_type": {
-          "enum": [
-            "candidates_found",
-            "follow_up"
-          ],
-          "title": "Value",
-          "type": "string"
-        },
-        "type_evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
-          },
-          "minItems": 1,
-          "title": "Evidence",
-          "type": "array"
-        },
-        "boundness": {
-          "anyOf": [
-            {
-              "enum": [
-                "no_overall_conclusion",
-                "unbound",
-                "possibly_unbound",
-                "possibly_bound",
-                "bound"
-              ],
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Status"
-        },
-        "boundness_evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
-          },
-          "title": "Evidence",
-          "type": "array"
-        },
-        "boundness_author_errors": {
-          "items": {
-            "$ref": "#/$defs/AuthorErrorSubmission"
-          },
-          "title": "Author Errors",
-          "type": "array"
-        },
-        "boundness_gap_ids": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Gap Ids",
-          "type": "array"
-        },
-        "conditional_assessments": {
-          "items": {
-            "$ref": "#/$defs/ConditionalAssessmentSubmission"
-          },
-          "title": "Conditional Assessments",
-          "type": "array"
+          "$ref": "#/$defs/ContributionType"
         }
       },
       "required": [
         "identifiers",
-        "disposition"
+        "contribution_type"
       ],
-      "title": "RosterEntrySubmission",
-      "type": "object",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "disposition": {
-                "const": "included"
-              }
-            },
-            "required": [
-              "disposition"
-            ]
-          },
-          "then": {
-            "required": [
-              "summary",
-              "summary_evidence",
-              "contribution_type",
-              "type_evidence",
-              "boundness",
-              "conditional_assessments"
-            ]
-          },
-          "else": {
-            "not": {
-              "anyOf": [
-                {
-                  "required": [
-                    "summary"
-                  ]
-                },
-                {
-                  "required": [
-                    "summary_evidence"
-                  ]
-                },
-                {
-                  "required": [
-                    "contribution_type"
-                  ]
-                },
-                {
-                  "required": [
-                    "type_evidence"
-                  ]
-                },
-                {
-                  "required": [
-                    "boundness"
-                  ]
-                },
-                {
-                  "required": [
-                    "boundness_evidence"
-                  ]
-                },
-                {
-                  "required": [
-                    "boundness_author_errors"
-                  ]
-                },
-                {
-                  "required": [
-                    "boundness_gap_ids"
-                  ]
-                },
-                {
-                  "required": [
-                    "conditional_assessments"
-                  ]
-                }
-              ]
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "disposition": {
-                "enum": [
-                  "included",
-                  "excluded"
-                ]
-              }
-            },
-            "required": [
-              "disposition"
-            ]
-          },
-          "then": {
-            "required": [
-              "evidence"
-            ],
-            "properties": {
-              "evidence": {
-                "minItems": 1
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "boundness": {
-                "enum": [
-                  "unbound",
-                  "possibly_unbound",
-                  "possibly_bound",
-                  "bound"
-                ]
-              }
-            },
-            "required": [
-              "boundness"
-            ]
-          },
-          "then": {
-            "required": [
-              "boundness_evidence"
-            ],
-            "properties": {
-              "boundness_evidence": {
-                "minItems": 1
-              }
-            }
-          }
-        }
-      ]
+      "type": "object"
     },
-    "UnresolvedGroupSubmission": {
+    "TextEvidence": {
       "additionalProperties": false,
       "properties": {
-        "original_range": {
-          "minLength": 1,
-          "title": "Original Range",
+        "location": {
+          "description": "Copy the complete T: location, such as T:p3-b5. Exclude LOCATION and the block type.",
+          "pattern": "^T:p[1-9][0-9]*-b[0-9]+$",
           "type": "string"
         },
-        "evidence": {
-          "items": {
-            "$ref": "#/$defs/InlineEvidence"
-          },
-          "minItems": 1,
-          "title": "Evidence",
-          "type": "array"
-        },
-        "member_identifier_values": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Member Identifier Values",
-          "type": "array"
-        },
-        "reason": {
+        "quote": {
+          "description": "Copy a nonempty excerpt from the corresponding text block without changes. Keep its original language.",
           "minLength": 1,
-          "title": "Reason",
           "type": "string"
         }
       },
       "required": [
-        "original_range",
-        "evidence",
-        "reason"
+        "location",
+        "quote"
       ],
-      "title": "UnresolvedGroupSubmission",
-      "type": "object"
+      "type": "object",
+      "description": "Evidence from text or a caption."
+    },
+    "EvidenceList": {
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/TextEvidence"
+          },
+          {
+            "$ref": "#/$defs/ImageEvidence"
+          }
+        ]
+      },
+      "minItems": 1,
+      "type": "array",
+      "description": "Use separate items for different locations."
     }
   },
   "additionalProperties": false,
   "properties": {
-    "coverage": {
-      "$ref": "#/$defs/RosterCoverageSubmission"
-    },
-    "entries": {
+    "stars": {
+      "description": "One entry per star. Use an empty array if no star meets the scientific rules.",
       "items": {
-        "$ref": "#/$defs/RosterEntrySubmission"
+        "$ref": "#/$defs/Star"
       },
-      "title": "Entries",
       "type": "array"
     },
-    "unresolved_groups": {
-      "items": {
-        "$ref": "#/$defs/UnresolvedGroupSubmission"
-      },
-      "title": "Unresolved Groups",
-      "type": "array"
-    },
-    "model_judgments": {
-      "description": "Brief chosen interpretations with their supporting original evidence.",
-      "items": {
-        "type": "string"
-      },
-      "title": "Model Judgments",
-      "type": "array"
+    "notes": {
+      "description": "For each star discussed, include one star identifier. If a note discusses a passage or image, include its complete location. Use an empty string if no note is necessary.",
+      "type": "string"
     }
   },
   "required": [
-    "coverage",
-    "entries",
-    "unresolved_groups"
+    "stars",
+    "notes"
   ],
-  "title": "RosterSubmission",
   "type": "object"
 }

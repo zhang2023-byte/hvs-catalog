@@ -1,147 +1,120 @@
-"""Synthetic current-pair maintenance inputs; no real Gold or services."""
+"""Independent fictional complete annotations and fixed two-page PDFs."""
 
-import json
-from datetime import UTC, datetime
+import hashlib
 
-from evaluation_helpers import build_fresh_draft, write_synthetic_pdf
+from reportlab.pdfgen import canvas
 
-from hvs_catalog.evaluation import (
-    GoldTarget,
-    SaveApproval,
-    check_save,
-    compact_gold_annotation,
-    parse_gold_annotation,
-    read_compact_gold_pair,
-    write_compact_gold_pair,
-)
+from hvs_catalog.evaluation.gold import write_annotation
+from hvs_catalog.evaluation.store import inspect_save
+from hvs_catalog.records.pdf_contribution import GoldAnnotation, PdfContribution
+from hvs_catalog.records.rules import current_rules_ref
 
 
-def make_pair(tmp_path, *, raw=None, scope="complete", unresolved=None):
+def make_annotation(tmp_path):
     material = tmp_path / "materials"
-    digest = write_synthetic_pdf(material / "paper.pdf")
-    draft = parse_gold_annotation(raw or build_fresh_draft(pdf_sha256=digest))
-    pair = compact_gold_annotation(
-        draft,
-        title="Synthetic candidate paper",
-        original_annotator="synthetic-expert",
-        original_annotated_at="2026-09-22",
-        original_models=["synthetic-assistant"],
-        reviewer="synthetic-reviewer",
-        material_review={
-            "value": "checked",
-            "basis": "Synthetic material check",
-            "record_sha256": "a" * 64,
-            "differences": draft.material_correspondence.differences,
-        },
-        scope_review={
-            "value": scope,
-            "basis": "Synthetic scope review",
-            "record_sha256": "a" * 64,
-        },
-        scope_limitations=[
-            {"subject": "Table 3", "value": "Synthetic table not covered"}
-        ]
-        if scope == "partial"
-        else [],
-        unresolved=unresolved,
-        handled_pending_ids=[p.item_id for p in draft.pending],
+    material.mkdir(parents=True)
+    pdf = material / "paper.pdf"
+    document = canvas.Canvas(str(pdf))
+    document.drawString(
+        30, 700, "SYN-A is a candidate. Radial velocity 520 +/- 10 km/s."
     )
-    write_compact_gold_pair(pair, tmp_path / "pair")
-    return material, tmp_path / "pair", pair
-
-
-def authorize(binding):
-    return SaveApproval(
-        approved_by="synthetic-human",
-        approver_kind="human",
-        approved_at=datetime.now(UTC),
-        binding=binding,
-        binding_sha256=binding.sha256,
-        basis="Synthetic human review and save permission",
-        scientific_review=True,
-        accepted_pending=binding.science_pending,
-    )
-
-
-def flow(tmp_path, **kwargs):
-    material, pair_path, pair = make_pair(tmp_path, **kwargs)
-    target = GoldTarget(tmp_path / "private-repo" / "data" / pair.answer.arxiv_id)
-    checked = check_save(pair_path=pair_path, material_root=material, target=target)
-    return {
-        "pair_path": pair_path,
-        "material_root": material,
-        "target": target,
-        "approval": authorize(checked.binding),
-    }
-
-
-def revise(args, *, value="613.0", work=None):
-    pair = read_compact_gold_pair(args["pair_path"])
-    current = args["target"].read_current()
-    answer = pair.answer.model_dump(mode="json")
-    answer["contributions"][0]["quantities"][0]["values"][0]["value"] = value
-    return edit_pair(
-        args, answer=answer, revision=current[1].binding.answer_sha256, work=work
-    )
-
-
-def edit_pair(args, *, answer=None, metadata=None, revision=None, work=None):
-    import hashlib
-
-    from hvs_catalog.evaluation import (
-        CompactGoldAnswer,
-        CompactGoldMetadata,
-        CompactGoldPair,
-        compact_answer_to_json,
-    )
-
-    pair = read_compact_gold_pair(args["pair_path"])
-    answer = (
-        CompactGoldAnswer.model_validate(answer) if answer is not None else pair.answer
-    )
-    metadata = metadata or pair.metadata.model_dump(mode="json", by_alias=True)
-    metadata["review"]["answer_sha256"] = hashlib.sha256(
-        compact_answer_to_json(answer).encode()
-    ).hexdigest()
-    if revision:
-        metadata["revision"] = {
-            "revised_by": "synthetic-preparer",
-            "decided_by": "synthetic-human",
-            "revised_at": "2026-09-30",
-            "basis": "Synthetic correction",
-            "previous_answer_sha256": revision,
-        }
-    pair = CompactGoldPair(
-        answer=answer, metadata=CompactGoldMetadata.model_validate(metadata)
-    )
-    path = work or args["pair_path"]
-    write_compact_gold_pair(pair, path)
-    result = dict(args, pair_path=path)
-    return result
-
-
-def approve_revision(args):
-    checked = check_save(
-        pair_path=args["pair_path"],
-        material_root=args["material_root"],
-        target=args["target"],
-        expected_old=args["target"].fingerprint(),
-    )
-    return dict(args, approval=authorize(checked.binding))
-
-
-def snapshot(root):
-    return (
+    document.showPage()
+    document.drawString(30, 700, "Table 2. SYN-A distance < 8.0 kpc.")
+    document.save()
+    evidence = [
         {
-            str(p.relative_to(root)): p.read_bytes()
-            for p in root.rglob("*")
-            if p.is_file()
+            "page": 1,
+            "location": "Candidate paragraph",
         }
-        if root.exists()
-        else {}
+    ]
+    answer = PdfContribution.model_validate(
+        {
+            "metadata": {
+                "arxiv_id": "2601.99999",
+                "version": "v1",
+                "title": "Fictional two-page paper",
+                "authors": ["A. Example"],
+            },
+            "stars": [
+                {
+                    "identifiers": [{"value": "SYN-A", "evidence": evidence}],
+                    "contribution_type": {
+                        "value": "candidates_found",
+                        "evidence": evidence,
+                    },
+                    "quantities": [
+                        {
+                            "quantity": "radial_velocity",
+                            "values": [
+                                {
+                                    "value": "520",
+                                    "error": "10",
+                                    "unit": "km/s",
+                                    "evidence": evidence,
+                                }
+                            ],
+                        },
+                        {
+                            "quantity": "distance",
+                            "values": [
+                                {
+                                    "upper_bound": "8.0",
+                                    "upper_inclusive": False,
+                                    "unit": "kpc",
+                                    "condition": "Model A",
+                                    "evidence": [
+                                        {
+                                            "page": 2,
+                                            "location": "Table 2, SYN-A row",
+                                        }
+                                    ],
+                                }
+                            ],
+                        },
+                    ],
+                }
+            ],
+            "notes": [],
+        }
     )
+    raw = answer.model_dump(mode="json")
+    raw["metadata"].update(
+        rules=current_rules_ref(),
+        material={
+            "path": "paper.pdf",
+            "sha256": hashlib.sha256(pdf.read_bytes()).hexdigest(),
+        },
+    )
+    annotation = GoldAnnotation.model_validate(raw)
+    write_annotation(annotation, material / "annotation.json")
+    return annotation, material
 
 
-def write_approval(args, path):
-    path.write_text(json.dumps(args["approval"].model_dump(mode="json")))
-    return path
+def flow(tmp_path):
+    _, root = make_annotation(tmp_path)
+    data = tmp_path / "repo/data"
+    data.mkdir(parents=True)
+    target = data / "2601.99999"
+    args = {"annotation": root / "annotation.json", "target": target}
+    args["expected_new"] = inspect_save(**args)["annotation_sha256"]
+    return args
+
+
+def revision(args, root):
+    import shutil
+
+    from hvs_catalog.evaluation.gold import read_annotation
+    from hvs_catalog.evaluation.store import read_saved
+
+    root.mkdir()
+    shutil.copyfile(args["annotation"].parent / "paper.pdf", root / "paper.pdf")
+    annotation = read_annotation(args["annotation"])
+    annotation.notes.append("Revised synthetic note.")
+    write_annotation(annotation, root / "annotation.json")
+    result = {
+        "annotation": root / "annotation.json",
+        "target": args["target"],
+        "expected_old": read_saved(args["target"])["annotation_sha256"],
+    }
+    result["expected_new"] = inspect_save(**result)["annotation_sha256"]
+    return result

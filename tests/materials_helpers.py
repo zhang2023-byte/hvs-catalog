@@ -74,9 +74,9 @@ def mineru_zip(text, pages=1, *, full=True):
 
 
 class FakeMinerU:
-    def __init__(self, *, gaps=None):
+    def __init__(self, *, preparation_issues=None):
         self.calls = 0
-        self.gaps = gaps or []
+        self.preparation_issues = preparation_issues or []
 
     def fingerprint(self):
         return {
@@ -94,7 +94,7 @@ class FakeMinerU:
         text = PdfReader(path).metadata["/FixtureText"]
         raw = mineru_zip(text, page_count)
         parsed = read_result(raw, page_count)
-        parsed["gaps"] += self.gaps
+        parsed["preparation_issues"] += self.preparation_issues
         return raw, parsed
 
 
@@ -104,5 +104,26 @@ def prepared_space(tmp_path, payload=None):
     path.write_bytes(payload or make_pdf())
     imported = AcquisitionService(space).import_local_pdf(
         path, arxiv_id=PAPER + "v1", provenance="synthetic PDF fixture"
+    )
+    from hvs_catalog.materials.metadata import archive_metadata
+    from hvs_catalog.pipeline.acquisition.protocol import ArxivPaperMeta
+
+    archive_metadata(
+        space,
+        ArxivPaperMeta(
+            canonical_id=PAPER,
+            version=1,
+            api_id_url="https://arxiv.org/abs/" + PAPER + "v1",
+            published="2020-01-01T00:00:00Z",
+            updated="2020-01-01T00:00:00Z",
+            title="Synthetic paper",
+            authors=("A. Author",),
+            categories=("astro-ph.GA",),
+            primary_category="astro-ph.GA",
+            abstract="Synthetic material.",
+            doi=None,
+            journal_ref=None,
+        ),
+        {"kind": "synthetic"},
     )
     return space, imported

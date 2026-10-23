@@ -1,0 +1,370 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "ImageEvidence": {
+      "additionalProperties": false,
+      "description": "A supplied image location without a text transcription.",
+      "properties": {
+        "location": {
+          "description": "Complete image location, such as I:p5-b6.",
+          "pattern": "^I:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location"
+      ],
+      "title": "ImageEvidence",
+      "type": "object"
+    },
+    "LiteratureContributionType": {
+      "additionalProperties": false,
+      "description": "The paper's contribution to this star.",
+      "properties": {
+        "value": {
+          "description": "Contribution category. Scientific inclusion rules are separate.",
+          "enum": [
+            "candidates_found",
+            "follow_up"
+          ],
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this contribution type.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "LiteratureContributionType",
+      "type": "object"
+    },
+    "LiteratureIdentifier": {
+      "additionalProperties": false,
+      "description": "One reported identifier and its supporting evidence.",
+      "properties": {
+        "value": {
+          "description": "Star identifier.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this identifier.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "LiteratureIdentifier",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "RosterData": {
+      "additionalProperties": false,
+      "properties": {
+        "source_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "material_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "response_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_round": {
+          "anyOf": [
+            {
+              "maximum": 2,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Round"
+        },
+        "fallback": {
+          "title": "Fallback",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "stars": {
+          "items": {
+            "$ref": "#/$defs/RosterStar"
+          },
+          "title": "Stars",
+          "type": "array"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Notes"
+        },
+        "source_indices": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Source Indices",
+          "type": "array"
+        },
+        "rejected": {
+          "additionalProperties": {
+            "items": {
+              "$ref": "#/$defs/RosterIssue"
+            },
+            "type": "array"
+          },
+          "title": "Rejected",
+          "type": "object"
+        },
+        "issues": {
+          "items": {
+            "$ref": "#/$defs/RosterIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_ref",
+        "material_ref",
+        "response_ref",
+        "source_round",
+        "fallback",
+        "status",
+        "stars",
+        "notes",
+        "source_indices",
+        "rejected",
+        "issues"
+      ],
+      "title": "RosterData",
+      "type": "object"
+    },
+    "RosterIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "message"
+      ],
+      "title": "RosterIssue",
+      "type": "object"
+    },
+    "RosterStar": {
+      "additionalProperties": false,
+      "properties": {
+        "identifiers": {
+          "description": "Star identifiers for this star.",
+          "items": {
+            "$ref": "#/$defs/LiteratureIdentifier"
+          },
+          "minItems": 1,
+          "title": "Identifiers",
+          "type": "array"
+        },
+        "contribution_type": {
+          "$ref": "#/$defs/LiteratureContributionType"
+        }
+      },
+      "required": [
+        "identifiers",
+        "contribution_type"
+      ],
+      "title": "RosterStar",
+      "type": "object"
+    },
+    "SchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "SchemaTag",
+      "type": "object"
+    },
+    "TextEvidence": {
+      "additionalProperties": false,
+      "description": "An exact excerpt from one supplied text block.",
+      "properties": {
+        "location": {
+          "description": "Complete text location, such as T:p3-b5.",
+          "pattern": "^T:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "description": "Unchanged excerpt from this text block.",
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "quote"
+      ],
+      "title": "TextEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/SchemaTag"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Execution Id"
+    },
+    "data": {
+      "$ref": "#/$defs/RosterData"
+    }
+  },
+  "required": [
+    "schema",
+    "record_id",
+    "revision",
+    "created_at",
+    "execution_id",
+    "data"
+  ],
+  "title": "RosterRecord",
+  "type": "object"
+}

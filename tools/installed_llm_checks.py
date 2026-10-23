@@ -70,7 +70,7 @@ try:
     # The installed public CLI joins actual preparation and real HTTP model calls.
     # All source content and service output here are synthetic.
     from hvs_catalog.materials import MaterialsService
-    from hvs_catalog.pipeline import ExtractionConfig,get_extraction,list_methods
+    from hvs_catalog.pipeline import ExtractionConfig,get_extraction
     from hvs_catalog.pipeline.acquisition.lifecycle import AcquisitionService
     from hvs_catalog.records.common import RecordRef
     from hvs_catalog.records.roster import RosterRecord
@@ -78,29 +78,29 @@ try:
     package=root/'paper.pdf';package.write_bytes(make_pdf(text))
     space=initialize_workspace(root/'roster-space')
     imported=AcquisitionService(space).import_local_pdf(package,arxiv_id='2501.03333',version=1,provenance='synthetic installed roster check')
+    archive_fixture_metadata(space)
     preparation,report=MaterialsService(space,runner=FakeMinerU()).prepare_materials(request_key='roster-prepare',paper=imported.canonical_id)
     assert report.outcome=='finished',report.errors
     bundle=MaterialsService(space).get_prepared_input(preparation.execution_id)
     source=space.store().read_record(RecordRef.model_validate(bundle['prepared_source_ref']))
-    gap_ids=[g.gap_id for g in source.data.gaps]
     evidence={'location':'T:p1-b0','quote':text}
-    roster_payload={'coverage':{'state':'partial' if gap_ids else 'complete','checked_file_ids':['raw'],'gap_ids':gap_ids},'entries':[{'identifiers':[{'value':'SYN-A','evidence':[evidence]}],'disposition':'included','evidence':[evidence],'summary':'This paper discovers SYN-A.','summary_evidence':[evidence],'contribution_type':'candidates_found','type_evidence':[evidence],'boundness':'unbound','boundness_evidence':[evidence],'conditional_assessments':[]}],'unresolved_groups':[]}
+    roster_payload={'stars':[{'identifiers':[{'value':'SYN-A','evidence':[evidence]}],'contribution_type':{'value':'candidates_found','evidence':[evidence]}}],'notes':''}
     prep_id=preparation.execution_id
     config=root/'roster-config.json';config.write_text(ExtractionConfig(runtime=runtime).model_dump_json())
     space.close()
     result=cli('extract','roster','--space',root/'roster-space','--preparation',prep_id,'--request-key','installed-roster','--config',config,'--env-file',env_file)
-    assert result['outcome']=='finished' and result['implementation']=='model-roster',result
+    assert result['outcome']=='finished' and result['implementation']=='model-extraction',result
     eid=result['execution_id']
     status=cli('extract','status','--space',root/'roster-space','--execution',eid)
-    assert status['config']['scope']=='roster' and status['usage']['attempts']==1,status
+    assert status['usage']['attempts']==1,status
     assert cli('extract','resume','--space',root/'roster-space','--execution',eid)['outcome']=='finished'
     assert len(count)==6
     space=open_workspace(root/'roster-space')
     status=get_extraction(space,eid)
     records=[space.store().read_record(RecordRef.model_validate(r)) for r in status['result_refs']]
     roster=next(r for r in records if isinstance(r,RosterRecord))
-    assert roster.data.entries[0].identifiers[0].value=='SYN-A'
-    assert next(m for m in list_methods() if m['method_id']=='roster')['model_steps']==['roster']
+    assert roster.data.stars[0].identifiers[0].value=='SYN-A'
+    assert ExtractionConfig().model_steps()==('roster','quantities')
     space.close()
     assert Path(llm.__file__).resolve().is_relative_to(Path(sys.prefix).resolve()),llm.__file__
     assert (Path(llm.__file__).parent/'STELLA_LICENSE.txt').is_file()

@@ -8,7 +8,6 @@ from typing import Literal
 from pydantic import Field, model_serializer, model_validator
 
 from .common import ArtifactRef, Config, Record, RecordRef
-from .paper import PrecedentSnapshotRef
 from .questions import RulesRef
 
 RunMode = Literal["daily", "evaluation", "synthetic"]
@@ -72,7 +71,7 @@ class InputSnapshot(Config):
     expert_adjudication: bool
     prompt_refs: list[ArtifactRef] = Field(min_length=0)
     example_refs: list[ArtifactRef] = Field(min_length=0)
-    precedent_refs: list[PrecedentSnapshotRef] = Field(min_length=0)
+    precedent_refs: list[dict] = Field(min_length=0)
     existing_decision_refs: list[RecordRef] = Field(min_length=0)
     # Fixed options, including preparation and resolved extraction configuration, enter
     # complete digests. Values are strings; callers canonically serialize structured options.

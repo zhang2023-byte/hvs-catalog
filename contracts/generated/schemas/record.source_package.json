@@ -1,84 +1,5 @@
 {
   "$defs": {
-    "AffectedItem": {
-      "additionalProperties": false,
-      "properties": {
-        "item_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Contribution item affected by the gap, when identifiable.",
-          "title": "Item Id"
-        },
-        "quantity": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Quantity path affected by the gap, when the scope names one.",
-          "title": "Quantity"
-        },
-        "judgment": {
-          "anyOf": [
-            {
-              "enum": [
-                "inclusion",
-                "identity"
-              ],
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Roster-level judgment the gap affects: inclusion (whether the object belongs to the roster) or identity (whether printed names denote one object). Mutually exclusive with quantity in one item; null when the item names quantities only.",
-          "title": "Judgment"
-        }
-      },
-      "required": [
-        "item_id",
-        "quantity",
-        "judgment"
-      ],
-      "title": "AffectedItem",
-      "type": "object"
-    },
-    "AffectedTargets": {
-      "additionalProperties": false,
-      "properties": {
-        "scope": {
-          "enum": [
-            "known",
-            "unknown"
-          ],
-          "title": "Scope",
-          "type": "string"
-        },
-        "items": {
-          "items": {
-            "$ref": "#/$defs/AffectedItem"
-          },
-          "minItems": 0,
-          "title": "Items",
-          "type": "array"
-        }
-      },
-      "required": [
-        "scope",
-        "items"
-      ],
-      "title": "AffectedTargets",
-      "type": "object"
-    },
     "ArxivOrigin": {
       "additionalProperties": false,
       "properties": {
@@ -105,64 +26,6 @@
         "retrieval"
       ],
       "title": "ArxivOrigin",
-      "type": "object"
-    },
-    "Gap": {
-      "additionalProperties": false,
-      "properties": {
-        "gap_id": {
-          "minLength": 1,
-          "title": "Gap Id",
-          "type": "string"
-        },
-        "reason": {
-          "enum": [
-            "missing",
-            "unreadable",
-            "unparsed",
-            "external_not_included"
-          ],
-          "title": "Reason",
-          "type": "string"
-        },
-        "description": {
-          "minLength": 1,
-          "title": "Description",
-          "type": "string"
-        },
-        "file_id": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Omitted for gaps without a specific package file.",
-          "title": "File Id"
-        },
-        "mention_evidence_refs": {
-          "items": {
-            "$ref": "#/$defs/RecordRef"
-          },
-          "minItems": 0,
-          "title": "Mention Evidence Refs",
-          "type": "array"
-        },
-        "affected_targets": {
-          "$ref": "#/$defs/AffectedTargets"
-        }
-      },
-      "required": [
-        "gap_id",
-        "reason",
-        "description",
-        "file_id",
-        "mention_evidence_refs",
-        "affected_targets"
-      ],
-      "title": "Gap",
       "type": "object"
     },
     "LocalPdfOrigin": {
@@ -196,27 +59,6 @@
         "provenance"
       ],
       "title": "LocalPdfOrigin",
-      "type": "object"
-    },
-    "RecordRef": {
-      "additionalProperties": false,
-      "properties": {
-        "record_id": {
-          "minLength": 1,
-          "title": "Record Id",
-          "type": "string"
-        },
-        "revision": {
-          "minimum": 1,
-          "title": "Revision",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "record_id",
-        "revision"
-      ],
-      "title": "RecordRef",
       "type": "object"
     },
     "SchemaTag": {
@@ -340,12 +182,11 @@
           "title": "Files",
           "type": "array"
         },
-        "gaps": {
+        "preparation_issues": {
           "items": {
-            "$ref": "#/$defs/Gap"
+            "type": "string"
           },
-          "minItems": 0,
-          "title": "Gaps",
+          "title": "Preparation Issues",
           "type": "array"
         }
       },
@@ -353,8 +194,7 @@
         "paper_key",
         "origin",
         "source_version",
-        "files",
-        "gaps"
+        "files"
       ],
       "title": "SourcePackageData",
       "type": "object"

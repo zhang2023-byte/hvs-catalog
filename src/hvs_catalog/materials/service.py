@@ -265,7 +265,9 @@ class MaterialsService:
                 for view in questions
             ],
             "errors": errors,
-            "gaps": bundle.get("gaps", []) if bundle is not None else state.get("gaps"),
+            "preparation_issues": bundle.get("preparation_issues", [])
+            if bundle is not None
+            else state.get("preparation_issues"),
             "summary": bundle.get("summary") if bundle is not None else None,
             "result_refs": [
                 ref.model_dump(mode="json") for ref in run.data.result_refs
@@ -300,7 +302,9 @@ class MaterialsService:
             "ok": True,
             "materials_complete": bundle["summary"]["materials_complete"],
             "summary": bundle["summary"],
-            "gaps": bundle["gaps"],
+            "preparation_issues": bundle.get(
+                "preparation_issues", [g["description"] for g in bundle.get("gaps", [])]
+            ),
             "problems": [],
             "verified_artifacts": [f.path for f in source.data.files],
         }
@@ -332,7 +336,7 @@ class MaterialsService:
                 "versioned_id": paper["download"]["versioned_id"],
                 "state": preparation["state"],
                 "errors": preparation["errors"],
-                "gaps": [],
+                "preparation_issues": [],
             }
             inventory.append(item)
             folder = destination / paper["arxiv_id"].replace("/", "_")
@@ -357,7 +361,9 @@ class MaterialsService:
             source = self._space.store().read_record(
                 RecordRef.model_validate(bundle["prepared_source_ref"])
             )
-            item["gaps"] = bundle["gaps"]
+            item["preparation_issues"] = bundle.get(
+                "preparation_issues", [g["description"] for g in bundle.get("gaps", [])]
+            )
             for role, name in (
                 ("parser_output", "mineru.zip"),
                 ("pdf_index", "pdf-blocks.json"),
@@ -377,7 +383,7 @@ class MaterialsService:
                                 write(folder / member.filename, archive.read(member))
         summary = {
             "batch_id": manifest["batch_id"],
-            "quality_review": "structural gaps only; transcription accuracy not reviewed",
+            "quality_review": "structural preparation_issues only; transcription accuracy not reviewed",
             "papers": inventory,
         }
         write(

@@ -276,8 +276,10 @@ class AcquisitionService:
             ) from exc
         return state
 
-    def _save(self, state: dict, records: list | None = None) -> None:
-        updates = {_STATE_KEY: _dump(state)}
+    def _save(
+        self, state: dict, records: list | None = None, metadata_updates=None
+    ) -> None:
+        updates = {_STATE_KEY: _dump(state), **(metadata_updates or {})}
         if records:
             # Shared-record receipts prove commits only; they do not coordinate/replay acquisition.
             self._space.store().commit(
@@ -532,6 +534,39 @@ class AcquisitionService:
                 self._save(state)
                 return replace(result, latex_error=str(exc))
 
+    def acquire_metadata(self, identifier: str) -> ArtifactRef:
+        """Archive metadata for an explicitly selected version without downloading its PDF."""
+        from ...materials.metadata import PREFIX, archive_metadata
+        from ...workspace.archives import read_json
+
+        ident = parse_arxiv_identifier(identifier)
+        if ident.version is None:
+            raise AcquisitionError("元数据归档必须提供固定版本")
+        with self._space.lock():
+            existing = self._space.store().get_meta(PREFIX + ident.versioned_id)
+            if existing:
+                ref = ArtifactRef.model_validate_json(existing)
+                read_json(self._space, ref)
+                return ref
+            batch = self._api.metadata_by_ids([ident.versioned_id])
+            matches = [
+                item.meta
+                for item in batch.lookups
+                if item.status == "found" and item.meta is not None
+            ]
+            if (
+                batch.anomalies
+                or len(matches) != 1
+                or matches[0].canonical_id != ident.canonical_id
+                or matches[0].version != ident.version
+            ):
+                raise AcquisitionError("元数据缺失或与固定论文版本不符")
+            return archive_metadata(
+                self._space,
+                matches[0],
+                {"response_url": batch.response_url, "fetched_at": batch.fetched_at},
+            )
+
     def _acquire_pdf(self, identifier: ArxivIdentifier | str) -> AcquisitionResult:
         ident = (
             parse_arxiv_identifier(identifier)
@@ -570,6 +605,16 @@ class AcquisitionService:
                         )
                     ident = parse_arxiv_identifier(
                         f"{ident.canonical_id}v{lookup.meta.version}"
+                    )
+                    from ...materials.metadata import archive_metadata
+
+                    archive_metadata(
+                        self._space,
+                        lookup.meta,
+                        {
+                            "response_url": batch.response_url,
+                            "fetched_at": batch.fetched_at,
+                        },
                     )
                     via = "latest_at_selection"
             else:
@@ -702,7 +747,7 @@ class AcquisitionService:
                         derived_from=[],
                     )
                 ],
-                gaps=[],
+                preparation_issues=[],
             ),
         )
 
@@ -776,7 +821,7 @@ class AcquisitionService:
             self._reject_conflict(state, ident, payload)
             self._declarations(
                 ident.versioned_id
-            )  # Never silently skip gaps in saved provenance.
+            )  # Never silently skip preparation_issues in saved provenance.
             raw = self._publish_raw(payload)
             fact = self._select(state, ident, "local_import")
             record = self._source_record(fact)
@@ -916,7 +961,7 @@ class AcquisitionService:
                             "derived_from": [],
                         }
                     ],
-                    "gaps": [],
+                    "preparation_issues": [],
                 },
             )
             self._space.store().commit(
@@ -1036,6 +1081,20 @@ class AcquisitionService:
                         ],
                     },
                 )
+                from ...materials.metadata import prepare_metadata
+
+                metadata_records, metadata_updates = [], {}
+                for metadata in page.entries:
+                    _, records, updates = prepare_metadata(
+                        self._space,
+                        metadata,
+                        {
+                            "record_ref": record.ref().model_dump(),
+                            "response_ref": ref.model_dump(),
+                        },
+                    )
+                    metadata_records.extend(records)
+                    metadata_updates.update(updates)
                 round_state["pages"].append(record.ref().model_dump(mode="json"))
                 round_state["next_start"] = start + len(page.entries)
                 pages_fetched += 1
@@ -1046,7 +1105,7 @@ class AcquisitionService:
                 elif max_pages is not None and pages_fetched >= max_pages:
                     round_state.update(state=ROUND_INCOMPLETE, reason="page_bound")
                 self._save(
-                    state, [record]
+                    state, [record, *metadata_records], metadata_updates
                 )  # Commit page records, progress, and actual terminal state once.
                 if round_state["state"] != ROUND_IN_PROGRESS:
                     return self._round_status(round_state)

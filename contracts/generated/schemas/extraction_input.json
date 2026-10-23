@@ -1,0 +1,295 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "InputSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "rules": {
+          "$ref": "#/$defs/RulesRef"
+        },
+        "method": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Method"
+        },
+        "models": {
+          "items": {
+            "$ref": "#/$defs/ModelSpec"
+          },
+          "minItems": 0,
+          "title": "Models",
+          "type": "array"
+        },
+        "code_version": {
+          "minLength": 1,
+          "title": "Code Version",
+          "type": "string"
+        },
+        "dependency_versions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Dependency Versions",
+          "type": "object"
+        },
+        "expert_adjudication": {
+          "title": "Expert Adjudication",
+          "type": "boolean"
+        },
+        "prompt_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 0,
+          "title": "Prompt Refs",
+          "type": "array"
+        },
+        "example_refs": {
+          "items": {
+            "$ref": "#/$defs/ArtifactRef"
+          },
+          "minItems": 0,
+          "title": "Example Refs",
+          "type": "array"
+        },
+        "precedent_refs": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "minItems": 0,
+          "title": "Precedent Refs",
+          "type": "array"
+        },
+        "existing_decision_refs": {
+          "items": {
+            "$ref": "#/$defs/RecordRef"
+          },
+          "minItems": 0,
+          "title": "Existing Decision Refs",
+          "type": "array"
+        },
+        "options": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Options",
+          "type": "object"
+        }
+      },
+      "required": [
+        "source_refs",
+        "rules",
+        "method",
+        "models",
+        "code_version",
+        "dependency_versions",
+        "expert_adjudication",
+        "prompt_refs",
+        "example_refs",
+        "precedent_refs",
+        "existing_decision_refs"
+      ],
+      "title": "InputSnapshot",
+      "type": "object"
+    },
+    "LiteratureMetadata": {
+      "additionalProperties": false,
+      "description": "Bibliographic identity of the fixed paper version.",
+      "properties": {
+        "arxiv_id": {
+          "description": "Bare arXiv identifier, without a version suffix.",
+          "pattern": "^(?:[0-9]{4}\\.[0-9]{4,5}|[a-zA-Z-]+(?:\\.[A-Z]{2})?/[0-9]{7})$",
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "version": {
+          "description": "arXiv paper version, such as v1; not a format version.",
+          "pattern": "^v[1-9][0-9]*$",
+          "title": "Version",
+          "type": "string"
+        },
+        "title": {
+          "description": "Paper title.",
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "authors": {
+          "description": "Paper authors in reported order.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "version",
+        "title",
+        "authors"
+      ],
+      "title": "LiteratureMetadata",
+      "type": "object"
+    },
+    "ModelSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "step_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Null for the whole-pipeline default model.",
+          "title": "Step Id"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "step_id",
+        "provider",
+        "model",
+        "parameters"
+      ],
+      "title": "ModelSpec",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "RulesRef": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "sha256"
+      ],
+      "title": "RulesRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "hvs.extraction-input",
+      "default": "hvs.extraction-input",
+      "title": "Format",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "metadata": {
+      "$ref": "#/$defs/LiteratureMetadata"
+    },
+    "metadata_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "material_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "snapshot": {
+      "$ref": "#/$defs/InputSnapshot"
+    }
+  },
+  "required": [
+    "metadata",
+    "metadata_ref",
+    "material_ref",
+    "snapshot"
+  ],
+  "title": "ExtractionInput",
+  "type": "object"
+}

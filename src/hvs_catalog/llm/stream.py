@@ -121,7 +121,7 @@ class SSEBody:
     def __init__(self, strict_json):
         self.strict_json = strict_json
         self.body = {}
-        self.message = {"content": []}
+        self.message = {"content": [], "reasoning_content": []}
         self.tools = {}
         self.finish = None
         self.done = False
@@ -180,7 +180,11 @@ class SSEBody:
                     current["function"][key].append(value)
 
     def result(self):
-        message = {key: "".join(value) for key, value in self.message.items()}
+        message = {
+            key: "".join(value)
+            for key, value in self.message.items()
+            if key == "content" or value
+        }
         if self.tools:
             message["tool_calls"] = [
                 {

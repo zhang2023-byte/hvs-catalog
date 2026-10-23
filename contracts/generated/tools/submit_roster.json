@@ -1,0 +1,143 @@
+{
+  "type": "function",
+  "function": {
+    "name": "submit_roster",
+    "description": "Submit the star roster for this paper.",
+    "parameters": {
+      "$defs": {
+        "ImageEvidence": {
+          "additionalProperties": false,
+          "properties": {
+            "location": {
+              "description": "Copy the complete I: location, such as I:p5-b6. Exclude LOCATION.",
+              "pattern": "^I:p[1-9][0-9]*-b[0-9]+$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "location"
+          ],
+          "type": "object",
+          "description": "Evidence from an image. Do not include a quote field."
+        },
+        "ContributionType": {
+          "additionalProperties": false,
+          "properties": {
+            "value": {
+              "description": "The contribution category defined in the scientific rules.",
+              "enum": [
+                "candidates_found",
+                "follow_up"
+              ],
+              "type": "string"
+            },
+            "evidence": {
+              "$ref": "#/$defs/EvidenceList",
+              "description": "Evidence for this contribution category."
+            }
+          },
+          "required": [
+            "value",
+            "evidence"
+          ],
+          "type": "object"
+        },
+        "Identifier": {
+          "additionalProperties": false,
+          "properties": {
+            "value": {
+              "description": "The star identifier.",
+              "minLength": 1,
+              "type": "string"
+            },
+            "evidence": {
+              "$ref": "#/$defs/EvidenceList",
+              "description": "Evidence for this star identifier."
+            }
+          },
+          "required": [
+            "value",
+            "evidence"
+          ],
+          "type": "object"
+        },
+        "Star": {
+          "additionalProperties": false,
+          "properties": {
+            "identifiers": {
+              "description": "Star identifiers for this star.",
+              "items": {
+                "$ref": "#/$defs/Identifier"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "contribution_type": {
+              "$ref": "#/$defs/ContributionType"
+            }
+          },
+          "required": [
+            "identifiers",
+            "contribution_type"
+          ],
+          "type": "object"
+        },
+        "TextEvidence": {
+          "additionalProperties": false,
+          "properties": {
+            "location": {
+              "description": "Copy the complete T: location, such as T:p3-b5. Exclude LOCATION and the block type.",
+              "pattern": "^T:p[1-9][0-9]*-b[0-9]+$",
+              "type": "string"
+            },
+            "quote": {
+              "description": "Copy a nonempty excerpt from the corresponding text block without changes. Keep its original language.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "location",
+            "quote"
+          ],
+          "type": "object",
+          "description": "Evidence from text or a caption."
+        },
+        "EvidenceList": {
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array",
+          "description": "Use separate items for different locations."
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "stars": {
+          "description": "One entry per star. Use an empty array if no star meets the scientific rules.",
+          "items": {
+            "$ref": "#/$defs/Star"
+          },
+          "type": "array"
+        },
+        "notes": {
+          "description": "For each star discussed, include one star identifier. If a note discusses a passage or image, include its complete location. Use an empty string if no note is necessary.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stars",
+        "notes"
+      ],
+      "type": "object"
+    }
+  }
+}

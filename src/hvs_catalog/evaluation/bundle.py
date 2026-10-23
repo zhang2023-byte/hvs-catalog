@@ -1,158 +1,70 @@
-"""Freeze explicit scoring inputs, verify all fingerprints, and replay offline.
+"""Freeze scoring inputs and replay them without a workspace or Gold repository."""
 
-Bundles retain the complete scope, Gold/prediction records, comparison mode, program,
-rules, materials, and optional saved-run snapshot. Real Gold and answer-bearing bundles
-belong in authorized private scoring spaces. No extraction or repository scanning
-occurs during replay.
-"""
-
-from __future__ import annotations
-
+import hashlib
 import json
+from importlib.metadata import version
 from pathlib import Path
+from typing import Literal
 
-from ..records.common import sha256_of
-from .scoring import (
-    AuxiliaryScoringConfig,
-    GoldPaperEntry,
-    PredictionPaperEntry,
-    ScoringPlan,
-    ScoringReport,
-    auxiliary_config_digest,
-    gold_input_digest,
-    predictions_input_digest,
-    score_batch,
-)
+from pydantic import Field
 
-__all__ = [
-    "BUNDLE_SCHEMA_NAME",
-    "BUNDLE_SCHEMA_VERSION",
-    "ScoringBundleError",
-    "load_scoring_bundle",
-    "plan_digest",
-    "save_scoring_bundle",
-    "score_scoring_bundle",
-]
-
-BUNDLE_SCHEMA_NAME = "hvs.evaluation.scoring-bundle"
-BUNDLE_SCHEMA_VERSION = 1
+from ..records.common import Config, sha256_of
+from ..records.roster_validation import strict_json
+from .scoring import Fingerprint, GoldReference, Prediction, ScoringPlan, score_batch
 
 
-class ScoringBundleError(ValueError):
-    """Missing, malformed, or fingerprint-invalid scoring input bundle."""
-
-
-def plan_digest(plan: ScoringPlan) -> str:
-    """Canonical complete-plan digest covering scope, program/rules/material/Gold/auxiliary
-    references, versions, scoring, and provenance.
-
-    Recomputing at save/load detects changes; this is integrity detection, not
-    cryptographic identity authentication, and need not defend against malicious authors
-    who can resign contents.
-    """
-    return sha256_of(plan.model_dump(mode="json"))
-
-
-def _digests(plan: ScoringPlan, gold, predictions, auxiliary) -> dict[str, str]:
-    return {
-        "plan": plan_digest(plan),
-        "gold": gold_input_digest(gold),
-        "predictions": predictions_input_digest(predictions),
-        "auxiliary": auxiliary_config_digest(auxiliary),
+def program_reference() -> Fingerprint:
+    root = Path(__file__).resolve().parents[1]
+    files = {
+        p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in sorted(root.rglob("*"))
+        if p.is_file() and p.suffix in {".py", ".toml", ".json", ".yaml"}
     }
+    return Fingerprint(version=version("hvs-catalog"), sha256=sha256_of(files))
 
 
-def save_scoring_bundle(
-    path: str | Path,
-    *,
-    plan: ScoringPlan,
-    gold: list[GoldPaperEntry],
-    predictions: list[PredictionPaperEntry],
-    auxiliary: AuxiliaryScoringConfig,
-) -> dict:
-    """Write scoring inputs and digests as canonical JSON; return the written digests."""
-    digests = _digests(plan, gold, predictions, auxiliary)
-    payload = {
-        "schema": {"name": BUNDLE_SCHEMA_NAME, "version": BUNDLE_SCHEMA_VERSION},
-        "digests": digests,
-        "plan": plan.model_dump(mode="json"),
-        "gold": [entry.model_dump(mode="json") for entry in gold],
-        "predictions": [entry.model_dump(mode="json") for entry in predictions],
-        "auxiliary": auxiliary.model_dump(mode="json"),
-    }
+class ScoringBundle(Config):
+    format: Literal["hvs.scoring-inputs"] = "hvs.scoring-inputs"
+    version: Literal[4] = 4
+    plan: ScoringPlan
+    gold: list[GoldReference]
+    predictions: list[Prediction]
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
+def make_bundle(plan, gold, predictions) -> ScoringBundle:
+    report = score_batch(plan, gold, predictions)
+    return ScoringBundle(
+        plan=plan, gold=gold, predictions=predictions, sha256=report.input_sha256
+    )
+
+
+def save_scoring_bundle(path, *, plan, gold, predictions) -> ScoringBundle:
+    bundle = make_bundle(plan, gold, predictions)
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    return digests
-
-
-def _validate_schema(payload: dict) -> None:
-    schema = payload.get("schema")
-    if not isinstance(schema, dict) or schema.get("name") != BUNDLE_SCHEMA_NAME:
-        raise ScoringBundleError(
-            f"不是评分输入集文件（schema.name 应为 {BUNDLE_SCHEMA_NAME}）"
+    with target.open("x", encoding="utf-8") as stream:
+        stream.write(
+            json.dumps(bundle.model_dump(mode="json"), ensure_ascii=False, indent=2)
+            + "\n"
         )
-    if schema.get("version") != BUNDLE_SCHEMA_VERSION:
-        raise ScoringBundleError(f"不支持的评分输入集版本：{schema.get('version')!r}")
+    return bundle
 
 
-def load_scoring_bundle(
-    path: str | Path,
-) -> tuple[ScoringPlan, list, list, AuxiliaryScoringConfig]:
-    """Load and verify scoring inputs, rejecting changed contents."""
-    target = Path(path)
-    try:
-        payload = json.loads(target.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        raise ScoringBundleError(f"无法读取评分输入集 {target}：{exc}") from exc
-    if not isinstance(payload, dict):
-        raise ScoringBundleError("评分输入集必须是 JSON 对象")
-    _validate_schema(payload)
-    recorded = payload.get("digests")
-    if not isinstance(recorded, dict):
-        raise ScoringBundleError("评分输入集缺少摘要记录")
-    for field in ("gold", "predictions"):
-        if field not in payload:
-            raise ScoringBundleError(f"评分输入集缺少字段：{field}")
-        if not isinstance(payload[field], list):
-            raise ScoringBundleError(f"评分输入集字段 {field} 必须是 JSON 列表")
-    try:
-        plan = ScoringPlan.model_validate(payload["plan"])
-        gold = [GoldPaperEntry.model_validate(item) for item in payload["gold"]]
-        predictions = [
-            PredictionPaperEntry.model_validate(item) for item in payload["predictions"]
-        ]
-        auxiliary = AuxiliaryScoringConfig.model_validate(payload["auxiliary"])
-    except KeyError as exc:
-        raise ScoringBundleError(f"评分输入集缺少字段：{exc.args[0]}") from exc
-    except ValueError as exc:
-        raise ScoringBundleError(f"评分输入集内容不合法：{exc}") from exc
-    recomputed = _digests(plan, gold, predictions, auxiliary)
-    mismatched = sorted(
-        name for name in recomputed if recomputed[name] != recorded.get(name)
+def load_scoring_bundle(path) -> ScoringBundle:
+    bundle = ScoringBundle.model_validate(
+        strict_json(Path(path).read_text(encoding="utf-8"))
     )
-    if mismatched:
-        raise ScoringBundleError(
-            "评分输入集与保存时的摘要不符（"
-            + "、".join(mismatched)
-            + "）；输入在保存后被改动，拒绝按原指纹重评"
+    if bundle.plan.program != program_reference():
+        raise ValueError(
+            "Scoring program differs from the frozen input. Use its recorded program version."
         )
-    return plan, gold, predictions, auxiliary
+    report = score_batch(bundle.plan, bundle.gold, bundle.predictions)
+    if report.input_sha256 != bundle.sha256:
+        raise ValueError("Frozen scoring input fingerprint differs from its content.")
+    return bundle
 
 
-def score_scoring_bundle(path: str | Path) -> ScoringReport:
-    """Verify bundle fingerprints and rescore offline with identical digests across
-    processes.
-    """
-    plan, gold, predictions, auxiliary = load_scoring_bundle(path)
-    if plan.comparison_mode == "numeric" and plan.program_ref.name == "hvs-catalog":
-        from .saved import program_reference
-
-        if plan.program_ref != program_reference():
-            raise ScoringBundleError(
-                "冻结输入绑定的程序与当前安装不符；请使用原程序重评或明确生成新快照"
-            )
-    return score_batch(plan, gold, predictions, auxiliary=auxiliary)
+def score_scoring_bundle(path):
+    bundle = load_scoring_bundle(path)
+    return score_batch(bundle.plan, bundle.gold, bundle.predictions)

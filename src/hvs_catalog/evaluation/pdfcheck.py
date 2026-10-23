@@ -39,8 +39,8 @@ class PdfAnalysis:
     notes: tuple[str, ...] = ()
 
 
-def analyze_pdf(data: bytes) -> PdfAnalysis:
-    """Open bytes through an established parser, count actual pages, and extract page text.
+def analyze_pdf(data: bytes, *, extract_text: bool = True) -> PdfAnalysis:
+    """Open bytes, count actual pages, and optionally extract page text.
 
     Parser rejection, encryption, or missing EOF markers make documents unopenable with
     reasons. Text extraction failure affects auxiliary quote checks only, not opening
@@ -72,11 +72,12 @@ def analyze_pdf(data: bytes) -> PdfAnalysis:
             notes=(*notes, f"无法按页树确定页数：{_brief(exc)}"),
         )
     texts: list[str] = []
-    for page in reader.pages:
-        try:
-            texts.append(page.extract_text() or "")
-        except (PdfReadError, ValueError, OSError):
-            texts.append("")
+    if extract_text:
+        for page in reader.pages:
+            try:
+                texts.append(page.extract_text() or "")
+            except (PdfReadError, ValueError, OSError):
+                texts.append("")
     return PdfAnalysis(
         openable=not notes,
         page_count=page_count,

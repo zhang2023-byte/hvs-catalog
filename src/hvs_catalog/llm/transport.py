@@ -23,6 +23,7 @@ from referencing.exceptions import Unresolvable
 from urllib3.exceptions import NewConnectionError
 from urllib3.util import Timeout
 
+from ..records.roster_validation import strict_json
 from .config import BASE_URL, CallRequest, CallResult, RuntimeConfig, parameter_manifest
 from .stream import (
     RawResponse,
@@ -32,21 +33,6 @@ from .stream import (
     exception_facts,
     upload_gate,
 )
-
-
-def strict_json(text: str):
-    def pairs(items):
-        result = {}
-        for key, value in items:
-            if key in result:
-                raise ValueError("duplicate JSON key")
-            result[key] = value
-        return result
-
-    def constant(_):
-        raise ValueError("non-finite JSON value")
-
-    return json.loads(text, object_pairs_hook=pairs, parse_constant=constant)
 
 
 def redact(value, secret: SecretStr):
@@ -465,7 +451,11 @@ class TokenDanceAdapter:
         if request.tool is not None:
             if not isinstance(tool_calls, list) or len(tool_calls) != 1:
                 raise OutputFailure("missing_or_multiple_tool_calls")
-            function = tool_calls[0].get("function") or {}
+            if not isinstance(tool_calls[0], dict):
+                raise OutputFailure("invalid_message")
+            function = tool_calls[0].get("function")
+            if not isinstance(function, dict):
+                raise OutputFailure("invalid_tool_arguments")
             if function.get("name") != request.tool.name:
                 raise OutputFailure("wrong_tool")
             try:

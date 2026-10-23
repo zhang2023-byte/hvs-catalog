@@ -1,42 +1,36 @@
-"""Unique schema.name mapping to concrete record models."""
-
-from __future__ import annotations
+"""Record types used by preparation, roster extraction, and the runtime."""
 
 from .common import Record
-from .objects import ExternalRecord, ObjectRecord
-from .paper import PaperRecord
+from .objects import ExternalRecord
+from .quantities import QuantityRecord
 from .questions import DecisionRecord, QuestionRecord
 from .roster import RosterRecord
 from .runs import ReleaseRecord, RunRecord
 from .source import EvidenceRecord, SourcePackageRecord
 
 AnyRecord = (
-    SourcePackageRecord
+    ExternalRecord
+    | SourcePackageRecord
     | EvidenceRecord
-    | PaperRecord
     | RosterRecord
-    | ObjectRecord
-    | ExternalRecord
-    | QuestionRecord
-    | DecisionRecord
+    | QuantityRecord
     | RunRecord
     | ReleaseRecord
+    | QuestionRecord
+    | DecisionRecord
 )
-
-RECORD_MODELS: dict[str, type[Record[object]]] = {
-    model.RECORD_NAME: model  # type: ignore[misc]
+RECORD_MODELS: dict[str, type[Record]] = {
+    model.RECORD_NAME: model
     for model in (
+        ExternalRecord,
         SourcePackageRecord,
         EvidenceRecord,
-        PaperRecord,
         RosterRecord,
-        ObjectRecord,
-        ExternalRecord,
-        QuestionRecord,
-        DecisionRecord,
+        QuantityRecord,
         RunRecord,
         ReleaseRecord,
+        QuestionRecord,
+        DecisionRecord,
     )
 }
-
-RECORD_TYPE_NAMES: tuple[str, ...] = tuple(sorted(RECORD_MODELS))
+RECORD_TYPE_NAMES = tuple(sorted(RECORD_MODELS))

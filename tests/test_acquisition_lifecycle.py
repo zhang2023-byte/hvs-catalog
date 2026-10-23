@@ -812,7 +812,16 @@ def test_precise_crash_windows_new_process_resume(tmp_path, operation, window):
         else:
             result = service.run_discovery(base_request())
             assert result.state == "complete" and len(result.pages) == 1
-            assert len(space.store().list_records()) == 1
+            assert (
+                len(
+                    [
+                        r
+                        for r in space.store().list_records()
+                        if r.data.service == "arxiv-api"
+                    ]
+                )
+                == 1
+            )
             if window == "after_commit":
                 assert api.search_calls == []
     finally:

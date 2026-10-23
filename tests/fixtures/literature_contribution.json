@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "arxiv_id": "2601.99999",
+    "version": "v1",
+    "title": "A fictional follow-up study of FIC-A",
+    "authors": [
+      "A. Example",
+      "B. Example"
+    ]
+  },
+  "stars": [
+    {
+      "identifiers": [
+        {
+          "value": "FIC-A",
+          "evidence": [
+            {
+              "location": "T:p2-b1",
+              "quote": "Our target FIC-A is also designated FIC-001."
+            }
+          ]
+        },
+        {
+          "value": "FIC-001",
+          "evidence": [
+            {
+              "location": "T:p2-b1",
+              "quote": "Our target FIC-A is also designated FIC-001."
+            }
+          ]
+        }
+      ],
+      "contribution_type": {
+        "value": "follow_up",
+        "evidence": [
+          {
+            "location": "T:p2-b2",
+            "quote": "We obtained new spectroscopy of FIC-A because earlier work identified it as a candidate unbound from the Milky Way."
+          }
+        ]
+      },
+      "quantities": [
+        {
+          "quantity": "radial_velocity",
+          "values": [
+            {
+              "value": "520",
+              "error": "10",
+              "unit": "km/s",
+              "condition": "Spectroscopy in the heliocentric frame",
+              "evidence": [
+                {
+                  "location": "T:p3-b1",
+                  "quote": "Our new spectroscopy gives a heliocentric radial velocity of 520 ± 10 km/s for FIC-A."
+                }
+              ]
+            },
+            {
+              "value": "550",
+              "error": "20",
+              "unit": "km/s",
+              "condition": "Spectroscopy in the heliocentric frame",
+              "evidence": [
+                {
+                  "location": "T:p3-b2",
+                  "quote": "Earlier Study spectroscopy yielded a heliocentric radial velocity of 550 ± 20 km/s for FIC-A."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "distance",
+          "values": [
+            {
+              "value": "8.2",
+              "lower_error": "-0.6",
+              "upper_error": "+0.8",
+              "unit": "kpc",
+              "condition": "Spectrophotometric estimate using stellar model S",
+              "evidence": [
+                {
+                  "location": "T:p4-b1",
+                  "quote": "Our spectrophotometric estimate using stellar model S gives a heliocentric distance of 8.2 kpc for FIC-A, with lower and upper uncertainties of -0.6 and +0.8 kpc."
+                }
+              ]
+            },
+            {
+              "upper_bound": "10.0",
+              "upper_inclusive": true,
+              "unit": "kpc",
+              "condition": "Distance constraint from stellar model T at 95% confidence",
+              "evidence": [
+                {
+                  "location": "T:p4-b4",
+                  "quote": "Using stellar model T, we obtain d ≤ 10.0 kpc at 95% confidence for the heliocentric distance of FIC-A."
+                }
+              ]
+            },
+            {
+              "lower_bound": "5.0",
+              "lower_inclusive": false,
+              "unit": "kpc",
+              "condition": "Distance constraint from stellar model U",
+              "evidence": [
+                {
+                  "location": "T:p4-b5",
+                  "quote": "Using stellar model U, we find that the heliocentric distance of FIC-A satisfies d > 5.0 kpc."
+                }
+              ]
+            },
+            {
+              "lower_bound": "7.0",
+              "upper_bound": "9.0",
+              "unit": "kpc",
+              "condition": "95% credible interval for the heliocentric distance from stellar model V",
+              "evidence": [
+                {
+                  "location": "T:p4-b6",
+                  "quote": "Using stellar model V, we obtain a 95% credible interval of 7.0–9.0 kpc for the heliocentric distance of FIC-A; no central estimate is reported."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "unbound_probability",
+          "values": [
+            {
+              "value": "95",
+              "unit": "%",
+              "condition": "Galactic potential Model A",
+              "evidence": [
+                {
+                  "location": "T:p5-b1",
+                  "quote": "Our analysis gives FIC-A a Galactic unbound probability of 95% under Galactic potential Model A."
+                }
+              ]
+            },
+            {
+              "value": "10",
+              "unit": "%",
+              "condition": "Galactic potential Model B",
+              "evidence": [
+                {
+                  "location": "T:p5-b2",
+                  "quote": "Our analysis gives FIC-A a Galactic unbound probability of 10% under Galactic potential Model B."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "FIC-B was excluded because T:p2-b3 only mentions it as background and reports no qualifying contribution.",
+    "FIC-A: T:p4-b2 gives a parallax of 0.25 mas, while T:p4-b3 gives 0.025 mas for the same measurement without explanation; this may be a typographical error, so neither value was included or corrected. The unbound probabilities of 95% and 10% were retained separately because T:p5-b1 and T:p5-b2 explicitly use different Galactic potential models; they were not treated as a numerical conflict."
+  ]
+}

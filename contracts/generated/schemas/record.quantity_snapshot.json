@@ -1,0 +1,494 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "ImageEvidence": {
+      "additionalProperties": false,
+      "description": "A supplied image location without a text transcription.",
+      "properties": {
+        "location": {
+          "description": "Complete image location, such as I:p5-b6.",
+          "pattern": "^I:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location"
+      ],
+      "title": "ImageEvidence",
+      "type": "object"
+    },
+    "LiteratureQuantity": {
+      "additionalProperties": false,
+      "description": "Reported values grouped by one existing physical quantity identifier.",
+      "properties": {
+        "quantity": {
+          "description": "Short quantity identifier from the existing science definitions.",
+          "enum": [
+            "ra",
+            "dec",
+            "distance",
+            "parallax",
+            "proper_motion_ra",
+            "proper_motion_dec",
+            "radial_velocity",
+            "galactocentric_radius",
+            "galactic_rest_frame_velocity",
+            "bound_probability",
+            "unbound_probability"
+          ],
+          "title": "Quantity",
+          "type": "string"
+        },
+        "values": {
+          "description": "Reported values, each with its own evidence.",
+          "items": {
+            "$ref": "#/$defs/LiteratureValue"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "values"
+      ],
+      "title": "LiteratureQuantity",
+      "type": "object"
+    },
+    "LiteratureValue": {
+      "additionalProperties": false,
+      "dependentRequired": {
+        "lower_inclusive": [
+          "lower_bound"
+        ],
+        "upper_inclusive": [
+          "upper_bound"
+        ]
+      },
+      "description": "One point value, one-sided limit, or pure interval with local evidence.",
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "lower_error"
+            ]
+          },
+          {
+            "required": [
+              "upper_error"
+            ]
+          }
+        ],
+        "required": [
+          "error"
+        ]
+      },
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "lower_bound"
+                ]
+              },
+              {
+                "required": [
+                  "upper_bound"
+                ]
+              }
+            ]
+          },
+          "required": [
+            "value"
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "required": [
+                "lower_bound"
+              ]
+            },
+            {
+              "required": [
+                "upper_bound"
+              ]
+            }
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "value"
+                ]
+              },
+              {
+                "required": [
+                  "error"
+                ]
+              },
+              {
+                "required": [
+                  "lower_error"
+                ]
+              },
+              {
+                "required": [
+                  "upper_error"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "value": {
+          "description": "Reported point value.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "error": {
+          "description": "Reported symmetric error.",
+          "minLength": 1,
+          "title": "Error",
+          "type": "string"
+        },
+        "lower_error": {
+          "description": "Reported lower error, preserving its original sign.",
+          "minLength": 1,
+          "title": "Lower Error",
+          "type": "string"
+        },
+        "upper_error": {
+          "description": "Reported upper error, preserving its original sign.",
+          "minLength": 1,
+          "title": "Upper Error",
+          "type": "string"
+        },
+        "lower_bound": {
+          "description": "Reported lower limit or interval endpoint.",
+          "minLength": 1,
+          "title": "Lower Bound",
+          "type": "string"
+        },
+        "upper_bound": {
+          "description": "Reported upper limit or interval endpoint.",
+          "minLength": 1,
+          "title": "Upper Bound",
+          "type": "string"
+        },
+        "lower_inclusive": {
+          "description": "Whether the reported lower bound is included.",
+          "title": "Lower Inclusive",
+          "type": "boolean"
+        },
+        "upper_inclusive": {
+          "description": "Whether the reported upper bound is included.",
+          "title": "Upper Inclusive",
+          "type": "boolean"
+        },
+        "unit": {
+          "description": "Unit, when applicable.",
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "condition": {
+          "description": "Relevant method, model, reference frame, or statistical meaning.",
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this value and its context.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evidence"
+      ],
+      "title": "LiteratureValue",
+      "type": "object"
+    },
+    "QuantityData": {
+      "additionalProperties": false,
+      "properties": {
+        "source_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "material_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "roster_ref": {
+          "$ref": "#/$defs/RecordRef"
+        },
+        "source_index": {
+          "minimum": 0,
+          "title": "Source Index",
+          "type": "integer"
+        },
+        "response_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_round": {
+          "anyOf": [
+            {
+              "maximum": 2,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Round"
+        },
+        "fallback": {
+          "title": "Fallback",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "quantities": {
+          "items": {
+            "$ref": "#/$defs/LiteratureQuantity"
+          },
+          "title": "Quantities",
+          "type": "array"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Notes"
+        },
+        "source_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Paths",
+          "type": "array"
+        },
+        "rejected": {
+          "additionalProperties": {
+            "items": {
+              "$ref": "#/$defs/RosterIssue"
+            },
+            "type": "array"
+          },
+          "title": "Rejected",
+          "type": "object"
+        },
+        "issues": {
+          "items": {
+            "$ref": "#/$defs/RosterIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_ref",
+        "material_ref",
+        "roster_ref",
+        "source_index",
+        "response_ref",
+        "source_round",
+        "fallback",
+        "status",
+        "quantities",
+        "notes",
+        "source_paths",
+        "rejected",
+        "issues"
+      ],
+      "title": "QuantityData",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "RosterIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "message"
+      ],
+      "title": "RosterIssue",
+      "type": "object"
+    },
+    "SchemaTag": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "SchemaTag",
+      "type": "object"
+    },
+    "TextEvidence": {
+      "additionalProperties": false,
+      "description": "An exact excerpt from one supplied text block.",
+      "properties": {
+        "location": {
+          "description": "Complete text location, such as T:p3-b5.",
+          "pattern": "^T:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "description": "Unchanged excerpt from this text block.",
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "quote"
+      ],
+      "title": "TextEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "$ref": "#/$defs/SchemaTag"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "execution_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Execution Id"
+    },
+    "data": {
+      "$ref": "#/$defs/QuantityData"
+    }
+  },
+  "required": [
+    "schema",
+    "record_id",
+    "revision",
+    "created_at",
+    "execution_id",
+    "data"
+  ],
+  "title": "QuantityRecord",
+  "type": "object"
+}

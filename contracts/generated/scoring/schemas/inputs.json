@@ -1,0 +1,1111 @@
+{
+  "$defs": {
+    "GoldAnnotation": {
+      "additionalProperties": false,
+      "description": "One complete reference answer bound to one original PDF and science rules.\n\nReview status is established by the repository workflow, not by a JSON flag.",
+      "properties": {
+        "metadata": {
+          "$ref": "#/$defs/GoldMetadata"
+        },
+        "stars": {
+          "items": {
+            "$ref": "#/$defs/PdfStar"
+          },
+          "title": "Stars",
+          "type": "array"
+        },
+        "notes": {
+          "description": "Brief notes about relevant exclusions, suspected errors, ambiguities, and handling decisions with their basis. Put the roster note first. Follow it with quantity notes in saved roster order. Prefix each quantity note with that star's first identifier and ': '. Omit empty notes. Use an empty array when no note is necessary. Notes do not replace field evidence.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "metadata",
+        "stars",
+        "notes"
+      ],
+      "title": "GoldAnnotation",
+      "type": "object"
+    },
+    "GoldMaterial": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "const": "paper.pdf",
+          "default": "paper.pdf",
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha256"
+      ],
+      "title": "GoldMaterial",
+      "type": "object"
+    },
+    "GoldMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "arxiv_id": {
+          "description": "Bare arXiv identifier, without a version suffix.",
+          "pattern": "^(?:[0-9]{4}\\.[0-9]{4,5}|[a-zA-Z-]+(?:\\.[A-Z]{2})?/[0-9]{7})$",
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "version": {
+          "description": "arXiv paper version, such as v1; not a format version.",
+          "pattern": "^v[1-9][0-9]*$",
+          "title": "Version",
+          "type": "string"
+        },
+        "title": {
+          "description": "Paper title.",
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "authors": {
+          "description": "Paper authors in reported order.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        },
+        "format": {
+          "const": "hvs.gold-annotation",
+          "default": "hvs.gold-annotation",
+          "title": "Format",
+          "type": "string"
+        },
+        "format_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Format Version",
+          "type": "integer"
+        },
+        "rules": {
+          "$ref": "#/$defs/GoldRules"
+        },
+        "material": {
+          "$ref": "#/$defs/GoldMaterial"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "version",
+        "title",
+        "authors",
+        "rules",
+        "material"
+      ],
+      "title": "GoldMetadata",
+      "type": "object"
+    },
+    "GoldRules": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "sha256"
+      ],
+      "title": "GoldRules",
+      "type": "object"
+    },
+    "ImageEvidence": {
+      "additionalProperties": false,
+      "description": "A supplied image location without a text transcription.",
+      "properties": {
+        "location": {
+          "description": "Complete image location, such as I:p5-b6.",
+          "pattern": "^I:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location"
+      ],
+      "title": "ImageEvidence",
+      "type": "object"
+    },
+    "LiteratureContribution": {
+      "additionalProperties": false,
+      "description": "The complete literature_contribution.json scientific document.",
+      "properties": {
+        "metadata": {
+          "$ref": "#/$defs/LiteratureMetadata"
+        },
+        "stars": {
+          "description": "Contributions to individual stars; may be empty.",
+          "items": {
+            "$ref": "#/$defs/LiteratureStar"
+          },
+          "title": "Stars",
+          "type": "array"
+        },
+        "notes": {
+          "description": "Brief notes about relevant exclusions, suspected errors, ambiguities, and handling decisions with their basis. Put the roster note first. Follow it with quantity notes in saved roster order. Prefix each quantity note with that star's first identifier and ': '. Omit empty notes. Use an empty array when no note is necessary. Notes do not replace field evidence.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "metadata",
+        "stars",
+        "notes"
+      ],
+      "title": "LiteratureContribution",
+      "type": "object"
+    },
+    "LiteratureContributionType": {
+      "additionalProperties": false,
+      "description": "The paper's contribution to this star.",
+      "properties": {
+        "value": {
+          "description": "Contribution category. Scientific inclusion rules are separate.",
+          "enum": [
+            "candidates_found",
+            "follow_up"
+          ],
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this contribution type.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "LiteratureContributionType",
+      "type": "object"
+    },
+    "LiteratureIdentifier": {
+      "additionalProperties": false,
+      "description": "One reported identifier and its supporting evidence.",
+      "properties": {
+        "value": {
+          "description": "Star identifier.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this identifier.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "LiteratureIdentifier",
+      "type": "object"
+    },
+    "LiteratureMetadata": {
+      "additionalProperties": false,
+      "description": "Bibliographic identity of the fixed paper version.",
+      "properties": {
+        "arxiv_id": {
+          "description": "Bare arXiv identifier, without a version suffix.",
+          "pattern": "^(?:[0-9]{4}\\.[0-9]{4,5}|[a-zA-Z-]+(?:\\.[A-Z]{2})?/[0-9]{7})$",
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "version": {
+          "description": "arXiv paper version, such as v1; not a format version.",
+          "pattern": "^v[1-9][0-9]*$",
+          "title": "Version",
+          "type": "string"
+        },
+        "title": {
+          "description": "Paper title.",
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "authors": {
+          "description": "Paper authors in reported order.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "version",
+        "title",
+        "authors"
+      ],
+      "title": "LiteratureMetadata",
+      "type": "object"
+    },
+    "LiteratureQuantity": {
+      "additionalProperties": false,
+      "description": "Reported values grouped by one existing physical quantity identifier.",
+      "properties": {
+        "quantity": {
+          "description": "Short quantity identifier from the existing science definitions.",
+          "enum": [
+            "ra",
+            "dec",
+            "distance",
+            "parallax",
+            "proper_motion_ra",
+            "proper_motion_dec",
+            "radial_velocity",
+            "galactocentric_radius",
+            "galactic_rest_frame_velocity",
+            "bound_probability",
+            "unbound_probability"
+          ],
+          "title": "Quantity",
+          "type": "string"
+        },
+        "values": {
+          "description": "Reported values, each with its own evidence.",
+          "items": {
+            "$ref": "#/$defs/LiteratureValue"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "values"
+      ],
+      "title": "LiteratureQuantity",
+      "type": "object"
+    },
+    "LiteratureStar": {
+      "additionalProperties": false,
+      "description": "This paper's contribution to one star; cross-paper association is separate.",
+      "properties": {
+        "identifiers": {
+          "description": "Identifiers with individual evidence.",
+          "items": {
+            "$ref": "#/$defs/LiteratureIdentifier"
+          },
+          "minItems": 1,
+          "title": "Identifiers",
+          "type": "array"
+        },
+        "contribution_type": {
+          "$ref": "#/$defs/LiteratureContributionType"
+        },
+        "quantities": {
+          "description": "Retained quantities; may be empty if no values are retained.",
+          "items": {
+            "$ref": "#/$defs/LiteratureQuantity"
+          },
+          "title": "Quantities",
+          "type": "array"
+        }
+      },
+      "required": [
+        "identifiers",
+        "contribution_type",
+        "quantities"
+      ],
+      "title": "LiteratureStar",
+      "type": "object"
+    },
+    "LiteratureValue": {
+      "additionalProperties": false,
+      "dependentRequired": {
+        "lower_inclusive": [
+          "lower_bound"
+        ],
+        "upper_inclusive": [
+          "upper_bound"
+        ]
+      },
+      "description": "One point value, one-sided limit, or pure interval with local evidence.",
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "lower_error"
+            ]
+          },
+          {
+            "required": [
+              "upper_error"
+            ]
+          }
+        ],
+        "required": [
+          "error"
+        ]
+      },
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "lower_bound"
+                ]
+              },
+              {
+                "required": [
+                  "upper_bound"
+                ]
+              }
+            ]
+          },
+          "required": [
+            "value"
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "required": [
+                "lower_bound"
+              ]
+            },
+            {
+              "required": [
+                "upper_bound"
+              ]
+            }
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "value"
+                ]
+              },
+              {
+                "required": [
+                  "error"
+                ]
+              },
+              {
+                "required": [
+                  "lower_error"
+                ]
+              },
+              {
+                "required": [
+                  "upper_error"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "value": {
+          "description": "Reported point value.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "error": {
+          "description": "Reported symmetric error.",
+          "minLength": 1,
+          "title": "Error",
+          "type": "string"
+        },
+        "lower_error": {
+          "description": "Reported lower error, preserving its original sign.",
+          "minLength": 1,
+          "title": "Lower Error",
+          "type": "string"
+        },
+        "upper_error": {
+          "description": "Reported upper error, preserving its original sign.",
+          "minLength": 1,
+          "title": "Upper Error",
+          "type": "string"
+        },
+        "lower_bound": {
+          "description": "Reported lower limit or interval endpoint.",
+          "minLength": 1,
+          "title": "Lower Bound",
+          "type": "string"
+        },
+        "upper_bound": {
+          "description": "Reported upper limit or interval endpoint.",
+          "minLength": 1,
+          "title": "Upper Bound",
+          "type": "string"
+        },
+        "lower_inclusive": {
+          "description": "Whether the reported lower bound is included.",
+          "title": "Lower Inclusive",
+          "type": "boolean"
+        },
+        "upper_inclusive": {
+          "description": "Whether the reported upper bound is included.",
+          "title": "Upper Inclusive",
+          "type": "boolean"
+        },
+        "unit": {
+          "description": "Unit, when applicable.",
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "condition": {
+          "description": "Relevant method, model, reference frame, or statistical meaning.",
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this value and its context.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evidence"
+      ],
+      "title": "LiteratureValue",
+      "type": "object"
+    },
+    "MaterialBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "files": {
+          "items": {
+            "$ref": "#/$defs/MaterialFile"
+          },
+          "minItems": 1,
+          "title": "Files",
+          "type": "array"
+        },
+        "material_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Material Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "files",
+        "material_sha256"
+      ],
+      "title": "MaterialBinding",
+      "type": "object"
+    },
+    "MaterialFile": {
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "enum": [
+            "pdf",
+            "supplement"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "sha256"
+      ],
+      "title": "MaterialFile",
+      "type": "object"
+    },
+    "PdfContributionType": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "description": "Contribution category. Scientific inclusion rules are separate.",
+          "enum": [
+            "candidates_found",
+            "follow_up"
+          ],
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/PdfEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "PdfContributionType",
+      "type": "object"
+    },
+    "PdfEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "page": {
+          "description": "One-based file page ordinal, not printed page number.",
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "location": {
+          "description": "Visible table, section, object row or other precise location.",
+          "minLength": 1,
+          "title": "Location",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "location"
+      ],
+      "title": "PdfEvidence",
+      "type": "object"
+    },
+    "PdfIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "description": "Star identifier.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/PdfEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "PdfIdentifier",
+      "type": "object"
+    },
+    "PdfQuantity": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "description": "Short quantity identifier from the existing science definitions.",
+          "enum": [
+            "ra",
+            "dec",
+            "distance",
+            "parallax",
+            "proper_motion_ra",
+            "proper_motion_dec",
+            "radial_velocity",
+            "galactocentric_radius",
+            "galactic_rest_frame_velocity",
+            "bound_probability",
+            "unbound_probability"
+          ],
+          "title": "Quantity",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/PdfValue"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "values"
+      ],
+      "title": "PdfQuantity",
+      "type": "object"
+    },
+    "PdfStar": {
+      "additionalProperties": false,
+      "properties": {
+        "identifiers": {
+          "items": {
+            "$ref": "#/$defs/PdfIdentifier"
+          },
+          "minItems": 1,
+          "title": "Identifiers",
+          "type": "array"
+        },
+        "contribution_type": {
+          "$ref": "#/$defs/PdfContributionType"
+        },
+        "quantities": {
+          "items": {
+            "$ref": "#/$defs/PdfQuantity"
+          },
+          "title": "Quantities",
+          "type": "array"
+        }
+      },
+      "required": [
+        "identifiers",
+        "contribution_type",
+        "quantities"
+      ],
+      "title": "PdfStar",
+      "type": "object"
+    },
+    "PdfValue": {
+      "additionalProperties": false,
+      "dependentRequired": {
+        "lower_inclusive": [
+          "lower_bound"
+        ],
+        "upper_inclusive": [
+          "upper_bound"
+        ]
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "lower_error"
+            ]
+          },
+          {
+            "required": [
+              "upper_error"
+            ]
+          }
+        ],
+        "required": [
+          "error"
+        ]
+      },
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "lower_bound"
+                ]
+              },
+              {
+                "required": [
+                  "upper_bound"
+                ]
+              }
+            ]
+          },
+          "required": [
+            "value"
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "required": [
+                "lower_bound"
+              ]
+            },
+            {
+              "required": [
+                "upper_bound"
+              ]
+            }
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "value"
+                ]
+              },
+              {
+                "required": [
+                  "error"
+                ]
+              },
+              {
+                "required": [
+                  "lower_error"
+                ]
+              },
+              {
+                "required": [
+                  "upper_error"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "value": {
+          "description": "Reported point value.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "error": {
+          "description": "Reported symmetric error.",
+          "minLength": 1,
+          "title": "Error",
+          "type": "string"
+        },
+        "lower_error": {
+          "description": "Reported lower error, preserving its original sign.",
+          "minLength": 1,
+          "title": "Lower Error",
+          "type": "string"
+        },
+        "upper_error": {
+          "description": "Reported upper error, preserving its original sign.",
+          "minLength": 1,
+          "title": "Upper Error",
+          "type": "string"
+        },
+        "lower_bound": {
+          "description": "Reported lower limit or interval endpoint.",
+          "minLength": 1,
+          "title": "Lower Bound",
+          "type": "string"
+        },
+        "upper_bound": {
+          "description": "Reported upper limit or interval endpoint.",
+          "minLength": 1,
+          "title": "Upper Bound",
+          "type": "string"
+        },
+        "lower_inclusive": {
+          "description": "Whether the reported lower bound is included.",
+          "title": "Lower Inclusive",
+          "type": "boolean"
+        },
+        "upper_inclusive": {
+          "description": "Whether the reported upper bound is included.",
+          "title": "Upper Inclusive",
+          "type": "boolean"
+        },
+        "unit": {
+          "description": "Unit, when applicable.",
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "condition": {
+          "description": "Relevant method, model, reference frame, or statistical meaning.",
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/PdfEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evidence"
+      ],
+      "title": "PdfValue",
+      "type": "object"
+    },
+    "Prediction": {
+      "additionalProperties": false,
+      "description": "Retained stage content is independent of delivery of a final science file.",
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/LiteratureContribution"
+        },
+        "rules": {
+          "$ref": "#/$defs/GoldRules"
+        },
+        "materials": {
+          "$ref": "#/$defs/MaterialBinding"
+        },
+        "scope": {
+          "enum": [
+            "full",
+            "roster"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "delivered": {
+          "title": "Delivered",
+          "type": "boolean"
+        },
+        "format_valid": {
+          "title": "Format Valid",
+          "type": "boolean"
+        },
+        "completion": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed",
+            "unfinished"
+          ],
+          "title": "Completion",
+          "type": "string"
+        },
+        "execution_state": {
+          "title": "Execution State",
+          "type": "string"
+        },
+        "errors": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "evidence_checks": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Evidence Checks",
+          "type": "object"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        }
+      },
+      "required": [
+        "content",
+        "rules",
+        "materials",
+        "scope",
+        "delivered",
+        "format_valid",
+        "completion",
+        "execution_state"
+      ],
+      "title": "Prediction",
+      "type": "object"
+    },
+    "ScoringPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "hvs.scoring-plan",
+          "default": "hvs.scoring-plan",
+          "title": "Format",
+          "type": "string"
+        },
+        "version": {
+          "const": 1,
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "papers": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Papers",
+          "type": "array"
+        },
+        "scope": {
+          "default": "full",
+          "enum": [
+            "full",
+            "roster"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "quantities": {
+          "items": {
+            "enum": [
+              "ra",
+              "dec",
+              "distance",
+              "parallax",
+              "proper_motion_ra",
+              "proper_motion_dec",
+              "radial_velocity",
+              "galactocentric_radius",
+              "galactic_rest_frame_velocity",
+              "bound_probability",
+              "unbound_probability"
+            ],
+            "type": "string"
+          },
+          "title": "Quantities",
+          "type": "array"
+        },
+        "rules": {
+          "$ref": "#/$defs/GoldRules"
+        },
+        "scheme": {
+          "$ref": "#/$defs/GoldRules"
+        },
+        "program": {
+          "$ref": "#/$defs/GoldRules"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        }
+      },
+      "required": [
+        "papers",
+        "program"
+      ],
+      "title": "ScoringPlan",
+      "type": "object"
+    },
+    "TextEvidence": {
+      "additionalProperties": false,
+      "description": "An exact excerpt from one supplied text block.",
+      "properties": {
+        "location": {
+          "description": "Complete text location, such as T:p3-b5.",
+          "pattern": "^T:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "description": "Unchanged excerpt from this text block.",
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "quote"
+      ],
+      "title": "TextEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "hvs.scoring-inputs",
+      "default": "hvs.scoring-inputs",
+      "title": "Format",
+      "type": "string"
+    },
+    "version": {
+      "const": 4,
+      "default": 4,
+      "title": "Version",
+      "type": "integer"
+    },
+    "plan": {
+      "$ref": "#/$defs/ScoringPlan"
+    },
+    "gold": {
+      "items": {
+        "$ref": "#/$defs/GoldAnnotation"
+      },
+      "title": "Gold",
+      "type": "array"
+    },
+    "predictions": {
+      "items": {
+        "$ref": "#/$defs/Prediction"
+      },
+      "title": "Predictions",
+      "type": "array"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "plan",
+    "gold",
+    "predictions",
+    "sha256"
+  ],
+  "title": "ScoringBundle",
+  "type": "object"
+}

@@ -1,0 +1,359 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "RunStages": {
+      "additionalProperties": false,
+      "properties": {
+        "roster": {
+          "$ref": "#/$defs/StageSummary"
+        },
+        "quantities": {
+          "items": {
+            "$ref": "#/$defs/StageSummary"
+          },
+          "title": "Quantities",
+          "type": "array"
+        }
+      },
+      "required": [
+        "roster",
+        "quantities"
+      ],
+      "title": "RunStages",
+      "type": "object"
+    },
+    "RunStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "execution": {
+          "title": "Execution",
+          "type": "string"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "enum": [
+                "complete",
+                "partial",
+                "failed"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Result"
+        },
+        "resumable": {
+          "title": "Resumable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "execution",
+        "result",
+        "resumable"
+      ],
+      "title": "RunStatus",
+      "type": "object"
+    },
+    "RunTimestamps": {
+      "additionalProperties": false,
+      "properties": {
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Started At"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Finished At"
+        }
+      },
+      "required": [
+        "started_at",
+        "finished_at"
+      ],
+      "title": "RunTimestamps",
+      "type": "object"
+    },
+    "RunUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "attempts": {
+          "minimum": 0,
+          "title": "Attempts",
+          "type": "integer"
+        },
+        "known_tokens": {
+          "minimum": 0,
+          "title": "Known Tokens",
+          "type": "integer"
+        },
+        "total_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Total Tokens"
+        }
+      },
+      "required": [
+        "attempts",
+        "known_tokens",
+        "total_tokens"
+      ],
+      "title": "RunUsage",
+      "type": "object"
+    },
+    "StageSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "title": "State",
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "enum": [
+                "complete",
+                "partial",
+                "failed"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Status"
+        },
+        "snapshot_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecordRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_execution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Execution"
+        },
+        "rounds_completed": {
+          "minimum": 0,
+          "title": "Rounds Completed",
+          "type": "integer"
+        },
+        "source_round": {
+          "anyOf": [
+            {
+              "maximum": 2,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Round"
+        },
+        "fallback": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fallback"
+        },
+        "notes_available": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Notes Available"
+        },
+        "source_index": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Index"
+        }
+      },
+      "required": [
+        "state",
+        "status",
+        "snapshot_ref",
+        "source_execution",
+        "rounds_completed",
+        "source_round",
+        "fallback",
+        "notes_available"
+      ],
+      "title": "StageSummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "hvs.extraction-run",
+      "default": "hvs.extraction-run",
+      "title": "Format",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "execution_id": {
+      "title": "Execution Id",
+      "type": "string"
+    },
+    "scope": {
+      "enum": [
+        "full",
+        "roster"
+      ],
+      "title": "Scope",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/RunStatus"
+    },
+    "timestamps": {
+      "$ref": "#/$defs/RunTimestamps"
+    },
+    "input_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "stages": {
+      "$ref": "#/$defs/RunStages"
+    },
+    "usage": {
+      "$ref": "#/$defs/RunUsage"
+    },
+    "errors": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Errors",
+      "type": "array"
+    },
+    "trace_ref": {
+      "$ref": "#/$defs/ArtifactRef"
+    },
+    "result_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "execution_id",
+    "scope",
+    "status",
+    "timestamps",
+    "input_ref",
+    "stages",
+    "usage",
+    "errors",
+    "trace_ref",
+    "result_ref"
+  ],
+  "title": "ExtractionRun",
+  "type": "object"
+}
