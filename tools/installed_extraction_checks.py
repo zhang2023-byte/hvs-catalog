@@ -34,7 +34,7 @@ class Handler(BaseHTTPRequestHandler):
         request=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
         seen.append(request)
         name=request['tools'][0]['function']['name']
-        result=({**payload,'notes':None} if len(seen)<3 else payload) if name=='submit_roster' else {'quantities':[{'quantity':'radial_velocity','values':[{'value':'520','evidence':ev}]}],'notes':'Numerical note.'}
+        result=({**payload,'notes':None} if len(seen)<3 else payload) if name=='submit_roster' else {'quantities':[{'quantity':'radial_velocity','values':[{'value':'520','evidence':[{'location':'T:p1-b0','quote':'Installed warning quote'}]}]}],'notes':'Numerical note.'}
         delta={'reasoning_content':'Installed synthetic reasoning.','tool_calls':[{'index':0,'id':f'call-{len(seen)}','function':{'name':name,'arguments':json.dumps(result)}}]}
         frame={'id':'wheel-call','choices':[{'index':0,'delta':delta,'finish_reason':'tool_calls'}],'usage':{'total_tokens':10}}
         raw=('data: '+json.dumps(frame)+'\n\n').replace('\\n','\n').encode()
@@ -100,9 +100,8 @@ resume_extraction(space,eid,service=CallService(stored_configuration(get_executi
     assert seen[2]['messages'][2]['reasoning_content']=='Installed synthetic reasoning.'
     assert seen[2]['messages'][5]['reasoning_content']=='Installed synthetic reasoning.'
     feedback=json.loads(seen[1]['messages'][3]['content'])
-    assert feedback['argument_root']=={'type':'object','required':['stars','notes']}
-    assert feedback['errors'][0]['scope']=='tool_arguments'
-    assert feedback['errors'][0]['path']=='/notes'
+    assert feedback['errors']==[{'kind':'schema','path':'/notes','rule':'type','constraint':'string'}]
+    assert 'stars and notes' in seen[1]['messages'][4]['content']
     assert 'END LOCATION T:p1-b0' in seen[0]['messages'][1]['content']
     assert saved_roster(space,handle.execution_id).data.stars[0].model_dump()==payload['stars'][0]
     from hvs_catalog.pipeline.results import current_result
@@ -111,6 +110,11 @@ resume_extraction(space,eid,service=CallService(stored_configuration(get_executi
     assert science['notes']==['SYN-A: Numerical note.']
     assert science['stars'][0]['quantities'][0]['values'][0]['value']=='520'
     assert manifest.usage.attempts==4
+    audit=json.loads(space.read_file(manifest.evidence_audit_ref))
+    assert audit['metadata']['result_ref']==manifest.result_ref.model_dump()
+    assert len(audit['quote_mismatches'])==1
+    assert audit['quote_mismatches'][0]['quote']=='Installed warning quote'
+    assert audit['quote_mismatches'][0]['reason']=='unknown'
     targets=roster_targets(space,handle.execution_id)
     assert targets['targets'][0]['identifiers']==['SYN-A','SYN-001']
     backup_workspace(space,root/'backup');restore_workspace(root/'backup',root/'restored')

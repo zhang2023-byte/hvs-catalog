@@ -8,6 +8,106 @@ from .errors import WorkspaceIntegrityError
 PREFIX = "retained_result:"
 
 
+def discard_literature_extractions(space, *, expected_execution_ids):
+    """Discard explicitly selected extraction state, preserving all preparation history.
+
+    This reset requires the complete current extraction set and an idle workspace.
+    It does not rename executions, change materials, or restart any model calls.
+    """
+    import shutil
+
+    from langgraph.checkpoint.sqlite import SqliteSaver
+
+    from ..records.validate import validate_collection
+    from .backup import _referenced_files
+    from .layout import resolve_within
+
+    expected = set(expected_execution_ids)
+    if space.read_only or not space.is_literature or not expected:
+        raise ValueError(
+            "Provide a writable literature workspace and explicit executions."
+        )
+    with space.lock():
+        executions = space.store().list_executions()
+        actual = {e.execution_id for e in executions if e.flow_id == "hvs-extraction"}
+        if actual != expected:
+            raise ValueError(
+                "The explicit selection must match all current extractions."
+            )
+        records = space.store().list_records()
+        kept = [r for r in records if r.execution_id not in expected]
+        validate_collection(kept, space.root)
+        before = set(_referenced_files(space))
+        directories = [
+            f"{prefix}/{execution}"
+            for execution in sorted(expected)
+            for prefix in ("runs", ".state/executions")
+        ]
+        for directory in directories:
+            resolve_within(space.root, directory)
+        conn = space.checkpoint_connection()
+        try:
+            saver = SqliteSaver(conn)
+            saver.setup()
+            for execution in sorted(expected):
+                saver.delete_thread(execution)
+        finally:
+            conn.close()
+        with space.store().transaction() as tx:
+            for execution in sorted(expected):
+                owned = [
+                    r[0]
+                    for r in tx.conn.execute(
+                        "SELECT DISTINCT record_id FROM records WHERE execution_id=?",
+                        (execution,),
+                    )
+                ]
+                for record_id in owned:
+                    tx.conn.execute(
+                        "DELETE FROM current_revisions WHERE record_id=?", (record_id,)
+                    )
+                    tx.conn.execute(
+                        "DELETE FROM records WHERE record_id=?", (record_id,)
+                    )
+                for table in ("receipts", "step_results", "questions", "executions"):
+                    tx.conn.execute(
+                        f"DELETE FROM {table} WHERE execution_id=?", (execution,)
+                    )
+                for prefix in (
+                    "extraction_result:",
+                    "retained_result:",
+                    "framework_final_checkpoint:",
+                ):
+                    tx.conn.execute(
+                        "DELETE FROM meta WHERE key=?", (prefix + execution,)
+                    )
+        after = set(_referenced_files(space))
+        if any(
+            path.startswith(directory + "/")
+            for path in after
+            for directory in directories
+        ):
+            raise WorkspaceIntegrityError(
+                "A retained execution still references extraction files."
+            )
+        removed = 0
+        for relative in sorted(before - after):
+            if relative.startswith(("runs/", ".state/inputs/", ".state/executions/")):
+                path = resolve_within(space.root, relative)
+                if path.is_file():
+                    path.unlink()
+                    removed += 1
+        for directory in directories:
+            path = resolve_within(space.root, directory)
+            if path.is_dir():
+                shutil.rmtree(path)
+        return {
+            "discarded_executions": len(expected),
+            "retained_records": len(kept),
+            "removed_referenced_files": removed,
+        }
+
+
 def require_resumable(space, execution_id):
     if space.store().get_meta(PREFIX + execution_id) is not None:
         raise ValueError("执行已明确结束；请以新请求键创建新实验")

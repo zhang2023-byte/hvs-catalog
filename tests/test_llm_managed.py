@@ -42,7 +42,13 @@ def run_call(
 
 @pytest.mark.parametrize(
     "model",
-    ["deepseek-v4.1-flash", "glm-5.3-flash", "mimo-v2.6-flash", "qwen3.8-flash"],
+    [
+        "deepseek-v4.1-flash",
+        "deepseek-v4.1-flash-1017",
+        "glm-5.3-flash",
+        "mimo-v2.6-flash",
+        "qwen3.8-flash",
+    ],
 )
 def test_stream_tools_usage_and_completed_resume(tmp_path, model):
     with endpoint() as (url, seen, _):

@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from .common import ArtifactRef, Config, Record, RecordRef
+from .evidence_audit import EvidencePolicy
 from .roster_input import RosterStar
 
 
@@ -14,6 +15,9 @@ class RosterIssue(Config):
 
 
 class RosterData(Config):
+    evidence_policy: EvidencePolicy | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     source_ref: RecordRef
     material_ref: ArtifactRef
     response_ref: ArtifactRef | None

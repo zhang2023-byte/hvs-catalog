@@ -32,6 +32,12 @@ class Api:
     def download_pdf(self, *args):
         raise AssertionError('discovery must not download')
 cli._build_service = lambda space: PreparationBatchService(space, api=Api())
+init = ['prepare', 'init', '--space', 'literature', '--batch', 'planned', '--from', '2018-04-25', '--to', '2026-04-30']
+for term in ('hypervelocity star', 'high velocity star', 'unbound star'):
+    init.extend(['--term', term])
+assert main(init) == 0
+assert {p.name for p in Path('literature').iterdir()} == {'papers', 'runs', 'reports', '.state'}
+assert not list(Path('literature/papers').iterdir())
 args = ['prepare','discover','--space','batch-space','--batch','installed','--output','batch-reports','--init','--from','2018-04-25','--to','2018-04-30']
 for term in ('hypervelocity stars','high velocity stars','unbound stars'):
     args.extend(['--term',term])

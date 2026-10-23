@@ -133,6 +133,19 @@
     "RosterData": {
       "additionalProperties": false,
       "properties": {
+        "evidence_policy": {
+          "anyOf": [
+            {
+              "const": "quote_warning_v1",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Policy"
+        },
         "source_ref": {
           "$ref": "#/$defs/RecordRef"
         },
@@ -299,7 +312,7 @@
     },
     "TextEvidence": {
       "additionalProperties": false,
-      "description": "An exact excerpt from one supplied text block.",
+      "description": "An evidence excerpt attributed to one supplied text block.",
       "properties": {
         "location": {
           "description": "Complete text location, such as T:p3-b5.",
@@ -308,7 +321,7 @@
           "type": "string"
         },
         "quote": {
-          "description": "Unchanged excerpt from this text block.",
+          "description": "Faithful excerpt from this text block.",
           "minLength": 1,
           "title": "Quote",
           "type": "string"

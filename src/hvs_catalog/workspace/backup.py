@@ -383,7 +383,7 @@ def backup_workspace(space: Workspace, target: Path) -> BackupReport:
                     }
                 )
             paths = _referenced_files(space)
-            if space.identity.format_version == 2:
+            if space.identity.format_version in {2, 3}:
                 state_files = {
                     space.state_root / name
                     for name in (
@@ -528,7 +528,9 @@ def restore_workspace(backup_dir: Path, target: Path) -> Workspace:
             shutil.copyfile(source, dest)
 
         state = (
-            staging / ".state" if manifest["space"]["format_version"] == 2 else staging
+            staging / ".state"
+            if manifest["space"]["format_version"] in {2, 3}
+            else staging
         )
         for db_name in (BUSINESS_DB, CHECKPOINT_DB):
             conn = sqlite3.connect(f"file:{state / db_name}?mode=ro", uri=True)
@@ -553,6 +555,9 @@ def restore_workspace(backup_dir: Path, target: Path) -> Workspace:
                 )
         finally:
             restored.close()
+        if manifest["space"]["format_version"] == 3:
+            for name in ("papers", "runs", "reports"):
+                (staging / name).mkdir(exist_ok=True)
         os.replace(staging, target)
         _fsync_dir(parent)
     except BaseException:

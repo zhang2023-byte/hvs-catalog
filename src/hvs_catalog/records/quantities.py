@@ -5,11 +5,15 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from .common import ArtifactRef, Config, Record, RecordRef
+from .evidence_audit import EvidencePolicy
 from .literature_contribution import LiteratureQuantity
 from .roster import RosterIssue
 
 
 class QuantityData(Config):
+    evidence_policy: EvidencePolicy | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     source_ref: RecordRef
     material_ref: ArtifactRef
     roster_ref: RecordRef

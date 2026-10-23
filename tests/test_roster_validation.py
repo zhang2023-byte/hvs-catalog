@@ -171,7 +171,8 @@ def test_partial_protocol_history_answers_each_associable_tool_call(content):
     history = correction_messages(prior, checked.issues)
     assert [m.role for m in history] == ["assistant", "tool", "user"]
     assert history[1].tool_call_id == "original-call"
-    assert '"errors"' in history[2].content
+    assert '"errors"' in history[1].content
+    assert '"errors"' not in history[2].content
     assert '"function"' in history[0].content
 
 

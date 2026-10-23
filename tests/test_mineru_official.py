@@ -99,9 +99,13 @@ def api_server(
     reject_create_count=0,
     fail_poll_once=False,
     waiting=False,
+    reject_upload_once=None,
+    drop_upload_reply_once=None,
+    track_uploads=False,
 ):
     raw = official_zip() if raw is None else raw
     calls, batches = [], {}
+    received, interrupted = set(), set()
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -143,6 +147,19 @@ def api_server(
         def do_PUT(self):
             body = self.rfile.read(int(self.headers["Content-Length"]))
             calls.append(("PUT", self.path, self.headers.get("Authorization"), body))
+            path = self.path.split("?", 1)[0]
+            batch, index = path.split("/")[-2:]
+            index = int(index)
+            if index == reject_upload_once and path not in interrupted:
+                interrupted.add(path)
+                self.reply(b"temporary upload failure", 503)
+                return
+            received.add((batch, index))
+            if index == drop_upload_reply_once and path not in interrupted:
+                interrupted.add(path)
+                self.connection.shutdown(2)
+                self.connection.close()
+                return
             self.reply(b"")
 
         def do_GET(self):
@@ -167,6 +184,7 @@ def api_server(
                                 "data_id": entry["data_id"],
                                 "state": "waiting-file"
                                 if waiting
+                                or (track_uploads and (batch_id, i) not in received)
                                 else "failed"
                                 if i == fail_index
                                 else "done",
@@ -475,3 +493,109 @@ def test_native_image_names_resolve_without_changing_official_bytes():
     assert parsed["preparation_issues"] == []
     assert parsed["blocks"][-1]["image_files"] == ["images/one.png", "images/two.png"]
     assert zipfile.ZipFile(io.BytesIO(raw)).read("layout.json") == payload
+
+
+@pytest.mark.parametrize("received_before_disconnect", [False, True])
+@pytest.mark.parametrize("legacy_upload_state", [False, True])
+def test_upload_failure_isolated_and_resumed_from_remote_state(
+    tmp_path, monkeypatch, received_before_disconnect, legacy_upload_state
+):
+    class PerPaperApi(SyntheticApi):
+        def download_pdf(self, identifier):
+            original = super().download_pdf(identifier)
+            payload = make_pdf(identifier)
+            return replace(original, payload=payload, byte_count=len(payload))
+
+    space, _ = prepared_space(tmp_path)
+    api = PerPaperApi()
+    with api_server(
+        track_uploads=True,
+        reject_upload_once=None if received_before_disconnect else 1,
+        drop_upload_reply_once=1 if received_before_disconnect else None,
+    ) as (url, calls, _):
+        runner = runner_for(space, url, monkeypatch)
+        service = PreparationBatchService(space, api=api, runner=runner)
+        create(service)
+        service.discover("sample")
+        service.download("sample")
+        service.parse("sample")
+        initial = service.get_manifest("sample")
+        assert initial["summary"]["prepared"] == 2
+        failed = next(p for p in initial["papers"] if p["issue"])
+        finished = [p for p in initial["papers"] if not p["issue"]]
+        assert len([c for c in calls if c[0] == "PUT"]) == 3
+        if legacy_upload_state:
+            rows = space.store().transaction_read(
+                lambda tx: tx.conn.execute(
+                    "SELECT key,value FROM meta WHERE key LIKE 'mineru-cloud-batch:%'"
+                ).fetchall()
+            )
+            for key, value in rows:
+                state = json.loads(value)
+                state.pop("upload_confirmed")
+                space.store().set_meta(key, json.dumps(state))
+        service = PreparationBatchService(
+            space, api=api, runner=runner_for(space, url, monkeypatch)
+        )
+        service.parse("sample", identifiers=[failed["arxiv_id"]])
+        after = service.get_manifest("sample")
+        assert after["summary"]["prepared"] == 3
+        assert (
+            next(p for p in after["papers"] if p["arxiv_id"] == failed["arxiv_id"])[
+                "preparation"
+            ]["execution_id"]
+            == failed["preparation"]["execution_id"]
+        )
+        assert [
+            p
+            for p in after["papers"]
+            if p["arxiv_id"] in {f["arxiv_id"] for f in finished}
+        ] == finished
+        assert len([c for c in calls if c[0] == "POST"]) == 1
+        puts = [c for c in calls if c[0] == "PUT"]
+        assert len(puts) == (3 if received_before_disconnect else 4)
+        assert all(p[1].split("?", 1)[0].endswith("/1") for p in puts[3:])
+        assert all(p[2] is None for p in puts)
+    space.close()
+
+
+def test_large_upload_uses_bounded_socket_writes_and_preserves_bytes(
+    tmp_path, monkeypatch
+):
+    from urllib3.connection import HTTPConnection
+
+    space, _ = prepared_space(tmp_path)
+    payload = b"fixed PDF byte stream" * 100000
+    writes = []
+    original = HTTPConnection.send
+
+    def record_send(connection, data):
+        if isinstance(data, (bytes, bytearray)):
+            writes.append(len(data))
+        return original(connection, data)
+
+    monkeypatch.setattr(HTTPConnection, "send", record_send)
+    with api_server() as (url, calls, _):
+        runner_for(space, url, monkeypatch)._transfer(
+            "PUT", url + "/put/probe/0", payload=payload
+        )
+        assert next(c[3] for c in calls if c[0] == "PUT") == payload
+        assert max(writes) <= 65536
+        assert sum(writes) >= len(payload)
+    space.close()
+
+
+def test_transfer_diagnostic_never_exposes_signed_url(tmp_path, monkeypatch):
+    import requests
+
+    space, _ = prepared_space(tmp_path)
+    url = "https://example.invalid/upload?signature=private"
+
+    def fail(*args, **kwargs):
+        raise requests.ConnectionError(url + " token=private-token")
+
+    monkeypatch.setattr(requests, "request", fail)
+    with pytest.raises(MinerUError, match="PUT, ConnectionError") as caught:
+        OfficialMinerU(space)._transfer("PUT", url, payload=b"fixed PDF")
+    assert "signature" not in str(caught.value) and "private" not in str(caught.value)
+    space.close()

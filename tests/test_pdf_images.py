@@ -199,7 +199,13 @@ def test_image_protocol_supports_profiles_and_rejects_local_links(model):
 
 @pytest.mark.integration
 @pytest.mark.parametrize(
-    "model", ["deepseek-v4.1-flash", "glm-5.3-flash", "mimo-v2.6-flash"]
+    "model",
+    [
+        "deepseek-v4.1-flash",
+        "deepseek-v4.1-flash-1017",
+        "glm-5.3-flash",
+        "mimo-v2.6-flash",
+    ],
 )
 def test_image_bytes_reach_http_endpoint(image_space, tmp_path, model):
     space, _, bundle, source = image_space

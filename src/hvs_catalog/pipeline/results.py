@@ -5,11 +5,13 @@ import re
 from pathlib import Path
 
 from ..records.common import ArtifactRef, sha256_of
+from ..records.evidence_audit import uses_quote_warnings
 from ..records.extraction_run import ExtractionRun, StageSummary
 from ..records.literature_contribution import LiteratureContribution
 from ..runtime import get_execution
 from ..workspace.archives import publish_json, read_json
 from ..workspace.store import CommitRequest
+from .evidence_audit import make_audit, retained_mismatches, verify_result_audit
 from .inputs import read_input
 from .roster import saved_roster
 from .stages import quantity_step
@@ -89,9 +91,23 @@ def current_result(space, execution_id):
             != snapshot["sha256"]
         ):
             raise WorkspaceIntegrityError("科学记录与发布结果不一致")
-    read_json(space, value.input_ref)
-    if value.result_ref:
+    document = read_json(space, value.input_ref)
+    science = (
         LiteratureContribution.model_validate_json(space.read_file(value.result_ref))
+        if value.result_ref
+        else None
+    )
+    roster = (
+        space.store().read_record(value.stages.roster.snapshot_ref)
+        if value.stages.roster.snapshot_ref
+        else None
+    )
+    quantities = {
+        stage.source_index: space.store().read_record(stage.snapshot_ref)
+        for stage in value.stages.quantities
+        if stage.snapshot_ref
+    }
+    verify_result_audit(space, value, document, science, roster, quantities)
     return ref, value
 
 
@@ -293,11 +309,16 @@ def publish_result(space, execution_id, *, closed=False, hook=None):
         )
         folder = space.run_path(execution_id, f"results/{generation}")
         refs = [trace_ref]
+        warning_mode = uses_quote_warnings(
+            handle.input_snapshot.options.get("evidence_policy")
+        )
         if science:
             science_folder = space.run_path(
                 execution_id,
                 "results/science/" + sha256_of(science.model_dump(mode="json")),
             )
+            if warning_mode:
+                science_folder = folder
             ref = space.publish_file(
                 science_folder + "/literature_contribution.json",
                 (
@@ -309,7 +330,26 @@ def publish_result(space, execution_id, *, closed=False, hook=None):
             )
             payload["result_ref"] = ref.model_dump()
             refs.append(ref)
+            if warning_mode:
+                from ..llm.prompts import PromptInput
+
+                locations = PromptInput.model_validate(
+                    read_json(
+                        space, ArtifactRef.model_validate(document["material_ref"])
+                    )
+                ).citation_locations
+                mismatches = retained_mismatches(
+                    space, science, roster, quantities, locations
+                )
+                audit = make_audit(science, ref, mismatches)
+                audit_ref = space.publish_file(
+                    folder + "/evidence_audit.json",
+                    (audit.model_dump_json(indent=2) + "\n").encode(),
+                )
+                payload["evidence_audit_ref"] = audit_ref.model_dump()
+                refs.append(audit_ref)
         value = ExtractionRun.model_validate(payload)
+        verify_result_audit(space, value, document, science, roster, quantities)
         ref = space.publish_file(
             folder + "/run.json", (value.model_dump_json(indent=2) + "\n").encode()
         )

@@ -14,9 +14,7 @@ from ..records.common import (
 )
 from ..records.source import SourcePackageRecord
 from ..runtime import get_execution
-from .feedback import submission_feedback
-
-CORRECTION = "Correct the errors in the latest tool result.\nCall submit_roster once with the complete corrected result."
+from .feedback import correction_instruction, submission_feedback
 
 
 def prepared_bundle(
@@ -123,9 +121,7 @@ def start_roster_extraction(
     )
 
 
-def correction_messages(
-    prior, issues, *, tool="submit_roster", locations=None, effective_prior=None
-):
+def correction_messages(prior, issues, *, tool="submit_roster", effective_prior=None):
     """Use real tool call identifiers or preserve an invalid envelope as assistant text."""
     raw_calls = prior.get("tool_calls")
     calls = raw_calls if isinstance(raw_calls, list) else []
@@ -149,7 +145,6 @@ def correction_messages(
             effective_prior if effective_prior is not None else prior,
             issues,
             tool=tool,
-            locations=locations or {},
         )
     )
     reasoning = prior.get("reasoning_content")
@@ -172,15 +167,10 @@ def correction_messages(
     result.extend(
         Message(role="tool", tool_call_id=call.id, content=feedback) for call in parsed
     )
-    correction = (
-        feedback + "\nCorrect the errors in this message.\n"
-        "Call submit_roster once with the complete corrected result."
-        if invalid
-        else CORRECTION
-    )
-    result.append(
-        Message(role="user", content=correction.replace("submit_roster", tool))
-    )
+    correction = correction_instruction(tool)
+    if not parsed:
+        correction = feedback + "\n" + correction
+    result.append(Message(role="user", content=correction))
     return result
 
 

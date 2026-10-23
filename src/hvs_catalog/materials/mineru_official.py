@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import os
 import re
@@ -123,8 +124,10 @@ class OfficialMinerU:
             with requests.request(
                 method,
                 url,
-                data=payload,
-                timeout=(30, 120),
+                # A bytes body becomes one socket write; stream bounded chunks instead.
+                data=io.BytesIO(payload) if payload is not None else None,
+                # The socket keeps this timeout while writing a streamed request body.
+                timeout=(120 if method == "PUT" else 30, 120),
                 allow_redirects=False,
                 stream=True,
             ) as response:
@@ -133,8 +136,11 @@ class OfficialMinerU:
                         f"MinerU file transfer HTTP {response.status_code}"
                     )
                 return self._body(response) if method == "GET" else b""
-        except requests.RequestException:
-            raise MinerUError("MinerU file transfer failed") from None
+        except requests.RequestException as exc:
+            # Exception messages may contain signed URLs; expose only their type.
+            raise MinerUError(
+                f"MinerU file transfer failed ({method}, {type(exc).__name__})"
+            ) from None
 
     def prepare_batch(self, inputs):
         """Respect the cloud's 50-file/minute limit; retain independent paper failures."""
@@ -263,54 +269,58 @@ class OfficialMinerU:
                 uploaded=[],
             )
             save()
-        for index, (path, _) in enumerate(chunk):
-            if index in state["uploaded"]:
-                continue
-            # Mark before PUT: a lost reply must not silently cause a second upload.
-            state["uploaded"].append(index)
+        confirmed = state.setdefault("upload_confirmed", [])
+        uncertain = set(state["uploaded"]) - set(confirmed)
+        if uncertain:
+            # Legacy "uploaded" records mean attempted, not acknowledged. A known
+            # remote task decides whether a missing upload may be sent again.
+            rows = self._batch_rows(state, token)
+            for index in uncertain:
+                if rows[entries[index]["data_id"]]["state"] != "waiting-file":
+                    confirmed.append(index)
             save()
+        for index, (path, _) in enumerate(chunk):
+            if path in self._results or index in confirmed:
+                continue
             payload = path.read_bytes()
             if (
                 hashlib.sha256(payload).hexdigest()
                 != entries[index]["data_id"].rsplit("-", 1)[0]
             ):
                 raise MinerUError("Fixed PDF changed before upload")
-            self._transfer("PUT", state["upload_urls"][index], payload=payload)
+            if index not in state["uploaded"]:
+                state["uploaded"].append(index)
+                save()
+            try:
+                self._transfer("PUT", state["upload_urls"][index], payload=payload)
+            except MinerUError as exc:
+                # One interrupted file must not prevent other uploads or results.
+                self._results[path] = exc
+                continue
+            confirmed.append(index)
+            save()
         if stage_only:
+            return
+        active = [
+            entry["data_id"]
+            for (path, _), entry in zip(chunk, entries, strict=True)
+            if path not in self._results
+        ]
+        if not active:
             return
         deadline = time.monotonic() + self.timeout_seconds
         while True:
-            response = self._api(
-                "GET", "/extract-results/batch/" + state["batch_id"], token
-            )
-            rows = {row["data_id"]: row for row in response.get("extract_result", [])}
-            if (
-                len(response.get("extract_result", [])) != len(entries)
-                or len(rows) != len(entries)
-                or set(rows) != {entry["data_id"] for entry in entries}
-            ):
-                raise MinerUError("MinerU returned inconsistent batch identities")
-            if all(row["state"] in {"done", "failed"} for row in rows.values()):
+            rows = self._batch_rows(state, token)
+            if all(rows[data_id]["state"] in {"done", "failed"} for data_id in active):
                 break
-            if any(
-                row["state"]
-                not in {
-                    "done",
-                    "failed",
-                    "waiting-file",
-                    "pending",
-                    "running",
-                    "converting",
-                }
-                for row in rows.values()
-            ):
-                raise MinerUError("MinerU returned an unknown state")
             if time.monotonic() >= deadline:
                 raise MinerUError(
                     "MinerU batch polling timed out; resume the saved batch"
                 )
             time.sleep(self.poll_interval)
         for (path, pages), entry in zip(chunk, entries, strict=True):
+            if path in self._results:
+                continue
             row = rows[entry["data_id"]]
             try:
                 if row["state"] == "failed":
@@ -320,24 +330,64 @@ class OfficialMinerU:
                     raw = self.space.read_file(ArtifactRef.model_validate(cache))
                 else:
                     raw = self._transfer("GET", row["full_zip_url"])
-                    ref = self.space.publish_file(
-                        "sources/mineru-cloud/"
-                        + hashlib.sha256(raw).hexdigest()
-                        + ".zip",
-                        raw,
-                    )
-                    state["results"][entry["data_id"]] = ref.model_dump(mode="json")
-                    save()
                 try:
                     parsed = read_result(raw, pages)
-                except (ValueError, KeyError, TypeError, zipfile.BadZipFile) as exc:
+                except (
+                    MinerUError,
+                    ValueError,
+                    KeyError,
+                    TypeError,
+                    zipfile.BadZipFile,
+                ) as exc:
                     raise MinerUError(
                         "Unreadable official MinerU output",
                         artifacts={"mineru.zip": raw},
                     ) from exc
+                if not cache or not (self.space.root / cache["path"]).is_file():
+                    destination = (
+                        self.space.paper_path(path.parent.name, "mineru/result.zip")
+                        if self.space.is_literature
+                        and path.parent.parent == self.space.root / "papers"
+                        and path.name == "paper.pdf"
+                        else "sources/mineru-cloud/"
+                        + hashlib.sha256(raw).hexdigest()
+                        + ".zip"
+                    )
+                    ref = self.space.publish_file(destination, raw)
+                    state.setdefault("results", {})[entry["data_id"]] = ref.model_dump(
+                        mode="json"
+                    )
+                    save()
                 self._results[path] = (raw, parsed)
             except (MinerUError, KeyError) as exc:
                 self._results[path] = exc
+
+    def _batch_rows(self, state, token):
+        response = self._api(
+            "GET", "/extract-results/batch/" + state["batch_id"], token
+        )
+        entries = response.get("extract_result", [])
+        rows = {row["data_id"]: row for row in entries}
+        if (
+            len(entries) != len(state["files"])
+            or len(rows) != len(entries)
+            or set(rows) != {entry["data_id"] for entry in state["files"]}
+        ):
+            raise MinerUError("MinerU returned inconsistent batch identities")
+        if any(
+            row["state"]
+            not in {
+                "done",
+                "failed",
+                "waiting-file",
+                "pending",
+                "running",
+                "converting",
+            }
+            for row in rows.values()
+        ):
+            raise MinerUError("MinerU returned an unknown state")
+        return rows
 
     def parse(self, path, page_count):
         path = Path(path).resolve()

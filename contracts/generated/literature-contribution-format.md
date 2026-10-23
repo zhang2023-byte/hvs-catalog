@@ -34,8 +34,13 @@ The final assembly step must add the prefixes and preserve this order.
   `unit` and `condition` are optional. Put reference frames and relevant
   statistical meanings or confidence levels in `condition`.
 - Each identifier, contribution type, and value has a nonempty `evidence`
-  array. Text evidence contains `location` and an unchanged `quote`.
+  array. Text evidence contains `location` and a faithful `quote`.
   Image evidence contains only `location`. Captions use text locations.
+
+Exact quote mismatches are nonblocking audit observations for new executions.
+The program preserves the submitted quote and records its location, result path, and matching reason.
+Missing locations, unsupplied images, invalid structure, and damaged bindings remain errors.
+An exact match does not authenticate scientific support.
 
 ## Validation and JSON access
 
@@ -149,12 +154,12 @@ One point value, one-sided limit, or pure interval with local evidence.
 
 #### TextEvidence
 
-An exact excerpt from one supplied text block.
+An evidence excerpt attributed to one supplied text block.
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `location` | `string` | yes | pattern `^T:p[1-9][0-9]*-b[0-9]+$` | Complete text location, such as T:p3-b5. |
-| `quote` | `string` | yes | minLength 1 | Unchanged excerpt from this text block. |
+| `quote` | `string` | yes | minLength 1 | Faithful excerpt from this text block. |
 
 #### ImageEvidence
 

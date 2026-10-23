@@ -4,6 +4,7 @@ from pathlib import Path
 
 from ..llm.managed import CallFailure, execute_model_call
 from ..records.common import ArtifactRef, build_record, canonical_json, sha256_of
+from ..records.evidence_audit import uses_quote_warnings
 from ..records.material import supplied_locations
 from ..records.quantities import QuantityData, QuantityRecord
 from ..records.roster import RosterData, RosterIssue, RosterRecord
@@ -20,6 +21,8 @@ def run_stage(ctx, request, source, inputs, *, roster=None, source_index=None):
     from ..records import quantity_validation, roster_validation
     from .roster import correction_messages
 
+    policy = ctx.execution.input_snapshot.options.get("evidence_policy")
+    warning_mode = uses_quote_warnings(policy)
     numerical = roster is not None
     validator = quantity_validation if numerical else roster_validation
     locations = supplied_locations(
@@ -52,12 +55,15 @@ def run_stage(ctx, request, source, inputs, *, roster=None, source_index=None):
     failure = None
     for number in range(limit + 1):
         key = retry_call_key(ctx, step, number)
+        prepared = ctx.service.adapter.prepare(request)
+        if policy is not None:
+            prepared["evidence_policy"] = policy
         try:
             envelope = execute_model_call(
                 ctx,
                 ctx.service,
                 request,
-                ctx.service.adapter.prepare(request),
+                prepared,
                 step_id=step,
                 call_key=key,
             )
@@ -66,7 +72,9 @@ def run_stage(ctx, request, source, inputs, *, roster=None, source_index=None):
             if failure.startswith("completion_unknown"):
                 raise
             break
-        check = validator.check_response(envelope, locations)
+        check = validator.check_response(
+            envelope, locations, quote_warnings=warning_mode
+        )
         run = ctx.store.read_record_current(ctx.execution.run_ref.record_id)
         current = next(s for s in run.data.steps if s.step_id == step)
         response = next(
@@ -84,6 +92,8 @@ def run_stage(ctx, request, source, inputs, *, roster=None, source_index=None):
             "passed": check.passed,
             "issues": [i.model_dump() for i in check.issues],
         }
+        if warning_mode:
+            validation["warnings"] = [w.model_dump() for w in check.warnings]
         ref = ctx.space.publish_run_file(
             ctx.execution.execution_id,
             f"outputs/validation-{key}.json",
@@ -100,7 +110,6 @@ def run_stage(ctx, request, source, inputs, *, roster=None, source_index=None):
                     check.issues,
                     effective_prior=response_message(envelope, effective=True),
                     tool="submit_quantities" if numerical else "submit_roster",
-                    locations=locations,
                 )
             )
     selected = next((row for row in reversed(rounds) if row[2].readable), None)
@@ -122,6 +131,7 @@ def run_stage(ctx, request, source, inputs, *, roster=None, source_index=None):
     if failure:
         issues.append(RosterIssue(path="/response", message=failure))
     common = {
+        "evidence_policy": policy,
         "source_ref": source.ref(),
         "material_ref": ArtifactRef.model_validate_json(
             ctx.execution.input_snapshot.options["prepared_prompt"]

@@ -1,0 +1,104 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "AuditMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "arxiv_id": {
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "arxiv_version": {
+          "description": "The source paper version, such as v1.",
+          "title": "Arxiv Version",
+          "type": "string"
+        },
+        "result_ref": {
+          "$ref": "#/$defs/ArtifactRef"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "arxiv_version",
+        "result_ref"
+      ],
+      "title": "AuditMetadata",
+      "type": "object"
+    },
+    "QuoteMismatch": {
+      "additionalProperties": false,
+      "properties": {
+        "result_path": {
+          "description": "JSON Pointer to the evidence in the bound scientific result.",
+          "title": "Result Path",
+          "type": "string"
+        },
+        "location": {
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "description": "The submitted quote, preserved without changes.",
+          "title": "Quote",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "whitespace_difference",
+            "exact_match_elsewhere",
+            "unknown"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result_path",
+        "location",
+        "quote",
+        "reason"
+      ],
+      "title": "QuoteMismatch",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "metadata": {
+      "$ref": "#/$defs/AuditMetadata"
+    },
+    "quote_mismatches": {
+      "items": {
+        "$ref": "#/$defs/QuoteMismatch"
+      },
+      "title": "Quote Mismatches",
+      "type": "array"
+    }
+  },
+  "required": [
+    "metadata",
+    "quote_mismatches"
+  ],
+  "title": "EvidenceAudit",
+  "type": "object"
+}

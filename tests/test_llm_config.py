@@ -40,6 +40,28 @@ def test_profiles_have_distinct_wire_parameters_and_locked_routes():
         assert "temperature" not in v and "top_p" not in v
 
 
+@pytest.mark.parametrize("effort", ["max", "low"])
+def test_deepseek_1017_preserves_exact_model_and_official_route(effort):
+    model = ModelConfig(
+        model="deepseek-v4.1-flash-1017",
+        provider="deepseek",
+        input_mode="text_and_images",
+        parameters={
+            "max_tokens": 393216,
+            "thinking_type": "enabled",
+            "reasoning_effort": effort,
+        },
+    )
+    wire = TokenDanceAdapter().prepare(synthetic_request(model))["payload"]
+    assert wire["model"] == "deepseek-v4.1-flash-1017"
+    assert wire["provider"] == {"only": ["deepseek"], "allow_fallbacks": False}
+    assert wire["thinking"] == {"type": "enabled"}
+    assert wire["reasoning_effort"] == effort
+    assert wire["max_tokens"] == 393216
+    with pytest.raises(ValidationError, match="pinned provider"):
+        ModelConfig(model=model.model, provider="ark")
+
+
 @pytest.mark.parametrize(
     "parameters",
     [

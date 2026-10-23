@@ -1,9 +1,11 @@
 """Benchmark material choices and closed archives preserve independent science."""
 
+import io
 import json
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 from pydantic import SecretStr
@@ -34,12 +36,14 @@ from hvs_catalog.materials.package import (
 )
 from hvs_catalog.pipeline import resume_extraction, start_extraction
 from hvs_catalog.pipeline.results import current_result
+from hvs_catalog.records.common import ArtifactRef
 from hvs_catalog.records.rules import current_rules_ref
 from hvs_catalog.workspace import (
     backup_workspace,
     initialize_workspace,
     restore_workspace,
 )
+from hvs_catalog.workspace.archives import read_json
 
 
 def material_fixture(prepared, tmp_path):
@@ -49,6 +53,90 @@ def material_fixture(prepared, tmp_path):
     export_material_package(source, record.ref(), package)
     paper = record.data.paper_key
     return package, paper, config
+
+
+@pytest.mark.parametrize("same_workspace", [True, False])
+def test_archive_preserves_raw_response_references_discovered_during_verification(
+    prepared, tmp_path, same_workspace
+):
+    package, paper, config = material_fixture(prepared, tmp_path)
+    bench = initialize_workspace(tmp_path / "benchmark", benchmark=True)
+    source = bench if same_workspace else initialize_workspace(tmp_path / "source")
+    received = []
+
+    class RawAdapter(ScriptedAdapter):
+        def send(self, payload, runtime, credential):
+            exchange = super().send(payload, runtime, credential)
+            raw = json.dumps(exchange["body"]).encode()
+            received.append(raw)
+            exchange["_raw_stream"] = io.BytesIO(raw)
+            return exchange
+
+    try:
+        migrate_package(package, bench, paper, "mineru_cloud")
+        ref = import_material_package(
+            bench.root / "materials" / paper / "mineru_cloud",
+            source,
+            root=bench.root,
+            copy_files=not same_workspace,
+        )
+        handle = start_extraction(
+            source,
+            prepared_source_ref=ref,
+            request_key="raw-response",
+            configuration=config,
+            execution_id="exec01/" + paper if same_workspace else None,
+        )
+        adapter = RawAdapter(
+            [
+                json.dumps(submission()) + "}",
+                quantities([value("520", "Archive warning")]),
+            ]
+        )
+        report = resume_extraction(
+            source,
+            handle.execution_id,
+            service=CallService(
+                config.runtime, credential=SecretStr("synthetic"), adapter=adapter
+            ),
+        )
+        assert report.result_status == "complete"
+        _, original = current_result(source, handle.execution_id)
+        science = source.read_file(original.result_ref)
+        result = archive_execution(
+            source, bench, handle.execution_id, "exec01", paper, "mineru_cloud"
+        )
+        assert bench.read_file(result.result_ref) == science
+        audit = json.loads(bench.read_file(result.evidence_audit_ref))
+        assert audit["metadata"]["result_ref"] == result.result_ref.model_dump()
+        assert audit["quote_mismatches"][0]["quote"] == "Archive warning"
+        assert (
+            Path(result.evidence_audit_ref.path).parent
+            == Path(result.result_ref.path).parent
+        )
+        trace = read_json(bench, result.trace_ref)
+        envelopes = [
+            read_json(bench, ArtifactRef.model_validate(call["response"]))
+            for call in trace["calls"]
+        ]
+        raw_refs = [
+            ArtifactRef.model_validate(envelope["exchange"]["raw_response_ref"])
+            for envelope in envelopes
+            if envelope["exchange"].get("raw_response_ref")
+        ]
+        assert len(raw_refs) == 1
+        assert bench.read_file(raw_refs[0]) == received[0]
+        assert verify_archive(bench.root, "exec01", paper).usage.attempts == 2
+        assert (
+            archive_execution(
+                source, bench, handle.execution_id, "exec01", paper, "mineru_cloud"
+            ).model_dump()
+            == result.model_dump()
+        )
+    finally:
+        if source is not bench:
+            source.close()
+        bench.close()
 
 
 def test_closed_archive_moves_without_legacy_workspaces(prepared, tmp_path):

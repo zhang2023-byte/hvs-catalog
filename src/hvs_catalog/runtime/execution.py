@@ -254,8 +254,10 @@ def create_execution(
     digest = snapshot_input_digest(
         input_snapshot, flow_id=flow.flow_id, flow_version=flow.flow_version
     )
-    if execution_id is not None and space.identity.format_version != 2:
-        raise ValueError("Named executions require a benchmark workspace.")
+    if execution_id is not None and space.identity.format_version not in {2, 3}:
+        raise ValueError(
+            "Named executions require a benchmark or literature workspace."
+        )
     with space.lock():
         store = space.store()
         existing = store.find_execution_by_request(request_key)
@@ -274,7 +276,21 @@ def create_execution(
         if execution_id is not None:
             import re
 
-            if not re.fullmatch(r"exec\d+/\d{4}\.\d{4,5}", execution_id):
+            if space.is_literature:
+                source = (
+                    store.read_record(input_snapshot.source_refs[0])
+                    if len(input_snapshot.source_refs) == 1
+                    else None
+                )
+                if (
+                    not re.fullmatch(r"\d{4}\.\d{4,5}", execution_id)
+                    or not isinstance(source, SourcePackageRecord)
+                    or source.data.paper_key != execution_id
+                ):
+                    raise ValueError(
+                        "A named literature execution must match its arXiv paper."
+                    )
+            elif not re.fullmatch(r"exec\d+/\d{4}\.\d{4,5}", execution_id):
                 raise ValueError(
                     "A named execution must identify one benchmark round and paper."
                 )

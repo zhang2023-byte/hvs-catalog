@@ -11,12 +11,11 @@ SINGLE_TRAILING_BRACE = "deepseek_single_trailing_brace_v1"
 
 
 def response_policy(adapter, protocol, model, provider):
-    if (adapter, protocol, model, provider) == (
+    if (adapter, protocol, provider) == (
         "tokendance",
         "openai:chat-completions",
-        "deepseek-v4.1-flash",
         "deepseek",
-    ):
+    ) and model in ("deepseek-v4.1-flash", "deepseek-v4.1-flash-1017"):
         return SINGLE_TRAILING_BRACE
     return None
 

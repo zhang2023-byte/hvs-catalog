@@ -120,7 +120,12 @@ class Relocator:
         self.current_ref, self.current = current_result(source, execution_id)
         self.selected = {
             r.path
-            for r in (self.current_ref, self.current.trace_ref, self.current.result_ref)
+            for r in (
+                self.current_ref,
+                self.current.trace_ref,
+                self.current.result_ref,
+                self.current.evidence_audit_ref,
+            )
             if r
         }
 
@@ -204,6 +209,11 @@ class Relocator:
                 path = self.prefix + "/run.json"
             elif self.current.result_ref and ref.path == self.current.result_ref.path:
                 path = self.prefix + "/literature_contribution.json"
+            elif (
+                self.current.evidence_audit_ref
+                and ref.path == self.current.evidence_audit_ref.path
+            ):
+                path = self.prefix + "/evidence_audit.json"
             elif ref.path == self.current.trace_ref.path:
                 path = self.prefix + "/trace/trace.json"
             elif (
@@ -312,19 +322,24 @@ def archive_execution(source, target, execution_id, round_name, paper, variant):
             raise ValueError("; ".join(problems))
         current_result(candidate, converter.new_id)
         # Reconstructed request/response content must be identical after relocation.
-        for (path, digest), new_ref in converter.files.items():
-            if "/requests/" in path or "/responses/" in path:
-                old_ref = ArtifactRef(path=path, sha256=digest)
-                if path.endswith(".json"):
-                    # Response envelopes can link a retained raw HTTP body. Its
-                    # location changes, but its bytes and every model value do not.
-                    if converter.rewrite(read_json(source, old_ref)) != read_json(
-                        target, new_ref
-                    ):
-                        raise ValueError(
-                            "Migration changed a model request or response."
-                        )
-                elif source.read_file(old_ref) != target.read_file(new_ref):
-                    raise ValueError("Migration changed raw response bytes.")
+        verified_files = set()
+        while pending := [
+            item for item in converter.files.items() if item[0] not in verified_files
+        ]:
+            for (path, digest), new_ref in pending:
+                verified_files.add((path, digest))
+                if "/requests/" in path or "/responses/" in path:
+                    old_ref = ArtifactRef(path=path, sha256=digest)
+                    if path.endswith(".json"):
+                        # Rewriting an envelope can discover retained raw bodies.
+                        # Verify the new references on the next pass as well.
+                        if converter.rewrite(read_json(source, old_ref)) != read_json(
+                            target, new_ref
+                        ):
+                            raise ValueError(
+                                "Migration changed a model request or response."
+                            )
+                    elif source.read_file(old_ref) != target.read_file(new_ref):
+                        raise ValueError("Migration changed raw response bytes.")
         target.publish_file(destination, (canonical_json(payload) + "\n").encode())
         return verify_archive(target.root, round_name, paper)

@@ -72,6 +72,8 @@ def _layout_document(layout):
                     bbox[3] / height,
                 ],
             }
+            if "source_mapping" in block:
+                node["source_mapping"] = block["source_mapping"]
             if "blocks" in block:
                 node["content"] = [convert(child) for child in block["blocks"]]
             else:
@@ -100,7 +102,9 @@ def _layout_document(layout):
     return {"pages": pages, "is_full_document": True}
 
 
-def read_result(payload: bytes, page_count: int) -> dict:
+def read_result(
+    payload: bytes, page_count: int, *, mapping: dict | None = None
+) -> dict:
     if len(payload) > MAX_OUTPUT_BYTES:
         raise MinerUError("MinerU output exceeds the size limit")
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
@@ -127,6 +131,11 @@ def read_result(payload: bytes, page_count: int) -> dict:
             )
         document = json.loads(archive.read(json_names[0]))
         markdown = archive.read(md_names[0]).decode("utf-8")
+    mapping_report = None
+    if mapping is not None:
+        from .remap import remap_native_layout
+
+        document, mapping_report = remap_native_layout(document, mapping)
     if "pdf_info" in document:
         document = _layout_document(document)
     elif document.get("schema") != "docvortex.middle":
@@ -216,6 +225,8 @@ def read_result(payload: bytes, page_count: int) -> dict:
                     "text": text,
                     "image_files": image_files,
                 }
+                if "source_mapping" in block:
+                    adapted["source_mapping"] = block["source_mapping"]
                 if block["type"] in {"chart", "image", "table"}:
                     parts = regions(block.get("content", []), bbox)
                     if parts:
@@ -242,10 +253,21 @@ def read_result(payload: bytes, page_count: int) -> dict:
         preparation_issues.append("Parser did not declare a full-document result.")
     if not blocks:
         raise MinerUError("PDF parser returned no readable content")
-    return {
+    result = {
         "blocks": blocks,
         "markdown": markdown,
         "preparation_issues": preparation_issues,
         "page_count": page_count,
         "images": images,
     }
+
+    if mapping_report is not None:
+        result["provenance_outputs"] = {
+            "material-mapping.json": (
+                json.dumps(
+                    mapping_report, ensure_ascii=False, sort_keys=True, indent=2
+                ).encode(),
+                "application/json",
+            )
+        }
+    return result

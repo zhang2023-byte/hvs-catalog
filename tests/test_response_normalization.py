@@ -35,10 +35,11 @@ def case(arguments, model="deepseek-v4.1-flash"):
 
 
 @pytest.mark.parametrize("suffix", ["}", " \n}\t\r\n"])
-def test_one_surplus_brace_preserves_original_characters_and_audit(suffix):
+@pytest.mark.parametrize("model", ["deepseek-v4.1-flash", "deepseek-v4.1-flash-1017"])
+def test_one_surplus_brace_preserves_original_characters_and_audit(suffix, model):
     valid = ' \n{"id":"SYN-1","value":42} '
     arguments = valid + suffix
-    request, prepared, exchange = case(arguments)
+    request, prepared, exchange = case(arguments, model)
     original = copy.deepcopy(exchange)
     apply_response_policy(exchange, prepared)
     record = exchange["tool_arguments_normalization"]
@@ -221,7 +222,7 @@ def test_normalized_arguments_still_get_evidence_feedback_and_raw_history(prepar
     assert history[2]["tool_calls"][0]["function"]["arguments"] == arguments
     feedback = json.loads(history[3]["content"])
     error = next(e for e in feedback["errors"] if e["path"].endswith("/location"))
-    assert error["kind"] == "evidence" and error["match_status"] == "unique"
+    assert error["kind"] == "validation" and "T:p9-b9" in error["message"]
     assert not any(e["kind"] == "json_syntax" for e in feedback["errors"])
     assert len(adapter.seen) == 3
 
@@ -252,7 +253,7 @@ def test_saved_submission_checks_normalization_against_frozen_request(tmp_path, 
     ref = ArtifactRef(path=response_path, sha256=hashlib.sha256(data).hexdigest())
     record = SimpleNamespace(
         execution_id="exec-000001",
-        data=SimpleNamespace(response_ref=ref, source_round=0),
+        data=SimpleNamespace(response_ref=ref, source_round=0, evidence_policy=None),
     )
     files = SimpleNamespace(
         root=tmp_path, read_file=lambda ref: (tmp_path / ref.path).read_bytes()

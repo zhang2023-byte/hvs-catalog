@@ -179,8 +179,73 @@ class MaterialsService:
             "parser": self._runner.fingerprint(),
             "parser_fingerprint": parser_fingerprint(),
         }
+        return self._start_preparation(request_key, request_payload, [source])
+
+    def rebuild_materials(
+        self, preparation_id: str, *, request_key: str, mapping: dict
+    ) -> tuple[PreparationHandle, PreparationReport]:
+        """Create a new index from a saved official archive without any parser call.
+
+        Freeze both the acquired PDF and the prior preparation. Old records and
+        attachment paths remain immutable; only new derived files are published.
+        """
+        with self._space.lock():
+            self.consume_prepared_input(preparation_id)
+            previous = self.get_prepared_input(preparation_id)
+            saved = self.get_preparation(preparation_id)["config"]["request"]
+            prior_ref = RecordRef.model_validate(previous["prepared_source_ref"])
+            source = RecordRef.model_validate(saved["source_ref"])
+            prior = self._space.store().read_record(prior_ref)
+            archive = next(
+                f
+                for f in prior.data.files
+                if f.file_id == "mineru.zip" and f.role == "parser_output"
+            )
+            from .mineru import read_result
+
+            # Each revision keeps its predecessor's explicit recoveries. Rebuild
+            # from the official archive, never from previously changed text.
+            mapping = json.loads(json.dumps(mapping))
+            prior_mapping = previous.get("rebuild", {}).get("mapping")
+            if prior_mapping is not None:
+                if mapping.get("version") not in (1, 2):
+                    raise ValueError("Unsupported offline material mapping")
+                if prior_mapping["version"] == 2:
+                    mapping["version"] = 2
+                    mapping.setdefault("caption_moves", [])
+                for key in ("replacements", "recover_discarded_pages", "caption_moves"):
+                    if key in prior_mapping:
+                        mapping[key].extend(
+                            item
+                            for item in prior_mapping[key]
+                            if item not in mapping[key]
+                        )
+            # Validate before creating a durable execution. This is a local read.
+            read_result(
+                self._space.read_file(
+                    ArtifactRef(path=archive.path, sha256=archive.sha256)
+                ),
+                previous["summary"]["pages"],
+                mapping=mapping,
+            )
+            request = {
+                "source_ref": source.model_dump(mode="json"),
+                "paper_key": saved["paper_key"],
+                "parser": saved["parser"],
+                "parser_fingerprint": parser_fingerprint(),
+                "rebuild": {
+                    "preparation_id": preparation_id,
+                    "prepared_source_ref": prior_ref.model_dump(mode="json"),
+                    "archive": {"path": archive.path, "sha256": archive.sha256},
+                    "mapping": mapping,
+                },
+            }
+            return self._start_preparation(request_key, request, [source, prior_ref])
+
+    def _start_preparation(self, request_key, request_payload, sources):
+        source = sources[0]
         snapshot = build_input_snapshot(
-            source_refs=[source],
+            source_refs=sources,
             method="materials-prepare",
             expert_adjudication=False,
             options={

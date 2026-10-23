@@ -405,6 +405,35 @@ class PreparationBatchService:
             raise ValueError("指定论文不在批次去重清单中")
         return [papers[paper] for paper in wanted]
 
+    def select_preparation(
+        self, batch_id: str, paper_id: str, preparation_id: str
+    ) -> None:
+        """Select a finished offline revision of the current fixed preparation.
+
+        Append its request key to the existing history. A stale predecessor or
+        another PDF cannot replace the current batch selection.
+        """
+        with self.space.lock():
+            paper = self._scope(batch_id, [paper_id])[0]
+            if paper["preparation"]["execution_id"] == preparation_id:
+                self.materials.consume_prepared_input(preparation_id)
+                return
+            self.materials.consume_prepared_input(preparation_id)
+            saved = self.materials.get_preparation(preparation_id)["config"]["request"]
+            if (
+                saved.get("rebuild", {}).get("preparation_id")
+                != paper["preparation"]["execution_id"]
+                or saved["source_ref"] != paper["download"]["source_ref"]
+            ):
+                raise ValueError("材料版本必须派生自本批次当前准备及同一固定 PDF")
+            from ..runtime import get_execution
+
+            execution = get_execution(self.space, preparation_id)
+            batch = self._load(batch_id)
+            keys = batch.preparation_attempts.get(paper_id, ())
+            batch.preparation_attempts[paper_id] = (*keys, execution.request_key)
+            self._save(batch)
+
     def download(
         self, batch_id: str, *, identifiers=None, progress: Progress | None = None
     ) -> None:
@@ -432,10 +461,39 @@ class PreparationBatchService:
                         meta = found[0].meta
                         if meta.canonical_id != canonical:
                             raise AcquisitionError("最新版元数据身份不符")
+                        if self.space.is_literature:
+                            from ..materials.metadata import archive_metadata
+
+                            archive_metadata(
+                                self.space,
+                                meta,
+                                {
+                                    "response_url": lookup.response_url,
+                                    "fetched_at": lookup.fetched_at,
+                                },
+                            )
                         target = parse_arxiv_identifier(f"{canonical}v{meta.version}")
                         batch.selected_versions[canonical] = target.versioned_id
                         self._save(batch)
-                    self.acquisition.acquire(batch.selected_versions[canonical])
+                    acquired = self.acquisition.acquire(
+                        batch.selected_versions[canonical]
+                    )
+                    if self.space.is_literature:
+                        from ..materials.metadata import fixed_metadata
+                        from ..workspace.archives import read_json
+
+                        source = self.space.store().read_record(acquired.material_ref)
+                        metadata_ref, _ = fixed_metadata(self.space, source)
+                        metadata = read_json(self.space, metadata_ref)
+                        pdf = next(f for f in source.data.files if f.role == "pdf")
+                        metadata.update(
+                            metadata_ref=metadata_ref.model_dump(mode="json"),
+                            pdf={"path": pdf.path, "sha256": pdf.sha256},
+                        )
+                        self.space.publish_file(
+                            self.space.paper_path(canonical, "metadata.json"),
+                            (canonical_json(metadata) + "\n").encode(),
+                        )
                     batch.issues.pop(canonical, None)
                 except ArxivAuthError as exc:
                     self._issue(batch, canonical, "download", exc)

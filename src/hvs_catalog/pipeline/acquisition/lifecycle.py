@@ -651,7 +651,7 @@ class AcquisitionService:
                     self._save(state)
                     raise
                 self._reject_conflict(state, ident, download.payload)
-                ref = self._publish_raw(download.payload)
+                ref = self._publish_raw(download.payload, ident=ident)
                 attempt = self._attempt_record(
                     ident, ref, download.fetched_at, download.final_url
                 )
@@ -700,7 +700,25 @@ class AcquisitionService:
             replayed,
         )
 
-    def _publish_raw(self, payload: bytes) -> ArtifactRef:
+    def _publish_raw(self, payload: bytes, *, ident=None) -> ArtifactRef:
+        if self._space.is_literature and ident is not None:
+            for versioned in self._load()["versions"]:
+                old = parse_arxiv_identifier(versioned)
+                if (
+                    old.canonical_id == ident.canonical_id
+                    and old.version != ident.version
+                ):
+                    raise WorkspaceConflictError(
+                        "文献目录每篇只保留一个固定版本；新版须另建文献空间"
+                    )
+            try:
+                pdf_page_count(payload)
+            except ValueError:
+                pass  # Preserve rejected remote bytes as diagnostics, not as paper.pdf.
+            else:
+                return self._space.publish_file(
+                    self._space.paper_path(ident.canonical_id, "paper.pdf"), payload
+                )
         digest = hashlib.sha256(payload).hexdigest()
         return self._space.publish_source_file(f"packages/{digest}.bin", payload)
 
@@ -822,7 +840,7 @@ class AcquisitionService:
             self._declarations(
                 ident.versioned_id
             )  # Never silently skip preparation_issues in saved provenance.
-            raw = self._publish_raw(payload)
+            raw = self._publish_raw(payload, ident=ident)
             fact = self._select(state, ident, "local_import")
             record = self._source_record(fact)
             reused = record is not None

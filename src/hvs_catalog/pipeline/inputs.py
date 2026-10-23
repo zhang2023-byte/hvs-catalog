@@ -2,6 +2,7 @@
 
 from ..llm.prompts import PromptInput
 from ..records.common import ArtifactRef, RecordRef, sha256_of
+from ..records.evidence_audit import QUOTE_WARNING_POLICY, uses_quote_warnings
 from ..records.extraction_input import ExtractionInput
 from ..runtime import build_input_snapshot
 from ..workspace.archives import publish_json, read_json
@@ -97,6 +98,7 @@ def freeze_input(
     frozen = freeze_configuration(space, config)
     frozen["options"].update(
         extraction_scope=scope,
+        evidence_policy=QUOTE_WARNING_POLICY,
         prepared_prompt=material_ref.model_dump_json(),
         extraction_code=code_fingerprint(),
     )
@@ -131,6 +133,7 @@ def read_input(space, snapshot):
     from .roster import material_prompt
 
     validate_configuration_snapshot(snapshot)
+    uses_quote_warnings(snapshot.options.get("evidence_policy"))
     if snapshot.options.get("extraction_code") != code_fingerprint():
         raise ValueError("Extraction code differs from the frozen input.")
     ref = ArtifactRef.model_validate_json(snapshot.options["extraction_input"])

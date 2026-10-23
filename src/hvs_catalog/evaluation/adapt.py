@@ -1,15 +1,17 @@
 """Read exact saved extraction facts without resuming or rewriting an execution."""
 
 from ..llm.prompts import PromptInput
+from ..pipeline.evidence_audit import retained_mismatches, verify_result_audit
 from ..pipeline.results import PREFIX, saved_quantities
 from ..pipeline.roster import saved_roster
 from ..records.common import ArtifactRef, RecordRef, sha256_of
+from ..records.evidence_audit import uses_quote_warnings
 from ..records.extraction_input import ExtractionInput
 from ..records.extraction_run import ExtractionRun
 from ..records.literature_contribution import LiteratureContribution
 from ..records.quantities import QuantityRecord
 from ..records.roster import RosterRecord
-from ..records.roster_validation import evidence_issues, strict_json
+from ..records.roster_validation import strict_json
 from ..records.source import SourcePackageRecord
 from ..records.validate import validate_collection
 from ..runtime import get_execution
@@ -232,11 +234,19 @@ def _prediction(space, execution_id):
             or completion != expected_status
         ):
             raise ValueError("The result status differs from its retained stages.")
-    checks = list(
-        evidence_issues(retained.model_dump(mode="json"), prompt.citation_locations)
+    mismatches = retained_mismatches(
+        space, retained, roster, quantities, prompt.citation_locations
     )
-    if checks:
-        raise ValueError("Retained scientific evidence failed validation.")
+    warning_mode = uses_quote_warnings(document.snapshot.options.get("evidence_policy"))
+    if summary:
+        verify_result_audit(
+            space,
+            summary,
+            document.model_dump(mode="json"),
+            science,
+            roster,
+            quantities,
+        )
     delivered = (
         bool(summary and summary.result_ref)
         if scope == "full"
@@ -264,6 +274,7 @@ def _prediction(space, execution_id):
         evidence_checks={
             "invalid": 0,
             "checked": _evidence_count(retained.model_dump(mode="json")),
+            **({"quote_mismatches": len(mismatches)} if warning_mode else {}),
         },
         provenance={
             "execution_id": execution_id,

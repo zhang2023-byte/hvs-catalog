@@ -122,7 +122,12 @@ def shared_dependencies(root: Path, ref: dict, *, _checked_nodes=None) -> list[d
             found = []
         else:
             payload = json.loads(path.read_bytes())
-            if not isinstance(payload, dict) or payload.get("format") not in {
+            if path.name == "evidence_audit.json":
+                from ..records.evidence_audit import EvidenceAudit
+
+                audit = EvidenceAudit.model_validate(payload)
+                found = [audit.metadata.result_ref.model_dump()]
+            elif not isinstance(payload, dict) or payload.get("format") not in {
                 FORMAT,
                 "hvs.extraction-input",
                 "hvs.extraction-run",

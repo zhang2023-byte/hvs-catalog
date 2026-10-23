@@ -99,9 +99,11 @@ def test_partial_numerical_failure_keeps_l1_and_gold_denominator(prepared):
 
 
 def test_partial_snapshot_scores_only_retained_values(prepared):
+    bad = value("999", "not in paper")
+    bad["evidence"][0]["location"] = "T:p9-b9"
     handle, _, _, _ = run_full(
         prepared,
-        [submission(), quantities([value(), value("999", "not in paper")])],
+        [submission(), quantities([value(), bad])],
         limit=0,
     )
     pred = prediction_from_execution(prepared[0], handle.execution_id)

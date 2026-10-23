@@ -8,7 +8,7 @@ import threading
 import pytest
 from llm_helpers import completion, endpoint
 from pydantic import SecretStr
-from test_quantities import quantities
+from test_quantities import quantities, value
 from test_roster import entry, submission
 
 from hvs_catalog.llm.managed import CallService
@@ -116,7 +116,7 @@ def test_quantity_and_publication_process_exit(prepared, hook, complete):
         payload = (
             submission()
             if request["tools"][0]["function"]["name"] == "submit_roster"
-            else quantities()
+            else quantities([value("520", "Process warning")])
         )
         return reply(request, payload)
 
@@ -144,6 +144,9 @@ def test_quantity_and_publication_process_exit(prepared, hook, complete):
         _, result = current_result(space, handle.execution_id)
         assert (report.result_status == "complete") is complete, report.errors
         assert bool(result.result_ref) is complete
+        if complete:
+            audit = json.loads(space.read_file(result.evidence_audit_ref))
+            assert audit["quote_mismatches"][0]["quote"] == "Process warning"
         assert len(seen) == before
         saved = current_result(space, handle.execution_id)[0]
         resume_extraction(space, handle.execution_id, service=service)

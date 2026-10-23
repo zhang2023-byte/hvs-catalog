@@ -12,9 +12,9 @@ from .roster_validation import (
 )
 
 
-def payload_issues(payload, locations):
+def payload_issues(payload, locations, *, quote_warnings=False):
     issues = list(schema_issues(payload, quantity_input_schema()))
-    issues.extend(evidence_issues(payload, locations))
+    issues.extend(evidence_issues(payload, locations, quote_warnings=quote_warnings))
     groups = payload.get("quantities") if isinstance(payload, dict) else None
     owners = {}
     if isinstance(groups, list):
@@ -34,19 +34,22 @@ def payload_issues(payload, locations):
     return issues
 
 
-def check_response(envelope, locations):
+def check_response(envelope, locations, *, quote_warnings=False):
     return check_submission(
         envelope,
         locations,
         tool="submit_quantities",
         key="quantities",
         validator=payload_issues,
+        quote_warnings=quote_warnings,
     )
 
 
 def select_partial(check, locations):
     quantities, paths, rejected = [], [], {}
-    issues = payload_issues(check.payload, locations)
+    issues = payload_issues(
+        check.payload, locations, quote_warnings=check.quote_warnings
+    )
     for index, group in enumerate(check.payload["quantities"]):
         path = f"/quantities/{index}"
         group_issues = [

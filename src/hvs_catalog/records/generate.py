@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from .evidence_audit import EvidenceAudit
 from .extraction_input import ExtractionInput
 from .extraction_run import ExtractionRun
 from .literature_contribution import (
@@ -130,8 +131,13 @@ def render_literature_contribution_format() -> str:
         "  `unit` and `condition` are optional. Put reference frames and relevant",
         "  statistical meanings or confidence levels in `condition`.",
         "- Each identifier, contribution type, and value has a nonempty `evidence`",
-        "  array. Text evidence contains `location` and an unchanged `quote`.",
+        "  array. Text evidence contains `location` and a faithful `quote`.",
         "  Image evidence contains only `location`. Captions use text locations.",
+        "",
+        "Exact quote mismatches are nonblocking audit observations for new executions.",
+        "The program preserves the submitted quote and records its location, result path, and matching reason.",
+        "Missing locations, unsupplied images, invalid structure, and damaged bindings remain errors.",
+        "An exact match does not authenticate scientific support.",
         "",
         "## Validation and JSON access",
         "",
@@ -271,6 +277,7 @@ def build_outputs():
             "They retain parser text and omit images from requests. Scientific rules and submission schemas remain the same.\n\n"
             "The final scientific result uses [literature_contribution.json](schemas/literature_contribution.json). "
             "The [run summary](schemas/extraction_run.json) records status and exact references. "
+            "The [evidence audit](schemas/evidence_audit.json) binds quote warnings to the exact scientific result. "
             "Its [fictional example](examples/run.json) uses placeholder references. "
             "The [input schema](schemas/extraction_input.json) defines the frozen input. "
             "The [scoring contract](scoring/README.md) defines fixed references, manifests and offline replay. "
@@ -279,6 +286,7 @@ def build_outputs():
         "literature-contribution-format.md": render_literature_contribution_format(),
         "schemas/literature_contribution.json": _schema_json(LiteratureContribution),
         "schemas/extraction_run.json": _schema_json(ExtractionRun),
+        "schemas/evidence_audit.json": _schema_json(EvidenceAudit),
         "schemas/extraction_input.json": _schema_json(ExtractionInput),
         "examples/run.json": run_example().model_dump_json(indent=2) + "\n",
     }

@@ -67,6 +67,7 @@ def test_partial_values_and_duplicate_groups(prepared):
     space, prep, config = prepared
     config = config.model_copy(update={"max_format_corrections": 0})
     payload = quantities([value(), value("bad", "not in paper")], notes="Partial note.")
+    payload["quantities"][0]["values"][1]["evidence"][0]["location"] = "T:p9-b9"
     payload["quantities"] += [
         {"quantity": "distance", "values": [value("8")]},
         {"quantity": "distance", "values": [value("9")]},

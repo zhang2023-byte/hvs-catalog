@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from jsonschema import Draft202012Validator
 
+from .evidence_audit import QuoteMismatch, quote_mismatches
 from .response import (
     response_message,
     strict_json,
@@ -19,7 +20,10 @@ def pointer(parts):
 
 
 def schema_issues(payload, schema=None):
-    """Describe schema errors without copying the submitted scientific content."""
+    """Preserve stored rejection diagnostics for exact legacy snapshot replay.
+
+    Model feedback renders constraints independently in pipeline.feedback.
+    """
     for error in Draft202012Validator(schema or roster_input_schema()).iter_errors(
         payload
     ):
@@ -94,7 +98,7 @@ def schema_issues(payload, schema=None):
         yield RosterIssue(path=path, message=message)
 
 
-def evidence_issues(payload, locations):
+def evidence_issues(payload, locations, *, quote_warnings=False):
     issues = []
 
     def walk(item, path):
@@ -114,7 +118,7 @@ def evidence_issues(payload, locations):
                     if (
                         not isinstance(quote, str)
                         or not quote
-                        or quote not in bound.get("text", "")
+                        or (not quote_warnings and quote not in bound.get("text", ""))
                     ):
                         issues.append(
                             RosterIssue(
@@ -139,11 +143,11 @@ def evidence_issues(payload, locations):
     return issues
 
 
-def payload_issues(payload, locations):
+def payload_issues(payload, locations, *, quote_warnings=False):
     """Return every structural, citation, and exact duplicate error without edits."""
     issues = list(schema_issues(payload))
 
-    issues.extend(evidence_issues(payload, locations))
+    issues.extend(evidence_issues(payload, locations, quote_warnings=quote_warnings))
 
     stars = payload.get("stars") if isinstance(payload, dict) else None
     owners = {}
@@ -175,6 +179,8 @@ class SubmissionCheck:
     payload: dict | None = None
     issues: list[RosterIssue] = field(default_factory=list)
     key: str = "stars"
+    quote_warnings: bool = False
+    warnings: list[QuoteMismatch] = field(default_factory=list)
 
     @property
     def readable(self):
@@ -193,7 +199,13 @@ class SubmissionCheck:
 
 
 def check_message(
-    message, locations, *, tool="submit_roster", key="stars", validator=payload_issues
+    message,
+    locations,
+    *,
+    tool="submit_roster",
+    key="stars",
+    validator=payload_issues,
+    quote_warnings=False,
 ):
     calls = message.get("tool_calls") if isinstance(message, dict) else None
     if (
@@ -218,7 +230,7 @@ def check_message(
         return SubmissionCheck(
             issues=[RosterIssue(path="/arguments", message=str(exc))]
         )
-    issues = validator(payload, locations)
+    issues = validator(payload, locations, quote_warnings=quote_warnings)
     if message.get("content") not in (None, ""):
         issues.append(
             RosterIssue(
@@ -232,13 +244,21 @@ def check_message(
                 message="The tool call has no valid identifier.",
             )
         )
-    return SubmissionCheck(payload if isinstance(payload, dict) else None, issues, key)
+    return SubmissionCheck(
+        payload if isinstance(payload, dict) else None,
+        issues,
+        key,
+        quote_warnings,
+        quote_mismatches(payload, locations) if quote_warnings else [],
+    )
 
 
 def select_partial(check: SubmissionCheck, locations):
     """Keep whole valid stars from one readable submission, in original order."""
     stars, indices, rejected = [], [], {}
-    all_issues = payload_issues(check.payload, locations)
+    all_issues = payload_issues(
+        check.payload, locations, quote_warnings=check.quote_warnings
+    )
     for i, star in enumerate(check.payload["stars"]):
         issues = [
             e
@@ -246,7 +266,11 @@ def select_partial(check: SubmissionCheck, locations):
             if e.path == f"/stars/{i}" or e.path.startswith(f"/stars/{i}/")
         ]
         # Validate each entry independently even if the root failed first.
-        entry = payload_issues({"stars": [star], "notes": ""}, locations)
+        entry = payload_issues(
+            {"stars": [star], "notes": ""},
+            locations,
+            quote_warnings=check.quote_warnings,
+        )
         for issue in entry:
             mapped = issue.model_copy(
                 update={"path": issue.path.replace("/stars/0", f"/stars/{i}", 1)}

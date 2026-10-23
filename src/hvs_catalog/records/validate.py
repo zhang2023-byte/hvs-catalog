@@ -445,6 +445,8 @@ def _check_submission_binding(record, files, *, roster=None):
     )
     request = read_json(files, request_ref)
     response = read_json(files, data.response_ref)
+    if data.evidence_policy != request.get("evidence_policy"):
+        raise ValueError("The evidence policy differs from the frozen request.")
     if response.get("request_sha256") != sha256_of(request):
         raise ValueError("The response differs from its archived request.")
     from .response import argument_normalization, response_message
@@ -495,7 +497,9 @@ def _check_roster_snapshot(record, source, root):
         locations, request["payload"]["messages"][1]["content"]
     )
     response = read_json(space, data.response_ref)
-    check = check_response(response, locations)
+    check = check_response(
+        response, locations, quote_warnings=data.evidence_policy is not None
+    )
     if data.status == "complete":
         if (
             not check.passed
@@ -555,7 +559,11 @@ def _check_quantity_snapshot(record, source, index, root):
     locations = supplied_locations(
         locations, request["payload"]["messages"][1]["content"]
     )
-    check = check_response(read_json(space, data.response_ref), locations)
+    check = check_response(
+        read_json(space, data.response_ref),
+        locations,
+        quote_warnings=data.evidence_policy is not None,
+    )
     if data.status == "complete" and not check.passed:
         raise ValueError("The saved submission did not pass all checks.")
     if check.readable:

@@ -20,7 +20,7 @@ from ..records.pdf import pdf_page_count
 from ..records.source import SourceFile, SourcePackageRecord
 from ..runtime import DefaultFlowAdapter
 from ..runtime.execution import append_run_revision
-from .mineru import MinerUError
+from .mineru import MinerUError, read_result
 from .mineru_official import OfficialMinerU
 
 FLOW_ID = "hvs-pdf-prepare"
@@ -32,7 +32,7 @@ def parser_fingerprint() -> str:
     return hashlib.sha256(
         b"".join(
             Path(__file__).with_name(name).read_bytes()
-            for name in ("flow.py", "mineru.py", "mineru_official.py")
+            for name in ("flow.py", "mineru.py", "mineru_official.py", "remap.py")
         )
     ).hexdigest()
 
@@ -62,9 +62,10 @@ class MaterialsFlow(DefaultFlowAdapter):
         return graph.compile(checkpointer=ctx.checkpointer)
 
     def _prepare(self, ctx, state):
-        if self.runner is None:
-            self.runner = OfficialMinerU(ctx.space)
         request = json.loads(ctx.execution.input_snapshot.options["materials_request"])
+        rebuild = request.get("rebuild")
+        if self.runner is None and not rebuild:
+            self.runner = OfficialMinerU(ctx.space)
         if request["parser_fingerprint"] != parser_fingerprint():
             raise ValueError("PDF adapter code changed; create a new preparation")
         digest = sha256_of(request)
@@ -78,7 +79,7 @@ class MaterialsFlow(DefaultFlowAdapter):
                 "bundle": ref.model_dump(mode="json"),
                 "result_refs": [r.model_dump(mode="json") for r in saved.result_refs],
             }
-        if self.runner.fingerprint() != request["parser"]:
+        if not rebuild and self.runner.fingerprint() != request["parser"]:
             raise ValueError(
                 "MinerU version/configuration changed; create a new preparation"
             )
@@ -97,8 +98,32 @@ class MaterialsFlow(DefaultFlowAdapter):
         pdf = pdfs[0]
         pdf_bytes = ctx.space.read_file(ArtifactRef(path=pdf.path, sha256=pdf.sha256))
         pages = pdf_page_count(pdf_bytes)
+        previous_files = {}
         try:
-            raw, parsed = self.runner.parse(ctx.space.root / pdf.path, pages)
+            if rebuild:
+                prior = ctx.store.read_record(
+                    RecordRef.model_validate(rebuild["prepared_source_ref"])
+                )
+                previous_files = {file.file_id: file for file in prior.data.files}
+                original_pdf = previous_files.get(pdf.file_id)
+                if (
+                    original_pdf is None
+                    or original_pdf.sha256 != pdf.sha256
+                    or original_pdf.role != "pdf"
+                ):
+                    raise ValueError(
+                        "Offline rebuild PDF does not match its previous preparation"
+                    )
+                archive = previous_files["mineru.zip"]
+                ref = ArtifactRef.model_validate(rebuild["archive"])
+                if archive.path != ref.path or archive.sha256 != ref.sha256:
+                    raise ValueError(
+                        "Offline rebuild archive does not match its previous preparation"
+                    )
+                raw = ctx.space.read_file(ref)
+                parsed = read_result(raw, pages, mapping=rebuild["mapping"])
+            else:
+                raw, parsed = self.runner.parse(ctx.space.root / pdf.path, pages)
         except MinerUError as exc:
             artifacts = []
             for name, content in exc.artifacts.items():
@@ -116,9 +141,25 @@ class MaterialsFlow(DefaultFlowAdapter):
         files = [pdf.model_copy(update={"read_state": "ready"})]
 
         def publish(name, content, media, role, derived):
-            ref = ctx.space.publish_run_file(
-                ctx.execution.execution_id, "outputs/" + name, content
-            )
+            old = previous_files.get(name)
+            if old is None and role == "pdf_image":
+                old = previous_files.get("raw/" + name)
+            if old is not None and old.sha256 == hashlib.sha256(content).hexdigest():
+                ref = ArtifactRef(path=old.path, sha256=old.sha256)
+                ctx.space.read_file(ref)
+            elif ctx.space.is_literature and role != "prepared_bundle":
+                filename = "result.zip" if name == "mineru.zip" else name
+                prefix = "mineru/"
+                if rebuild:
+                    prefix += "versions/" + ctx.execution.execution_id + "/"
+                ref = ctx.space.publish_file(
+                    ctx.space.paper_path(basis.data.paper_key, prefix + filename),
+                    content,
+                )
+            else:
+                ref = ctx.space.publish_run_file(
+                    ctx.execution.execution_id, "outputs/" + name, content
+                )
             file = SourceFile(
                 file_id=name,
                 path=ref.path,
@@ -134,6 +175,14 @@ class MaterialsFlow(DefaultFlowAdapter):
         publish("mineru.zip", raw, "application/zip", "parser_output", [pdf.file_id])
         for name, (content, media) in parsed.get("additional_outputs", {}).items():
             publish(name, content, media, "parser_output", [pdf.file_id])
+        for name, (content, media) in parsed.get("provenance_outputs", {}).items():
+            publish(
+                name,
+                content,
+                media,
+                "preparation_provenance",
+                [pdf.file_id, "mineru.zip"],
+            )
         import io
         import zipfile
 
@@ -148,6 +197,21 @@ class MaterialsFlow(DefaultFlowAdapter):
                 )
                 if ref.sha256 != image["sha256"]:
                     raise ValueError("Parser image fingerprint changed")
+            if ctx.space.is_literature:
+                for member in archive.infolist():
+                    if (
+                        member.is_dir()
+                        or member.filename in parsed.get("images", {})
+                        or member.filename.endswith((".md", "_origin.pdf"))
+                    ):
+                        continue
+                    publish(
+                        "raw/" + member.filename,
+                        archive.read(member),
+                        "application/octet-stream",
+                        "parser_output",
+                        [pdf.file_id, "mineru.zip"],
+                    )
         blocks = list(parsed["blocks"])
         publish(
             "manuscript.md",
@@ -165,6 +229,8 @@ class MaterialsFlow(DefaultFlowAdapter):
             "image_policy": "original_images_without_generated_descriptions",
             "evidence_basis": "parser transcription; original PDF remains authoritative",
         }
+        if rebuild:
+            index["rebuild"] = rebuild
         publish(
             "pdf-blocks.json",
             canonical_json(index).encode(),
@@ -194,6 +260,8 @@ class MaterialsFlow(DefaultFlowAdapter):
             "summary": summary,
             "preparation_issues": preparation_issues,
         }
+        if rebuild:
+            bundle["rebuild"] = rebuild
         bundle_ref = publish(
             "prepared-input.json",
             canonical_json(bundle).encode(),

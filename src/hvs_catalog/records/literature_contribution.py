@@ -38,13 +38,13 @@ class LiteratureMetadata(_ScientificContent):
 
 
 class TextEvidence(_ScientificContent):
-    """An exact excerpt from one supplied text block."""
+    """An evidence excerpt attributed to one supplied text block."""
 
     location: str = Field(
         pattern=r"^T:p[1-9][0-9]*-b[0-9]+$",
         description="Complete text location, such as T:p3-b5.",
     )
-    quote: NonEmptyText = Field(description="Unchanged excerpt from this text block.")
+    quote: NonEmptyText = Field(description="Faithful excerpt from this text block.")
 
 
 class ImageEvidence(_ScientificContent):

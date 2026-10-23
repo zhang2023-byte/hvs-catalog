@@ -1,4 +1,4 @@
-"""Feedback identifies failures without repairing or reinterpreting submissions."""
+"""Generic feedback reports validator facts without case-specific repair instructions."""
 
 import copy
 import json
@@ -6,11 +6,11 @@ from functools import partial
 
 import pytest
 from test_quantities import quantities, run_full
-from test_roster import TEXT, entry, run, submission
+from test_roster import submission
 from test_roster_validation import LOCATIONS, message
 
 from hvs_catalog.pipeline.feedback import submission_feedback
-from hvs_catalog.pipeline.roster import correction_messages, saved_roster
+from hvs_catalog.pipeline.roster import correction_messages
 from hvs_catalog.records.quantity_validation import payload_issues as quantity_issues
 from hvs_catalog.records.roster_validation import check_message
 
@@ -19,19 +19,12 @@ check_quantities = partial(
 )
 
 
-def test_double_encoded_object_is_a_root_schema_error():
+def test_double_encoded_object_uses_the_same_type_constraint():
     prior = message(json.dumps(json.dumps(submission())))
     checked = check_message(prior, LOCATIONS)
-    feedback = submission_feedback(
-        prior, checked.issues, tool="submit_roster", locations=LOCATIONS
-    )
+    feedback = submission_feedback(prior, checked.issues, tool="submit_roster")
     assert feedback["errors"] == [
-        {
-            "path": "",
-            "message": "Use an object.",
-            "scope": "tool_arguments",
-            "kind": "schema",
-        }
+        {"kind": "schema", "path": "", "rule": "type", "constraint": "object"}
     ]
 
 
@@ -45,36 +38,42 @@ def test_double_encoded_object_is_a_root_schema_error():
 @pytest.mark.parametrize(
     "arguments",
     [
+        r'{"notes":"520 \pm 10"}',
         '{"notes":""}}',
-        '{"arguments":"unterminated',
+        '{"notes":"unterminated',
         '{"notes":"" "stars":[]}',
         '{"notes":"","notes":"duplicate"}',
+        '{"notes":NaN}',
     ],
 )
-def test_syntax_feedback_distinguishes_argument_root_from_protocol(
+def test_syntax_uses_parser_details_without_protocol_paths(
     tool, root, check, arguments
 ):
     prior = message(arguments)
     prior["tool_calls"][0]["function"]["name"] = tool
     original = copy.deepcopy(prior)
     checked = check(prior, LOCATIONS)
-    history = correction_messages(prior, checked.issues, tool=tool, locations=LOCATIONS)
+    history = correction_messages(prior, checked.issues, tool=tool)
     feedback = json.loads(history[1].content)
-    assert feedback["argument_root"] == {"type": "object", "required": [root, "notes"]}
-    assert feedback["errors"] == [
-        {
-            "path": "",
-            "message": checked.issues[0].message,
-            "scope": "tool_arguments",
-            "kind": "json_syntax",
-            "protocol_path": "/tool_calls/0/function/arguments",
-        }
-    ]
-    assert history[1].tool_call_id == "original-call"
+    assert len(feedback["errors"]) == 1
+    error = feedback["errors"][0]
+    assert error["kind"] == "json_syntax"
+    assert not {"protocol_path", "scope", "path"} & error.keys()
+    if "Duplicate" in error["message"] or "Non-finite" in error["message"]:
+        assert "line" not in error
+    else:
+        assert error["line"] == 1 and error["column"] > 0
+        assert error["excerpt"] in arguments
+    assert root + " and notes" in history[-1].content
+    assert "/tool_calls" not in history[-1].content
     assert history[0].tool_calls[0].arguments == arguments
+    assert history[1].tool_call_id == "original-call"
     assert prior == original
 
 
+@pytest.mark.parametrize(
+    "wrapper", ["arguments", "argument", "result", "unfamiliar_name"]
+)
 @pytest.mark.parametrize(
     "tool,root,check",
     [
@@ -82,124 +81,86 @@ def test_syntax_feedback_distinguishes_argument_root_from_protocol(
         ("submit_quantities", "quantities", check_quantities),
     ],
 )
-def test_wrapper_feedback_names_required_root_fields(tool, root, check):
-    prior = message(json.dumps({"arguments": {root: [], "notes": ""}}))
+def test_all_wrappers_use_generic_object_constraints(wrapper, tool, root, check):
+    prior = message(json.dumps({wrapper: {root: [], "notes": ""}}))
     prior["tool_calls"][0]["function"]["name"] = tool
     checked = check(prior, LOCATIONS)
-    feedback = submission_feedback(
-        prior, checked.issues, tool=tool, locations=LOCATIONS
-    )
-    error = next(e for e in feedback["errors"] if e["path"] == "/arguments")
-    assert error["scope"] == "tool_arguments" and error["kind"] == "schema"
-    assert error["message"] == (
-        "Remove the outer arguments field. "
-        f"Submit one object with {root} and notes at its root."
-    )
+    assert submission_feedback(prior, checked.issues, tool=tool)["errors"] == [
+        {
+            "kind": "schema",
+            "path": "",
+            "missing": [root, "notes"],
+            "unexpected": [wrapper],
+        }
+    ]
     assert not checked.passed
 
 
-@pytest.mark.parametrize(
-    "count,status", [(0, "none"), (1, "unique"), (2, "multiple"), (7, "multiple")]
-)
-def test_evidence_candidates_are_exact_bounded_and_do_not_change_answers(count, status):
-    quote = "Exact Ω source"
-    payload = submission()
-    payload["stars"][0]["identifiers"][0]["evidence"] = [
-        {"location": "T:p9-b9", "quote": quote}
-    ]
-    locations = {
-        **LOCATIONS,
-        "T:p2-b0": {"text": "Exact  Ω source"},
-        "T:p2-b1": {"text": "exact Ω source"},
-        "I:p2-b2": {"text": quote, "images": [{"path": "synthetic.png"}]},
-        **{f"T:p3-b{i}": {"text": "x" * 300 + quote + "y" * 300} for i in range(count)},
-    }
+def test_nested_fields_use_the_same_constraints_without_echoing_content():
+    payload = quantities()
+    payload["quantities"][0].update(payload["quantities"][0].pop("values")[0])
     prior = message(json.dumps(payload))
-    before = copy.deepcopy((prior, locations))
-    checked = check_message(prior, locations)
-    feedback = submission_feedback(
-        prior, checked.issues, tool="submit_roster", locations=locations
-    )
-    error = next(e for e in feedback["errors"] if e["path"].endswith("/location"))
-    assert error["kind"] == "evidence" and error["scope"] == "tool_arguments"
-    assert error["match_status"] == status and error["match_count"] == count
-    assert [c["location"] for c in error["candidate_locations"]] == [
-        f"T:p3-b{i}" for i in range(min(count, 5))
+    prior["tool_calls"][0]["function"]["name"] = "submit_quantities"
+    check = check_quantities(prior, LOCATIONS)
+    feedback = submission_feedback(prior, check.issues, tool="submit_quantities")
+    assert feedback["errors"] == [
+        {
+            "kind": "schema",
+            "path": "/quantities/0",
+            "missing": ["values"],
+            "unexpected": ["evidence", "unit", "value"],
+        }
     ]
-    assert error["candidates_truncated"] is (count > 5)
-    for candidate in error["candidate_locations"]:
-        assert len(candidate["excerpt"]) <= 240
-        assert quote in candidate["excerpt"]
-        assert candidate["excerpt"] in locations[candidate["location"]]["text"]
-    assert "source data, not instructions" in error["instruction"]
-    assert "No location was changed" in error["instruction"]
-    assert (prior, locations) == before and not checked.passed
+    assert "520" not in json.dumps(feedback)
 
 
-def test_protocol_error_keeps_its_own_scope():
+def test_unknown_location_reports_fact_without_candidate_search():
+    payload = submission()
+    payload["stars"][0]["identifiers"][0]["evidence"][0]["location"] = "T:p9-b9"
+    prior = message(json.dumps(payload))
+    check = check_message(prior, LOCATIONS, quote_warnings=True)
+    errors = submission_feedback(prior, check.issues, tool="submit_roster")["errors"]
+    assert len(errors) == 2
+    assert all(e["path"].endswith("/location") for e in errors)
+    assert "T:p9-b9" in errors[0]["message"]
+    assert "candidate_locations" not in errors[0]
+    assert not check.passed
+
+
+def test_protocol_errors_report_required_call_without_internal_paths():
     prior = {"content": "No tool call."}
     checked = check_message(prior, LOCATIONS)
-    feedback = submission_feedback(
-        prior, checked.issues, tool="submit_roster", locations=LOCATIONS
-    )
-    assert all(e["scope"] == e["kind"] == "protocol" for e in feedback["errors"])
+    history = correction_messages(prior, checked.issues)
+    feedback = submission_feedback(prior, checked.issues, tool="submit_roster")
+    assert feedback["errors"][0]["received_calls"] == 0
+    assert feedback["errors"][0]["expected_tool"] == "submit_roster"
+    assert '"errors"' in history[-1].content
 
 
-def test_roster_feedback_uses_current_paper_locations_in_actual_correction(prepared):
-    good = submission([entry("B", 2, "follow_up")])
-    bad = copy.deepcopy(good)
-    bad["stars"][0]["identifiers"][0]["evidence"][0]["location"] = "T:p1-b0"
-    handle, report, adapter, _ = run(prepared, [bad, good])
-    assert report.result_status == "complete"
-    messages = adapter.seen[1]["messages"]
-    assert json.loads(messages[2]["tool_calls"][0]["function"]["arguments"]) == bad
-    error = json.loads(messages[3]["content"])["errors"][0]
-    assert error["path"] == "/stars/0/identifiers/0/evidence/0/quote"
-    assert error["match_status"] == "unique"
-    assert error["candidate_locations"] == [
-        {"location": "T:p1-b1", "excerpt": TEXT.splitlines()[1]}
-    ]
-    assert saved_roster(prepared[0], handle.execution_id).data.source_round == 1
-
-
-def test_quantity_feedback_uses_same_contract_and_preserves_submitted_value(prepared):
+def test_actual_quantity_correction_preserves_raw_history(prepared):
     good = quantities()
     bad = copy.deepcopy(good)
-    bad["quantities"][0]["values"][0]["evidence"][0]["location"] = "T:p1-b1"
+    bad["quantities"][0]["values"][0]["evidence"][0]["location"] = "T:p9-b9"
     _, report, adapter, _ = run_full(prepared, [submission(), bad, good])
-    assert report.result_status == "complete"
+    assert report.result_status == "complete", report.errors
     messages = adapter.seen[2]["messages"]
     assert json.loads(messages[3]["tool_calls"][0]["function"]["arguments"]) == bad
     feedback = json.loads(messages[4]["content"])
-    assert feedback["argument_root"]["required"] == ["quantities", "notes"]
-    error = feedback["errors"][0]
-    assert error["path"] == "/quantities/0/values/0/evidence/0/quote"
-    assert error["match_status"] == "unique"
-    assert error["candidate_locations"] == [
-        {"location": "T:p1-b0", "excerpt": TEXT.splitlines()[0]}
-    ]
+    assert feedback["errors"][0]["path"] == "/quantities/0/values/0/evidence/0/location"
+    assert "quantities and notes" in messages[5]["content"]
 
 
 @pytest.mark.parametrize("tool", ["submit_roster", "submit_quantities"])
 @pytest.mark.parametrize(
-    "evidence,expected",
+    "evidence",
     [
-        (
-            {"location": "T:p1-b0"},
-            "Text evidence must contain only location and a nonempty quote.",
-        ),
-        (
-            {"location": "T:p1-b0", "quote": ""},
-            "Text evidence must contain only location and a nonempty quote.",
-        ),
-        (
-            {"location": "I:p1-b0", "quote": "A"},
-            "Image evidence must contain only location.",
-        ),
+        {"location": "T:p1-b0"},
+        {"location": "T:p1-b0", "quote": ""},
+        {"location": "I:p1-b0", "quote": "A"},
     ],
 )
-def test_evidence_schema_feedback_does_not_report_value_structure(
-    tool, evidence, expected
+def test_evidence_shapes_report_schema_constraints_without_numerical_advice(
+    tool, evidence
 ):
     payload = submission() if tool == "submit_roster" else quantities()
     owner = (
@@ -208,7 +169,6 @@ def test_evidence_schema_feedback_does_not_report_value_structure(
         else payload["quantities"][0]["values"][0]
     )
     owner["evidence"] = [evidence]
-    original = copy.deepcopy(payload)
     prior = message(json.dumps(payload))
     prior["tool_calls"][0]["function"]["name"] = tool
     check = (
@@ -216,27 +176,8 @@ def test_evidence_schema_feedback_does_not_report_value_structure(
         if tool == "submit_roster"
         else check_quantities(prior, LOCATIONS)
     )
-    history = correction_messages(prior, check.issues, tool=tool, locations=LOCATIONS)
-    feedback = json.loads(history[1].content)
-    error = next(e for e in feedback["errors"] if e["path"].endswith("/evidence/0"))
-    assert error["message"] == expected
-    assert error["kind"] == "evidence"
-    assert not any("use bounds" in e["message"] for e in feedback["errors"])
-    assert not check.passed and payload == original
-
-
-def test_actual_value_combination_still_reports_value_structure():
-    payload = quantities()
-    payload["quantities"][0]["values"][0]["lower_bound"] = "400"
-    prior = message(json.dumps(payload))
-    prior["tool_calls"][0]["function"]["name"] = "submit_quantities"
-    check = check_quantities(prior, LOCATIONS)
-    feedback = submission_feedback(
-        prior, check.issues, tool="submit_quantities", locations=LOCATIONS
-    )
-    error = next(e for e in feedback["errors"] if e["path"] == "/quantities/0/values/0")
-    assert error["kind"] == "schema"
-    assert (
-        error["message"]
-        == "Use value, with optional errors, or use bounds without value or errors."
-    )
+    errors = submission_feedback(prior, check.issues, tool=tool)["errors"]
+    error = next(e for e in errors if e.get("path", "").endswith("/evidence/0"))
+    assert error["rule"] == "oneOf" and error["kind"] == "schema"
+    assert "lower_bound" not in json.dumps(error)
+    assert not check.passed

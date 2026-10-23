@@ -156,7 +156,7 @@ def test_full_request_and_saved_short_excerpt(prepared):
 
 def test_two_full_corrections_allow_changes_and_preserve_reasoning(prepared):
     bad = submission()
-    bad["stars"][0]["identifiers"][0]["evidence"][0]["quote"] = "rewritten"
+    bad["stars"][0]["identifiers"][0]["evidence"][0]["location"] = "T:p9-b9"
     other = submission([entry("B", 2, "follow_up")])
     other["extra"] = True
     final = submission([entry("B", 2, "follow_up")])

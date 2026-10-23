@@ -19,6 +19,7 @@ def build_preparation_parser(commands: argparse._SubParsersAction) -> None:
     )
     sub = group.add_subparsers(dest="preparation_command", required=True)
     for name, help_text in (
+        ("init", "离线初始化文献目录与固定检索范围，不访问外部服务"),
         ("discover", "只检索与去重，不下载、不解析"),
         ("download", "下载批次 PDF，首次获取时固定最新版"),
         ("parse", "批量上传固定 PDF 至 MinerU 官方精准 API（vlm）"),
@@ -29,27 +30,33 @@ def build_preparation_parser(commands: argparse._SubParsersAction) -> None:
         command.add_argument("--batch", required=True, help="批次标识（固定范围）")
         command.add_argument(
             "--output",
-            required=name != "parse",
             type=Path,
-            help="JSON／CSV 清单输出目录；解析阶段可省略，只生成 literature 下的 summary.json",
+            help="JSON／CSV 清单目录；新文献空间默认使用 reports/",
         )
-        if name == "discover":
+        if name in {"init", "discover"}:
+            if name == "discover":
+                command.add_argument(
+                    "--init",
+                    action="store_true",
+                    help="兼容旧命令：初始化业务空间并检索；离线准备请用 prepare init",
+                )
             command.add_argument(
-                "--init",
-                action="store_true",
-                help="显式初始化业务空间；拒绝接管未知非空目录",
+                "--from",
+                dest="submitted_from",
+                required=name == "init",
+                type=date.fromisoformat,
             )
             command.add_argument(
-                "--from", dest="submitted_from", required=True, type=date.fromisoformat
-            )
-            command.add_argument(
-                "--to", dest="submitted_to", required=True, type=date.fromisoformat
+                "--to",
+                dest="submitted_to",
+                required=name == "init",
+                type=date.fromisoformat,
             )
             command.add_argument(
                 "--term",
                 action="append",
-                required=True,
-                help="短语关键词，可重复；不限制类别",
+                required=name == "init",
+                help="短语关键词，可重复；检索时省略范围参数则使用已保存批次",
             )
             command.add_argument(
                 "--round", type=int, default=1, help="查询轮次序号，默认 1"
@@ -69,8 +76,7 @@ def build_preparation_parser(commands: argparse._SubParsersAction) -> None:
                 command.add_argument(
                     "--literature",
                     type=Path,
-                    default=Path(".work/hvs_literature"),
-                    help="逐篇解析材料目录，默认 .work/hvs_literature",
+                    help="仅旧空间可显式导出解析副本；新文献空间直接保存 papers/",
                 )
                 credentials = command.add_mutually_exclusive_group()
                 credentials.add_argument(
@@ -108,7 +114,13 @@ def run_preparation_command(args: argparse.Namespace) -> int:
     space = service = manifest = None
     exit_code = 0
     try:
-        if args.preparation_command == "discover":
+        defining = args.preparation_command == "init" or (
+            args.preparation_command == "discover"
+            and any((args.submitted_from, args.submitted_to, args.term))
+        )
+        if defining:
+            if not all((args.submitted_from, args.submitted_to, args.term)):
+                raise ValueError("检索范围必须同时提供 --from、--to 和 --term")
             for term in args.term:
                 if not ArxivSearchRequest(
                     args.submitted_from, args.submitted_to, term
@@ -118,10 +130,21 @@ def run_preparation_command(args: argparse.Namespace) -> int:
                 args.max_queries is not None and args.max_queries < 1
             ):
                 raise ValueError("轮次及查询推进上限必须是正整数")
-        if args.preparation_command == "discover" and args.init:
+        if args.preparation_command == "init":
+            space = initialize_workspace(args.space, literature=True)
+        elif args.preparation_command == "discover" and args.init:
+            if not defining:
+                raise ValueError("初始化检索需要完整范围；离线初始化请用 prepare init")
             space = initialize_workspace(args.space)
         else:
             space = open_workspace(args.space)
+        if space.is_literature:
+            if args.output is None:
+                args.output = space.root / "reports"
+            if getattr(args, "literature", None) is not None:
+                raise ValueError("新文献空间直接保存 papers/，不另行导出材料副本")
+        elif args.output is None and args.preparation_command != "parse":
+            raise ValueError("旧空间需要显式指定 --output")
         if args.preparation_command == "parse":
             from .materials.mineru_official import OfficialMinerU
 
@@ -135,7 +158,7 @@ def run_preparation_command(args: argparse.Namespace) -> int:
             )
         else:
             service = _build_service(space)
-        if args.preparation_command == "discover":
+        if defining:
             service.create_batch(
                 args.batch,
                 submitted_from=args.submitted_from,
@@ -143,6 +166,7 @@ def run_preparation_command(args: argparse.Namespace) -> int:
                 terms=args.term,
                 round_seq=args.round,
             )
+        if args.preparation_command == "discover":
             service.discover(
                 args.batch, max_queries=args.max_queries, progress=_progress
             )
@@ -167,7 +191,7 @@ def run_preparation_command(args: argparse.Namespace) -> int:
                 paths = (
                     list(export_manifest(manifest, args.output)) if args.output else []
                 )
-                if args.preparation_command == "parse":
+                if args.preparation_command == "parse" and args.literature is not None:
                     service.materials.export_literature(manifest, args.literature)
                     paths.append(args.literature / "summary.json")
                 print(
@@ -190,6 +214,8 @@ def run_preparation_command(args: argparse.Namespace) -> int:
                 space.close()
     if exit_code or manifest is None:
         return exit_code or 1
+    if args.preparation_command == "init":
+        return 0
     if not manifest["discovery_complete"]:
         return 3
     if args.preparation_command in {"download", "parse"}:
@@ -202,6 +228,8 @@ def run_preparation_command(args: argparse.Namespace) -> int:
         if args.preparation_command == "download":
             ready = all(
                 p["download"]["state"] in {"downloaded", "imported"} for p in papers
+            ) and not any(
+                p["issue"] and p["issue"]["stage"] == "download" for p in papers
             )
         else:
             ready = all(p["preparation"]["state"] == "finished" for p in papers)

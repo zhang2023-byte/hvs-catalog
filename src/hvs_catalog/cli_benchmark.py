@@ -57,6 +57,17 @@ def add_benchmark_commands(commands):
     compare = sub.add_parser("compare", help="从已有评分和费用生成比较")
     compare.add_argument("--rounds", required=True, nargs="+")
     compare.add_argument("--name", required=True)
+    for operation in ("prepare", "run", "status", "score"):
+        child = sub.add_parser(
+            "repair-" + operation,
+            help="网络缺口的派生补跑；仅 repair-run 会请求模型",
+        )
+        child.add_argument("--round", required=True)
+        child.add_argument("--label", default="network-repair-01")
+        if operation == "prepare":
+            child.add_argument("--policy", type=Path)
+        elif operation == "run":
+            child.add_argument("--env-file", type=Path)
     migrate = sub.add_parser(
         "migrate", help="将旧 Benchmark 迁移到新的空目录；核验后再替换原目录"
     )
@@ -82,7 +93,33 @@ def run_benchmark_command(args):
 
     try:
         command = args.benchmark_command
-        if command == "init":
+        if command.startswith("repair-"):
+            from .benchmark.repair import (
+                prepare_repair,
+                repair_status,
+                run_repair,
+                score_repair,
+            )
+            from .benchmark.repair_source import repair_folder
+
+            if command == "repair-prepare":
+                result = prepare_repair(
+                    args.root,
+                    args.round,
+                    label=args.label,
+                    policy=json.loads(args.policy.read_text()) if args.policy else None,
+                )
+            elif command == "repair-run":
+                result = run_repair(
+                    args.root, args.round, label=args.label, env_file=args.env_file
+                )
+            elif command == "repair-status":
+                result = repair_status(repair_folder(args.root, args.round, args.label))
+            else:
+                result = score_repair(
+                    args.root, args.round, label=args.label
+                ).model_dump(mode="json")
+        elif command == "init":
             space = initialize_workspace(args.root, benchmark=True)
             space.close()
             result = {"root": str(args.root.resolve())}

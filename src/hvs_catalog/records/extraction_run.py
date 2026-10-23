@@ -56,3 +56,6 @@ class ExtractionRun(Config):
     errors: list[dict]
     trace_ref: ArtifactRef
     result_ref: ArtifactRef | None
+    evidence_audit_ref: ArtifactRef | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )

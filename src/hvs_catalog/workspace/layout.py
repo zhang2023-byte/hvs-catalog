@@ -105,7 +105,7 @@ def _read_marker(root: Path) -> SpaceIdentity:
         payload = json.loads(marker_path.read_text(encoding="utf-8"))
         if payload.get("format") != WORKSPACE_FORMAT:
             raise UnknownWorkspaceError(f"未知工作空间格式：{payload.get('format')!r}")
-        if payload.get("format_version") not in {WORKSPACE_FORMAT_VERSION, 2}:
+        if payload.get("format_version") not in {WORKSPACE_FORMAT_VERSION, 2, 3}:
             raise UnknownWorkspaceError(
                 f"未知工作空间格式版本：v{payload.get('format_version')}"
                 f"（当前支持 v{WORKSPACE_FORMAT_VERSION}），不自动迁移"
@@ -141,13 +141,19 @@ def _publish_initialization(staging: Path, root: Path) -> None:
 
 
 def initialize_workspace(
-    root: Path, *, config: dict | None = None, benchmark: bool = False
+    root: Path,
+    *,
+    config: dict | None = None,
+    benchmark: bool = False,
+    literature: bool = False,
 ) -> Workspace:
     """Create complete workspaces; compatible reinitialization only reads original
     configuration.
     """
     from .store import RecordStore
 
+    if benchmark and literature:
+        raise ValueError("Choose one workspace layout.")
     root = Path(root).resolve()
     if (root / WORKSPACE_FILENAME).exists() or (
         root / ".state" / WORKSPACE_FILENAME
@@ -158,6 +164,9 @@ def initialize_workspace(
             raise WorkspaceConflictError(
                 "Benchmark requires a shared benchmark workspace."
             )
+        if literature and space.identity.format_version != 3:
+            space.close()
+            raise WorkspaceConflictError("Literature requires a literature workspace.")
         return space
     _require_empty_target(root)
     _validate_config(config if config is not None else {})
@@ -165,11 +174,21 @@ def initialize_workspace(
     staging = Path(tempfile.mkdtemp(prefix=f".{root.name}-init-", dir=root.parent))
     try:
         identity = SpaceIdentity(
-            uuid.uuid4().hex, WORKSPACE_FORMAT, 2 if benchmark else 1, _now()
+            uuid.uuid4().hex,
+            WORKSPACE_FORMAT,
+            3 if literature else 2 if benchmark else 1,
+            _now(),
         )
-        state = staging / ".state" if benchmark else staging
+        state = staging / ".state" if benchmark or literature else staging
         state.mkdir(exist_ok=True)
-        for dirname in ("materials", RUNS_DIR) if benchmark else (SOURCE_DIR, RUNS_DIR):
+        directories = (
+            ("papers", RUNS_DIR, "reports")
+            if literature
+            else ("materials", RUNS_DIR)
+            if benchmark
+            else (SOURCE_DIR, RUNS_DIR)
+        )
+        for dirname in directories:
             (staging / dirname).mkdir()
         _write_file_published(
             state / CONFIG_FILENAME,
@@ -200,7 +219,7 @@ def open_workspace(root: Path, *, read_only: bool = False) -> Workspace:
     """Open explicitly without implicit initialization, repair, or migration."""
     root = Path(root).resolve()
     identity = _read_marker(root)
-    state = root / ".state" if identity.format_version == 2 else root
+    state = root / ".state" if identity.format_version in {2, 3} else root
     for name in (BUSINESS_DB, CHECKPOINT_DB):
         if not (state / name).is_file():
             raise WorkspaceIntegrityError(
@@ -274,7 +293,19 @@ class Workspace:
         self.identity = identity
         self._store: RecordStore | None = None
         self.read_only = read_only
-        self.state_root = root / ".state" if identity.format_version == 2 else root
+        self.state_root = root / ".state" if identity.format_version in {2, 3} else root
+
+    @property
+    def is_literature(self) -> bool:
+        return self.identity.format_version == 3
+
+    def paper_path(self, paper: str, name: str) -> str:
+        """Locate a fixed paper inside a literature workspace."""
+        if not self.is_literature:
+            raise WorkspaceConflictError("This layout has no papers directory.")
+        relative = f"papers/{paper.replace('/', '_')}/{name}"
+        resolve_within(self.root, relative)
+        return relative
 
     def lock(self) -> SpaceLock:
         return SpaceLock(self.state_root)
@@ -323,16 +354,20 @@ class Workspace:
     def publish_file(self, relative_path: str, data: bytes) -> ArtifactRef:
         if self.read_only:
             raise WorkspaceIntegrityError("只读空间不能发布文件")
-        if self.identity.format_version == 2 and relative_path.startswith(
+        if self.identity.format_version in {2, 3} and relative_path.startswith(
             "runs/inputs/"
         ):
             relative_path = ".state/inputs/" + relative_path.removeprefix(
                 "runs/inputs/"
             )
+        if self.is_literature and relative_path.startswith("sources/"):
+            relative_path = ".state/" + relative_path
         rel = Path(relative_path)
         top = rel.parts[0] if rel.parts else ""
         allowed = (
-            {"materials", "runs", ".state", "preparations"}
+            {"papers", "runs", "reports", ".state"}
+            if self.is_literature
+            else {"materials", "runs", ".state", "preparations"}
             if self.identity.format_version == 2
             else {SOURCE_DIR, RUNS_DIR}
         )
@@ -360,6 +395,10 @@ class Workspace:
         return self.publish_file(self.run_path(execution_id, name), data)
 
     def run_path(self, execution_id: str, name: str) -> str:
+        if self.is_literature:
+            if name.startswith(("results/", "traces/", "requests/", "responses/")):
+                return f"runs/{execution_id}/{name}"
+            return f".state/executions/{execution_id}/{name}"
         if self.identity.format_version == 2:
             if name.startswith(("results/", "traces/")):
                 return f".state/executions/{execution_id}/{name}"

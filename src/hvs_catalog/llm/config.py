@@ -94,21 +94,26 @@ def _profile(model, provider, cap, defaults, extra, source, accounting):
 PROFILES = {
     p.model: p
     for p in (
-        _profile(
-            "deepseek-v4.1-flash",
-            "deepseek",
-            393216,
-            {"thinking_type": "enabled", "reasoning_effort": "max"},
-            (
-                _spec("thinking_type", (str,), choices=("enabled", "disabled")),
-                _spec(
-                    "reasoning_effort", (str,), choices=("none", "low", "high", "max")
+        *(
+            _profile(
+                model,
+                "deepseek",
+                393216,
+                {"thinking_type": "enabled", "reasoning_effort": "max"},
+                (
+                    _spec("thinking_type", (str,), choices=("enabled", "disabled")),
+                    _spec(
+                        "reasoning_effort",
+                        (str,),
+                        choices=("none", "low", "high", "max"),
+                    ),
+                    _spec("frequency_penalty", minimum=-2, maximum=2),
+                    _spec("presence_penalty", minimum=-2, maximum=2),
                 ),
-                _spec("frequency_penalty", minimum=-2, maximum=2),
-                _spec("presence_penalty", minimum=-2, maximum=2),
-            ),
-            "https://api-docs.deepseek.com/api/create-chat-completion/",
-            "Combined completion limit; retain provider reasoning usage separately.",
+                "https://api-docs.deepseek.com/api/create-chat-completion/",
+                "Combined completion limit; retain provider reasoning usage separately.",
+            )
+            for model in ("deepseek-v4.1-flash", "deepseek-v4.1-flash-1017")
         ),
         _profile(
             "glm-5.3-flash",
