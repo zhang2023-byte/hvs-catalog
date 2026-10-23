@@ -172,7 +172,11 @@ def test_invalid_caption_coordinates_are_rejected(bbox):
         read_result(buffer.getvalue(), 1)
 
 
-def test_image_protocol_rejects_local_links_and_unconfigured_models():
+@pytest.mark.parametrize(
+    "model",
+    ["deepseek-v4.1-flash", "glm-5.3-flash", "mimo-v2.6-flash", "qwen3.8-flash"],
+)
+def test_image_protocol_supports_profiles_and_rejects_local_links(model):
     url = "data:image/png;base64," + base64.b64encode(PNG).decode()
     message = Message(
         role="user",
@@ -181,9 +185,7 @@ def test_image_protocol_rejects_local_links_and_unconfigured_models():
             {"type": "image_url", "image_url": {"url": url}},
         ],
     )
-    request = CallRequest(
-        model=ModelConfig(model="deepseek-v4.1-flash"), messages=[message]
-    )
+    request = CallRequest(model=ModelConfig(model=model), messages=[message])
     wire = TokenDanceAdapter().prepare(request)["payload"]
     assert wire["messages"][0]["content"][1]["image_url"]["url"] == url
     with pytest.raises(ValidationError, match="base64 data URL"):
@@ -193,17 +195,17 @@ def test_image_protocol_rejects_local_links_and_unconfigured_models():
         )
     with pytest.raises(ValidationError, match="user message"):
         Message(role="system", content=message.content)
-    request.model = ModelConfig(model="glm-5.3-flash")
-    with pytest.raises(ValueError, match="will not be discarded"):
-        TokenDanceAdapter().prepare(request)
 
 
 @pytest.mark.integration
-def test_image_bytes_reach_http_endpoint(image_space, tmp_path):
+@pytest.mark.parametrize(
+    "model", ["deepseek-v4.1-flash", "glm-5.3-flash", "mimo-v2.6-flash"]
+)
+def test_image_bytes_reach_http_endpoint(image_space, tmp_path, model):
     space, _, bundle, source = image_space
     image = material_prompt(space, bundle, source).images[0]
     request = CallRequest(
-        model=ModelConfig(model="deepseek-v4.1-flash"),
+        model=ModelConfig(model=model),
         messages=[
             Message(
                 role="user",

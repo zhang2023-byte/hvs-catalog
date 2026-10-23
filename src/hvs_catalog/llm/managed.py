@@ -15,6 +15,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import SecretStr
 
 from ..records.common import ArtifactRef, canonical_json, sha256_of
+from ..records.response import apply_response_policy
 from ..records.runs import Attempt, ModelSpec, RunError, RunRecord, StepRecord, Usage
 from ..runtime import (
     build_input_snapshot,
@@ -124,12 +125,23 @@ def _finalize(ctx, attempts, envelope, *, index=-1, step_id=STEP):
 
 
 def _archive_raw(ctx, envelope, name):
-    """Retain submissions and transport facts, discarding redundant wire bytes."""
+    """Keep response bytes for failures and recorded argument normalization."""
     exchange = envelope.get("exchange") or {}
     raw = exchange.pop("_raw_stream", None)
-    if raw is not None:
-        raw.close()
-    exchange.pop("raw_response_ref", None)
+    try:
+        if raw is not None and (
+            envelope.get("error") or exchange.get("tool_arguments_normalization")
+        ):
+            raw.seek(0, 2)
+            if raw.tell():
+                raw.seek(0)
+                ref = ctx.space.publish_run_stream(
+                    ctx.execution.execution_id, name, raw
+                )
+                exchange["raw_response_ref"] = ref.model_dump(mode="json")
+    finally:
+        if raw is not None:
+            raw.close()
     exchange["events"] = []
     exchange["text"] = ""
 
@@ -252,7 +264,10 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
             number = index + 1
             request_ref = publish_json(
                 ctx.space,
-                f"runs/{ctx.execution.execution_id}/requests/{prefix}attempt-{number:03d}.json",
+                ctx.space.run_path(
+                    ctx.execution.execution_id,
+                    f"requests/{prefix}attempt-{number:03d}.json",
+                ),
                 prepared,
             )
             attempts.append(
@@ -274,6 +289,7 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
                 )
                 service.hook("after_response")
                 try:
+                    apply_response_policy(exchange, prepared)
                     result = service.adapter.parse(exchange, request)
                     envelope = {
                         "exchange": exchange,
@@ -314,7 +330,10 @@ def execute_model_call(ctx, service, request, prepared, *, step_id=STEP, call_ke
             _archive_raw(ctx, envelope, f"responses/{prefix}attempt-{number:03d}.raw")
             response_ref = publish_json(
                 ctx.space,
-                f"runs/{ctx.execution.execution_id}/responses/{prefix}attempt-{number:03d}.json",
+                ctx.space.run_path(
+                    ctx.execution.execution_id,
+                    f"responses/{prefix}attempt-{number:03d}.json",
+                ),
                 envelope,
             )
             exchange = envelope["exchange"]
@@ -406,7 +425,10 @@ def _execute_concurrent(ctx, service, request, prepared, step_id, call_key):
     service.hook("before_send")
     request_ref = publish_json(
         ctx.space,
-        f"runs/{ctx.execution.execution_id}/requests/{prefix}attempt-{len(indices) + 1:03d}.json",
+        ctx.space.run_path(
+            ctx.execution.execution_id,
+            f"requests/{prefix}attempt-{len(indices) + 1:03d}.json",
+        ),
         prepared,
     )
     attempts.append(
@@ -432,7 +454,10 @@ def _execute_concurrent(ctx, service, request, prepared, step_id, call_key):
             )
             response_ref = publish_json(
                 ctx.space,
-                f"runs/{ctx.execution.execution_id}/responses/{prefix}attempt-{len(indices) + 1:03d}.json",
+                ctx.space.run_path(
+                    ctx.execution.execution_id,
+                    f"responses/{prefix}attempt-{len(indices) + 1:03d}.json",
+                ),
                 envelope,
             )
             current = _attempts(ctx, step_id)

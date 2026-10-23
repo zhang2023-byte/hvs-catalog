@@ -862,11 +862,12 @@ def verify_artifact_refs(records: list[AnyRecord], root: Path) -> list[str]:
 
     Cover every request/response/prompt/example/precedent/source {path, sha256}
     reference, including historical runs. Commits, backups, recovery, and completion
-    share this function.
+    share this function. Check each path/hash pair once per call. Keep every owner
+    in error reports, and recheck files on the next call, even in a shared scope.
     """
-    from .layout import resolve_within
-
     problems: list[str] = []
+    checked: dict[tuple[str, str | None], list[str]] = {}
+    dependencies: dict = {}
     for record in records:
         payload = record if isinstance(record, dict) else record.model_dump(mode="json")
         record_id = (
@@ -874,29 +875,36 @@ def verify_artifact_refs(records: list[AnyRecord], root: Path) -> list[str]:
         )
         revision = record["revision"] if isinstance(record, dict) else record.revision
         for ref in walk_artifact_refs(payload):
+            key = (ref["path"], ref.get("sha256"))
+            if key not in checked:
+                checked[key] = _artifact_problems(root, ref, dependencies)
+            if not checked[key]:
+                continue
             where = f"记录 {record_id} v{revision} 引用的 {ref['path']}"
-            path = root / ref["path"]
-            try:
-                resolved = resolve_within(root, ref["path"])
-            except WorkspaceIntegrityError as exc:
-                problems.append(f"{where}：{exc}")
-                continue
-            if resolved.is_symlink() or not resolved.is_file():
-                problems.append(f"{where} 缺失或不可读")
-                continue
-            digest = file_digest(path)
-            if digest != ref.get("sha256"):
-                problems.append(f"{where} 哈希与记录不符")
-            else:
-                from .archives import shared_dependencies
+            problems.extend(where + problem for problem in checked[key])
+    return problems
 
-                try:
-                    for dependency in shared_dependencies(root, ref):
-                        target = resolve_within(root, dependency["path"])
-                        if file_digest(target) != dependency["sha256"]:
-                            problems.append(f"{where} 的共用输入哈希不符")
-                except (OSError, ValueError) as exc:
-                    problems.append(f"{where} 的共用输入不可读：{exc}")
+
+def _artifact_problems(root: Path, ref: dict, dependencies: dict) -> list[str]:
+    """Check one reference and its dependencies; keep errors relative to its owner."""
+    from .archives import shared_dependencies
+    from .layout import resolve_within
+
+    try:
+        resolved = resolve_within(root, ref["path"])
+    except WorkspaceIntegrityError as exc:
+        return [f"：{exc}"]
+    if resolved.is_symlink() or not resolved.is_file():
+        return [" 缺失或不可读"]
+    if file_digest(resolved) != ref.get("sha256"):
+        return [" 哈希与记录不符"]
+    problems = []
+    try:
+        # The traversal verifies each dependency's path and expected hash.
+        # Share its nodes only within this verify_artifact_refs call.
+        shared_dependencies(root, ref, _checked_nodes=dependencies)
+    except (OSError, ValueError) as exc:
+        problems.append(f" 的共用输入不可读：{exc}")
     return problems
 
 

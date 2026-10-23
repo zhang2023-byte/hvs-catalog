@@ -28,8 +28,8 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command")
     gold = commands.add_parser(
         "gold",
-        help="原PDF Gold工作副本、校验、比较、保存与评分导出",
-        description="当前Gold工具；迁移另行开展。正式保存绑定具体人类批准，不执行Git。",
+        help="原PDF Gold标注校验、比较、保存与读取",
+        description="正式Gold直接用于评分。保存须有具体人类批准，不执行Git。",
     )
     from .cli_gold import add_gold_commands
 
@@ -65,6 +65,9 @@ def build_parser() -> argparse.ArgumentParser:
     from .cli_llm import add_model_commands
 
     add_model_commands(commands)
+    from .cli_benchmark import add_benchmark_commands
+
+    add_benchmark_commands(commands)
     return parser
 
 
@@ -87,6 +90,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         from .cli_scoring import run_scoring_command
 
         return run_scoring_command(args)
+    if args.command == "benchmark":
+        from .cli_benchmark import run_benchmark_command
+
+        return run_benchmark_command(args)
     if args.command == "acquisition":
         from .cli_acquisition import EXIT_OK
 

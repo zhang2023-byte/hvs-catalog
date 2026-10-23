@@ -52,7 +52,7 @@ try:
         assert result['state']=='finished',result
         assert result['response']['result']['parsed']=={'id':'SYN-1','value':42}
         assert llm.resume_call(space,handle.execution_id)['attempt_count']==1
-    assert len(count)==4
+    assert len(count)==6
     space.close()
     config=root/'config.json';config.write_text(llm.CallConfig(model=llm.ModelConfig(model='glm-5.3-flash'),runtime=runtime).model_dump_json())
     env_file=root/'local.env';env_file.write_text('TOKENDANCE_API_KEY=wheel-test-key'+chr(10))
@@ -60,13 +60,13 @@ try:
         child=subprocess.run([str(script),*map(str,args)],capture_output=True,text=True,check=False,timeout=30)
         assert child.returncode==0,child.stderr+' '+child.stdout
         return json.loads(child.stdout)
-    assert len(cli('models','list'))==4
+    assert len(cli('models','list'))==6
     cli('models','check','--config',config)
     result=cli('models','probe','--config',config,'--space',root/'cli-space','--request-key','wheel-cli','--env-file',env_file)
     assert result['state']=='finished',result
     cli('models','status','--space',root/'cli-space','--execution',result['execution_id'])
     cli('models','resume','--space',root/'cli-space','--execution',result['execution_id'])
-    assert len(count)==5
+    assert len(count)==7
     # The installed public CLI joins actual preparation and real HTTP model calls.
     # All source content and service output here are synthetic.
     from hvs_catalog.materials import MaterialsService
@@ -86,7 +86,7 @@ try:
     evidence={'location':'T:p1-b0','quote':text}
     roster_payload={'stars':[{'identifiers':[{'value':'SYN-A','evidence':[evidence]}],'contribution_type':{'value':'candidates_found','evidence':[evidence]}}],'notes':''}
     prep_id=preparation.execution_id
-    config=root/'roster-config.json';config.write_text(ExtractionConfig(runtime=runtime).model_dump_json())
+    config=root/'roster-config.json';config.write_text(ExtractionConfig(default_model=llm.ModelConfig(model='deepseek-v4-flash-0731'),step_models={},runtime=runtime).model_dump_json())
     space.close()
     result=cli('extract','roster','--space',root/'roster-space','--preparation',prep_id,'--request-key','installed-roster','--config',config,'--env-file',env_file)
     assert result['outcome']=='finished' and result['implementation']=='model-extraction',result
@@ -94,7 +94,9 @@ try:
     status=cli('extract','status','--space',root/'roster-space','--execution',eid)
     assert status['usage']['attempts']==1,status
     assert cli('extract','resume','--space',root/'roster-space','--execution',eid)['outcome']=='finished'
-    assert len(count)==6
+    assert len(count)==8
+    assert isinstance(count[-1]['messages'][1]['content'],str)
+    assert count[-1]['provider']=={'only':['alibaba'],'allow_fallbacks':False}
     space=open_workspace(root/'roster-space')
     status=get_extraction(space,eid)
     records=[space.store().read_record(RecordRef.model_validate(r)) for r in status['result_refs']]

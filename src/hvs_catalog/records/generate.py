@@ -266,6 +266,9 @@ def build_outputs():
             "| Roster | [System](prompts/roster.md) | [Tool](tools/submit_roster.json) | [Schema](schemas/submission.roster.json) | Available |\n"
             "| Quantities | [System](prompts/quantities.md) | [Tool](tools/submit_quantities.json) | [Schema](schemas/submission.quantities.json) | Available |\n\n"
             "Both stages use the same frozen paper material. Quantity requests add a second user message with target identifiers.\n\n"
+            "Text-only inputs use separate [roster](prompts/roster-text-only.md) and "
+            "[quantity](prompts/quantities-text-only.md) material instructions. "
+            "They retain parser text and omit images from requests. Scientific rules and submission schemas remain the same.\n\n"
             "The final scientific result uses [literature_contribution.json](schemas/literature_contribution.json). "
             "The [run summary](schemas/extraction_run.json) records status and exact references. "
             "Its [fictional example](examples/run.json) uses placeholder references. "
@@ -286,6 +289,11 @@ def build_outputs():
         )
         outputs[f"prompts/{stage}.md"] = (
             "<!-- Generated -->\n" + blueprint.system + "\n"
+        )
+        outputs[f"prompts/{stage}-text-only.md"] = (
+            "<!-- Generated -->\n"
+            + assemble_blueprint(stage, "text_only").system
+            + "\n"
         )
         outputs[f"tools/submit_{stage}.json"] = (
             json.dumps(

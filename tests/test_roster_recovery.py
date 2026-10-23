@@ -7,7 +7,7 @@ import sys
 import threading
 
 import pytest
-from llm_helpers import completion, endpoint
+from llm_helpers import completion, endpoint, sse
 from pydantic import SecretStr
 from test_roster import ScriptedAdapter, run, submission
 
@@ -20,12 +20,14 @@ from hvs_catalog.pipeline import (
 )
 from hvs_catalog.pipeline.network_retry import continue_format_corrections
 from hvs_catalog.pipeline.roster import saved_roster
+from hvs_catalog.records.common import ArtifactRef
 from hvs_catalog.workspace import (
     OperationKeyConflictError,
     RecoveryInconsistentError,
     WorkspaceIntegrityError,
     backup_workspace,
 )
+from hvs_catalog.workspace.archives import read_json
 
 
 def test_changed_key_input_and_finished_reentry(prepared):
@@ -115,13 +117,16 @@ def test_reasoning_stored_once_and_corruption_blocks_resume_and_backup(
         ("after_commit", 1, "finished"),
     ],
 )
-def test_real_process_exit_windows(prepared, hook, expected_calls, outcome):
+@pytest.mark.parametrize("extra_brace", [False, True])
+def test_real_process_exit_windows(
+    prepared, hook, expected_calls, outcome, extra_brace
+):
     space, prep, config = prepared
 
     def reply(payload, number):
         body = completion(payload)
         body["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"] = (
-            json.dumps(submission())
+            json.dumps(submission()) + ("}" if extra_brace else "")
         )
         return {"body": body}
 
@@ -217,6 +222,9 @@ resume_extraction(space,eid,service=service)
             timeout=40,
         )
         assert child.returncode == 70, child.stderr
+        raw_files = sorted((space.root / "runs" / handle.execution_id).rglob("*.raw"))
+        assert len(raw_files) == 2
+        before = {path: path.read_bytes() for path in raw_files}
         report = resume_extraction(
             space,
             handle.execution_id,
@@ -226,6 +234,10 @@ resume_extraction(space,eid,service=service)
         assert [len(p["messages"]) for p in seen] == [2, 5, 8]
         assert seen[2]["messages"][2]["reasoning_content"] == "Synthetic Ω reasoning."
         assert seen[2]["messages"][5]["reasoning_content"] == "Synthetic Ω reasoning."
+        assert {path: path.read_bytes() for path in raw_files} == before
+        assert (
+            len(list((space.root / "runs" / handle.execution_id).rglob("*.raw"))) == 2
+        )
 
 
 @pytest.mark.integration
@@ -264,6 +276,91 @@ def test_parallel_rosters_archive_to_their_own_executions(prepared):
         roster = saved_roster(space, h.execution_id)
         assert roster.data.response_ref.path.startswith(f"runs/{h.execution_id}/")
         assert len(a.seen) == 1
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("normalized", [False, True])
+def test_parallel_failed_or_normalized_responses_keep_separate_raw_archives(
+    prepared, normalized
+):
+    space, prep, config = prepared
+    barrier = threading.Barrier(2)
+    received = {}
+
+    def reply(payload, number):
+        if number <= 2:
+            barrier.wait(timeout=10)
+        body = completion(payload)
+        body["id"] = f"response-{number}"
+        arguments = json.dumps(submission()) + (
+            ("}" if normalized else "}}") if number <= 2 else ""
+        )
+        body["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"] = (
+            arguments
+        )
+        raw = sse(body)
+        received[f"local-request-{number}"] = raw
+        return {"bytes": raw}
+
+    with endpoint(reply) as (url, seen, active):
+        config = config.model_copy(
+            update={"runtime": config.runtime.model_copy(update={"base_url": url})}
+        )
+        handles = [
+            start_roster_extraction(
+                space,
+                preparation_execution_id=prep,
+                request_key=f"raw-parallel-{i}",
+                configuration=config,
+            )
+            for i in range(2)
+        ]
+        tasks = [
+            ExtractionTask(
+                space,
+                h.execution_id,
+                CallService(config.runtime, credential=SecretStr("synthetic-key")),
+            )
+            for h in handles
+        ]
+        reports = resume_extractions(tasks, concurrency=2)
+        assert [r.result_status for r in reports] == ["complete", "complete"]
+        assert len(seen) == (2 if normalized else 4) and active["peak"] == 2
+        ids = set()
+        for handle in handles:
+            responses = list(
+                (space.root / "runs" / handle.execution_id / "responses").glob("*.json")
+            )
+            assert len(responses) == (1 if normalized else 2)
+            envelopes = [
+                read_json(
+                    space,
+                    ArtifactRef(
+                        path=p.relative_to(space.root).as_posix(),
+                        sha256=hashlib.sha256(p.read_bytes()).hexdigest(),
+                    ),
+                )
+                for p in responses
+            ]
+            archived = next(
+                e
+                for e in envelopes
+                if e["error"] or e["exchange"].get("tool_arguments_normalization")
+            )
+            exchange = archived["exchange"]
+            assert bool(exchange.get("tool_arguments_normalization")) is normalized
+            ref = ArtifactRef.model_validate(exchange["raw_response_ref"])
+            assert ref.path.startswith(f"runs/{handle.execution_id}/responses/")
+            request_id = exchange["headers"]["x-request-id"]
+            ids.add(request_id)
+            assert space.read_file(ref) == received[request_id]
+            assert all(
+                "raw_response_ref" not in e["exchange"]
+                for e in envelopes
+                if not e["error"]
+                and not e["exchange"].get("tool_arguments_normalization")
+            )
+        assert ids == {"local-request-1", "local-request-2"}
 
 
 def test_continuation_checks_terminal_checkpoint_before_reset(prepared):

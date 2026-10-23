@@ -35,7 +35,9 @@ def scoped_verification(function):
 
 
 def _key(path):
-    path = Path(path).resolve()
+    # Containment belongs to the caller. stat follows links and identifies the
+    # current file, including replacements; do not repeat full path resolution.
+    path = Path(path).absolute()
     stat = path.stat()
     return (
         path,

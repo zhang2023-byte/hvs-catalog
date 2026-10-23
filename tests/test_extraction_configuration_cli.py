@@ -24,6 +24,12 @@ def cli(*args):
 def test_default_config_check_and_complete_preview(tmp_path):
     config = cli("extract", "config")
     assert config.returncode == 0, config.stderr
+    defaults = ExtractionConfig.model_validate_json(config.stdout)
+    assert defaults.model_for("roster").parameters["reasoning_effort"] == "max"
+    assert defaults.model_for("quantities").parameters["reasoning_effort"] == "low"
+    # Explicit historical configurations retain their recorded stage inheritance.
+    historical = ExtractionConfig(step_models={})
+    assert historical.model_for("quantities").parameters["reasoning_effort"] == "max"
     assert len(json.loads(cli("extract", "check").stdout)["steps"]) == 2
     material = tmp_path / "input.json"
     material.write_text(

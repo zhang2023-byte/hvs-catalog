@@ -9,4 +9,6 @@ The approved prompts and tool definitions are generated from the project sources
 
 Both stages use the same frozen paper material. Quantity requests add a second user message with target identifiers.
 
+Text-only inputs use separate [roster](prompts/roster-text-only.md) and [quantity](prompts/quantities-text-only.md) material instructions. They retain parser text and omit images from requests. Scientific rules and submission schemas remain the same.
+
 The final scientific result uses [literature_contribution.json](schemas/literature_contribution.json). The [run summary](schemas/extraction_run.json) records status and exact references. Its [fictional example](examples/run.json) uses placeholder references. The [input schema](schemas/extraction_input.json) defines the frozen input. The [scoring contract](scoring/README.md) defines fixed references, manifests and offline replay. [Gold tools](gold/README.md) use original-PDF evidence and current scientific fields.

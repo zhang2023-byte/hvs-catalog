@@ -1,9 +1,49 @@
 """Build citation bindings from fixed parser blocks and supplied image files."""
 
+import base64
+import hashlib
 import json
 
 from .common import ArtifactRef
 from .file_checks import file_digest
+
+
+def supplied_locations(locations, content):
+    """Bind image evidence only to original bytes present in the material message."""
+    supplied = {k: v for k, v in locations.items() if not k.startswith("I:")}
+    if not isinstance(content, list):
+        return supplied
+    remaining = {
+        k: list(v["images"]) for k, v in locations.items() if k.startswith("I:")
+    }
+    label = None
+    for part in content:
+        if part.get("type") == "text":
+            text = part.get("text", "")
+            label = (
+                text.removeprefix("LOCATION ")
+                if text.startswith("LOCATION I:")
+                else None
+            )
+        elif part.get("type") == "image_url":
+            if label not in remaining:
+                raise ValueError("A supplied image has no fixed source location.")
+            url = part["image_url"]["url"]
+            try:
+                encoded = url.split(";base64,", 1)[1]
+                digest = hashlib.sha256(
+                    base64.b64decode(encoded, validate=True)
+                ).hexdigest()
+            except (IndexError, ValueError) as exc:
+                raise ValueError("A supplied image has invalid inline bytes.") from exc
+            ref = next((r for r in remaining[label] if r["sha256"] == digest), None)
+            if ref is None:
+                raise ValueError("A supplied image differs from the fixed source.")
+            remaining[label].remove(ref)
+            if label not in supplied:
+                supplied[label] = {**locations[label], "images": []}
+            supplied[label]["images"].append(ref)
+    return supplied
 
 
 def material_locations(source, root):

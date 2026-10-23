@@ -14,6 +14,7 @@ from test_llm_managed import run_call
 from hvs_catalog.llm import RuntimeConfig, TokenDanceAdapter, resume_call
 from hvs_catalog.llm.stream import RawResponse, SSEBody, SSEDecoder
 from hvs_catalog.llm.transport import strict_json
+from hvs_catalog.records.common import ArtifactRef
 from hvs_catalog.workspace import open_workspace
 from hvs_catalog.workspace.backup import backup_workspace, restore_workspace
 
@@ -160,7 +161,7 @@ def test_large_wire_response_retains_submission_without_raw_archive(tmp_path):
 
 
 @pytest.mark.integration
-def test_bounded_abort_retains_failure_facts_without_wire_bytes(tmp_path):
+def test_bounded_abort_retains_capped_response_and_failure_facts(tmp_path):
     with endpoint() as (url, seen, _):
         space, handle, report = run_call(
             tmp_path, url, tool=True, max_response_bytes=128
@@ -168,9 +169,12 @@ def test_bounded_abort_retains_failure_facts_without_wire_bytes(tmp_path):
         assert report["state"] == "failed" and len(seen) == 1
         exchange = report["response"]["exchange"]
         assert report["response"]["error"] == "response_limit"
-        assert "raw_response_ref" not in exchange
+        raw = space.read_file(ArtifactRef.model_validate(exchange["raw_response_ref"]))
+        assert len(raw) == 128 and raw.startswith(b": keepalive\n\n")
         assert exchange["transport"]["response_bytes"] > 128
-        assert not list((space.root / "runs").rglob("*.raw"))
+        assert exchange["transport"]["raw_response_truncated"]
+        assert not exchange["transport"]["response_body_complete"]
+        assert len(list((space.root / "runs").rglob("*.raw"))) == 1
         assert resume_call(space, handle.execution_id)["state"] == "failed"
         assert len(seen) == 1
         space.close()

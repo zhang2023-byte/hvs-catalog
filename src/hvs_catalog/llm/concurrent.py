@@ -6,6 +6,7 @@ import sqlite3
 import threading
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 
+from ..records.response import apply_response_policy
 from .quota import AccountQuota
 from .transport import OutputFailure, TransportFailure, network_retry_allowed
 
@@ -79,6 +80,7 @@ class ConcurrentCalls:
                 )
                 service.hook("after_response")
                 try:
+                    apply_response_policy(exchange, prepared)
                     result = service.adapter.parse(exchange, request)
                     return {
                         "exchange": exchange,

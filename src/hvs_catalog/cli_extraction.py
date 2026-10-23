@@ -1,4 +1,4 @@
-"""Roster configuration, previews, extraction, and durable recovery commands."""
+"""Two-stage extraction, fixed batch inputs, previews, and durable recovery commands."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from .workspace import WorkspaceError
 
 def add_extraction_commands(commands):
     commands.add_parser("config", help="输出默认提取配置（JSON）")
-    check = commands.add_parser("check", help="离线检查名单模型、步骤与英文提示配置")
+    check = commands.add_parser("check", help="离线检查两阶段模型、步骤与英文提示配置")
     check.add_argument("--config", type=Path)
     preview = commands.add_parser(
         "preview", help="离线预览完整提示、填写 Schema 与实际协议参数"
@@ -40,17 +40,23 @@ def add_extraction_commands(commands):
         roster.add_argument("--space", type=Path, required=True)
         selection = roster.add_mutually_exclusive_group(required=True)
         selection.add_argument("--preparation", help="已完成的材料准备执行编号")
+        selection.add_argument(
+            "--source-ref", help="已准备来源引用：record_id@revision"
+        )
         if name == "run":
             selection.add_argument("--roster-execution", help="复用固定名单执行")
         roster.add_argument("--request-key", required=True)
         roster.add_argument("--env-file", type=Path)
-    batch = commands.add_parser("batch", help="并行运行多篇固定PDF的名单提取")
-    batch.add_argument("--space", type=Path, required=True)
+    batch = commands.add_parser("batch", help="并行运行多篇固定PDF的完整提取")
+    batch.add_argument("--space", type=Path)
     batch.add_argument("--config", type=Path)
     batch.add_argument("--request-key")
     batch.add_argument("--env-file", type=Path)
     batch.add_argument("--concurrency", type=int)
-    batch.add_argument("--scope", choices=("roster", "full"), default="full")
+    batch.add_argument(
+        "--scope", choices=("roster", "full"), help="新执行默认full；清单使用已冻结范围"
+    )
+    batch.add_argument("--check-only", action="store_true", help="仅离线核验跨空间清单")
     selection = batch.add_mutually_exclusive_group(required=True)
     selection.add_argument(
         "--preparation", action="append", help="重复指定准备执行编号，创建新提取"
@@ -58,6 +64,7 @@ def add_extraction_commands(commands):
     selection.add_argument(
         "--execution", action="append", help="重复指定已固定提取执行编号，恢复批次"
     )
+    selection.add_argument("--manifest", type=Path, help="跨空间固定执行清单 JSON")
     for name in ("status", "resume"):
         command = commands.add_parser(
             name, help="查询提取执行" if name == "status" else "按固定输入恢复提取执行"
@@ -114,12 +121,34 @@ def run_extraction_command(args) -> int:
                 open_workspace,
             )
 
-            if name == "batch":
+            if name == "batch" and args.manifest is not None:
+                from .pipeline.saved_batch import run_saved_batch
+
+                if (
+                    args.space is not None
+                    or args.config is not None
+                    or args.request_key is not None
+                    or args.scope is not None
+                ):
+                    raise ValueError(
+                        "A manifest uses its saved workspaces and configurations."
+                    )
+                result = run_saved_batch(
+                    args.manifest,
+                    check_only=args.check_only,
+                    concurrency=args.concurrency,
+                    env_file=args.env_file,
+                )
+            elif name == "batch":
                 from .llm.managed import CallService
                 from .pipeline import ExtractionTask, resume_extractions
                 from .pipeline.configuration import stored_configuration
                 from .runtime import get_execution
 
+                if args.space is None or args.check_only:
+                    raise ValueError(
+                        "Provide --space, or use --manifest for --check-only."
+                    )
                 space = open_workspace(args.space)
                 if args.preparation:
                     if not args.request_key:
@@ -135,7 +164,7 @@ def run_extraction_command(args) -> int:
                             configuration=config,
                             preparation_execution_id=prep,
                             request_key=args.request_key + ":" + prep,
-                            scope=args.scope,
+                            scope=args.scope or "full",
                         ).execution_id
                         for prep in args.preparation
                     ]
@@ -172,10 +201,13 @@ def run_extraction_command(args) -> int:
 
                 config = load_extraction_config(args.config)
                 space = open_workspace(args.space)
+                from .cli_materials import _parse_source_ref
+
                 handle = start_extraction(
                     space,
                     configuration=config,
                     preparation_execution_id=args.preparation,
+                    prepared_source_ref=_parse_source_ref(args.source_ref),
                     roster_execution_id=getattr(args, "roster_execution", None),
                     request_key=args.request_key,
                     scope="full" if name == "run" else "roster",

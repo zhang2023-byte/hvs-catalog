@@ -4,6 +4,7 @@ from pathlib import Path
 
 from ..llm.managed import CallFailure, execute_model_call
 from ..records.common import ArtifactRef, build_record, canonical_json, sha256_of
+from ..records.material import supplied_locations
 from ..records.quantities import QuantityData, QuantityRecord
 from ..records.roster import RosterData, RosterIssue, RosterRecord
 from ..records.roster_validation import response_message
@@ -21,6 +22,9 @@ def run_stage(ctx, request, source, inputs, *, roster=None, source_index=None):
 
     numerical = roster is not None
     validator = quantity_validation if numerical else roster_validation
+    locations = supplied_locations(
+        inputs.citation_locations, request.messages[1].wire()["content"]
+    )
     step = quantity_step(roster, source_index) if numerical else "roster"
     binding = {
         "request": request.model_dump(mode="json"),
@@ -62,7 +66,7 @@ def run_stage(ctx, request, source, inputs, *, roster=None, source_index=None):
             if failure.startswith("completion_unknown"):
                 raise
             break
-        check = validator.check_response(envelope, inputs.citation_locations)
+        check = validator.check_response(envelope, locations)
         run = ctx.store.read_record_current(ctx.execution.run_ref.record_id)
         current = next(s for s in run.data.steps if s.step_id == step)
         response = next(
@@ -94,15 +98,15 @@ def run_stage(ctx, request, source, inputs, *, roster=None, source_index=None):
                 correction_messages(
                     response_message(envelope),
                     check.issues,
+                    effective_prior=response_message(envelope, effective=True),
                     tool="submit_quantities" if numerical else "submit_roster",
+                    locations=locations,
                 )
             )
     selected = next((row for row in reversed(rounds) if row[2].readable), None)
     if selected:
         number, response, check = selected
-        values, indices, rejected, notes = validator.select_partial(
-            check, inputs.citation_locations
-        )
+        values, indices, rejected, notes = validator.select_partial(check, locations)
         issues = list(check.issues)
         status = (
             "complete"

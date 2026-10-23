@@ -23,8 +23,15 @@ from referencing.exceptions import Unresolvable
 from urllib3.exceptions import NewConnectionError
 from urllib3.util import Timeout
 
-from ..records.roster_validation import strict_json
-from .config import BASE_URL, CallRequest, CallResult, RuntimeConfig, parameter_manifest
+from ..records.response import response_message, response_policy, strict_json
+from .config import (
+    BASE_URL,
+    PROFILES,
+    CallRequest,
+    CallResult,
+    RuntimeConfig,
+    parameter_manifest,
+)
 from .stream import (
     RawResponse,
     SSEBody,
@@ -186,10 +193,6 @@ class TokenDanceAdapter:
             payload["thinking"] = thinking
         payload.update(parameters)
         has_images = any(isinstance(m.content, list) for m in request.messages)
-        if has_images and config.model != "deepseek-v4.1-flash":
-            raise ValueError(
-                "Image input is currently configured only for deepseek-v4.1-flash; images will not be discarded"
-            )
         if config.stream:
             payload["stream_options"] = {"include_usage": True}
         if request.tool is not None:
@@ -205,19 +208,27 @@ class TokenDanceAdapter:
                 if isinstance(message.get("content"), list)
                 for part in message["content"]
             )
+            if image_count and config.input_mode == "text_only":
+                raise ValueError("Text-only input does not accept image content")
             if (
-                image_count > 600
+                image_count > PROFILES[config.model].maximum_images
                 or len(json.dumps(payload).encode()) > 48 * 1024 * 1024
             ):
                 raise ValueError(
                     "Image request exceeds the configured image count or body size limit"
                 )
-        return {
+        prepared = {
             "payload": payload,
             "parameters": parameter_manifest(config),
             "protocol": config.protocol,
             "adapter": self.name,
         }
+        policy = response_policy(
+            self.name, config.protocol, config.model, config.provider
+        )
+        if request.tool is not None and policy is not None:
+            prepared["response_policy"] = policy
+        return prepared
 
     def send(
         self, payload: dict, runtime: RuntimeConfig, credential: SecretStr
@@ -234,6 +245,8 @@ class TokenDanceAdapter:
             "request_bytes": 0,
             "request_started": False,
             "response_bytes": 0,
+            "response_body_complete": False,
+            "raw_response_truncated": False,
             "total_deadline_expired": False,
             "exceptions": [],
         }
@@ -345,11 +358,13 @@ class TokenDanceAdapter:
             for chunk in response.iter_content(chunk_size=8192):
                 if expired.is_set() or time.monotonic() >= deadline:
                     raise TransportFailure("completion_unknown", uncertain=True)
-                if payload.get("stream") and response.status_code == 200:
-                    raw.file = None
-                raw.write(chunk)
+                remaining = max(
+                    0, runtime.max_response_bytes - diagnostics["response_bytes"]
+                )
+                raw.write(chunk[:remaining])
                 diagnostics["response_bytes"] += len(chunk)
                 if diagnostics["response_bytes"] > runtime.max_response_bytes:
+                    diagnostics["raw_response_truncated"] = True
                     raise TransportFailure("response_limit", uncertain=True)
                 if (
                     payload.get("stream")
@@ -360,6 +375,7 @@ class TokenDanceAdapter:
                         decoder.feed(chunk)
                     except (ValueError, TypeError, KeyError, AttributeError) as exc:
                         parse_error = exc
+            diagnostics["response_body_complete"] = True
             if expired.is_set():
                 raise TransportFailure("completion_unknown", uncertain=True)
             phase("decode")
@@ -445,6 +461,7 @@ class TokenDanceAdapter:
         message = choice.get("message")
         if not isinstance(message, dict):
             raise OutputFailure("invalid_message")
+        message = response_message({"exchange": exchange}, effective=True)
         content = message.get("content")
         tool_calls = message.get("tool_calls") or []
         parsed = None

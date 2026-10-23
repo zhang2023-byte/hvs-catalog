@@ -22,6 +22,7 @@ from .parameters import ParameterPolicy, ParameterSpec
 
 BASE_URL = "https://tokendance.space/gateway/v1"
 PROTOCOL = "openai:chat-completions"
+InputMode = Literal["text_and_images", "text_only"]
 
 
 def _spec(name, types=(int, float), minimum=None, maximum=None, choices=None, **bounds):
@@ -40,6 +41,7 @@ class ModelProfile:
     policy: ParameterPolicy
     sources: tuple[str, ...]
     output_accounting: str
+    maximum_images: int = 600
 
     def describe(self) -> dict:
         return {
@@ -49,6 +51,8 @@ class ModelProfile:
             "protocol": PROTOCOL,
             "default_parameters": dict(self.defaults),
             "maximum_output": self.maximum_output,
+            "maximum_images": self.maximum_images,
+            "input_modalities": ["text", "image"] if self.maximum_images else ["text"],
             "output_accounting": self.output_accounting,
             "parameters": self.policy.describe(),
             "sources": list(self.sources),
@@ -83,6 +87,7 @@ def _profile(model, provider, cap, defaults, extra, source, accounting):
         ParameterPolicy(common + tuple(extra)),
         (source,),
         accounting,
+        50 if provider == "bigmodel" else 600,
     )
 
 
@@ -162,6 +167,61 @@ PROFILES = {
             "https://help.aliyun.com/zh/model-studio/qwen-api-via-openai-chat-completions",
             "Visible output limit and thinking_budget are separate controls.",
         ),
+        ModelProfile(
+            model="deepseek-v4-flash-0731",
+            provider="alibaba",
+            output_parameter="max_tokens",
+            maximum_output=393216,
+            defaults={
+                "max_tokens": 393216,
+                "enable_thinking": True,
+                "reasoning_effort": "max",
+            },
+            policy=ParameterPolicy(
+                (
+                    _spec("max_tokens", (int,), 1, 393216),
+                    _spec("enable_thinking", (bool,)),
+                    _spec("reasoning_effort", (str,), choices=("low", "high", "max")),
+                )
+            ),
+            sources=(
+                "https://tokendance.space/portal/api/models/deepseek-v4-flash-0731/endpoints/stats",
+                "https://help.aliyun.com/zh/model-studio/deepseek-api",
+            ),
+            output_accounting=(
+                "Alibaba documents a shared 393216-token output/reasoning ceiling. "
+                "The gateway route and effective backend version require live verification."
+            ),
+            maximum_images=0,
+        ),
+        ModelProfile(
+            model="deepseek-v4-flash",
+            provider="bocha",
+            output_parameter="max_tokens",
+            maximum_output=393216,
+            defaults={
+                "max_tokens": 393216,
+                "thinking_type": "enabled",
+                "reasoning_effort": "max",
+            },
+            policy=ParameterPolicy(
+                (
+                    _spec("max_tokens", (int,), 1, 393216),
+                    _spec("thinking_type", (str,), choices=("enabled", "disabled")),
+                    _spec("reasoning_effort", (str,), choices=("high", "max")),
+                )
+            ),
+            sources=(
+                "https://tokendance.space/portal/api/models/deepseek-v4-flash/endpoints/stats",
+                "https://www.deepseek.com/news/v4-preview/",
+            ),
+            output_accounting=(
+                "Preview declares high/max, not low. The 393216-token local ceiling "
+                "and reasoning controls are not a verified Bocha service guarantee. "
+                "The catalog label does not attest the backend checkpoint."
+            ),
+            maximum_images=0,
+        ),
     )
 }
 
@@ -174,6 +234,7 @@ class ModelConfig(Config):
     # None selects the published profile; {} deliberately omits every parameter.
     parameters: dict[str, object] | None = None
     stream: bool = Field(default=True, strict=True)
+    input_mode: InputMode | None = None
 
     @model_validator(mode="after")
     def _supported(self):
@@ -184,8 +245,16 @@ class ModelConfig(Config):
             raise ValueError("unsupported Token Dance model or protocol")
         p = PROFILES[self.model]
         if self.provider not in (None, p.provider):
-            raise ValueError("this model must use its pinned official provider")
+            raise ValueError("this model must use its pinned provider")
         object.__setattr__(self, "provider", p.provider)
+        if self.input_mode is None:
+            object.__setattr__(
+                self,
+                "input_mode",
+                "text_and_images" if p.maximum_images else "text_only",
+            )
+        if self.input_mode == "text_and_images" and not p.maximum_images:
+            raise ValueError("this model supports text input only")
         values = p.defaults if self.parameters is None else self.parameters
         values = p.policy.validate(values, context=self.model)
         if "thinking_budget" in values and "reasoning_effort" in values:
@@ -197,13 +266,9 @@ class ModelConfig(Config):
             or values.get("enable_thinking") is True
         ):
             raise ValueError("reasoning_effort=none conflicts with enabled thinking")
-        if (
-            self.model == "qwen3.8-flash"
-            and values.get("enable_thinking") is False
-            and (
-                "thinking_budget" in values
-                or values.get("reasoning_effort") not in (None, "none")
-            )
+        if values.get("enable_thinking") is False and (
+            "thinking_budget" in values
+            or values.get("reasoning_effort") not in (None, "none")
         ):
             raise ValueError("thinking controls conflict with disabled thinking")
         if values.get("thinking_type") == "disabled" and values.get(

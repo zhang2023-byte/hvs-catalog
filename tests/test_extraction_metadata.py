@@ -84,3 +84,53 @@ def test_wrong_version_binding_blocks_extraction(prepared):
             request_key="wrong",
             configuration=config,
         )
+
+
+@pytest.mark.parametrize("version,expected", [(1, 0), (2, 1)])
+def test_metadata_cli_closes_workspace_and_never_downloads(
+    tmp_path, monkeypatch, capsys, version, expected
+):
+    from unittest.mock import Mock
+
+    import hvs_catalog.cli_acquisition as cli
+    from hvs_catalog.cli import main
+
+    space = initialize_workspace(tmp_path / "space")
+    api = FakeArxivService(metadata={PAPER: make_meta(PAPER, version)})
+    closed = Mock(wraps=space.close)
+    monkeypatch.setattr(space, "close", closed)
+    monkeypatch.setattr(cli, "_open_space", lambda path: space)
+    monkeypatch.setattr(
+        cli, "_build_acquisition_service", lambda s: AcquisitionService(s, api)
+    )
+    assert (
+        main(
+            [
+                "acquisition",
+                "metadata",
+                "--space",
+                str(space.root),
+                "--id",
+                PAPER + "v1",
+            ]
+        )
+        == expected
+    )
+    closed.assert_called_once()
+    assert api.metadata_calls == [[PAPER + "v1"]]
+    assert api.download_calls == []
+    if expected:
+        assert "版本不符" in capsys.readouterr().err
+    else:
+        import json
+
+        from hvs_catalog.records.common import ArtifactRef
+        from hvs_catalog.workspace import open_workspace
+        from hvs_catalog.workspace.archives import read_json
+
+        ref = ArtifactRef.model_validate(json.loads(capsys.readouterr().out))
+        saved = open_workspace(space.root, read_only=True)
+        try:
+            assert read_json(saved, ref)["metadata"]["version"] == "v1"
+        finally:
+            saved.close()

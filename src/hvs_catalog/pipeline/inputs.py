@@ -21,15 +21,28 @@ def code_fingerprint():
     )
 
 
-def freeze_input(space, config, preparation_execution_id, roster_ref, scope):
+def freeze_input(
+    space,
+    config,
+    preparation_execution_id,
+    roster_ref,
+    scope,
+    *,
+    prepared_source_ref=None,
+):
     from ..materials import MaterialsService
     from ..materials.metadata import fixed_metadata
     from .roster import material_prompt, prepared_bundle
 
-    if scope not in {"full", "roster"} or (preparation_execution_id is None) == (
-        roster_ref is None
+    if (
+        scope not in {"full", "roster"}
+        or sum(
+            x is not None
+            for x in (preparation_execution_id, roster_ref, prepared_source_ref)
+        )
+        != 1
     ):
-        raise ValueError("Provide one preparation or one saved roster.")
+        raise ValueError("Provide one preparation, prepared source, or saved roster.")
     if roster_ref is not None:
         from ..records.roster import RosterRecord
         from ..records.validate import validate_collection
@@ -48,10 +61,32 @@ def freeze_input(space, config, preparation_execution_id, roster_ref, scope):
         material_ref = roster.data.material_ref
         bundle_ref = None
     else:
-        bundle = MaterialsService(space).get_prepared_input(preparation_execution_id)
-        bundle_ref = ArtifactRef.model_validate(bundle["bundle_ref"])
-        source_ref = RecordRef.model_validate(bundle["prepared_source_ref"])
-        bundle, source = prepared_bundle(space, bundle_ref, source_ref)
+        if prepared_source_ref is not None:
+            from ..records.source import SourcePackageRecord
+            from ..records.validate import validate_collection
+
+            source = space.store().read_record(prepared_source_ref)
+            if not isinstance(source, SourcePackageRecord):
+                raise ValueError(
+                    "The prepared source reference must identify a source package."
+                )
+            if any(
+                sum(f.role == role for f in source.data.files) != 1
+                for role in ("pdf", "pdf_index")
+            ):
+                raise ValueError(
+                    "A prepared source requires one PDF and one PDF index."
+                )
+            validate_collection([source], space.root)
+            bundle_ref = None
+            bundle = {}
+        else:
+            bundle = MaterialsService(space).get_prepared_input(
+                preparation_execution_id
+            )
+            bundle_ref = ArtifactRef.model_validate(bundle["bundle_ref"])
+            source_ref = RecordRef.model_validate(bundle["prepared_source_ref"])
+            bundle, source = prepared_bundle(space, bundle_ref, source_ref)
         inputs = material_prompt(space, bundle, source)
         material_ref = publish_json(
             space,

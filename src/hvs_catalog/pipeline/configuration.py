@@ -38,7 +38,18 @@ class ExtractionConfig(Config):
             },
         )
     )
-    step_models: dict[str, ModelConfig] = Field(default_factory=dict)
+    step_models: dict[str, ModelConfig] = Field(
+        default_factory=lambda: {
+            "quantities": ModelConfig(
+                model="deepseek-v4.1-flash",
+                parameters={
+                    "max_tokens": 393216,
+                    "thinking_type": "enabled",
+                    "reasoning_effort": "low",
+                },
+            )
+        }
+    )
     runtime: RuntimeConfig = Field(
         default_factory=lambda: RuntimeConfig(retry_post_send_network_errors=True)
     )
@@ -69,7 +80,10 @@ class ExtractionConfig(Config):
         )
 
     def blueprints(self) -> dict[str, PromptBlueprint]:
-        return {step: assemble_blueprint(step) for step in self.model_steps()}
+        return {
+            step: assemble_blueprint(step, self.model_for(step).input_mode)
+            for step in self.model_steps()
+        }
 
     def request(self, source_refs) -> ExtractionRequest:
         def spec(model, step=None):
@@ -126,11 +140,37 @@ def preview_extraction_prompt(
     request = blueprint.request(model, inputs, identifiers)
     # Reuse the provider conversion/checker without transport or credentials.
     prepared = TokenDanceAdapter().prepare(request)
+    selected = inputs.image_indices(model)
+    selected_set = set(selected)
+    selected_labels = {inputs.images[i].label for i in selected}
     return {
         "step_id": step_id,
         "request": request.model_dump(mode="json"),
         "prepared": prepared,
         "request_sha256": sha256_of(request.model_dump(mode="json")),
+        "material_view": {
+            "input_mode": model.input_mode,
+            "manuscript_sha256": sha256_of(inputs.manuscript),
+            "citation_locations": sorted(
+                location
+                for location in inputs.citation_locations
+                if not location.startswith("I:")
+                or f"LOCATION {location}" in selected_labels
+            ),
+        },
+        "images": {
+            "available": len(inputs.images),
+            "sent": len(selected),
+            "omission_reason": "text_only"
+            if model.input_mode == "text_only"
+            else "model_limit",
+            "selected": [inputs.images[i].label for i in selected],
+            "omitted": [
+                image.label
+                for i, image in enumerate(inputs.images)
+                if i not in selected_set
+            ],
+        },
     }
 
 

@@ -231,7 +231,9 @@ def snapshot_input_digest(
     )
 
 
-def rules_archive_rel(execution_id: str) -> str:
+def rules_archive_rel(execution_id: str, space=None) -> str:
+    if space is not None:
+        return space.run_path(execution_id, RULES_ARCHIVE_REL)
     return f"runs/{execution_id}/{RULES_ARCHIVE_REL}"
 
 
@@ -241,6 +243,7 @@ def create_execution(
     request_key: str,
     input_snapshot: InputSnapshot,
     flow: FlowAdapter | DefaultFlowAdapter,
+    execution_id: str | None = None,
 ) -> tuple[ExecutionHandle, bool]:
     """Create/reuse executions: identical request/input reuses; changed same-key input
     rejects.
@@ -251,10 +254,16 @@ def create_execution(
     digest = snapshot_input_digest(
         input_snapshot, flow_id=flow.flow_id, flow_version=flow.flow_version
     )
+    if execution_id is not None and space.identity.format_version != 2:
+        raise ValueError("Named executions require a benchmark workspace.")
     with space.lock():
         store = space.store()
         existing = store.find_execution_by_request(request_key)
         if existing is not None:
+            if execution_id is not None and existing.execution_id != execution_id:
+                raise OperationKeyConflictError(
+                    "The request key identifies another execution."
+                )
             if existing.input_digest == digest:
                 return _handle_from_row(space, existing), True
             raise OperationKeyConflictError(
@@ -262,8 +271,18 @@ def create_execution(
                 f"（已有执行 {existing.execution_id}）；"
                 "输入改变后必须使用新的请求键建立新执行"
             )
-        with store.transaction() as tx:
-            execution_id = tx.next_id("exec")
+        if execution_id is not None:
+            import re
+
+            if not re.fullmatch(r"exec\d+/\d{4}\.\d{4,5}", execution_id):
+                raise ValueError(
+                    "A named execution must identify one benchmark round and paper."
+                )
+            if store.get_execution(execution_id) is not None:
+                raise OperationKeyConflictError("The named execution already exists.")
+        else:
+            with store.transaction() as tx:
+                execution_id = tx.next_id("exec")
         # Publish rule archives before the final transaction; interruption leaves at most unreferenced files.
         archive = space.publish_run_file(execution_id, RULES_ARCHIVE_REL, rules_bytes())
         if archive.sha256 != input_snapshot.rules.sha256:
@@ -642,14 +661,16 @@ def verify_execution_inputs(space: Workspace, execution: ExecutionHandle) -> lis
             if digest != file.sha256:
                 problems.append(f"来源文件哈希改变：{file.path}")
     try:
-        archive = _resolved_input_file(space, rules_archive_rel(execution.execution_id))
+        archive = _resolved_input_file(
+            space, rules_archive_rel(execution.execution_id, space)
+        )
     except WorkspaceIntegrityError as exc:
         archive = None
         problems.append(f"规则归档路径不安全：{exc}")
     if archive is not None:
         if not archive.is_file():
             problems.append(
-                f"规则归档缺失：{rules_archive_rel(execution.execution_id)}"
+                f"规则归档缺失：{rules_archive_rel(execution.execution_id, space)}"
             )
         else:
             digest = hashlib.sha256(archive.read_bytes()).hexdigest()

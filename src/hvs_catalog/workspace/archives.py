@@ -100,40 +100,54 @@ def read_json(space, ref: ArtifactRef):
     return unpack(payload["value"])
 
 
-def shared_dependencies(root: Path, ref: dict) -> list[dict]:
+def shared_dependencies(root: Path, ref: dict, *, _checked_nodes=None) -> list[dict]:
     """Return the verified dependency graph of supported archive formats."""
     from .store import walk_artifact_refs
 
     result = {}
     visited = set()
+    nodes = {} if _checked_nodes is None else _checked_nodes
 
-    def visit(current):
+    def children(current):
         relative = current["path"]
-        if relative in visited:
-            return
-        visited.add(relative)
+        key = (relative, current.get("sha256"))
+        if key in nodes:
+            return nodes[key]
         path = resolve_within(root, relative)
         from ..records.file_checks import file_digest
 
         if "sha256" in current and file_digest(path) != current["sha256"]:
             raise ValueError("Archive content differs from its reference.")
         if path.suffix != ".json":
+            found = []
+        else:
+            payload = json.loads(path.read_bytes())
+            if not isinstance(payload, dict) or payload.get("format") not in {
+                FORMAT,
+                "hvs.extraction-input",
+                "hvs.extraction-run",
+                "hvs.extraction-trace",
+                "hvs.paper-metadata",
+            }:
+                found = []
+            else:
+                if payload.get("version") != 1:
+                    raise ValueError("Unsupported archive version.")
+                found = [
+                    ArtifactRef.model_validate(
+                        {"path": child["path"], "sha256": child["sha256"]}
+                    ).model_dump()
+                    for child in walk_artifact_refs(payload)
+                ]
+        nodes[key] = found
+        return found
+
+    def visit(current):
+        relative = current["path"]
+        if relative in visited:
             return
-        payload = json.loads(path.read_bytes())
-        if not isinstance(payload, dict) or payload.get("format") not in {
-            FORMAT,
-            "hvs.extraction-input",
-            "hvs.extraction-run",
-            "hvs.extraction-trace",
-            "hvs.paper-metadata",
-        }:
-            return
-        if payload.get("version") != 1:
-            raise ValueError("Unsupported archive version.")
-        for child in walk_artifact_refs(payload):
-            dependency = ArtifactRef.model_validate(
-                {"path": child["path"], "sha256": child["sha256"]}
-            ).model_dump()
+        visited.add(relative)
+        for dependency in children(current):
             if dependency["path"] == ref["path"]:
                 raise ValueError("An archive cannot reference itself.")
             if (

@@ -1,4 +1,4 @@
-"""Prepare a fixed PDF locally, inspect saved status, or resume technical work."""
+"""Prepare or reuse fixed PDF materials and inspect saved preparation state."""
 
 from __future__ import annotations
 
@@ -23,9 +23,34 @@ def build_materials_parser(commands: argparse._SubParsersAction) -> None:
     """Register materials subcommands."""
     group = commands.add_parser(
         "materials",
-        help="材料准备：本地 MinerU 全文解析 PDF 与证据定位",
+        help="材料准备：MinerU 官方解析、固定材料复用与证据定位",
     )
     sub = group.add_subparsers(dest="materials_command", required=True)
+
+    export = sub.add_parser(
+        "export", help="导出独立解析材料包，包含固定元数据，不带执行历史"
+    )
+    export.add_argument("--space", required=True, type=Path)
+    export.add_argument(
+        "--source-ref", required=True, help="固定来源引用 record_id@revision"
+    )
+    export.add_argument("--output", required=True, type=Path)
+
+    imported = sub.add_parser(
+        "import", help="从独立材料包导入固定输入，不下载、解析或启动提取"
+    )
+    imported.add_argument(
+        "--space", required=True, type=Path, help="已初始化的目标空间"
+    )
+    imported.add_argument("--package", required=True, type=Path)
+    imported.add_argument(
+        "--material-root", type=Path, help="共享材料包声明的完整 Benchmark 根目录"
+    )
+
+    reuse = sub.add_parser("reuse", help="复制已准备材料到独立空间，不下载或重新解析")
+    reuse.add_argument("--space", required=True, type=Path, help="已初始化的目标空间")
+    reuse.add_argument("--source-space", required=True, type=Path)
+    reuse.add_argument("--preparation", required=True)
 
     prepare = sub.add_parser("prepare", help="准备一篇论文的材料输入")
     prepare.add_argument("--space", required=True, help="工作空间路径")
@@ -208,6 +233,47 @@ def _run_consume(args: argparse.Namespace) -> int:
 
 def run_materials_command(args: argparse.Namespace) -> int:
     command = args.materials_command
+    if command in {"export", "import"}:
+        from .materials.package import export_material_package, import_material_package
+
+        space = None
+        try:
+            space = open_workspace(args.space, read_only=command == "export")
+            if command == "export":
+                package = export_material_package(
+                    space, _parse_source_ref(args.source_ref), args.output
+                )
+                print(package.model_dump_json())
+            else:
+                print(
+                    import_material_package(
+                        args.package, space, root=args.material_root
+                    ).model_dump_json()
+                )
+            return EXIT_OK
+        except (ValueError, TypeError, OSError, WorkspaceError) as exc:
+            print(f"[拒绝] {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        finally:
+            if space is not None:
+                space.close()
+    if command == "reuse":
+        from .materials import reuse_prepared_materials
+
+        source = target = None
+        try:
+            source = open_workspace(args.source_space, read_only=True)
+            target = open_workspace(args.space)
+            ref = reuse_prepared_materials(source, args.preparation, target)
+            print(ref.model_dump_json())
+            return EXIT_OK
+        except (ValueError, OSError, WorkspaceError, MaterialsPreparationError) as exc:
+            print(f"[拒绝] {exc}", file=sys.stderr)
+            return EXIT_ERROR
+        finally:
+            for space in (source, target):
+                if space is not None:
+                    space.close()
     if command == "prepare":
         return _run_prepare(args)
     if command == "status":

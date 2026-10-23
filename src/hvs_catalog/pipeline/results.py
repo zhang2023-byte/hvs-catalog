@@ -147,7 +147,9 @@ def publish_result(space, execution_id, *, closed=False, hook=None):
             ],
         }
         trace_ref = publish_json(
-            space, f"runs/{execution_id}/traces/{sha256_of(trace)}.json", trace
+            space,
+            space.run_path(execution_id, f"traces/{sha256_of(trace)}.json"),
+            trace,
         )
         steps = {s.step_id: s for s in run.data.steps}
 
@@ -289,11 +291,15 @@ def publish_result(space, execution_id, *, closed=False, hook=None):
                 "science": science.model_dump(mode="json") if science else None,
             }
         )
-        folder = f"runs/{execution_id}/results/{generation}"
+        folder = space.run_path(execution_id, f"results/{generation}")
         refs = [trace_ref]
         if science:
+            science_folder = space.run_path(
+                execution_id,
+                "results/science/" + sha256_of(science.model_dump(mode="json")),
+            )
             ref = space.publish_file(
-                folder + "/literature_contribution.json",
+                science_folder + "/literature_contribution.json",
                 (
                     json.dumps(
                         science.model_dump(mode="json"), ensure_ascii=False, indent=2

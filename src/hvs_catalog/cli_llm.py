@@ -52,7 +52,7 @@ def synthetic_request(model: ModelConfig, *, structured=True) -> CallRequest:
 def add_model_commands(commands):
     parser = commands.add_parser("models", help="模型配置、Token Dance 合成调用与状态")
     sub = parser.add_subparsers(dest="model_command", required=True)
-    sub.add_parser("list", help="列出固定模型、官方路由、参数与来源")
+    sub.add_parser("list", help="列出固定模型、锁定路由、参数与来源")
     check = sub.add_parser("check", help="离线检查非敏感 JSON 配置")
     check.add_argument("--config", type=Path, required=True)
     probe = sub.add_parser("probe", help="付费真实调用：仅英文 SYN-1 合成任务")

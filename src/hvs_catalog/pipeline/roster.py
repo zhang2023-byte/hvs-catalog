@@ -14,6 +14,7 @@ from ..records.common import (
 )
 from ..records.source import SourcePackageRecord
 from ..runtime import get_execution
+from .feedback import submission_feedback
 
 CORRECTION = "Correct the errors in the latest tool result.\nCall submit_roster once with the complete corrected result."
 
@@ -66,7 +67,9 @@ def material_prompt(space, bundle: dict, source: SourcePackageRecord) -> PromptI
                 },
             }
             blocks.append(
-                f"LOCATION {text_location} ({block['type']})\n" + block["text"]
+                f"LOCATION {text_location} ({block['type']})\n"
+                + block["text"]
+                + f"\nEND LOCATION {text_location}"
             )
         for image_id in block.get("image_files", []):
             file = files[image_id]
@@ -92,6 +95,7 @@ def material_prompt(space, bundle: dict, source: SourcePackageRecord) -> PromptI
             images.append(
                 PromptImage(
                     label=f"LOCATION {image_location}",
+                    kind="table" if block["type"] == "table" else "image",
                     image_url={
                         "url": f"data:{file.media_type};base64,"
                         + base64.b64encode(data).decode("ascii")
@@ -119,7 +123,9 @@ def start_roster_extraction(
     )
 
 
-def correction_messages(prior, issues, *, tool="submit_roster"):
+def correction_messages(
+    prior, issues, *, tool="submit_roster", locations=None, effective_prior=None
+):
     """Use real tool call identifiers or preserve an invalid envelope as assistant text."""
     raw_calls = prior.get("tool_calls")
     calls = raw_calls if isinstance(raw_calls, list) else []
@@ -139,7 +145,12 @@ def correction_messages(prior, issues, *, tool="submit_roster"):
         except (ValueError, KeyError, TypeError, AttributeError):
             invalid = True
     feedback = canonical_json(
-        {"status": "invalid", "errors": [e.model_dump() for e in issues]}
+        submission_feedback(
+            effective_prior if effective_prior is not None else prior,
+            issues,
+            tool=tool,
+            locations=locations or {},
+        )
     )
     reasoning = prior.get("reasoning_content")
     reasoning = reasoning if isinstance(reasoning, str) else None

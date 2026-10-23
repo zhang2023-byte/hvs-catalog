@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import tomllib
 from importlib import resources
+from typing import Literal
 
 from pydantic import Field
 
@@ -13,9 +14,11 @@ from ..records.quantity_input import quantity_input_schema
 from ..records.roster_input import roster_input_schema
 from ..records.rules import load_rules, rules_bytes
 from .config import (
+    PROFILES,
     CallRequest,
     ImageContent,
     ImageURL,
+    InputMode,
     Message,
     ModelConfig,
     TextContent,
@@ -26,6 +29,7 @@ from .config import (
 class PromptImage(Config):
     label: str = Field(min_length=1)
     image_url: ImageURL
+    kind: Literal["image", "table"] = "image"
 
 
 class PromptInput(Config):
@@ -35,9 +39,22 @@ class PromptInput(Config):
     images: list[PromptImage] = Field(default_factory=list)
     citation_locations: dict[str, dict] = Field(default_factory=dict)
 
+    def image_indices(self, model: ModelConfig) -> list[int]:
+        """Select tables first on overflow, preserving source order within each kind."""
+        if model.input_mode == "text_only":
+            return []
+        indices = list(range(len(self.images)))
+        profile = PROFILES.get(model.model) if model.adapter == "tokendance" else None
+        if profile is None or len(indices) <= profile.maximum_images:
+            return indices
+        return sorted(indices, key=lambda i: self.images[i].kind != "table")[
+            : profile.maximum_images
+        ]
+
 
 class PromptBlueprint(Config):
     step_id: str
+    input_mode: InputMode = "text_and_images"
     system: str
     schema_: dict = Field(alias="schema")
     tool_description: str
@@ -59,10 +76,18 @@ class PromptBlueprint(Config):
     ) -> CallRequest:
         if self.step_id == "quantities" and not identifiers:
             raise ValueError("Provide the target star identifiers.")
+        if self.input_mode != (model.input_mode or "text_and_images"):
+            raise ValueError(
+                "The prompt input mode differs from the model configuration."
+            )
+        if self.input_mode == "text_only" and not inputs.manuscript.strip():
+            raise ValueError("Text-only input requires readable text.")
         content = inputs.manuscript
-        if inputs.images:
+        selected = inputs.image_indices(model)
+        if selected:
             content = [TextContent(text=inputs.manuscript)] if inputs.manuscript else []
-            for image in inputs.images:
+            for index in selected:
+                image = inputs.images[index]
                 content.extend(
                     [
                         TextContent(text=image.label),
@@ -101,7 +126,9 @@ def science_content() -> dict:
     return tomllib.loads(rules_bytes().decode())
 
 
-def assemble_blueprint(step_id: str) -> PromptBlueprint:
+def assemble_blueprint(
+    step_id: str, input_mode: InputMode = "text_and_images"
+) -> PromptBlueprint:
     schemas = {"roster": roster_input_schema, "quantities": quantity_input_schema}
     if step_id not in schemas:
         raise ValueError("Unknown extraction stage")
@@ -125,12 +152,14 @@ def assemble_blueprint(step_id: str) -> PromptBlueprint:
         [
             "# Task\n\n" + step["task"],
             "# Scientific rules\n\n" + science,
-            "# Materials\n\n" + step["materials"],
+            "# Materials\n\n"
+            + step["materials_text_only" if input_mode == "text_only" else "materials"],
             "# Submission\n\n" + step["submission"],
         ]
     )
     return PromptBlueprint(
         step_id=step_id,
+        input_mode=input_mode,
         system=system,
         schema=schemas[step_id](),
         tool_description=step["tool_description"],

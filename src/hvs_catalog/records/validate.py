@@ -5,13 +5,14 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel
 
 from .common import ArtifactRef, GapRef, ItemRef, RecordRef
-from .file_checks import file_digest, scoped_verification
+from .file_checks import checked_value, file_digest, scoped_verification
 from .objects import ExternalRecord
 from .quantities import QuantityRecord
 from .registry import AnyRecord
@@ -265,6 +266,11 @@ def _resolve_json_pointer(document: Any, pointer: str) -> Any:
 def validate_collection(records, materials_root=None):
     issues = []
     index = _Index(records)
+    snapshot_keys = (
+        _snapshot_cache_keys(records, index, Path(materials_root))
+        if materials_root is not None
+        else {}
+    )
     seen = set()
     for record in records:
         key = (record.record_id, record.revision)
@@ -335,7 +341,17 @@ def validate_collection(records, materials_root=None):
                 source, SourcePackageRecord
             ):
                 try:
-                    _check_quantity_snapshot(record, source, index, root)
+                    key = snapshot_keys.get((record.record_id, record.revision))
+                    if key is None:
+                        _check_quantity_snapshot(record, source, index, root)
+                    else:
+                        checked_value(
+                            "quantity-snapshot",
+                            key,
+                            partial(
+                                _check_quantity_snapshot, record, source, index, root
+                            ),
+                        )
                 except (ValueError, KeyError, OSError, TypeError) as exc:
                     issues.append(ValidationIssue(record.record_id, str(exc)))
             elif isinstance(record, RosterRecord) and isinstance(
@@ -348,6 +364,57 @@ def validate_collection(records, materials_root=None):
     if issues:
         raise CollectionValidationError(issues)
     return issues
+
+
+def _snapshot_cache_keys(records, index, root):
+    """Permit reuse only after rechecking all files used by unchanged snapshots."""
+    from ..workspace import WorkspaceIntegrityError
+    from ..workspace.layout import resolve_within
+    from ..workspace.store import verify_artifact_refs
+
+    snapshots = [r for r in records if isinstance(r, QuantityRecord)]
+    if not snapshots:
+        return {}
+    keys, requests = {}, []
+    try:
+        for record in snapshots:
+            source = index.resolve(record.data.source_ref)
+            roster = index.resolve(record.data.roster_ref)
+            if not isinstance(source, SourcePackageRecord) or not isinstance(
+                roster, RosterRecord
+            ):
+                continue
+            request = None
+            if record.data.response_ref is not None:
+                path = record.data.response_ref.path.replace(
+                    "/responses/", "/requests/", 1
+                )
+                request = {
+                    "path": path,
+                    "sha256": file_digest(resolve_within(root, path)),
+                }
+                requests.append(request)
+            keys[(record.record_id, record.revision)] = (
+                root.absolute(),
+                record.model_dump_json(),
+                source.model_dump_json(),
+                roster.model_dump_json(),
+                request["sha256"] if request else None,
+            )
+        checked = [
+            r
+            for r in records
+            if isinstance(r, (SourcePackageRecord, RosterRecord, QuantityRecord))
+        ]
+        checked.append(
+            {"record_id": "snapshot-inputs", "revision": 1, "files": requests}
+        )
+        if verify_artifact_refs(checked, root):
+            return {}
+    except (OSError, ValueError, WorkspaceIntegrityError):
+        # Retain the original validator's diagnostics for damaged inputs.
+        return {}
+    return keys
 
 
 def _check_submission_binding(record, files, *, roster=None):
@@ -363,7 +430,8 @@ def _check_submission_binding(record, files, *, roster=None):
         if roster is None
         else f"quantities-{sha256_of(roster.ref().model_dump())[:12]}-{data.source_index}"
     )
-    prefix = f"runs/{record.execution_id}/responses/{step}-{data.source_round:02d}"
+    folder = "trace/responses" if "/" in record.execution_id else "responses"
+    prefix = f"runs/{record.execution_id}/{folder}/{step}-{data.source_round:02d}"
     if not re.fullmatch(
         re.escape(prefix) + r"(?:-retry-[a-f0-9]+)?-attempt-\d{3}\.json",
         data.response_ref.path,
@@ -379,17 +447,29 @@ def _check_submission_binding(record, files, *, roster=None):
     response = read_json(files, data.response_ref)
     if response.get("request_sha256") != sha256_of(request):
         raise ValueError("The response differs from its archived request.")
+    from .response import argument_normalization, response_message
+
+    exchange = response.get("exchange") or {}
+    if exchange.get("tool_arguments_normalization") is not None:
+        if exchange["tool_arguments_normalization"] != argument_normalization(
+            exchange, request
+        ):
+            raise ValueError(
+                "The normalization record differs from the frozen request policy."
+            )
+        response_message(response, effective=True)
     if roster is not None:
         star = roster.data.stars[roster.data.source_indices.index(data.source_index)]
         target = strict_json(request["payload"]["messages"][2]["content"])
         if target != {"identifiers": [i.value for i in star.identifiers]}:
             raise ValueError("The request target differs from the fixed roster.")
+    return request
 
 
 def _check_roster_snapshot(record, source, root):
     from ..workspace.archives import read_json
     from ..workspace.layout import resolve_within
-    from .material import material_locations
+    from .material import material_locations, supplied_locations
     from .roster_validation import check_response, select_partial
 
     class Files:
@@ -401,7 +481,7 @@ def _check_roster_snapshot(record, source, root):
 
     space = Files()
     space.root = root
-    _check_submission_binding(record, space)
+    request = _check_submission_binding(record, space)
     data = record.data
     material = read_json(space, data.material_ref)
     locations = material_locations(source, root)
@@ -411,6 +491,9 @@ def _check_roster_snapshot(record, source, root):
         if data.status != "failed" or data.stars or data.notes is not None:
             raise ValueError("A missing response cannot produce scientific content.")
         return
+    locations = supplied_locations(
+        locations, request["payload"]["messages"][1]["content"]
+    )
     response = read_json(space, data.response_ref)
     check = check_response(response, locations)
     if data.status == "complete":
@@ -440,7 +523,7 @@ def _check_roster_snapshot(record, source, root):
 def _check_quantity_snapshot(record, source, index, root):
     from ..workspace.archives import read_json
     from ..workspace.layout import resolve_within
-    from .material import material_locations
+    from .material import material_locations, supplied_locations
     from .quantity_validation import check_response, select_partial
 
     class Files:
@@ -461,7 +544,7 @@ def _check_quantity_snapshot(record, source, index, root):
         raise ValueError("Numerical target differs from the fixed roster.")
     space = Files()
     space.root = root
-    _check_submission_binding(record, space, roster=roster)
+    request = _check_submission_binding(record, space, roster=roster)
     locations = material_locations(source, root)
     if read_json(space, data.material_ref)["citation_locations"] != locations:
         raise ValueError("Saved material differs from the fixed source.")
@@ -469,6 +552,9 @@ def _check_quantity_snapshot(record, source, index, root):
         if data.status != "failed" or data.quantities or data.notes is not None:
             raise ValueError("A missing response cannot produce scientific content.")
         return
+    locations = supplied_locations(
+        locations, request["payload"]["messages"][1]["content"]
+    )
     check = check_response(read_json(space, data.response_ref), locations)
     if data.status == "complete" and not check.passed:
         raise ValueError("The saved submission did not pass all checks.")

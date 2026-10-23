@@ -106,8 +106,11 @@ def test_auth_error_not_retried_and_secret_echo_redacted(tmp_path):
         space, _, report = run_call(tmp_path, url, stream=False)
         assert report["state"] == "failed" and len(seen) == 1
         assert SECRET.get_secret_value() not in json.dumps(report)
-        for path in (tmp_path / "space" / "runs").rglob("*.json"):
-            assert SECRET.get_secret_value() not in path.read_text()
+        files = list((tmp_path / "space" / "runs").rglob("*"))
+        assert len([p for p in files if p.suffix == ".raw"]) == 1
+        for path in files:
+            if path.is_file():
+                assert SECRET.get_secret_value().encode() not in path.read_bytes()
         space.close()
 
 

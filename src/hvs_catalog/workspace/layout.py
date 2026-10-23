@@ -94,6 +94,8 @@ class SpaceIdentity:
 
 def _read_marker(root: Path) -> SpaceIdentity:
     marker_path = root / WORKSPACE_FILENAME
+    if not marker_path.exists():
+        marker_path = resolve_within(root, ".state/" + WORKSPACE_FILENAME)
     if not marker_path.is_file():
         raise UnknownWorkspaceError(
             f"{root} 不是已初始化的工作空间（缺少 {WORKSPACE_FILENAME}）；"
@@ -103,7 +105,7 @@ def _read_marker(root: Path) -> SpaceIdentity:
         payload = json.loads(marker_path.read_text(encoding="utf-8"))
         if payload.get("format") != WORKSPACE_FORMAT:
             raise UnknownWorkspaceError(f"未知工作空间格式：{payload.get('format')!r}")
-        if payload.get("format_version") != WORKSPACE_FORMAT_VERSION:
+        if payload.get("format_version") not in {WORKSPACE_FORMAT_VERSION, 2}:
             raise UnknownWorkspaceError(
                 f"未知工作空间格式版本：v{payload.get('format_version')}"
                 f"（当前支持 v{WORKSPACE_FORMAT_VERSION}），不自动迁移"
@@ -138,37 +140,49 @@ def _publish_initialization(staging: Path, root: Path) -> None:
     _fsync_dir(root.parent)
 
 
-def initialize_workspace(root: Path, *, config: dict | None = None) -> Workspace:
+def initialize_workspace(
+    root: Path, *, config: dict | None = None, benchmark: bool = False
+) -> Workspace:
     """Create complete workspaces; compatible reinitialization only reads original
     configuration.
     """
     from .store import RecordStore
 
     root = Path(root).resolve()
-    if (root / WORKSPACE_FILENAME).exists():
-        return open_workspace(root)
+    if (root / WORKSPACE_FILENAME).exists() or (
+        root / ".state" / WORKSPACE_FILENAME
+    ).exists():
+        space = open_workspace(root)
+        if benchmark and space.identity.format_version != 2:
+            space.close()
+            raise WorkspaceConflictError(
+                "Benchmark requires a shared benchmark workspace."
+            )
+        return space
     _require_empty_target(root)
     _validate_config(config if config is not None else {})
     root.parent.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix=f".{root.name}-init-", dir=root.parent))
     try:
         identity = SpaceIdentity(
-            uuid.uuid4().hex, WORKSPACE_FORMAT, WORKSPACE_FORMAT_VERSION, _now()
+            uuid.uuid4().hex, WORKSPACE_FORMAT, 2 if benchmark else 1, _now()
         )
-        for dirname in (SOURCE_DIR, RUNS_DIR, BACKUPS_DIR):
+        state = staging / ".state" if benchmark else staging
+        state.mkdir(exist_ok=True)
+        for dirname in ("materials", RUNS_DIR) if benchmark else (SOURCE_DIR, RUNS_DIR):
             (staging / dirname).mkdir()
         _write_file_published(
-            staging / CONFIG_FILENAME,
+            state / CONFIG_FILENAME,
             (json.dumps(config or {}, ensure_ascii=False, indent=2) + "\n").encode(),
         )
         store = RecordStore(
-            staging / BUSINESS_DB, create=True, space_id=identity.space_id
+            state / BUSINESS_DB, create=True, space_id=identity.space_id
         )
         store.close()
-        sqlite3.connect(staging / CHECKPOINT_DB).close()
-        (staging / LOCK_FILENAME).touch()
+        sqlite3.connect(state / CHECKPOINT_DB).close()
+        (state / LOCK_FILENAME).touch()
         _write_file_published(
-            staging / WORKSPACE_FILENAME,
+            state / WORKSPACE_FILENAME,
             (
                 json.dumps(identity.marker_payload(), ensure_ascii=False, indent=2)
                 + "\n"
@@ -186,12 +200,13 @@ def open_workspace(root: Path, *, read_only: bool = False) -> Workspace:
     """Open explicitly without implicit initialization, repair, or migration."""
     root = Path(root).resolve()
     identity = _read_marker(root)
+    state = root / ".state" if identity.format_version == 2 else root
     for name in (BUSINESS_DB, CHECKPOINT_DB):
-        if not (root / name).is_file():
+        if not (state / name).is_file():
             raise WorkspaceIntegrityError(
                 f"空间 {root} 缺少数据库文件 {name}，标记与内容不符"
             )
-    db_identity = _read_space_id(root / BUSINESS_DB)
+    db_identity = _read_space_id(state / BUSINESS_DB)
     if db_identity != identity.space_id:
         raise WorkspaceIntegrityError(
             f"空间 {identity.space_id} 的标记与业务数据库身份（{db_identity}）不符"
@@ -259,23 +274,24 @@ class Workspace:
         self.identity = identity
         self._store: RecordStore | None = None
         self.read_only = read_only
+        self.state_root = root / ".state" if identity.format_version == 2 else root
 
     def lock(self) -> SpaceLock:
-        return SpaceLock(self.root)
+        return SpaceLock(self.state_root)
 
     def store(self) -> RecordStore:
         if self._store is None:
             from .store import RecordStore
 
             self._store = RecordStore(
-                self.root / BUSINESS_DB,
+                self.state_root / BUSINESS_DB,
                 materials_root=self.root,
                 read_only=self.read_only,
             )
         return self._store
 
     def checkpoint_connection(self) -> sqlite3.Connection:
-        path = self.root / CHECKPOINT_DB
+        path = self.state_root / CHECKPOINT_DB
         conn = (
             sqlite3.connect(
                 path.as_uri() + "?mode=ro", uri=True, check_same_thread=False
@@ -287,7 +303,9 @@ class Workspace:
         return conn
 
     def read_config(self) -> dict:
-        return json.loads((self.root / CONFIG_FILENAME).read_text(encoding="utf-8"))
+        return json.loads(
+            (self.state_root / CONFIG_FILENAME).read_text(encoding="utf-8")
+        )
 
     def update_config(self, changes: dict) -> dict:
         if self.read_only:
@@ -297,7 +315,7 @@ class Workspace:
             merged = {**self.read_config(), **changes}
             _validate_config(merged)
             _write_file_published(
-                self.root / CONFIG_FILENAME,
+                self.state_root / CONFIG_FILENAME,
                 (json.dumps(merged, ensure_ascii=False, indent=2) + "\n").encode(),
             )
         return merged
@@ -305,9 +323,20 @@ class Workspace:
     def publish_file(self, relative_path: str, data: bytes) -> ArtifactRef:
         if self.read_only:
             raise WorkspaceIntegrityError("只读空间不能发布文件")
+        if self.identity.format_version == 2 and relative_path.startswith(
+            "runs/inputs/"
+        ):
+            relative_path = ".state/inputs/" + relative_path.removeprefix(
+                "runs/inputs/"
+            )
         rel = Path(relative_path)
         top = rel.parts[0] if rel.parts else ""
-        if top not in {SOURCE_DIR, RUNS_DIR}:
+        allowed = (
+            {"materials", "runs", ".state", "preparations"}
+            if self.identity.format_version == 2
+            else {SOURCE_DIR, RUNS_DIR}
+        )
+        if top not in allowed:
             raise WorkspaceConflictError(
                 f"空间文件必须位于 {SOURCE_DIR}/ 或 {RUNS_DIR}/ 下：{relative_path}"
             )
@@ -328,13 +357,20 @@ class Workspace:
     def publish_run_file(
         self, execution_id: str, name: str, data: bytes
     ) -> ArtifactRef:
-        return self.publish_file(f"{RUNS_DIR}/{execution_id}/{name}", data)
+        return self.publish_file(self.run_path(execution_id, name), data)
+
+    def run_path(self, execution_id: str, name: str) -> str:
+        if self.identity.format_version == 2:
+            if name.startswith(("results/", "traces/")):
+                return f".state/executions/{execution_id}/{name}"
+            return f"runs/{execution_id}/trace/{name}"
+        return f"{RUNS_DIR}/{execution_id}/{name}"
 
     def publish_run_stream(self, execution_id: str, name: str, stream) -> ArtifactRef:
         """Publish a binary stream immutably without loading it into memory."""
         if self.read_only:
             raise WorkspaceIntegrityError("只读空间不能发布文件")
-        relative = f"{RUNS_DIR}/{execution_id}/{name}"
+        relative = self.run_path(execution_id, name)
         target = resolve_within(self.root, relative)
         target.parent.mkdir(parents=True, exist_ok=True)
         staging = target.parent / f".{target.name}.tmp-{uuid.uuid4().hex}"

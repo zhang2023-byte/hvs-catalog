@@ -105,6 +105,14 @@ def prepare_saved_scoring(path):
             space = open_workspace(
                 (path.parent / item.workspace).resolve(), read_only=True
             )
+            if space.identity.format_version == 2 and "/" in item.execution_id:
+                from ..benchmark.archive import archive_path, open_archive
+
+                round_name, paper = item.execution_id.split("/")
+                if (space.root / archive_path(round_name, paper)).is_file():
+                    root = space.root
+                    space.close()
+                    space = open_archive(root, round_name, paper)
             try:
                 prediction = prediction_from_execution(space, item.execution_id)
             finally:

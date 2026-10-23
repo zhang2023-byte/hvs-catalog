@@ -50,7 +50,30 @@ try:
     assert report.outcome=='finished',report.errors
     runtime=RuntimeConfig(base_url=f'http://127.0.0.1:{server.server_port}',quota_store=root/'quota.db')
     config=ExtractionConfig(runtime=runtime)
-    handle=start_extraction(space,preparation_execution_id=prep.execution_id,request_key='extract',configuration=config)
+    from hvs_catalog.records.common import RecordRef
+    original=space
+    space=initialize_workspace(root/'reused')
+    copied=subprocess.run([str(script),'materials','reuse','--source-space',str(original.root),'--preparation',prep.execution_id,'--space',str(space.root)],check=False,capture_output=True,text=True,timeout=30)
+    assert copied.returncode==0,copied.stderr
+    source_ref=RecordRef.model_validate(json.loads(copied.stdout))
+    archive_fixture_metadata(space)
+    metadata=subprocess.run([str(script),'acquisition','metadata','--space',str(space.root),'--id','2501.03333v1'],check=False,capture_output=True,text=True,timeout=30)
+    assert metadata.returncode==0,metadata.stderr
+    packaged=subprocess.run([str(script),'materials','export','--space',str(space.root),'--source-ref',source_ref.record_id+'@'+str(source_ref.revision),'--output',str(root/'material')],check=False,capture_output=True,text=True,timeout=30)
+    assert packaged.returncode==0,packaged.stderr
+    space.close()
+    space=initialize_workspace(root/'portable')
+    loaded=subprocess.run([str(script),'materials','import','--space',str(space.root),'--package',str(root/'material')],check=False,capture_output=True,text=True,timeout=30)
+    assert loaded.returncode==0,loaded.stderr
+    source_ref=RecordRef.model_validate(json.loads(loaded.stdout))
+    assert space.store().list_executions()==[]
+    handle=start_extraction(space,prepared_source_ref=source_ref,request_key='extract',configuration=config)
+    batch=root/'extraction-batch.json'
+    batch.write_text(json.dumps({'tasks':[{'arxiv_id':'2501.03333','workspace':str(space.root),'execution_id':handle.execution_id}]}))
+    checked=subprocess.run([str(script),'extract','batch','--manifest',str(batch),'--check-only'],check=False,capture_output=True,text=True,timeout=30)
+    assert checked.returncode==0,checked.stderr
+    assert seen==[]
+    original.close()
     code="""
 import os,sys
 from pathlib import Path
@@ -68,11 +91,19 @@ resume_extraction(space,eid,service=CallService(stored_configuration(get_executi
 """
     child=subprocess.run([sys.executable,'-c',code,str(space.root),handle.execution_id],check=False,capture_output=True,text=True,timeout=40)
     assert child.returncode==70,child.stderr
+    raw_files=list((space.root/'runs'/handle.execution_id).rglob('*.raw'))
+    assert len(raw_files)==2
+    raw_before={p.relative_to(space.root):p.read_bytes() for p in raw_files}
     report=resume_extraction(space,handle.execution_id,service=CallService(runtime,credential=SecretStr('wheel-synthetic')))
     assert report.outcome=='finished',report.errors
     assert [len(p['messages']) for p in seen]==[2,5,8,3]
     assert seen[2]['messages'][2]['reasoning_content']=='Installed synthetic reasoning.'
     assert seen[2]['messages'][5]['reasoning_content']=='Installed synthetic reasoning.'
+    feedback=json.loads(seen[1]['messages'][3]['content'])
+    assert feedback['argument_root']=={'type':'object','required':['stars','notes']}
+    assert feedback['errors'][0]['scope']=='tool_arguments'
+    assert feedback['errors'][0]['path']=='/notes'
+    assert 'END LOCATION T:p1-b0' in seen[0]['messages'][1]['content']
     assert saved_roster(space,handle.execution_id).data.stars[0].model_dump()==payload['stars'][0]
     from hvs_catalog.pipeline.results import current_result
     _, manifest=current_result(space,handle.execution_id)
@@ -84,6 +115,7 @@ resume_extraction(space,eid,service=CallService(stored_configuration(get_executi
     assert targets['targets'][0]['identifiers']==['SYN-A','SYN-001']
     backup_workspace(space,root/'backup');restore_workspace(root/'backup',root/'restored')
     restored=open_workspace(root/'restored')
+    assert {p.relative_to(restored.root):p.read_bytes() for p in restored.root.rglob('*.raw')}==raw_before
     assert roster_targets(restored,handle.execution_id)==targets
     assert resume_extraction(restored,handle.execution_id).outcome=='finished'
     assert len(seen)==4
@@ -116,6 +148,23 @@ resume_extraction(space,eid,service=CallService(stored_configuration(get_executi
     replay=subprocess.run([str(script),'score','replay','--inputs',str(root/'scored/scoring-inputs.json')],check=False,capture_output=True,text=True,timeout=30)
     assert replay.returncode==0,replay.stdout+replay.stderr
     assert scored.stdout==replay.stdout and 'C=1 P=1 G=1' in replay.stdout
+    assert len(seen)==4
+    bench = root/'benchmark'
+    def benchmark_cli(*args):
+        child=subprocess.run([str(script),'benchmark','--root',str(bench),*map(str,args)],check=False,capture_output=True,text=True,timeout=30)
+        assert child.returncode==0,child.stdout+child.stderr
+        return json.loads(child.stdout)
+    benchmark_cli('init')
+    benchmark_cli('import-materials','--package',root/'material','--paper','2501.03333','--variant','mineru_cloud')
+    config_path=root/'benchmark-config.json'
+    config_path.write_text(json.dumps(config.model_dump(mode='json')))
+    benchmark_cli('preview','--variant','mineru_cloud','--papers','2501.03333','--config',config_path,'--name','offline')
+    state=benchmark_cli('prepare','--variant','mineru_cloud','--papers','2501.03333','--config',config_path,'--purpose','Installed offline fixture')
+    assert state['id']=='exec01' and state['material_variant']=='mineru_cloud'
+    closed=benchmark_cli('close','--round','exec01','--end')
+    assert closed['state']=='archived' and closed['papers'][0]['usage']['attempts']==0
+    assert benchmark_cli('check','--round','exec01')==closed
+    assert not (bench/'sources').exists() and not (bench/'backups').exists()
     assert len(seen)==4
     digest=hashlib.sha256(b'Installed synthetic reasoning.').hexdigest()
     assert (restored.root/'runs/inputs/shared'/f'{digest}.txt').read_text()=='Installed synthetic reasoning.'

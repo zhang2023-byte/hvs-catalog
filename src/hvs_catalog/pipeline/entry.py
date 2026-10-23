@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass, field
 
 from ..llm.managed import CallService
 from ..records.common import RecordRef
+from ..records.file_checks import scoped_verification
 from ..runtime import create_execution, get_execution, resume_execution
 from .configuration import ExtractionConfig, stored_configuration
 from .flow import ExtractionFlow
@@ -35,11 +36,13 @@ def start_extraction(
     space,
     *,
     preparation_execution_id=None,
+    prepared_source_ref=None,
     roster_ref=None,
     roster_execution_id=None,
     request_key,
     configuration=None,
     scope="full",
+    execution_id=None,
 ):
     from .roster import saved_roster
 
@@ -52,17 +55,25 @@ def start_extraction(
         roster_ref = roster.ref()
     if isinstance(roster_ref, dict):
         roster_ref = RecordRef.model_validate(roster_ref)
+    if isinstance(prepared_source_ref, dict):
+        prepared_source_ref = RecordRef.model_validate(prepared_source_ref)
     config = configuration or ExtractionConfig()
     config = ExtractionConfig.model_validate(config.model_dump())
     with space.lock():
         snapshot = freeze_input(
-            space, config, preparation_execution_id, roster_ref, scope
+            space,
+            config,
+            preparation_execution_id,
+            roster_ref,
+            scope,
+            prepared_source_ref=prepared_source_ref,
         )
         handle, _ = create_execution(
             space,
             request_key=request_key,
             input_snapshot=snapshot,
             flow=ExtractionFlow(mode=config.mode),
+            execution_id=execution_id,
         )
         from .results import PREFIX, publish_result
 
@@ -77,6 +88,7 @@ def resume_extraction(space, execution_id, *, service=None):
     return resume_extractions([ExtractionTask(space, execution_id, service)])[0]
 
 
+@scoped_verification
 def _resume_extraction_once(space, execution_id, *, service=None):
     from ..workspace.retention import PREFIX, close_extraction
     from .results import publish_result, result_status

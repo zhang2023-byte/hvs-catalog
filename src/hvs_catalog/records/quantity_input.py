@@ -48,7 +48,13 @@ def quantity_input_schema() -> dict:
             f"Include only when the paper explicitly includes or excludes the {side} endpoint. "
             "Use true for inclusion and false for exclusion."
         )
-    properties["unit"]["description"] = "Unit for this result."
+    properties["unit"]["description"] = (
+        "Specify the units for the point value or bounds and any reported errors. "
+        "If the point value and errors use different units, state both units here. "
+        "For example, `deg ± mas` means a point value in degrees with errors in milliarcseconds. "
+        "Preserve the reported numbers without conversion. "
+        "Do not put error units only in `condition` or `notes`."
+    )
     properties["condition"]["description"] = (
         "Relevant method, model, reference frame, or statistical meaning. "
         "Include applicable confidence levels and quantiles when the paper reports them."

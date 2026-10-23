@@ -136,6 +136,14 @@ def test_full_request_and_saved_short_excerpt(prepared):
     assert len(sent["messages"]) == 2
     assert "FILE " not in sent["messages"][1]["content"]
     assert sent["messages"][1]["content"].startswith("LOCATION T:p1-b0 (paragraph)")
+    assert (
+        TEXT.splitlines()[0] + "\nEND LOCATION T:p1-b0"
+        in sent["messages"][1]["content"]
+    )
+    assert (
+        TEXT.splitlines()[1] + "\nEND LOCATION T:p1-b1"
+        in sent["messages"][1]["content"]
+    )
     assert "# Task" in sent["messages"][0]["content"]
     assert "Record reported quantities" not in sent["messages"][0]["content"]
     assert "material_gaps" not in json.dumps(sent)
@@ -230,20 +238,24 @@ def test_empty_success_and_failed_empty_are_distinct(prepared):
 
 
 @pytest.mark.parametrize(
-    "arguments",
+    "arguments,expected_status",
     [
-        '{"stars":[],"notes":""}}',
-        '{"stars":[],"notes":"","notes":"x"}',
-        '{"stars":[],"notes":NaN}',
-        '{"stars":[],"notes":1e999}',
-        "```json\n{}\n```",
+        ('{"stars":[],"notes":""}}', "complete"),
+        ('{"stars":[],"notes":""}}}', "failed"),
+        ('{"stars":[],"notes":"","notes":"x"}', "failed"),
+        ('{"stars":[],"notes":NaN}', "failed"),
+        ('{"stars":[],"notes":1e999}', "failed"),
+        ("```json\n{}\n```", "failed"),
     ],
 )
-def test_no_json_repairs(prepared, arguments):
-    handle, report, _, _ = run(prepared, [arguments])
+def test_only_approved_json_normalization_is_allowed(
+    prepared, arguments, expected_status
+):
+    handle, report, adapter, _ = run(prepared, [arguments])
     assert report.outcome == "finished"
-    assert report.result_status != "complete"
-    assert saved_roster(prepared[0], handle.execution_id).data.status == "failed"
+    assert report.result_status == expected_status
+    assert saved_roster(prepared[0], handle.execution_id).data.status == expected_status
+    assert len(adapter.seen) == (1 if expected_status == "complete" else 3)
 
 
 def test_backup_preserves_reasoning_and_fixed_targets(prepared, tmp_path):

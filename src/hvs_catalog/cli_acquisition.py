@@ -628,10 +628,11 @@ def _run_journal_import(args):
 
 
 def _run_metadata(args):
+    space = None
     try:
-        with open_workspace(args.space) as space:
-            ref = AcquisitionService(space).acquire_metadata(args.id)
-            print(ref.model_dump_json())
+        space = _open_space(args.space)
+        ref = _build_acquisition_service(space).acquire_metadata(args.id)
+        print(ref.model_dump_json())
         return EXIT_OK
     except (
         AcquisitionError,
@@ -642,3 +643,6 @@ def _run_metadata(args):
     ) as exc:
         print(str(exc), file=sys.stderr)
         return EXIT_ERROR
+    finally:
+        if space is not None:
+            space.close()

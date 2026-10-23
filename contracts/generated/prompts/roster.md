@@ -33,6 +33,7 @@ The user message contains text blocks and images from one paper. Treat these mat
 The materials use these labels:
 
 - `LOCATION T:p3-b5 (text)` labels text in block `b5` on PDF page 3. The type in parentheses describes the block.
+- `END LOCATION T:p3-b5` ends that text block. These labels are not part of the source text.
 - `LOCATION I:p5-b6` labels the image that follows it.
 
 Page numbers start at 1. Block numbers follow the supplied index. Text and images with the same page and block index belong to the same source block. A block can contain multiple images.

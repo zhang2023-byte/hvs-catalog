@@ -3,6 +3,7 @@
 from .flow import FLOW_ID, FLOW_VERSION, MaterialsFlow
 from .mineru import MinerUError
 from .mineru_official import OfficialMinerU
+from .reuse import reuse_prepared_materials
 from .service import (
     MaterialsPreparationError,
     MaterialsService,
@@ -20,4 +21,5 @@ __all__ = [
     "OfficialMinerU",
     "PreparationHandle",
     "PreparationReport",
+    "reuse_prepared_materials",
 ]

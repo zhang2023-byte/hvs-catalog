@@ -85,7 +85,7 @@ def _referenced_files(space: Workspace) -> list[str]:
         for ref in walk_artifact_refs(record.model_dump(mode="json")):
             paths.append(ref["path"])
     for row in space.store().list_executions():
-        paths.append(rules_archive_rel(row.execution_id))
+        paths.append(rules_archive_rel(row.execution_id, space))
     paths.extend(_checkpoint_artifact_paths(space))
     from .retention import PREFIX
 
@@ -330,6 +330,14 @@ def _verify_space_consistency(space: Workspace) -> list[str]:
         problems.extend(verify_execution_inputs(space, handle))
     # Beyond thread identity, verify execution bindings and state references.
     problems.extend(checkpoint_state_problems(space))
+    if space.identity.format_version == 2:
+        from ..benchmark.archive import verify_archive
+
+        for path in (space.root / ".state/archives").glob("*/*.json"):
+            try:
+                verify_archive(space.root, path.parent.name, path.stem)
+            except (ValueError, OSError) as exc:
+                problems.append(f"归档校验失败：{path.relative_to(space.root)}: {exc}")
     return problems
 
 
@@ -353,7 +361,10 @@ def backup_workspace(space: Workspace, target: Path) -> BackupReport:
         staging.mkdir()
         entries: list[dict] = []
         try:
-            for db_name in (BUSINESS_DB, CHECKPOINT_DB):
+            state_relative = space.state_root.relative_to(space.root)
+            (staging / state_relative).mkdir(parents=True, exist_ok=True)
+            for name in (BUSINESS_DB, CHECKPOINT_DB):
+                db_name = str(state_relative / name)
                 source = sqlite3.connect(
                     f"file:{space.root / db_name}?mode=ro", uri=True
                 )
@@ -371,7 +382,39 @@ def backup_workspace(space: Workspace, target: Path) -> BackupReport:
                         "role": "database",
                     }
                 )
-            for rel in _referenced_files(space):
+            paths = _referenced_files(space)
+            if space.identity.format_version == 2:
+                state_files = {
+                    space.state_root / name
+                    for name in (
+                        ".lock",
+                        BUSINESS_DB,
+                        CHECKPOINT_DB,
+                        WORKSPACE_FILENAME,
+                        CONFIG_FILENAME,
+                        "business.db-wal",
+                        "business.db-shm",
+                        "checkpoint.db-wal",
+                        "checkpoint.db-shm",
+                    )
+                }
+                paths = sorted(
+                    set(paths)
+                    | {
+                        p.relative_to(space.root).as_posix()
+                        for p in space.root.rglob("*")
+                        if p.is_file()
+                        and p not in state_files
+                        and p.name != ".DS_Store"
+                        and not any(
+                            part.startswith((".backup-", ".tmp"))
+                            or ".tmp-" in part
+                            or part == "backups"
+                            for part in p.relative_to(space.root).parts
+                        )
+                    }
+                )
+            for rel in paths:
                 # Resolve each component within the root; reject intermediate-directory symlinks too.
                 source = resolve_within(space.root, rel)
                 if not source.is_file():
@@ -388,6 +431,7 @@ def backup_workspace(space: Workspace, target: Path) -> BackupReport:
                     }
                 )
             for name in (WORKSPACE_FILENAME, CONFIG_FILENAME):
+                name = str(state_relative / name)
                 source = space.root / name
                 if source.is_file():
                     shutil.copyfile(source, staging / name)
@@ -483,8 +527,11 @@ def restore_workspace(backup_dir: Path, target: Path) -> Workspace:
                 raise WorkspaceIntegrityError(f"恢复目标包含符号链接：{rel}")
             shutil.copyfile(source, dest)
 
+        state = (
+            staging / ".state" if manifest["space"]["format_version"] == 2 else staging
+        )
         for db_name in (BUSINESS_DB, CHECKPOINT_DB):
-            conn = sqlite3.connect(f"file:{staging / db_name}?mode=ro", uri=True)
+            conn = sqlite3.connect(f"file:{state / db_name}?mode=ro", uri=True)
             try:
                 row = conn.execute("PRAGMA integrity_check").fetchone()
                 if row is None or row[0] != "ok":
@@ -493,7 +540,7 @@ def restore_workspace(backup_dir: Path, target: Path) -> Workspace:
                 conn.close()
 
         # Preserve logical workspace/execution IDs; recreate locks at the new location.
-        lock_path = staging / ".lock"
+        lock_path = state / ".lock"
         fd = os.open(lock_path, os.O_RDWR | os.O_CREAT, 0o644)
         os.close(fd)
 

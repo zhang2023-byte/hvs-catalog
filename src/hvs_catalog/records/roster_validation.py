@@ -2,37 +2,16 @@
 
 from __future__ import annotations
 
-import json
-import math
 from dataclasses import dataclass, field
 
 from jsonschema import Draft202012Validator
 
+from .response import (
+    response_message,
+    strict_json,
+)
 from .roster import RosterIssue
 from .roster_input import RosterStar, roster_input_schema
-
-
-def strict_json(text: str):
-    def pairs(items):
-        result = {}
-        for key, value in items:
-            if key in result:
-                raise ValueError("Duplicate JSON key: " + key)
-            result[key] = value
-        return result
-
-    def constant(value):
-        raise ValueError("Non-finite JSON value: " + value)
-
-    def number(value):
-        parsed = float(value)
-        if not math.isfinite(parsed):
-            raise ValueError("Non-finite JSON number: " + value)
-        return parsed
-
-    return json.loads(
-        text, object_pairs_hook=pairs, parse_constant=constant, parse_float=number
-    )
 
 
 def pointer(parts):
@@ -66,7 +45,8 @@ def schema_issues(payload, schema=None):
         if (
             error.validator == "oneOf"
             and isinstance(error.instance, dict)
-            and "values" in list(error.absolute_path)
+            and "value" in error.schema.get("properties", {})
+            and "evidence" in error.schema.get("properties", {})
         ):
             message = "Use value, with optional errors, or use bounds without value or errors."
         elif error.validator == "not":
@@ -282,21 +262,10 @@ def select_partial(check: SubmissionCheck, locations):
     return stars, indices, rejected, notes if isinstance(notes, str) else None
 
 
-def response_message(envelope):
-    body = (envelope.get("exchange") or {}).get("body")
-    choices = body.get("choices") if isinstance(body, dict) else None
-    if (
-        not isinstance(choices, list)
-        or len(choices) != 1
-        or not isinstance(choices[0], dict)
-    ):
-        return {"invalid_response": body}
-    message = choices[0].get("message")
-    return message if isinstance(message, dict) else {"invalid_response": body}
-
-
 def check_response(envelope, locations, **kwargs):
-    check = check_message(response_message(envelope), locations, **kwargs)
+    check = check_message(
+        response_message(envelope, effective=True), locations, **kwargs
+    )
     error = envelope.get("error")
     if error and not check.issues:
         check.issues.append(

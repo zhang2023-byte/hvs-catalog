@@ -30,7 +30,7 @@ def test_initialize_creates_marker_databases_and_directories(tmp_path):
     assert (root / "checkpoint.db").is_file()
     assert (root / "sources").is_dir()
     assert (root / "runs").is_dir()
-    assert (root / "backups").is_dir()
+    assert not (root / "backups").exists()
     marker = json.loads((root / "workspace.json").read_text(encoding="utf-8"))
     assert marker["format"] == "hvs-catalog-workspace"
     assert marker["space_id"] == space.identity.space_id

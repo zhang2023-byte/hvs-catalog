@@ -1,11 +1,21 @@
 """Generate tool schemas from scientific models with shared filling instructions."""
 
+from copy import deepcopy
+
 from pydantic import BaseModel
+
+from .file_checks import checked_value
 
 
 def submission_schema(model: type[BaseModel], names: dict[str, str]) -> dict:
     """Preserve model constraints while naming and documenting tool definitions."""
-    schema = model.model_json_schema()
+    schema = deepcopy(
+        checked_value(
+            "submission-model-schema",
+            (model, id(model.__pydantic_core_schema__)),
+            model.model_json_schema,
+        )
+    )
 
     def clean(value):
         if isinstance(value, dict):
