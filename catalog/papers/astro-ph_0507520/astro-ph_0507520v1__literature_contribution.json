@@ -1,0 +1,144 @@
+{
+  "metadata": {
+    "arxiv_id": "astro-ph/0507520",
+    "version": "v1",
+    "title": "The Hypervelocity Star SDSS J090745.0+024507 is a Short-Period Variable",
+    "authors": [
+      "Cesar I. Fuentes",
+      "K. Z. Stanek",
+      "B. Scott Gaudi",
+      "Brian A. McLeod",
+      "Slavko B. Bogdanov",
+      "Joel D. Hartman",
+      "Ryan C. Hickox",
+      "Matthew J. Holman"
+    ]
+  },
+  "stars": [
+    {
+      "identifiers": [
+        {
+          "value": "SDSS J090745.0+024507",
+          "evidence": [
+            {
+              "location": "T:p1-b7",
+              "quote": "the Galactic halo star SDSS J090745.0+024507 (hereafter HVS)"
+            }
+          ]
+        },
+        {
+          "value": "HVS",
+          "evidence": [
+            {
+              "location": "T:p1-b4",
+              "quote": "the hypervelocity star SDSS J090745.0+024507 (HVS)"
+            }
+          ]
+        }
+      ],
+      "contribution_type": {
+        "value": "follow_up",
+        "evidence": [
+          {
+            "location": "T:p1-b7",
+            "quote": "In their survey of blue horizontal branch (BHB) stars, Brown et al. (2005) discovered that the Galactic halo star SDSS J090745.0+024507 (hereafter HVS)"
+          },
+          {
+            "location": "T:p1-b7",
+            "quote": "well above the local escape speed from the Galaxy."
+          },
+          {
+            "location": "T:p1-b4",
+            "quote": "We present high-precision photometry of the hypervelocity star SDSS J090745.0+024507 (HVS)"
+          }
+        ]
+      },
+      "quantities": [
+        {
+          "quantity": "ra",
+          "values": [
+            {
+              "value": "09:07:45.0",
+              "unit": "hourangle",
+              "condition": "J2000 equatorial coordinates encoded in the SDSS designation",
+              "evidence": [
+                {
+                  "location": "T:p1-b0",
+                  "quote": "SDSS J090745.0+024507"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "dec",
+          "values": [
+            {
+              "value": "+02:45:07",
+              "unit": "deg",
+              "condition": "J2000 equatorial coordinates encoded in the SDSS designation",
+              "evidence": [
+                {
+                  "location": "T:p1-b0",
+                  "quote": "SDSS J090745.0+024507"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "distance",
+          "values": [
+            {
+              "value": "39",
+              "unit": "kpc",
+              "condition": "if the HVS is a blue horizontal branch (BHB) star",
+              "evidence": [
+                {
+                  "location": "T:p1-b8",
+                  "quote": "distance is 39 kpc or 71 kpc if the HVS is a BHB star or main-sequence star, respectively."
+                }
+              ]
+            },
+            {
+              "value": "71",
+              "unit": "kpc",
+              "condition": "adopted heliocentric distance, assuming the HVS is a B9 main-sequence star",
+              "evidence": [
+                {
+                  "location": "T:p1-b8",
+                  "quote": "distance is 39 kpc or 71 kpc if the HVS is a BHB star or main-sequence star, respectively."
+                },
+                {
+                  "location": "T:p1-b4",
+                  "quote": "heliocentric distance of 71 kpc"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "radial_velocity",
+          "values": [
+            {
+              "value": "853",
+              "error": "12",
+              "unit": "km/s",
+              "condition": "heliocentric radial velocity reported by Brown et al. (2005)",
+              "evidence": [
+                {
+                  "location": "T:p1-b7",
+                  "quote": "853 ± 12 km s<sup>−1</sup>"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "SDSS J090745.0+024507 is the sole eligible star. It is categorized as follow_up because T:p1-b7 states that Brown et al. (2005) discovered it as a Galactic halo star with a Galactic rest-frame radial velocity well above the local escape speed, while this paper presents follow-up photometry (T:p1-b4). 'HVS' is the paper's explicit abbreviation for this same star (T:p1-b7).",
+    "SDSS J090745.0+024507: RA and Dec are not tabulated separately; they are encoded in the SDSS J2000 designation printed in the paper. The paper reports a Galactic rest-frame radial velocity of 709 km/s (also ∼700 km/s) but no total three-dimensional Galactic-rest-frame speed or proper motions. Per the quantity definitions, that Galactic-rest-frame radial value is not recorded as radial_velocity (which excludes Galactic-rest-frame velocities) or as galactocentric_rest_frame_velocity (which requires a total three-dimensional speed). No parallax, proper motion, galactocentric radius, or bound/unbound probability is reported. Location T:p1-b8 contains the alternative distance values; T:p1-b4 gives the adopted 71 kpc heliocentric distance."
+  ]
+}

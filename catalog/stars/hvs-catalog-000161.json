@@ -1,0 +1,180 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000161",
+  "display_name": "HVS18",
+  "sources": {
+    "1401.7342v1": {
+      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "records": [
+        "/stars/14"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS18",
+      "evidence": [
+        {
+          "location": "T:p11-b0",
+          "quote": "<tr><td>18</td><td>237.3 ± 6.4</td>"
+        }
+      ],
+      "source": "1401.7342v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p6-b6",
+          "quote": "21 HVSs that are unbound on the basis of radial"
+        },
+        {
+          "location": "T:p11-b0",
+          "quote": "<tr><td>18</td><td>237.3 ± 6.4</td>"
+        }
+      ],
+      "source": "1401.7342v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "237.3",
+          "error": "6.4",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity v_⊙ from MMT spectroscopy (Table 1).",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<td>18</td><td>237.3 ± 6.4</td>"
+            },
+            {
+              "location": "I:p11-b0"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "446.2",
+          "unit": "km/s",
+          "condition": "Line-of-sight Galactic rest-frame velocity v_rf obtained by transforming the heliocentric velocity via Eq. 1; this is not the total three-dimensional space motion, which can only be larger.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<td>18</td><td>237.3 ± 6.4</td><td>446.2</td>"
+            },
+            {
+              "location": "I:p11-b0"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "Because we measure radial velocity, the full space motion of the stars can only be larger."
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "80",
+          "error": "11",
+          "unit": "kpc",
+          "condition": "Galactocentric radial distance R_GC calculated assuming the Sun is at R = 8 kpc (Table 1).",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<td>80 ± 11</td>"
+            },
+            {
+              "location": "I:p11-b0"
+            },
+            {
+              "location": "T:p5-b11",
+              "quote": "We calculate HVS Galacto-centric radial distances, R, assuming the Sun is at R = 8 kpc. Table 1 summarizes the results."
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "+0.39",
+          "unit": "mas/yr",
+          "condition": "Predicted proper motion in right ascension for the best-fit Galactic center origin trajectory (μ_α)_GC in Table 1; not a measured proper motion.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<td>+0.39, -0.16</td>"
+            },
+            {
+              "location": "I:p11-b0"
+            },
+            {
+              "location": "T:p8-b13",
+              "quote": "We identify a Galactic center origin by the trajectory with the smallest Galactic pericenter passage. An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-0.16",
+          "unit": "mas/yr",
+          "condition": "Predicted proper motion in declination for the best-fit Galactic center origin trajectory (μ_δ)_GC in Table 1; not a measured proper motion.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<td>+0.39, -0.16</td>"
+            },
+            {
+              "location": "I:p11-b0"
+            },
+            {
+              "location": "T:p8-b13",
+              "quote": "We identify a Galactic center origin by the trajectory with the smallest Galactic pericenter passage. An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000161_provenance.json",
+    "sha256": "5b4b72b85a322fc313e3a291d13954697386a3b70139e81c88e893e4217dc1a9"
+  },
+  "warnings": [
+    "1401.7342v1#/stars/14/quantities/3/values/0/evidence/2: quote audit unknown at T:p8-b13; check the paper evidence.",
+    "1401.7342v1#/stars/14/quantities/4/values/0/evidence/2: quote audit unknown at T:p8-b13; check the paper evidence."
+  ]
+}

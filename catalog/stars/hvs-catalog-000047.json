@@ -1,0 +1,138 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000047",
+  "display_name": "HVS4",
+  "sources": {
+    "0808.2469v2": {
+      "title": "MMT Hypervelocity Star Survey",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/0808.2469v2",
+      "records": [
+        "/stars/3"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS4",
+      "evidence": [
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    },
+    {
+      "value": "SDSS J091301.01+305119.84",
+      "evidence": [
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b11",
+          "quote": "7 B-type HVSs discovered in a targeted HVS"
+        },
+        {
+          "location": "T:p3-b11",
+          "quote": "we find 14 unbound HVSs"
+        },
+        {
+          "location": "I:p6-b0"
+        },
+        {
+          "location": "I:p4-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "611",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity v_sun from the weighted average listed in Table 1 for HVS4.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "heliocentric radial velocityv _ { \\odot }, minimum Galactic rest-frame velocityv _ { r f }(not a full space velocity)"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "82",
+          "unit": "kpc",
+          "condition": "Galactocentric distance R_GC from the main-sequence fit listed in Table 1 for HVS4.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "Galactocentric distanceR"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "566",
+          "unit": "km/s",
+          "condition": "Minimum Galactic rest-frame velocity v_rf along the line of sight; explicitly not a full space velocity (Table 1).",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "minimum Galactic rest-frame velocityv _ { r f }(not a full space velocity)"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T04:52:18.542862+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000047_provenance.json",
+    "sha256": "67bd5001106a06a8c034d54db5b53add3f0afdf6c02c495fee490be87a83b209"
+  },
+  "warnings": [
+    "0808.2469v2#/stars/3/quantities/0/values/0/evidence/1: quote audit unknown at T:p7-b6; check the paper evidence.",
+    "0808.2469v2#/stars/3/quantities/1/values/0/evidence/1: quote audit exact_match_elsewhere at T:p7-b6; check the paper evidence.",
+    "0808.2469v2#/stars/3/quantities/2/values/0/evidence/1: quote audit unknown at T:p7-b6; check the paper evidence."
+  ]
+}

@@ -1,0 +1,161 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000702",
+  "display_name": "ID 60 (2401.05630)",
+  "sources": {
+    "2401.05630v1": {
+      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+      "authors": [
+        "A. Luna",
+        "T. Marchetti",
+        "M. Rejkuba",
+        "N. W. C. Leigh",
+        "J. Alonso-García",
+        "A. Valenzuela Navarro",
+        "D. Minniti",
+        "L. C. Smith"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "records": [
+        "/stars/63"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "ID 60",
+      "evidence": [
+        {
+          "location": "T:p16-b0",
+          "quote": "<td>60</td><td>17h38m42.34s</td><td>-33d15m48.34s</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p1-b13",
+          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+        },
+        {
+          "location": "T:p9-b10",
+          "quote": "65 were detected only in the VIRAC2 sample"
+        },
+        {
+          "location": "T:p18-b0",
+          "quote": "<td>60</td><td>15.52</td><td>11.42</td><td>3.39</td><td>848.9</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "17h38m42.34s",
+          "unit": "hourangle",
+          "condition": "VIRAC2-only candidate (no Gaia DR3 counterpart), ID 60, equatorial right ascension from Table B1",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "60 17h38m42.34s -33d15m48.34s -4.4571 -1.0246 14.14 1.77"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-33d15m48.34s",
+          "unit": "deg",
+          "condition": "VIRAC2-only candidate (no Gaia DR3 counterpart), ID 60, equatorial declination from Table B1",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "60 17h38m42.34s -33d15m48.34s -4.4571 -1.0246 14.14 1.77"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "11.42",
+          "unit": "kpc",
+          "condition": "VIRAC2-only candidate, ID 60, heliocentric distance derived from RC calibration (Table B2)",
+          "evidence": [
+            {
+              "location": "T:p18-b0",
+              "quote": "60 15.52 11.42 3.39 848.9 4179327 0.357 0.99"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "3.39",
+          "unit": "kpc",
+          "condition": "VIRAC2-only candidate, ID 60, galactocentric distance r_GC (Table B2)",
+          "evidence": [
+            {
+              "location": "T:p18-b0",
+              "quote": "60 15.52 11.42 3.39 848.9 4179327 0.357 0.99"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.99",
+          "unit": "dimensionless",
+          "condition": "ID 60; P is the probability of exceeding the escape velocity, computed as V_tan,16th(r_GC)/V_esc(r_GC) with the galpy Irrgang13III potential (Table B2)",
+          "evidence": [
+            {
+              "location": "T:p18-b0",
+              "quote": "60 15.52 11.42 3.39 848.9 4179327 0.357 0.99"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T06:03:41.501924+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000702_provenance.json",
+    "sha256": "c1243dba391f375fe7078373835478997fd9dd5077e1c381c3f383e7ac22e647"
+  },
+  "warnings": [
+    "Coordinate reference frame was not reported; ICRS was assumed for matching.",
+    "2401.05630v1#/stars/63/quantities/0/values/0/evidence/0: quote audit unknown at T:p16-b0; check the paper evidence.",
+    "2401.05630v1#/stars/63/quantities/1/values/0/evidence/0: quote audit unknown at T:p16-b0; check the paper evidence.",
+    "2401.05630v1#/stars/63/quantities/2/values/0/evidence/0: quote audit unknown at T:p18-b0; check the paper evidence.",
+    "2401.05630v1#/stars/63/quantities/3/values/0/evidence/0: quote audit unknown at T:p18-b0; check the paper evidence.",
+    "2401.05630v1#/stars/63/quantities/4/values/0/evidence/0: quote audit unknown at T:p18-b0; check the paper evidence."
+  ]
+}

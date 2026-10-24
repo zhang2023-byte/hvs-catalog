@@ -1,0 +1,74 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000697",
+  "associations": [],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "queries": [
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 266.5106666666666,
+            "dec_deg": -30.00266388888889,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "fd2615d62659c18c614b9bb8419b7fccb0ac1a74da2de7e783fe98007925b0f0",
+        "queried_at": "2026-10-24T06:03:03.326258+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2401.05630v1#/stars/59",
+            "position": {
+              "ra_deg": 266.5106666666666,
+              "dec_deg": -30.00266388888889,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "17h46m02.56s",
+                  "unit": "hourangle",
+                  "condition": "VIRAC2 red sample star (no Gaia DR3 counterpart), candidate HVS pointing away from the GC",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "56 17h46m02.56s -30d00m09.59s -0.8627 -0.6338 14.97 3.82"
+                    }
+                  ]
+                },
+                {
+                  "value": "-30d00m09.59s",
+                  "unit": "deg",
+                  "condition": "VIRAC2 red sample star (no Gaia DR3 counterpart), candidate HVS pointing away from the GC",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "56 17h46m02.56s -30d00m09.59s -0.8627 -0.6338 14.97 3.82"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

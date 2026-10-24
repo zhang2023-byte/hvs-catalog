@@ -1,0 +1,87 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000564",
+  "associations": [],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing.",
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "Gaia EDR3 6193551030782723072",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "b725ec7edb59aba38368e4a625a0c47d0f6b46fdc5cd7a1f08230c3b26240043",
+        "queried_at": "2026-10-24T04:41:35.636828+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null
+      },
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 201.24,
+            "dec_deg": -23.677,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": null,
+        "queried_at": null,
+        "client_version": null,
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2012.02123v2#/stars/9",
+            "position": {
+              "ra_deg": 201.24,
+              "dec_deg": -23.677,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "201.24",
+                  "unit": "deg",
+                  "condition": "Gaia EDR3 observed position (Table 3)",
+                  "evidence": [
+                    {
+                      "location": "T:p8-b0",
+                      "quote": "<td>6193551030782723072</td><td>(201.24, -23.677)</td>"
+                    }
+                  ]
+                },
+                {
+                  "value": "-23.677",
+                  "unit": "deg",
+                  "condition": "Gaia EDR3 observed position (Table 3)",
+                  "evidence": [
+                    {
+                      "location": "T:p8-b0",
+                      "quote": "<td>6193551030782723072</td><td>(201.24, -23.677)</td>"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

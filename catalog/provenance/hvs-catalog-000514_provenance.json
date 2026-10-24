@@ -1,0 +1,85 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000514",
+  "associations": [],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J111336.44+005856.4",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "ba3f246973361717117b67261b4895ebe22f93e6512d2ef5d6cb433e7a407791",
+        "queried_at": "2026-10-24T04:43:52.823192+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null
+      },
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 168.40183333333331,
+            "dec_deg": 0.9823333333333334,
+            "frame": "fk5",
+            "equinox": "J2000",
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "b25c05efc49f9262ee5277c0e1931d802c1237936356c9393b9fe30b71c7306f",
+        "queried_at": "2026-10-24T04:55:35.061704+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2003.12766v1#/stars/21",
+            "position": {
+              "ra_deg": 168.40183333333331,
+              "dec_deg": 0.9823333333333334,
+              "frame": "fk5",
+              "equinox": "J2000",
+              "evidence": [
+                {
+                  "value": "11h13m36.44s",
+                  "unit": "hourangle",
+                  "condition": "J2000 coordinates implied by the SDSS designation HVS24 (SDSSJ111336.44+005856.4); not an independent astrometric measurement",
+                  "evidence": [
+                    {
+                      "location": "I:p7-b0"
+                    }
+                  ]
+                },
+                {
+                  "value": "+00d58m56.4s",
+                  "unit": "deg",
+                  "condition": "J2000 coordinates implied by the SDSS designation HVS24 (SDSSJ111336.44+005856.4); not an independent astrometric measurement",
+                  "evidence": [
+                    {
+                      "location": "I:p7-b0"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "fk5",
+              "equinox": "J2000",
+              "frame_basis": "coordinate_conditions",
+              "frame_assumed": false,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

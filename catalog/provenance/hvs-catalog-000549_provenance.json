@@ -1,0 +1,87 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000549",
+  "associations": [],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing.",
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "Gaia EDR3 2038763839481341056",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "754efa85a41d8f907015693c692ca064932bcd85230da026e5c5c6e5a871b19a",
+        "queried_at": "2026-10-24T04:50:26.953498+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null
+      },
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 290.711,
+            "dec_deg": 29.843,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": null,
+        "queried_at": null,
+        "client_version": null,
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2012.02123v2#/stars/15",
+            "position": {
+              "ra_deg": 290.711,
+              "dec_deg": 29.843,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "290.711",
+                  "unit": "deg",
+                  "condition": "Observed Gaia EDR3 position; clean sample of 17 high-velocity stars with P_ub>0.8 (Table 3), no parallax zero point correction",
+                  "evidence": [
+                    {
+                      "location": "T:p8-b0",
+                      "quote": "2038763839481341056</td><td>(290.711, 29.843)</td>"
+                    }
+                  ]
+                },
+                {
+                  "value": "29.843",
+                  "unit": "deg",
+                  "condition": "Observed Gaia EDR3 position; clean sample of 17 high-velocity stars with P_ub>0.8 (Table 3), no parallax zero point correction",
+                  "evidence": [
+                    {
+                      "location": "T:p8-b0",
+                      "quote": "2038763839481341056</td><td>(290.711, 29.843)</td>"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

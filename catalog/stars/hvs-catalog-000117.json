@@ -1,0 +1,142 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000117",
+  "display_name": "HVS6",
+  "sources": {
+    "1203.3543v1": {
+      "title": "MMT Hypervelocity Star Survey. II. Five New Unbound Stars",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1203.3543v1",
+      "records": [
+        "/stars/5"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS6",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "1203.3543v1"
+    },
+    {
+      "value": "SDSS J110557.45+093439.47",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "1203.3543v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b10",
+          "quote": "we reported the discovery of 14 unbound HVSs"
+        },
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "1203.3543v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "626",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity (v_odot) from MMT Blue Channel spectroscopy; tabulated as HVS6 in Table 1",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "HVS6</td><td>626</td><td>511</td><td>18.97</td><td>+0.10</td><td>61</td>"
+            },
+            {
+              "location": "T:p6-b0",
+              "quote": "HVS number, heliocentric radial velocityv _ { \\odot } ., minimum"
+            },
+            {
+              "location": "I:p5-b0"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "61",
+          "unit": "kpc",
+          "condition": "Galactocentric distance R (R_GC) derived from Girardi et al. (2002, 2004) main-sequence distance estimate, assuming the Sun is 8 kpc from the Galactic center",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "HVS6</td><td>626</td><td>511</td><td>18.97</td><td>+0.10</td><td>61</td>"
+            },
+            {
+              "location": "T:p4-b7",
+              "quote": "We then calculate heliocentric distances using de-reddened apparent magnitudes, and convert to Galactocentric distances R assuming that the Sun is 8 kpc from the Galactic center."
+            },
+            {
+              "location": "I:p5-b0"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "lower_bound": "511",
+          "unit": "km/s",
+          "condition": "Minimum Galactic rest-frame velocity v_rf (radial component only, computed with Equation 1); explicitly a lower limit to the true three-dimensional velocity of the star",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "HVS6</td><td>626</td><td>511</td><td>18.97</td><td>+0.10</td><td>61</td>"
+            },
+            {
+              "location": "T:p4-b2",
+              "quote": "We note thatv _ {rf} represents the radial component of velocity in the Galactic rest frame, and is thus a lower limit to the true velocity of any HVS."
+            },
+            {
+              "location": "I:p5-b0"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T04:52:19.581520+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000117_provenance.json",
+    "sha256": "80307145470f9f70133671f2c2dc036868b3194f6c8efd403913b4095da696e4"
+  },
+  "warnings": [
+    "1203.3543v1#/stars/5/quantities/1/values/0/evidence/1: quote audit unknown at T:p4-b7; check the paper evidence.",
+    "1203.3543v1#/stars/5/quantities/2/values/0/evidence/1: quote audit unknown at T:p4-b2; check the paper evidence."
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000692",
+  "associations": [],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "queries": [
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 265.82020833333326,
+            "dec_deg": -32.80432222222222,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "5f6b50f93406998d78bb47df6bad73d868bbf8618d5fc17cd5388308ba5f3298",
+        "queried_at": "2026-10-24T06:04:10.800430+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2401.05630v1#/stars/54",
+            "position": {
+              "ra_deg": 265.82020833333326,
+              "dec_deg": -32.80432222222222,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "17h43m16.85s",
+                  "unit": "hms",
+                  "condition": "VIRAC2-only candidate HVS (no Gaia DR3 counterpart) whose proper motion points away from within 0.5 deg of the GC; Table B1, ID 51",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "51</td><td>17h43m16.85s</td><td>-32d48m15.56s</td><td>-3.5599</td><td>-1.5952</td><td>13.98</td><td>1.52</td>"
+                    },
+                    {
+                      "location": "I:p16-b0"
+                    }
+                  ]
+                },
+                {
+                  "value": "-32d48m15.56s",
+                  "unit": "dms",
+                  "condition": "VIRAC2-only candidate HVS (no Gaia DR3 counterpart); Table B1, ID 51",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "51</td><td>17h43m16.85s</td><td>-32d48m15.56s</td><td>-3.5599</td><td>-1.5952</td><td>13.98</td><td>1.52</td>"
+                    },
+                    {
+                      "location": "I:p16-b0"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

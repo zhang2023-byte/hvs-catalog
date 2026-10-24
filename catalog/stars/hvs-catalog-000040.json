@@ -1,0 +1,131 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000040",
+  "display_name": "HVS14",
+  "sources": {
+    "0808.2469v2": {
+      "title": "MMT Hypervelocity Star Survey",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/0808.2469v2",
+      "records": [
+        "/stars/13"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS14",
+      "evidence": [
+        {
+          "location": "T:p6-b3",
+          "quote": "SDSS J104401.75+061139.03, hereafter HVS14"
+        }
+      ],
+      "source": "0808.2469v2"
+    },
+    {
+      "value": "SDSS J104401.75+061139.03",
+      "evidence": [
+        {
+          "location": "T:p6-b3",
+          "quote": "SDSS J104401.75+061139.03, hereafter HVS14"
+        },
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p5-b11",
+          "quote": "6 unbound HVSs"
+        },
+        {
+          "location": "T:p8-b9",
+          "quote": "discovery of 6 new unbound HVSs"
+        },
+        {
+          "location": "T:p6-b3",
+          "quote": "minimum velocity of 416 km"
+        },
+        {
+          "location": "I:p4-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "532",
+          "error": "13",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; weighted average measurement reported in Table 1, with uncertainty from the text.",
+          "evidence": [
+            {
+              "location": "T:p6-b3",
+              "quote": "SDSS J104401.75+061139.03, hereafter HVS14, has a\nB9 spectral type,\\mathrm { { a ~ 5 3 2 \\pm 1 3 ~ k m ~ s ^ { - 1 } } }heliocentric radial\nvelocity, and a minimum velocity of 416 km\\mathrm { s } ^ { - 1 }in the\nGalactic rest frame."
+            },
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>HVS14</td><td>B</td><td>-0.3</td><td>19.89</td><td>112</td><td>241.78</td><td>+53.20</td><td>532</td><td>416</td><td>SDSS J104401.75+061139.0</td></tr>"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "112",
+          "unit": "kpc",
+          "condition": "Galactocentric distance inferred assuming HVS14 is a main-sequence star; Table 1 value.",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>HVS14</td><td>B</td><td>-0.3</td><td>19.89</td><td>112</td><td>241.78</td><td>+53.20</td><td>532</td><td>416</td><td>SDSS J104401.75+061139.0</td></tr>"
+            }
+          ],
+          "source": "0808.2469v2"
+        },
+        {
+          "value": "110",
+          "unit": "kpc",
+          "condition": "Approximate Galactocentric distance assuming HVS14 is a main-sequence star; text value.",
+          "evidence": [
+            {
+              "location": "T:p6-b3",
+              "quote": "At\ng = 1 9 . 7 2 \\pm 0 . 0 2, HVS14, like HVS13, has a very large\nGalactocentric distantR = 1 1 0 ~ \\mathrm { k p c }"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T04:41:59.554612+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000040_provenance.json",
+    "sha256": "35b185198307d18f01b4ff528a38e592e076799f63ad6a96ed09db5d7a550f72"
+  },
+  "warnings": []
+}

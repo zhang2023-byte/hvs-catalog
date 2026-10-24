@@ -1,0 +1,176 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000710",
+  "display_name": "ID 6 (2401.05630)",
+  "sources": {
+    "2401.05630v1": {
+      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+      "authors": [
+        "A. Luna",
+        "T. Marchetti",
+        "M. Rejkuba",
+        "N. W. C. Leigh",
+        "J. Alonso-García",
+        "A. Valenzuela Navarro",
+        "D. Minniti",
+        "L. C. Smith"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "records": [
+        "/stars/9"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "ID 6",
+      "evidence": [
+        {
+          "location": "T:p16-b0",
+          "quote": "<td>6</td><td>17h48m37.10s</td><td>-28d56m04.77s</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p1-b13",
+          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+        },
+        {
+          "location": "T:p9-b10",
+          "quote": "65 were detected only in the VIRAC2 sample"
+        },
+        {
+          "location": "T:p17-b2",
+          "quote": "<td>6</td><td>17.33</td><td>10.1</td><td>1.98</td><td>830.76</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "17h48m37.10s",
+          "unit": "hourangle",
+          "condition": "VIRC2 position of star ID 6 (red sample with no Gaia DR3 counterpart)",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "6</td><td>17h48m37.10s</td><td>-28d56m04.77s</td><td>0.3413</td><td>-0.5602</td><td>14.52</td><td>3.27"
+            },
+            {
+              "location": "I:p16-b0"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-28d56m04.77s",
+          "unit": "deg",
+          "condition": "VIRC2 position of star ID 6 (red sample with no Gaia DR3 counterpart)",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "6</td><td>17h48m37.10s</td><td>-28d56m04.77s</td><td>0.3413</td><td>-0.5602</td><td>14.52</td><td>3.27"
+            },
+            {
+              "location": "I:p16-b0"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "10.1",
+          "unit": "kpc",
+          "condition": "Heliocentric distance derived from RC photometric distance calibration for star ID 6",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "6</td><td>17.33</td><td>10.1</td><td>1.98</td><td>830.76</td><td>567325</td><td>0.293</td><td>0.98"
+            },
+            {
+              "location": "I:p17-b2"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "1.98",
+          "unit": "kpc",
+          "condition": "Three-dimensional galactocentric distance r_GC computed from RC distance, assuming R_0 = 8.122 kpc",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "6</td><td>17.33</td><td>10.1</td><td>1.98</td><td>830.76</td><td>567325</td><td>0.293</td><td>0.98"
+            },
+            {
+              "location": "I:p17-b2"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.98",
+          "unit": "dimensionless",
+          "condition": "Probability P of exceeding the escape velocity, given by V_tan,16th(r_GC)/V_esc(r_GC) with V_esc from the galpy Irrgang13III potential",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "6</td><td>17.33</td><td>10.1</td><td>1.98</td><td>830.76</td><td>567325</td><td>0.293</td><td>0.98"
+            },
+            {
+              "location": "T:p8-b2",
+              "quote": "the probability (�) of exceeding the escape velocity, given by\nV _ {t a n , 1 6 ^ { \\mathrm { t h } } } ( r _ { G C } ) / V _ { e s c } ( r _ { G C } )"
+            },
+            {
+              "location": "I:p17-b2"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T06:01:34.417458+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000710_provenance.json",
+    "sha256": "f51952067e8e39c2d7733fc1176d2b9bb9ac8a950fb54258584150d8b5395e70"
+  },
+  "warnings": [
+    "Coordinate reference frame was not reported; ICRS was assumed for matching.",
+    "2401.05630v1#/stars/9/quantities/4/values/0/evidence/1: quote audit unknown at T:p8-b2; check the paper evidence."
+  ]
+}

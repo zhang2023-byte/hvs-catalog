@@ -1,0 +1,167 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000035",
+  "display_name": "HVS1",
+  "sources": {
+    "0808.2469v2": {
+      "title": "MMT Hypervelocity Star Survey",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/0808.2469v2",
+      "records": [
+        "/stars/0"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS1",
+      "evidence": [
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    },
+    {
+      "value": "SDSS J090744.99+024506.91",
+      "evidence": [
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b6",
+          "quote": "the discovery of the first HVS"
+        },
+        {
+          "location": "T:p1-b6",
+          "quote": "twice the Milky Way’s escape velocity"
+        },
+        {
+          "location": "T:p1-b11",
+          "quote": "the first HVS (Brown et al. 2005)"
+        },
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "840",
+          "unit": "km/s",
+          "condition": "heliocentric radial velocity (v_⊙) in the combined HVS survey; weighted average velocity measurement",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "HVS1 B -0.3 19.83 111 227.33 +31.33 840 696 SDSS J090744.99+024506.91"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "Galactocentric distance R ,Galactic coordinates (l, b), heliocentric radial velocity v_odot, minimum Galactic rest-frame velocity v_rf (not a full space velocity), and catalog identification."
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "111",
+          "unit": "kpc",
+          "condition": "R_GC for HVS1 in Table 1",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "HVS1 B -0.3 19.83 111 227.33 +31.33 840 696 SDSS J090744.99+024506.91"
+            }
+          ],
+          "source": "0808.2469v2"
+        },
+        {
+          "value": "110",
+          "unit": "kpc",
+          "condition": "distance of HVS1 reported in the discovery paper (Brown et al. 2005); consistent with the Galactocentric distance R_GC = 111 kpc in Table 1",
+          "evidence": [
+            {
+              "location": "T:p1-b6",
+              "quote": "a Galactic rest frame velocity of at least +700 ± 12 km s−1, more than twice the Milky Way’s escape velocity at the star’s distance of 110 kpc (Brown et al. 2005)."
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "696",
+          "unit": "km/s",
+          "condition": "minimum Galactic rest-frame velocity v_rf (not a full space velocity); Table 1 weighted average",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "HVS1 B -0.3 19.83 111 227.33 +31.33 840 696 SDSS J090744.99+024506.91"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "minimum Galactic rest-frame velocity v_rf (not a full space velocity)"
+            }
+          ],
+          "source": "0808.2469v2"
+        },
+        {
+          "value": "700",
+          "error": "12",
+          "unit": "km/s",
+          "condition": "at least +700 ± 12 km/s Galactic rest-frame velocity reported for the first HVS (Brown et al. 2005); a lower limit",
+          "evidence": [
+            {
+              "location": "T:p1-b6",
+              "quote": "a Galactic rest frame velocity of at least +700 ± 12 km s−1, more than twice the Milky Way’s escape velocity at the star’s distance of 110 kpc (Brown et al. 2005)."
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T04:44:04.932901+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000035_provenance.json",
+    "sha256": "e1017f13479000972d485e9f132e646d3530ad1c20c4ffafc45d1d1cdfa8a5bd"
+  },
+  "warnings": [
+    "0808.2469v2#/stars/0/quantities/0/values/0/evidence/0: quote audit unknown at T:p6-b0; check the paper evidence.",
+    "0808.2469v2#/stars/0/quantities/0/values/0/evidence/1: quote audit unknown at T:p7-b6; check the paper evidence.",
+    "0808.2469v2#/stars/0/quantities/1/values/0/evidence/0: quote audit unknown at T:p6-b0; check the paper evidence.",
+    "0808.2469v2#/stars/0/quantities/1/values/1/evidence/0: quote audit unknown at T:p1-b6; check the paper evidence.",
+    "0808.2469v2#/stars/0/quantities/2/values/0/evidence/0: quote audit unknown at T:p6-b0; check the paper evidence.",
+    "0808.2469v2#/stars/0/quantities/2/values/0/evidence/1: quote audit unknown at T:p7-b6; check the paper evidence.",
+    "0808.2469v2#/stars/0/quantities/2/values/1/evidence/0: quote audit unknown at T:p1-b6; check the paper evidence."
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000118",
+  "display_name": "HVS8",
+  "sources": {
+    "1203.3543v1": {
+      "title": "MMT Hypervelocity Star Survey. II. Five New Unbound Stars",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1203.3543v1",
+      "records": [
+        "/stars/7"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS8",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "1203.3543v1"
+    },
+    {
+      "value": "SDSS J094214.03+200322.07",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "1203.3543v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b10",
+          "quote": "we reported the discovery of 14 unbound HVSs"
+        },
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "1203.3543v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "094214.03",
+          "unit": "hourangle",
+          "condition": "J2000 equatorial right ascension encoded in the SDSS catalog identifier listed for HVS8 in Table 1",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "<tr><td>HVS8</td><td>489</td><td>393</td><td>17.94</td><td>+0.01</td><td>46</td><td>211.70</td><td>+46.33</td><td>SDSS J094214.03+200322.07</td><td>6</td></tr>"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "+200322.07",
+          "unit": "deg",
+          "condition": "J2000 equatorial declination encoded in the SDSS catalog identifier listed for HVS8 in Table 1",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "<tr><td>HVS8</td><td>489</td><td>393</td><td>17.94</td><td>+0.01</td><td>46</td><td>211.70</td><td>+46.33</td><td>SDSS J094214.03+200322.07</td><td>6</td></tr>"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "489",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity v_odot for HVS8 from Table 1",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "<tr><td>HVS8</td><td>489</td><td>393</td><td>17.94</td><td>+0.01</td><td>46</td><td>211.70</td><td>+46.33</td><td>SDSS J094214.03+200322.07</td><td>6</td></tr>"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "46",
+          "unit": "kpc",
+          "condition": "Galactocentric distance R_GC for HVS8 from Table 1, based on Girardi et al. main-sequence tracks and assuming the Sun is 8 kpc from the Galactic center",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "<tr><td>HVS8</td><td>489</td><td>393</td><td>17.94</td><td>+0.01</td><td>46</td><td>211.70</td><td>+46.33</td><td>SDSS J094214.03+200322.07</td><td>6</td></tr>"
+            }
+          ],
+          "source": "1203.3543v1"
+        },
+        {
+          "value": "≃50",
+          "unit": "kpc",
+          "condition": "Approximate Galactocentric distance R quoted for HVS7 and HVS8 from prior echelle/spectroscopic studies",
+          "evidence": [
+            {
+              "location": "T:p5-b2",
+              "quote": "HVS7 and HVS8, on the other hand, are demon-\nstrated ≃4M _ { \\odot } main sequence B stars at R ≃50 kpc"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T04:41:46.543365+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000118_provenance.json",
+    "sha256": "9ce3b709da1b2c4c485c77033d3f443454609ce2810b8e2aa87f094824bf1541"
+  },
+  "warnings": [
+    "1203.3543v1#/stars/7/quantities/3/values/1/evidence/0: quote audit unknown at T:p5-b2; check the paper evidence."
+  ]
+}

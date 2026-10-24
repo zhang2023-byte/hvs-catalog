@@ -1,0 +1,363 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000391",
+  "display_name": "Gaia DR3 2946665465655257472",
+  "sources": {
+    "1808.02620v2": {
+      "title": "Nearby high-speed stars in Gaia DR2",
+      "authors": [
+        "Benjamin C. Bromley",
+        "Scott J. Kenyon",
+        "Warren R. Brown",
+        "Margaret J. Geller"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1808.02620v2",
+      "records": [
+        "/stars/13"
+      ]
+    },
+    "1907.06348v1": {
+      "title": "New nearby hypervelocity stars and their spatial distribution from Gaia DR2",
+      "authors": [
+        "Cuihua Du",
+        "Hefan Li",
+        "Yepeng Yan",
+        "Heidi Jo Newberg",
+        "Jianrong Shi",
+        "Jun Ma",
+        "Yuqin Chen",
+        "Zhenyu Wu"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1907.06348v1",
+      "records": [
+        "/stars/8"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "Gaia DR2 2946665465655257472",
+      "evidence": [
+        {
+          "location": "T:p23-b1",
+          "quote": "2946665465655257472"
+        }
+      ],
+      "source": "1808.02620v2"
+    },
+    {
+      "value": "Gaia DR2 2946665465655257472",
+      "evidence": [
+        {
+          "location": "I:p9-b1"
+        },
+        {
+          "location": "T:p9-b1",
+          "quote": "TABLE 2 HVS identified from tangential velocity selection of Gaia DR2 5D information"
+        }
+      ],
+      "source": "1907.06348v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p22-b1",
+          "quote": "Of these, 19 are unbound with 95% confidence on the sole basis of tangential velocity and\nastrometric uncertainties. Table 3 summarizes the properties of these 19 fastest objects."
+        }
+      ],
+      "source": "1808.02620v2"
+    },
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p1-b5",
+          "quote": "28 nearby (less than 6 kpc) late-type Hypervelocity\nstars (HVSs) with over 99% possibility of unbound are discovered."
+        },
+        {
+          "location": "T:p9-b1",
+          "quote": "TABLE 2 HVS identified from tangential velocity selection of Gaia DR2 5D information"
+        }
+      ],
+      "source": "1907.06348v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "3.17",
+          "error": "0.66",
+          "unit": "kpc",
+          "condition": "5-D tangential-speed sample (no radial velocity); heliocentric distance d_h from Table 3.",
+          "evidence": [
+            {
+              "location": "T:p23-b1",
+              "quote": "2946665465655257472</td><td>16.22</td><td>1.09</td><td>(227.47, -9.16)</td><td>3.17±0.66</td><td>10.4±0.6</td><td>786.7±173.6</td><td>0.98"
+            }
+          ],
+          "source": "1808.02620v2"
+        },
+        {
+          "value": "3.26",
+          "lower_error": "0.54",
+          "upper_error": "0.76",
+          "unit": "kpc",
+          "condition": "Bayesian distance inferred from Gaia DR2 parallax using an exponentially decreasing space-density prior; listed for the 5D tangential-velocity HVS sample in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p9-b1"
+            },
+            {
+              "location": "T:p9-b1",
+              "quote": "2946665465655257472<eq>^{B}</eq></td><td>(227.47, -9.16)</td><td>0.345 ± 0.057</td><td>54.42 ± 0.1</td><td>11.06 ± 0.13</td><td>3.26<eq>^{+0.76}_{-0.54}</eq></td><td>10.65<eq>^{+0.63}_{-0.43}</eq></td><td>810<eq>^{+198}_{-139}</eq>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "10.4",
+          "error": "0.6",
+          "unit": "kpc",
+          "condition": "5-D tangential-speed sample; Galactocentric distance r_g from Table 3.",
+          "evidence": [
+            {
+              "location": "T:p23-b1",
+              "quote": "2946665465655257472</td><td>16.22</td><td>1.09</td><td>(227.47, -9.16)</td><td>3.17±0.66</td><td>10.4±0.6</td><td>786.7±173.6</td><td>0.98"
+            }
+          ],
+          "source": "1808.02620v2"
+        },
+        {
+          "value": "10.65",
+          "lower_error": "0.63",
+          "upper_error": "0.43",
+          "unit": "kpc",
+          "condition": "Galactocentric radius r_gc listed in Table 2, derived using the paper's adopted Galactocentric coordinate transformation.",
+          "evidence": [
+            {
+              "location": "I:p9-b1"
+            },
+            {
+              "location": "T:p9-b1",
+              "quote": "2946665465655257472<eq>^{B}</eq></td><td>(227.47, -9.16)</td><td>0.345 ± 0.057</td><td>54.42 ± 0.1</td><td>11.06 ± 0.13</td><td>3.26<eq>^{+0.76}_{-0.54}</eq></td><td>10.65<eq>^{+0.63}_{-0.43}</eq></td><td>810<eq>^{+198}_{-139}</eq>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.98",
+          "unit": "dimensionless",
+          "condition": "5-D tangential-speed sample (no radial velocity); probability of being unbound from tangential velocity and astrometric uncertainties.",
+          "evidence": [
+            {
+              "location": "T:p23-b1",
+              "quote": "2946665465655257472</td><td>16.22</td><td>1.09</td><td>(227.47, -9.16)</td><td>3.17±0.66</td><td>10.4±0.6</td><td>786.7±173.6</td><td>0.98"
+            },
+            {
+              "location": "T:p22-b1",
+              "quote": "The proper motion sample includes 343 stars with ≥ 50% likelihood of being unbound (p_unb ≥ 0.5). Of these, 19 are unbound with 95% confidence on the sole basis of tangential velocity and astrometric uncertainties."
+            }
+          ],
+          "source": "1808.02620v2"
+        }
+      ]
+    },
+    {
+      "quantity": "parallax",
+      "values": [
+        {
+          "value": "0.345",
+          "error": "0.057",
+          "unit": "mas",
+          "condition": "Gaia DR2 parallax listed in Table 2 for the 5D HVS sample.",
+          "evidence": [
+            {
+              "location": "I:p9-b1"
+            },
+            {
+              "location": "T:p9-b1",
+              "quote": "2946665465655257472<eq>^{B}</eq></td><td>(227.47, -9.16)</td><td>0.345 ± 0.057</td><td>54.42 ± 0.1</td><td>11.06 ± 0.13</td><td>3.26<eq>^{+0.76}_{-0.54}</eq></td><td>10.65<eq>^{+0.63}_{-0.43}</eq></td><td>810<eq>^{+198}_{-139}</eq>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "54.42",
+          "error": "0.1",
+          "unit": "mas/yr",
+          "condition": "Gaia DR2 proper-motion component μ_α* listed in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p9-b1"
+            },
+            {
+              "location": "T:p9-b1",
+              "quote": "2946665465655257472<eq>^{B}</eq></td><td>(227.47, -9.16)</td><td>0.345 ± 0.057</td><td>54.42 ± 0.1</td><td>11.06 ± 0.13</td><td>3.26<eq>^{+0.76}_{-0.54}</eq></td><td>10.65<eq>^{+0.63}_{-0.43}</eq></td><td>810<eq>^{+198}_{-139}</eq>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "11.06",
+          "error": "0.13",
+          "unit": "mas/yr",
+          "condition": "Gaia DR2 proper-motion component μ_δ listed in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p9-b1"
+            },
+            {
+              "location": "T:p9-b1",
+              "quote": "2946665465655257472<eq>^{B}</eq></td><td>(227.47, -9.16)</td><td>0.345 ± 0.057</td><td>54.42 ± 0.1</td><td>11.06 ± 0.13</td><td>3.26<eq>^{+0.76}_{-0.54}</eq></td><td>10.65<eq>^{+0.63}_{-0.43}</eq></td><td>810<eq>^{+198}_{-139}</eq>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "810",
+          "lower_error": "139",
+          "upper_error": "198",
+          "unit": "km/s",
+          "condition": "Galactic rest-frame velocity v_gc listed in Table 2 for the 5D sample; based on tangential velocity because no radial velocity is used.",
+          "evidence": [
+            {
+              "location": "I:p9-b1"
+            },
+            {
+              "location": "T:p9-b1",
+              "quote": "2946665465655257472<eq>^{B}</eq></td><td>(227.47, -9.16)</td><td>0.345 ± 0.057</td><td>54.42 ± 0.1</td><td>11.06 ± 0.13</td><td>3.26<eq>^{+0.76}_{-0.54}</eq></td><td>10.65<eq>^{+0.63}_{-0.43}</eq></td><td>810<eq>^{+198}_{-139}</eq>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "Gaia DR3 2946665465655257472",
+      "aliases": [
+        "Gaia DR2 2946665465655257472",
+        "Gaia DR3 2946665465655257472"
+      ],
+      "object_type": "PM*",
+      "coordinates": {
+        "ra": {
+          "value": 101.14453627587,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": -17.047552376410003,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.02810000069439411,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.03669999912381172,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": 54.179,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": 11.25,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.03999999910593033,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.04600000008940697,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.4601,
+        "unit": "mas",
+        "error": 0.04280000180006027,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "value": 16.225629806518555,
+          "error": 0.002831999910995364,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR2 2946665465655257472"
+      ]
+    },
+    "last_queried_at": "2026-10-24T04:43:47.965810+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000391_provenance.json",
+    "sha256": "71a0728444579b2614d10c1e4f461ba9d329b59fb602100bf19ddded01125f5b"
+  },
+  "warnings": [
+    "1808.02620v2#/stars/13/quantities/2/values/0/evidence/1: quote audit unknown at T:p22-b1; check the paper evidence."
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "metadata": {
+    "arxiv_id": "0712.1825",
+    "version": "v2",
+    "title": "Low Metallicity Indicates that the Hypervelocity Star HE 0437-5439 was Ejected from the LMC",
+    "authors": [
+      "Alceste Z. Bonanos",
+      "Mercedes Lopez-Morales",
+      "Ian Hunter",
+      "Robert S. I. Ryans"
+    ]
+  },
+  "stars": [
+    {
+      "identifiers": [
+        {
+          "value": "HE 0437–5439",
+          "evidence": [
+            {
+              "location": "T:p1-b0",
+              "quote": "HE 0437–5439 was Ejected from the LMC"
+            },
+            {
+              "location": "T:p2-b2",
+              "quote": "HE 0437–5439 stands out as the most enigmatic one."
+            },
+            {
+              "location": "T:p5-b3",
+              "quote": "We measure the chemical abundance of the hypervelocity star HE 0437–5439"
+            }
+          ]
+        }
+      ],
+      "contribution_type": {
+        "value": "follow_up",
+        "evidence": [
+          {
+            "location": "T:p2-b2",
+            "quote": "Edelmann et al. (2005) discovered this HVS during a spectroscopic follow-up of their sample of subluminous B-star candidates from the Hamburg/ESO survey"
+          },
+          {
+            "location": "T:p2-b4",
+            "quote": "Motivated by these intriguing scenarios, we set out to measure the metallicity of HE 0437–5439 and obtained photometry to search for variability."
+          }
+        ]
+      },
+      "quantities": [
+        {
+          "quantity": "galactocentric_radius",
+          "values": [
+            {
+              "value": "61",
+              "error": "12",
+              "unit": "kpc",
+              "condition": "Distance from the Galactic center derived by Edelmann et al. (2005), as reported in this paper.",
+              "evidence": [
+                {
+                  "location": "T:p2-b2",
+                  "quote": "derived a distance ofd = 6 1 \\pm 1 2kpc from the Galatic center"
+                }
+              ]
+            },
+            {
+              "value": "73",
+              "lower_error": "5",
+              "upper_error": "6",
+              "unit": "kpc",
+              "condition": "Recalculated in this paper following Edelmann et al. (2005) using the new magnitude, mass, and surface gravity; interpreted as the same Galactic-center distance.",
+              "evidence": [
+                {
+                  "location": "T:p5-b1",
+                  "quote": "With the new values for the magnitude, mass and surface gravity we obtain a longer distance of7 3 _ { - 5 } ^ { + 6 }kpc."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "radial_velocity",
+          "values": [
+            {
+              "value": "+723",
+              "error": "3",
+              "unit": "km/s",
+              "condition": "Heliocentric radial velocity measured by Edelmann et al. (2005), as reported in this paper.",
+              "evidence": [
+                {
+                  "location": "T:p2-b2",
+                  "quote": "They measured a heliocentric radial velocity of+ 7 2 3 { \\pm } 3 \\mathrm { k m } \\mathrm { s } ^ { - 1 }"
+                }
+              ]
+            },
+            {
+              "value": "723",
+              "error": "2",
+              "unit": "km/s",
+              "condition": "Radial velocity confirmed in this paper from the best-fit Tlusty model spectrum using the IRAF rvsao.xcsao task.",
+              "evidence": [
+                {
+                  "location": "T:p5-b1",
+                  "quote": "we confirm the radial velocity of the star to be7 2 3 \\pm 2km\\mathrm { s } ^ { - 1 }with the IRAF rvsao.xcsao task."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "HE 0437–5439 is included as follow_up: it was already identified as an HVS by Edelmann et al. (2005) (T:p2-b2), and this paper analyzes it to measure its metallicity and search for variability (T:p2-b4). The paper's final preference for an LMC origin does not change the follow_up classification. No Gaia identifier is given in the supplied material.",
+    "HE 0437–5439: T:p2-b2 explicitly identifies 61 ± 12 kpc as a distance from the Galactic center, not a heliocentric distance. T:p5-b1 calls 73_{-5}^{+6} kpc the recalculated \"distance ... following Edelmann et al. (2005)\"; because Edelmann et al.'s reported quantity is Galactocentric, this is recorded as galactocentric_radius. T:p5-b1 does not explicitly restate the radial-velocity frame for the 723 ± 2 km/s confirmation. No equatorial coordinates, parallax, proper motions, total Galactic-rest-frame speed, or bound probabilities are reported."
+  ]
+}

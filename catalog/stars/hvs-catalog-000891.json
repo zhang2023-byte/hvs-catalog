@@ -1,0 +1,142 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000891",
+  "display_name": "HVS2",
+  "sources": {
+    "astro-ph/0601580v1": {
+      "title": "A Successful Targeted Search for Hypervelocity Stars",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon",
+        "Michael J. Kurtz"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/astro-ph/0601580v1",
+      "records": [
+        "/stars/1"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS2",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        },
+        {
+          "location": "T:p3-b0",
+          "quote": "HVS2 (Hirsch et al.\n2005) are marked by plus signs."
+        }
+      ],
+      "source": "astro-ph/0601580v1"
+    },
+    {
+      "value": "US 708",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "astro-ph/0601580v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b8",
+          "quote": "is probably a HVS ejected from the Galactic Center."
+        },
+        {
+          "location": "T:p3-b0",
+          "quote": "HVS2 (Hirsch et al.\n2005) are marked by plus signs."
+        },
+        {
+          "location": "T:p1-b9",
+          "quote": "HVSs, on the other hand, are unbound."
+        },
+        {
+          "location": "T:p3-b8",
+          "quote": "Table 1 summarizes the properties of all five known\nHVSs."
+        }
+      ],
+      "source": "astro-ph/0601580v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "19",
+          "unit": "kpc",
+          "condition": "Heliocentric distance estimate listed in Table 1 (adopted from Hirsch et al. 2005)",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "HVS2 176.0 47.1 18.8 +717 19 32 US 7082"
+            },
+            {
+              "location": "I:p5-b0"
+            }
+          ],
+          "source": "astro-ph/0601580v1"
+        },
+        {
+          "value": "~20",
+          "unit": "kpc",
+          "condition": "Heliocentric distance reported by Hirsch et al. (2005) for this helium-rich subluminous O star",
+          "evidence": [
+            {
+              "location": "T:p1-b8",
+              "quote": "Hirsch et al. (2005) report a helium-rich sublumi-\nnous O star, ∼20 kpc distant, traveling with a Galac-\ntic rest-frame velocity of at least +717 km s−1"
+            }
+          ],
+          "source": "astro-ph/0601580v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "lower_bound": "+717",
+          "lower_inclusive": true,
+          "unit": "km/s",
+          "condition": "Minimum Galactic rest-frame velocity from the radial velocity only (not a full space velocity), as reported by Hirsch et al. (2005) and listed in Table 1",
+          "evidence": [
+            {
+              "location": "T:p1-b8",
+              "quote": "traveling with a Galac-\ntic rest-frame velocity of at least +717 km s−1"
+            },
+            {
+              "location": "T:p5-b0",
+              "quote": "vRF km s-1 ... +717"
+            },
+            {
+              "location": "I:p5-b0"
+            }
+          ],
+          "source": "astro-ph/0601580v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000891_provenance.json",
+    "sha256": "3be45b545799de52d964ce71f34eb58d81123fcf10d31c94655947e024396869"
+  },
+  "warnings": [
+    "astro-ph/0601580v1#/stars/1/quantities/0/values/0/evidence/0: quote audit unknown at T:p5-b0; check the paper evidence.",
+    "astro-ph/0601580v1#/stars/1/quantities/0/values/1/evidence/0: quote audit unknown at T:p1-b8; check the paper evidence.",
+    "astro-ph/0601580v1#/stars/1/quantities/1/values/0/evidence/0: quote audit unknown at T:p1-b8; check the paper evidence.",
+    "astro-ph/0601580v1#/stars/1/quantities/1/values/0/evidence/1: quote audit unknown at T:p5-b0; check the paper evidence."
+  ]
+}

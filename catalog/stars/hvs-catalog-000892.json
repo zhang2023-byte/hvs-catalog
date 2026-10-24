@@ -1,0 +1,116 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000892",
+  "display_name": "HVS2",
+  "sources": {
+    "astro-ph/0604111v2": {
+      "title": "Hypervelocity Stars. I. The Spectroscopic Survey",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon",
+        "Michael J. Kurtz"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/astro-ph/0604111v2",
+      "records": [
+        "/stars/1"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS2",
+      "evidence": [
+        {
+          "location": "I:p10-b0"
+        }
+      ],
+      "source": "astro-ph/0604111v2"
+    },
+    {
+      "value": "US 708",
+      "evidence": [
+        {
+          "location": "I:p10-b0"
+        }
+      ],
+      "source": "astro-ph/0604111v2"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "I:p10-b0"
+        },
+        {
+          "location": "T:p3-b0",
+          "quote": "HVS2 (Hirsch et al. 2005) is marked by a plus sign."
+        },
+        {
+          "location": "T:p5-b4",
+          "quote": "Table 1 summarizes the properties of all seven known\nHVSs, four of which were discovered in this survey."
+        }
+      ],
+      "source": "astro-ph/0604111v2"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "19",
+          "unit": "kpc",
+          "condition": "Heliocentric distance estimate listed for HVS2 (= US 708) in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p10-b0",
+              "quote": "<tr><td>HVS2</td><td>176.0</td><td>47.1</td><td>18.8</td><td>+717</td><td>19</td><td>32</td><td>US 7082</td></tr>"
+            },
+            {
+              "location": "T:p5-b4",
+              "quote": "minimum Galactic rest-frame ve-locityv_RF(not a full space velocity), heliocentric dis-tance estimate d, travel time estimate from the Galactic Center"
+            }
+          ],
+          "source": "astro-ph/0604111v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "lower_bound": "+717",
+          "unit": "km/s",
+          "condition": "Minimum Galactic rest-frame velocity listed in Table 1; this is a lower limit to the true space velocity, not a full space velocity.",
+          "evidence": [
+            {
+              "location": "T:p10-b0",
+              "quote": "<tr><td>HVS2</td><td>176.0</td><td>47.1</td><td>18.8</td><td>+717</td><td>19</td><td>32</td><td>US 7082</td></tr>"
+            },
+            {
+              "location": "T:p5-b4",
+              "quote": "minimum Galactic rest-frame ve-locityv_RF(not a full space velocity)"
+            }
+          ],
+          "source": "astro-ph/0604111v2"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000892_provenance.json",
+    "sha256": "d4c2d1c6b1d54c0532ea8bd2d9dfceb31532e75608b7de8f3a4e8d4f42e7798e"
+  },
+  "warnings": [
+    "astro-ph/0604111v2#/stars/1/quantities/0/values/0/evidence/1: quote audit unknown at T:p5-b4; check the paper evidence.",
+    "astro-ph/0604111v2#/stars/1/quantities/1/values/0/evidence/1: quote audit unknown at T:p5-b4; check the paper evidence."
+  ]
+}

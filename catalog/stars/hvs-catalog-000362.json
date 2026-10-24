@@ -1,0 +1,537 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000362",
+  "display_name": "TYC 9383-3064-1",
+  "sources": {
+    "1805.03194v3": {
+      "title": "Old, Metal-Poor Extreme Velocity Stars in the Solar Neighborhood",
+      "authors": [
+        "Kohei Hattori",
+        "Monica Valluri",
+        "Eric F. Bell",
+        "Ian U. Roederer"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1805.03194v3",
+      "records": [
+        "/stars/7"
+      ]
+    },
+    "1907.06348v1": {
+      "title": "New nearby hypervelocity stars and their spatial distribution from Gaia DR2",
+      "authors": [
+        "Cuihua Du",
+        "Hefan Li",
+        "Yepeng Yan",
+        "Heidi Jo Newberg",
+        "Jianrong Shi",
+        "Jun Ma",
+        "Yuqin Chen",
+        "Zhenyu Wu"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1907.06348v1",
+      "records": [
+        "/stars/38"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "Gaia-T-ES8",
+      "evidence": [
+        {
+          "location": "T:p4-b0",
+          "quote": "<tr><td>Gaia-T-ES8</td><td>5212110596595560192</td>"
+        }
+      ],
+      "source": "1805.03194v3"
+    },
+    {
+      "value": "Gaia DR2 5212110596595560192",
+      "evidence": [
+        {
+          "location": "T:p4-b0",
+          "quote": "<td>GaiaDR2 source_id</td>"
+        },
+        {
+          "location": "T:p4-b0",
+          "quote": "<tr><td>Gaia-T-ES8</td><td>5212110596595560192</td>"
+        }
+      ],
+      "source": "1805.03194v3"
+    },
+    {
+      "value": "Gaia DR2 5212110596595560192",
+      "evidence": [
+        {
+          "location": "I:p9-b2"
+        },
+        {
+          "location": "T:p9-b2",
+          "quote": "TABLE 3 HVS identified from total velocity selection of Gaia DR2 6D information"
+        }
+      ],
+      "source": "1907.06348v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p2-b9",
+          "quote": "6D coordinates of each star and select 30 stars that are\nunbound( E > 0 )or marginally bound"
+        },
+        {
+          "location": "T:p4-b0",
+          "quote": "<tr><td>Gaia-T-ES8</td><td>5212110596595560192</td>"
+        },
+        {
+          "location": "T:p9-b4",
+          "quote": "While these stars have space velocities implying that\nthey are unbound in the MWPotential2014 potential"
+        }
+      ],
+      "source": "1805.03194v3"
+    },
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p1-b5",
+          "quote": "we also identify 28 stars from the total velocity (V<sub>gc</sub> > 0 75V<sub>esc</sub>) that have probabilities greater than 50% of\nbeing unbound from the Galaxy."
+        },
+        {
+          "location": "T:p9-b2",
+          "quote": "TABLE 3 HVS identified from total velocity selection of Gaia DR2 6D information"
+        }
+      ],
+      "source": "1907.06348v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "2.92",
+          "error": "0.15",
+          "unit": "kpc",
+          "condition": "Heliocentric distance d_helio reported in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Gaia-T-ES8 5212110596595560192 289.93 -28.26 2.92 ± 0.15 7.6 572.9 -553.7 298.2 31964 -842 0.98 -"
+            }
+          ],
+          "source": "1805.03194v3"
+        },
+        {
+          "value": "2.71",
+          "lower_error": "0.13",
+          "upper_error": "0.13",
+          "unit": "kpc",
+          "condition": "Bayesian distance inferred from Gaia DR2 parallax with an exponentially decreasing space density prior, as listed in Table 3",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "<td>5212110596595560192<eq>^{H}</eq></td><td>(289.93, -28.26)</td><td>0.372 ± 0.018</td><td>9.98 ± 0.04</td><td>-34.43 ± 0.04</td><td>298.2 ± 0.5</td><td>2.71<eq>^{+0.13}_{-0.13}</eq></td><td>7.82<eq>^{+0.01}_{-0.0}</eq></td><td>540<eq>^{+21}_{-21}</eq></td><td>0.71</td>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "298.2",
+          "unit": "km/s",
+          "condition": "Line-of-sight velocity v_los from Gaia DR2, as listed in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Gaia-T-ES8 5212110596595560192 289.93 -28.26 2.92 ± 0.15 7.6 572.9 -553.7 298.2 31964 -842 0.98 -"
+            },
+            {
+              "location": "T:p2-b4",
+              "quote": "Gaia DR2 includes 7,224,631 stars with line-of-sight velocities(v_los)obtained with the Gaia Radial Velocity Spectrometer"
+            }
+          ],
+          "source": "1805.03194v3"
+        },
+        {
+          "value": "298.2",
+          "error": "0.5",
+          "unit": "km/s",
+          "condition": "Gaia DR2 radial velocity rv listed in Table 3",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "<td>5212110596595560192<eq>^{H}</eq></td><td>(289.93, -28.26)</td><td>0.372 ± 0.018</td><td>9.98 ± 0.04</td><td>-34.43 ± 0.04</td><td>298.2 ± 0.5</td><td>2.71<eq>^{+0.13}_{-0.13}</eq></td><td>7.82<eq>^{+0.01}_{-0.0}</eq></td><td>540<eq>^{+21}_{-21}</eq></td><td>0.71</td>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "7.6",
+          "unit": "kpc",
+          "condition": "Galactocentric radius r reported in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Gaia-T-ES8 5212110596595560192 289.93 -28.26 2.92 ± 0.15 7.6 572.9 -553.7 298.2 31964 -842 0.98 -"
+            },
+            {
+              "location": "T:p2-b10",
+              "quote": "The total velocityv_total for these stars as a function of Galactocentric radius r is shown in Figure 1."
+            }
+          ],
+          "source": "1805.03194v3"
+        },
+        {
+          "value": "7.82",
+          "lower_error": "0.0",
+          "upper_error": "0.01",
+          "unit": "kpc",
+          "condition": "Present-day Galactocentric distance r_gc listed in Table 3",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "<td>5212110596595560192<eq>^{H}</eq></td><td>(289.93, -28.26)</td><td>0.372 ± 0.018</td><td>9.98 ± 0.04</td><td>-34.43 ± 0.04</td><td>298.2 ± 0.5</td><td>2.71<eq>^{+0.13}_{-0.13}</eq></td><td>7.82<eq>^{+0.01}_{-0.0}</eq></td><td>540<eq>^{+21}_{-21}</eq></td><td>0.71</td>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "572.9",
+          "unit": "km/s",
+          "condition": "Total 3D velocity v_total in the Galactocentric rest frame, from the MWPotential2014 orbit analysis and listed in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Gaia-T-ES8 5212110596595560192 289.93 -28.26 2.92 ± 0.15 7.6 572.9 -553.7 298.2 31964 -842 0.98 -"
+            },
+            {
+              "location": "T:p2-b10",
+              "quote": "The total velocityv_total for these stars as a function of Galactocentric radius r is shown in Figure 1."
+            }
+          ],
+          "source": "1805.03194v3"
+        },
+        {
+          "value": "540",
+          "lower_error": "21",
+          "upper_error": "21",
+          "unit": "km/s",
+          "condition": "Total velocity in the Galactic rest frame V_gc derived from 6D information and listed in Table 3",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "<td>5212110596595560192<eq>^{H}</eq></td><td>(289.93, -28.26)</td><td>0.372 ± 0.018</td><td>9.98 ± 0.04</td><td>-34.43 ± 0.04</td><td>298.2 ± 0.5</td><td>2.71<eq>^{+0.13}_{-0.13}</eq></td><td>7.82<eq>^{+0.01}_{-0.0}</eq></td><td>540<eq>^{+21}_{-21}</eq></td><td>0.71</td>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.98",
+          "unit": "dimensionless",
+          "condition": "Probability P_unb that the star is unbound in the MWPotential2014 potential, from Monte Carlo sampling of the 6D error distribution; Table 1.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Gaia-T-ES8 5212110596595560192 289.93 -28.26 2.92 ± 0.15 7.6 572.9 -553.7 298.2 31964 -842 0.98 -"
+            },
+            {
+              "location": "T:p2-b9",
+              "quote": "we evaluate the probability of each star being unbound,P_unb. in this potential."
+            }
+          ],
+          "source": "1805.03194v3"
+        },
+        {
+          "value": "0.71",
+          "unit": "dimensionless",
+          "condition": "Probability of being unbound P_ub from MCMC realizations with V_gc ≥ V_esc; Table 3 6D sample, source classified as an OUT candidate",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "<td>5212110596595560192<eq>^{H}</eq></td><td>(289.93, -28.26)</td><td>0.372 ± 0.018</td><td>9.98 ± 0.04</td><td>-34.43 ± 0.04</td><td>298.2 ± 0.5</td><td>2.71<eq>^{+0.13}_{-0.13}</eq></td><td>7.82<eq>^{+0.01}_{-0.0}</eq></td><td>540<eq>^{+21}_{-21}</eq></td><td>0.71</td>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "parallax",
+      "values": [
+        {
+          "value": "0.372",
+          "error": "0.018",
+          "unit": "mas",
+          "condition": "Gaia DR2 parallax listed in Table 3 for the 6D total-velocity selected sample; source classified as an OUT candidate",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "<td>5212110596595560192<eq>^{H}</eq></td><td>(289.93, -28.26)</td><td>0.372 ± 0.018</td><td>9.98 ± 0.04</td><td>-34.43 ± 0.04</td><td>298.2 ± 0.5</td><td>2.71<eq>^{+0.13}_{-0.13}</eq></td><td>7.82<eq>^{+0.01}_{-0.0}</eq></td><td>540<eq>^{+21}_{-21}</eq></td><td>0.71</td>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "9.98",
+          "error": "0.04",
+          "unit": "mas/yr",
+          "condition": "Gaia DR2 proper-motion component μ_α* = μ_α cos δ listed in Table 3",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "<td>5212110596595560192<eq>^{H}</eq></td><td>(289.93, -28.26)</td><td>0.372 ± 0.018</td><td>9.98 ± 0.04</td><td>-34.43 ± 0.04</td><td>298.2 ± 0.5</td><td>2.71<eq>^{+0.13}_{-0.13}</eq></td><td>7.82<eq>^{+0.01}_{-0.0}</eq></td><td>540<eq>^{+21}_{-21}</eq></td><td>0.71</td>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-34.43",
+          "error": "0.04",
+          "unit": "mas/yr",
+          "condition": "Gaia DR2 proper-motion component μ_δ listed in Table 3",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "<td>5212110596595560192<eq>^{H}</eq></td><td>(289.93, -28.26)</td><td>0.372 ± 0.018</td><td>9.98 ± 0.04</td><td>-34.43 ± 0.04</td><td>298.2 ± 0.5</td><td>2.71<eq>^{+0.13}_{-0.13}</eq></td><td>7.82<eq>^{+0.01}_{-0.0}</eq></td><td>540<eq>^{+21}_{-21}</eq></td><td>0.71</td>"
+            }
+          ],
+          "source": "1907.06348v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "TYC 9383-3064-1",
+      "aliases": [
+        "2MASS J06165171-7826207",
+        "AP J06165171-7826207",
+        "DENIS J061651.6-782621",
+        "Gaia DR2 5212110596595560192",
+        "Gaia DR3 5212110596595560192",
+        "RAVE J061651.7-782620",
+        "RAVE J061651.7-782621",
+        "TIC 261396856",
+        "TYC 9383-3064-1",
+        "USNO-B1.0 0115-00020369"
+      ],
+      "object_type": "Pe*",
+      "coordinates": {
+        "ra": {
+          "value": 94.21530810516,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": -78.4391082876,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.008700000122189522,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.009700000286102295,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": 10.143,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -34.395,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.013000000268220901,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.014000000432133675,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.4442,
+        "unit": "mas",
+        "error": 0.00930000003427267,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": 298.1236,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": 0.0009949282297587736
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 0.04340000078082085,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "A",
+        "bibcode": "2022ApJS..259...35A",
+        "wavelength": "N"
+      },
+      "photometry": [
+        {
+          "band": "J",
+          "value": 9.0,
+          "error": 0.023000000044703484,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 8.40999984741211,
+          "error": 0.03099999949336052,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "K",
+          "value": 8.288999557495117,
+          "error": 0.032999999821186066,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "R",
+          "value": 10.420000076293945,
+          "system": "V",
+          "bibcode": "2003AJ....125..984M",
+          "quality": "E"
+        },
+        {
+          "band": "B",
+          "value": 12.107999801635742,
+          "error": 0.017999999225139618,
+          "system": "V",
+          "bibcode": "2014AJ....148...81M",
+          "quality": "C"
+        },
+        {
+          "band": "V",
+          "value": 11.050000190734863,
+          "error": 0.00800000037997961,
+          "system": "V",
+          "bibcode": "2014AJ....148...81M",
+          "quality": "B"
+        },
+        {
+          "band": "g",
+          "value": 11.621000289916992,
+          "error": 0.0989999994635582,
+          "system": "V",
+          "bibcode": "2014AJ....148...81M",
+          "quality": "C"
+        },
+        {
+          "band": "r",
+          "value": 10.699000358581543,
+          "error": 0.009999999776482582,
+          "system": "V",
+          "bibcode": "2014AJ....148...81M",
+          "quality": "B"
+        },
+        {
+          "band": "I",
+          "value": 9.878000259399414,
+          "error": 0.029999999329447746,
+          "system": "V",
+          "bibcode": "2005yCat.2263....0D",
+          "quality": "C"
+        },
+        {
+          "band": "G",
+          "value": 10.714229583740234,
+          "error": 0.0027600000612437725,
+          "system": "V",
+          "bibcode": "2022yCat.1355....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR2 5212110596595560192"
+      ]
+    },
+    "last_queried_at": "2026-10-24T04:50:18.214065+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000362_provenance.json",
+    "sha256": "61f3b48e86715486c71d017a7be130b02abd531868561e9cf68627268db92e9f"
+  },
+  "warnings": [
+    "1805.03194v3#/stars/7/quantities/0/values/0/evidence/0: quote audit unknown at T:p4-b0; check the paper evidence.",
+    "1805.03194v3#/stars/7/quantities/1/values/0/evidence/0: quote audit unknown at T:p4-b0; check the paper evidence.",
+    "1805.03194v3#/stars/7/quantities/1/values/0/evidence/1: quote audit unknown at T:p2-b4; check the paper evidence.",
+    "1805.03194v3#/stars/7/quantities/2/values/0/evidence/0: quote audit unknown at T:p4-b0; check the paper evidence.",
+    "1805.03194v3#/stars/7/quantities/2/values/0/evidence/1: quote audit unknown at T:p2-b10; check the paper evidence.",
+    "1805.03194v3#/stars/7/quantities/3/values/0/evidence/0: quote audit unknown at T:p4-b0; check the paper evidence.",
+    "1805.03194v3#/stars/7/quantities/3/values/0/evidence/1: quote audit unknown at T:p2-b10; check the paper evidence.",
+    "1805.03194v3#/stars/7/quantities/4/values/0/evidence/0: quote audit unknown at T:p4-b0; check the paper evidence.",
+    "1805.03194v3#/stars/7/quantities/4/values/0/evidence/1: quote audit unknown at T:p2-b9; check the paper evidence."
+  ]
+}

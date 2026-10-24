@@ -1,0 +1,144 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000167",
+  "display_name": "HVS5",
+  "sources": {
+    "1401.7342v1": {
+      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "records": [
+        "/stars/2"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS5",
+      "evidence": [
+        {
+          "location": "T:p11-b0",
+          "quote": "<tr><td>5</td><td>545.5 ± 4.3</td>"
+        }
+      ],
+      "source": "1401.7342v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p6-b6",
+          "quote": "21 HVSs that are unbound on the basis of radial"
+        },
+        {
+          "location": "T:p11-b0",
+          "quote": "<tr><td>5</td><td>545.5 ± 4.3</td>"
+        }
+      ],
+      "source": "1401.7342v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "545.5",
+          "error": "4.3",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity from the Table 1 v_⊙ column.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<tr><td>5</td><td>545.5 ± 4.3</td><td>650.1</td><td>17.557</td><td>12000 ± 350</td><td>3.89 ± 0.13</td><td>132</td><td>3.58 ± 0.11</td><td>-0.68 ± 0.25</td><td>50 ± 5</td><td>66 ± 7</td><td>-0.44, -1.21</td></tr>"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "50",
+          "error": "5",
+          "unit": "kpc",
+          "condition": "Galactocentric radial distance R_GC, calculated assuming the Sun is at R = 8 kpc.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<tr><td>5</td><td>545.5 ± 4.3</td><td>650.1</td><td>17.557</td><td>12000 ± 350</td><td>3.89 ± 0.13</td><td>132</td><td>3.58 ± 0.11</td><td>-0.68 ± 0.25</td><td>50 ± 5</td><td>66 ± 7</td><td>-0.44, -1.21</td></tr>"
+            },
+            {
+              "location": "T:p5-b11",
+              "quote": "We calculate HVS Galacto-centric radial distances, R, assuming the Sun is at R = 8 kpc. Table 1 summarizes the results."
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-0.44",
+          "unit": "mas/yr",
+          "condition": "Predicted proper motion for a Galactic center origin, corresponding to the trajectory with the smallest Galactic pericenter passage.",
+          "evidence": [
+            {
+              "location": "T:p8-b13",
+              "quote": "An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
+            },
+            {
+              "location": "T:p11-b0",
+              "quote": "<tr><td>5</td><td>545.5 ± 4.3</td><td>650.1</td><td>17.557</td><td>12000 ± 350</td><td>3.89 ± 0.13</td><td>132</td><td>3.58 ± 0.11</td><td>-0.68 ± 0.25</td><td>50 ± 5</td><td>66 ± 7</td><td>-0.44, -1.21</td></tr>"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-1.21",
+          "unit": "mas/yr",
+          "condition": "Predicted proper motion for a Galactic center origin, corresponding to the trajectory with the smallest Galactic pericenter passage.",
+          "evidence": [
+            {
+              "location": "T:p8-b13",
+              "quote": "An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
+            },
+            {
+              "location": "T:p11-b0",
+              "quote": "<tr><td>5</td><td>545.5 ± 4.3</td><td>650.1</td><td>17.557</td><td>12000 ± 350</td><td>3.89 ± 0.13</td><td>132</td><td>3.58 ± 0.11</td><td>-0.68 ± 0.25</td><td>50 ± 5</td><td>66 ± 7</td><td>-0.44, -1.21</td></tr>"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000167_provenance.json",
+    "sha256": "cd31ea64e51ab05952053f05f5ea84adeb6330c9736ba9a99143f0f329f2a311"
+  },
+  "warnings": [
+    "1401.7342v1#/stars/2/quantities/2/values/0/evidence/0: quote audit unknown at T:p8-b13; check the paper evidence.",
+    "1401.7342v1#/stars/2/quantities/3/values/0/evidence/0: quote audit unknown at T:p8-b13; check the paper evidence."
+  ]
+}

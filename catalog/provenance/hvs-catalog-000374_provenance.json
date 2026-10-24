@@ -1,0 +1,651 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000374",
+  "associations": [
+    {
+      "method": "identifier",
+      "identifier": "SDSS J101018.82+302028.1",
+      "nodes": [
+        "1806.08630v1#/stars/11",
+        "2003.12766v1#/stars/27"
+      ]
+    },
+    {
+      "method": "coordinates",
+      "left": "2003.12766v1#/stars/27",
+      "right": "2504.14836v1#/stars/10",
+      "details": {
+        "separation_arcsec": 0.0772224669444803,
+        "threshold_arcsec": 5.0,
+        "left_position": {
+          "ra_deg": 152.57841666666664,
+          "dec_deg": 30.34113888888889,
+          "frame": "fk5",
+          "equinox": "J2000",
+          "evidence": [
+            {
+              "value": "10:10:18.82",
+              "unit": "hourangle",
+              "condition": "Equatorial right ascension encoded in the SDSS identifier SDSSJ101018.82+302028.1 (J2000); no separate RA/Dec table entry is given.",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "B485 (SDSSJ101018.82+302028.1)"
+                }
+              ]
+            },
+            {
+              "value": "+30:20:28.1",
+              "unit": "deg",
+              "condition": "Equatorial declination encoded in the SDSS identifier SDSSJ101018.82+302028.1 (J2000); no separate RA/Dec table entry is given.",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "B485 (SDSSJ101018.82+302028.1)"
+                }
+              ]
+            }
+          ]
+        },
+        "right_position": {
+          "ra_deg": 152.578431,
+          "dec_deg": 30.341158,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "152.578431",
+              "unit": "deg",
+              "condition": "ICRS position at epoch J2016.0 for LAMOST-HVS11 (J101018.82+302028.1)",
+              "evidence": [
+                {
+                  "location": "I:p15-b0"
+                }
+              ]
+            },
+            {
+              "value": "30.341158",
+              "unit": "deg",
+              "condition": "ICRS position at epoch J2016.0 for LAMOST-HVS11 (J101018.82+302028.1)",
+              "evidence": [
+                {
+                  "location": "I:p15-b0"
+                }
+              ]
+            }
+          ]
+        },
+        "coordinate_interpretations": {
+          "left": {
+            "frame": "fk5",
+            "equinox": "J2000",
+            "frame_basis": "coordinate_conditions",
+            "frame_assumed": false,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          },
+          "right": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "coordinate_conditions",
+            "frame_assumed": false,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          }
+        },
+        "epoch_propagation": false
+      }
+    },
+    {
+      "method": "simbad",
+      "left": "1806.08630v1#/stars/11",
+      "right": "2101.10878v1#/stars/17",
+      "details": {
+        "main_id": "Ton  30",
+        "basis": "Reliable identifier queries.",
+        "simbad_evidence": [
+          {
+            "node": "1806.08630v1#/stars/11",
+            "candidate": {
+              "$ref": "#/simbad/selected"
+            },
+            "queries": [
+              {
+                "$ref": "#/simbad/queries/0"
+              },
+              {
+                "$ref": "#/simbad/queries/1"
+              }
+            ]
+          },
+          {
+            "node": "2101.10878v1#/stars/17",
+            "candidate": {
+              "$ref": "#/simbad/selected"
+            },
+            "queries": [
+              {
+                "$ref": "#/simbad/queries/2"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "simbad": {
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "Ton  30",
+      "aliases": [
+        "CBS  20",
+        "GALEX J101018.8+302028",
+        "GEN# +6.10070030",
+        "Gaia DR2 742363828436051456",
+        "Gaia DR3 742363828436051456",
+        "LAMOST J101018.82+302028.1",
+        "LAMOST-HVS11",
+        "SDSS J101018.82+302028.1",
+        "SDSS J101018.83+302028.2",
+        "Ton  30",
+        "UBV M  43111",
+        "[BGK2006] J101018.83+302028.2"
+      ],
+      "position": {
+        "ra_deg": 152.57843601516,
+        "dec_deg": 30.34115791606,
+        "frame": "icrs",
+        "equinox": null,
+        "evidence": []
+      },
+      "fields": {
+        "main_id": {
+          "value": "Ton  30"
+        },
+        "nbref": {
+          "value": 28
+        },
+        "otype": {
+          "value": "HS*"
+        },
+        "ra": {
+          "value": 152.57843601516,
+          "unit": "deg"
+        },
+        "ra_prec": {
+          "value": 14
+        },
+        "dec": {
+          "value": 30.34115791606,
+          "unit": "deg"
+        },
+        "dec_prec": {
+          "value": 14
+        },
+        "coo_err_maj": {
+          "value": 0.04430000111460686,
+          "unit": "mas"
+        },
+        "coo_err_maj_prec": {
+          "value": 4
+        },
+        "coo_err_min": {
+          "value": 0.04190000146627426,
+          "unit": "mas"
+        },
+        "coo_err_min_prec": {
+          "value": 4
+        },
+        "coo_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "coo_qual": {
+          "value": "A"
+        },
+        "coo_wavelength": {
+          "value": "O"
+        },
+        "coo_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "hpx": {
+          "value": 1350351
+        },
+        "pmra": {
+          "value": -0.891,
+          "unit": "mas / yr"
+        },
+        "pmra_prec": {
+          "value": 3
+        },
+        "pmdec": {
+          "value": -0.071,
+          "unit": "mas / yr"
+        },
+        "pmdec_prec": {
+          "value": 3
+        },
+        "pm_err_maj": {
+          "value": 0.061000000685453415,
+          "unit": "mas / yr"
+        },
+        "pm_err_maj_prec": {
+          "value": 3
+        },
+        "pm_err_min": {
+          "value": 0.05400000140070915,
+          "unit": "mas / yr"
+        },
+        "pm_err_min_prec": {
+          "value": 3
+        },
+        "pm_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "pm_qual": {
+          "value": "A"
+        },
+        "pm_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "plx_qual": {
+          "value": ""
+        },
+        "plx_bibcode": {
+          "value": ""
+        },
+        "rvz_type": {
+          "value": "v"
+        },
+        "rvz_radvel": {
+          "value": 369.5,
+          "unit": "km / s"
+        },
+        "rvz_radvel_prec": {
+          "value": 1
+        },
+        "rvz_redshift": {
+          "value": 0.0012332798207377316
+        },
+        "rvz_redshift_prec": {
+          "value": 6
+        },
+        "rvz_err": {
+          "value": 1.399999976158142,
+          "unit": "km / s"
+        },
+        "rvz_err_prec": {
+          "value": 1
+        },
+        "rvz_nature": {
+          "value": "s"
+        },
+        "rvz_qual": {
+          "value": "B"
+        },
+        "rvz_bibcode": {
+          "value": "2025ApJ...986...22S"
+        },
+        "vlsr_wavelength": {
+          "value": ""
+        },
+        "vlsr_bibcode": {
+          "value": ""
+        },
+        "sp_type": {
+          "value": "B5V"
+        },
+        "sp_qual": {
+          "value": "C"
+        },
+        "sp_bibcode": {
+          "value": "2025ApJ...986...22S"
+        },
+        "morph_type": {
+          "value": ""
+        },
+        "morph_qual": {
+          "value": ""
+        },
+        "morph_bibcode": {
+          "value": ""
+        },
+        "galdim_qual": {
+          "value": ""
+        },
+        "galdim_wavelength": {
+          "value": ""
+        },
+        "galdim_bibcode": {
+          "value": ""
+        },
+        "update_date": {
+          "value": "2026-01-09"
+        },
+        "otype_txt": {
+          "value": "HS*"
+        },
+        "rvz_wavelength": {
+          "value": "O"
+        }
+      },
+      "photometry": [
+        {
+          "band": "z",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 1686760
+            },
+            "filter": {
+              "value": "z"
+            },
+            "flux": {
+              "value": 17.048999786376953
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.012000000104308128
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2008ApJS..175..297A"
+            }
+          }
+        },
+        {
+          "band": "B",
+          "fields": {
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 1686760
+            },
+            "filter": {
+              "value": "B"
+            },
+            "flux": {
+              "value": 16.020000457763672
+            },
+            "system": {
+              "value": ""
+            },
+            "qual": {
+              "value": "E"
+            },
+            "bibcode": {
+              "value": ""
+            }
+          }
+        },
+        {
+          "band": "V",
+          "fields": {
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 1686760
+            },
+            "filter": {
+              "value": "V"
+            },
+            "flux": {
+              "value": 15.960000038146973
+            },
+            "system": {
+              "value": ""
+            },
+            "qual": {
+              "value": "E"
+            },
+            "bibcode": {
+              "value": ""
+            }
+          }
+        },
+        {
+          "band": "G",
+          "fields": {
+            "flux_err_prec": {
+              "value": 6
+            },
+            "flux_prec": {
+              "value": 6
+            },
+            "oidref": {
+              "value": 1686760
+            },
+            "filter": {
+              "value": "G"
+            },
+            "flux": {
+              "value": 16.33793830871582
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.002891999902203679
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2020yCat.1350....0G"
+            }
+          }
+        },
+        {
+          "band": "u",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 1686760
+            },
+            "filter": {
+              "value": "u"
+            },
+            "flux": {
+              "value": 16.45800018310547
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.007000000216066837
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2012ApJS..203...21A"
+            }
+          }
+        },
+        {
+          "band": "g",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 1686760
+            },
+            "filter": {
+              "value": "g"
+            },
+            "flux": {
+              "value": 16.1560001373291
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.004000000189989805
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2012ApJS..203...21A"
+            }
+          }
+        },
+        {
+          "band": "r",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 1686760
+            },
+            "filter": {
+              "value": "r"
+            },
+            "flux": {
+              "value": 16.517000198364258
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.004999999888241291
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2012ApJS..203...21A"
+            }
+          }
+        },
+        {
+          "band": "i",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 1686760
+            },
+            "filter": {
+              "value": "i"
+            },
+            "flux": {
+              "value": 16.788000106811523
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.006000000052154064
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2012ApJS..203...21A"
+            }
+          }
+        }
+      ]
+    },
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "LAMOST -HVS11",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "41cfc2cb7cc4d63fd562ea9839689e703b8173b3bb6fd9ce0320959752142925",
+        "queried_at": "2026-10-24T04:41:45.303904+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J101018.82+302028.1",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "f4b3b984a033d649bf1616b3ff8c0a2e1fff4ac9472a54d8110e0846e4a7813a",
+        "queried_at": "2026-10-24T04:39:33.534544+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "Gaia EDR3 742363828436051456",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "4609a8779ee740a4ac4651ad53ed7c22892ebd4ba8d2300942895069adff92be",
+        "queried_at": "2026-10-24T04:45:51.422262+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null
+      }
+    ],
+    "matches": [
+      {
+        "main_id": "Ton  30",
+        "method": "identifier",
+        "identifier": "LAMOST -HVS11",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      },
+      {
+        "main_id": "Ton  30",
+        "method": "identifier",
+        "identifier": "SDSS J101018.82+302028.1",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      },
+      {
+        "main_id": "Ton  30",
+        "method": "identifier",
+        "identifier": "Gaia EDR3 742363828436051456",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      }
+    ]
+  }
+}

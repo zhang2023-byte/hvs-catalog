@@ -1,0 +1,159 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000650",
+  "display_name": "ID 13 (2401.05630)",
+  "sources": {
+    "2401.05630v1": {
+      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+      "authors": [
+        "A. Luna",
+        "T. Marchetti",
+        "M. Rejkuba",
+        "N. W. C. Leigh",
+        "J. Alonso-García",
+        "A. Valenzuela Navarro",
+        "D. Minniti",
+        "L. C. Smith"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "records": [
+        "/stars/16"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "ID 13",
+      "evidence": [
+        {
+          "location": "T:p16-b0",
+          "quote": "<td>13</td><td>17h41m25.95s</td><td>-26d49m12.87s</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p1-b13",
+          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+        },
+        {
+          "location": "T:p9-b10",
+          "quote": "65 were detected only in the VIRAC2 sample"
+        },
+        {
+          "location": "T:p17-b2",
+          "quote": "<td>13</td><td>31.41</td><td>11.08</td><td>2.99</td><td>1683.19</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "17h41m25.95s",
+          "unit": "hms",
+          "condition": "VIRAC2-only candidate HVS (no Gaia DR3 counterpart), equatorial coordinates from Table B1; J2000/ICRS",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<tr><td>13</td><td>17h41m25.95s</td><td>-26d49m12.87s</td><td>1.3162</td><td>1.8978</td><td>14.14</td><td>1.99</td></tr>"
+            },
+            {
+              "location": "I:p16-b0"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-26d49m12.87s",
+          "unit": "dms",
+          "condition": "VIRAC2-only candidate HVS (no Gaia DR3 counterpart), equatorial coordinates from Table B1; J2000/ICRS",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<tr><td>13</td><td>17h41m25.95s</td><td>-26d49m12.87s</td><td>1.3162</td><td>1.8978</td><td>14.14</td><td>1.99</td></tr>"
+            },
+            {
+              "location": "I:p16-b0"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "11.08",
+          "unit": "kpc",
+          "condition": "Heliocentric distance derived from the red-clump photometric calibration (VIRAC2 Ks, extinction corrected, with population correction); Monte Carlo median",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "<tr><td>13</td><td>31.41</td><td>11.08</td><td>2.99</td><td>1683.19</td><td>1483537</td><td>0.055</td><td>1.0</td></tr>"
+            },
+            {
+              "location": "I:p17-b2"
+            },
+            {
+              "location": "T:p18-b1",
+              "quote": "Table B2: Derived parameters of the stars with no Gaia DR3 counterpart and VIRAC2 proper motions pointing out from 0.5 deg around the GC."
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "2.99",
+          "unit": "kpc",
+          "condition": "Three-dimensional galactocentric distance computed with Astropy from the heliocentric RC distance, adopting R0 = 8.122 kpc, GC (RA, Dec) = (266.4051, -28.936175) deg and z_sun = 20.8 pc",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "<tr><td>13</td><td>31.41</td><td>11.08</td><td>2.99</td><td>1683.19</td><td>1483537</td><td>0.055</td><td>1.0</td></tr>"
+            },
+            {
+              "location": "I:p17-b2"
+            },
+            {
+              "location": "T:p6-b4",
+              "quote": "we derive the distance with respect to the GC (r_GC) using Astropy and the following parameters: the ICRS coordinates of the GC (RA,Dec)= (266.4051, -28.936175) deg (Reid & Brunthaler 2004)"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T06:03:40.838474+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000650_provenance.json",
+    "sha256": "b83c06c46b9a24b832413a7cb6168f7805e0dd8ffd6a84556f7ae8ae5aced93a"
+  },
+  "warnings": [
+    "2401.05630v1#/stars/16/quantities/3/values/0/evidence/2: quote audit unknown at T:p6-b4; check the paper evidence."
+  ]
+}

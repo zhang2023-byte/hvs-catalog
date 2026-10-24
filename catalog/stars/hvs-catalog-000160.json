@@ -1,0 +1,144 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000160",
+  "display_name": "HVS17",
+  "sources": {
+    "1401.7342v1": {
+      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "records": [
+        "/stars/13"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS17",
+      "evidence": [
+        {
+          "location": "T:p11-b0",
+          "quote": "<tr><td>17</td><td>250.2 ± 2.9</td>"
+        }
+      ],
+      "source": "1401.7342v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p6-b6",
+          "quote": "21 HVSs that are unbound on the basis of radial"
+        },
+        {
+          "location": "T:p11-b0",
+          "quote": "<tr><td>17</td><td>250.2 ± 2.9</td>"
+        }
+      ],
+      "source": "1401.7342v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "250.2",
+          "error": "2.9",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity v_helio (Table 1 column v_⊙).",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<td>17</td><td>250.2 ± 2.9</td><td>435.8</td><td>17.427</td><td>12350 ± 290</td><td>3.80 ± 0.09</td><td>96</td><td>3.91 ± 0.09</td><td>-1.05 ± 0.19</td><td>49 ± 4</td><td>89 ± 8</td><td>-0.69, +0.01</td>"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-0.69",
+          "unit": "mas/yr",
+          "condition": "Predicted proper motion in right ascension for a Galactic-center origin, (mu_alpha)_GC in Table 1; not an observed proper motion.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<td>17</td><td>250.2 ± 2.9</td><td>435.8</td><td>17.427</td><td>12350 ± 290</td><td>3.80 ± 0.09</td><td>96</td><td>3.91 ± 0.09</td><td>-1.05 ± 0.19</td><td>49 ± 4</td><td>89 ± 8</td><td>-0.69, +0.01</td>"
+            },
+            {
+              "location": "T:p8-b13",
+              "quote": "Table 1 lists the corresponding proper motion for the Galactic center origin."
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "+0.01",
+          "unit": "mas/yr",
+          "condition": "Predicted proper motion in declination for a Galactic-center origin, (mu_delta)_GC in Table 1; not an observed proper motion.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<td>17</td><td>250.2 ± 2.9</td><td>435.8</td><td>17.427</td><td>12350 ± 290</td><td>3.80 ± 0.09</td><td>96</td><td>3.91 ± 0.09</td><td>-1.05 ± 0.19</td><td>49 ± 4</td><td>89 ± 8</td><td>-0.69, +0.01</td>"
+            },
+            {
+              "location": "T:p8-b13",
+              "quote": "Table 1 lists the corresponding proper motion for the Galactic center origin."
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "49",
+          "error": "4",
+          "unit": "kpc",
+          "condition": "Galactocentric radial distance R_GC from Table 1, calculated assuming the Sun is at R = 8 kpc.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<td>17</td><td>250.2 ± 2.9</td><td>435.8</td><td>17.427</td><td>12350 ± 290</td><td>3.80 ± 0.09</td><td>96</td><td>3.91 ± 0.09</td><td>-1.05 ± 0.19</td><td>49 ± 4</td><td>89 ± 8</td><td>-0.69, +0.01</td>"
+            },
+            {
+              "location": "T:p5-b11",
+              "quote": "We calculate HVS Galacto-centric radial distances, R, assuming the Sun is at R = 8 kpc. Table 1 summarizes the results."
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000160_provenance.json",
+    "sha256": "503315550f85882a231e82f233d35d45063f77ed83b8097bbac0e747a61fb019"
+  },
+  "warnings": [
+    "1401.7342v1#/stars/13/quantities/1/values/0/evidence/1: quote audit unknown at T:p8-b13; check the paper evidence.",
+    "1401.7342v1#/stars/13/quantities/2/values/0/evidence/1: quote audit unknown at T:p8-b13; check the paper evidence."
+  ]
+}

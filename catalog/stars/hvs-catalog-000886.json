@@ -1,0 +1,295 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000886",
+  "display_name": "[AG92] 20276",
+  "sources": {
+    "2608.30063v1": {
+      "title": "Intermediate-mass runaway and hypervelocity star candidates in DESI DR1",
+      "authors": [
+        "Aakash Bhat",
+        "Matti Dorsch",
+        "Ulrich Heber",
+        "Stephan Geier",
+        "Harry Dawson"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2608.30063v1",
+      "records": [
+        "/stars/5"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "Gaia DR3 2537649197407027584",
+      "evidence": [
+        {
+          "location": "T:p16-b0",
+          "quote": "2537649197407027584"
+        }
+      ],
+      "source": "2608.30063v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p6-b3",
+          "quote": "probability of being unbound greater than"
+        },
+        {
+          "location": "I:p7-b6"
+        },
+        {
+          "location": "I:p16-b0"
+        }
+      ],
+      "source": "2608.30063v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "38.82",
+          "lower_error": "4.88",
+          "upper_error": "4.35",
+          "unit": "kpc",
+          "condition": "Spectro-photometric distance derived from the MIST-track radius and angular diameter for this star.",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<tr><td>6</td><td>2537649197407027584</td><td><eq>3.68^{+0.10}_{-0.10}</eq></td><td><eq>10538^{+212}_{-243}</eq></td><td><eq>-368^{+10}_{-10}</eq></td><td><eq>38.82^{+4.35}_{-4.88}</eq></td>"
+            },
+            {
+              "location": "I:p16-b0"
+            }
+          ],
+          "source": "2608.30063v1"
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-368",
+          "lower_error": "10",
+          "upper_error": "10",
+          "unit": "km/s",
+          "condition": "Radial velocity measured in this work and listed in the Appendix table; the text quotes the same estimate as approximately -370 km/s.",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<td><eq>-368^{+10}_{-10}</eq></td>"
+            },
+            {
+              "location": "I:p16-b0"
+            },
+            {
+              "location": "T:p7-b9",
+              "quote": "lower than our estimate of ∼ −370 km\\mathbf { s } ^ { - 1 }"
+            }
+          ],
+          "source": "2608.30063v1"
+        },
+        {
+          "value": "-434",
+          "unit": "km/s",
+          "condition": "Previous heliocentric radial-velocity measurement reported by Arnold & Gilmore (1992).",
+          "evidence": [
+            {
+              "location": "T:p7-b9",
+              "quote": "They found a heliocentric RV of\n−434 km\\mathbf { s } ^ { - 1 }"
+            }
+          ],
+          "source": "2608.30063v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "42",
+          "lower_error": "4",
+          "upper_error": "4",
+          "unit": "kpc",
+          "condition": "Present-day spherical Galactocentric radius assuming main-sequence nature (R_sph^MS).",
+          "evidence": [
+            {
+              "location": "T:p7-b6",
+              "quote": "<tr><td>6</td><td>440 ± 48</td><td>-</td><td>52</td><td>-</td><td>42 ± 4</td><td>250+0-5</td></tr>"
+            },
+            {
+              "location": "I:p7-b6"
+            }
+          ],
+          "source": "2608.30063v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "440",
+          "error": "48",
+          "unit": "km/s",
+          "condition": "Galactocentric rest-frame velocity assuming main-sequence nature; Model I of Irrgang et al. (2013), as listed in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p7-b6",
+              "quote": "<tr><td>6</td><td>440 ± 48</td><td>-</td><td>52</td><td>-</td><td>42 ± 4</td><td>250+0-5</td></tr>"
+            },
+            {
+              "location": "I:p7-b6"
+            }
+          ],
+          "source": "2608.30063v1"
+        },
+        {
+          "value": "421",
+          "error": "44",
+          "unit": "km/s",
+          "condition": "Galactocentric rest-frame velocity for Model I of Irrgang et al. (2013), as listed in the Appendix table.",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<td><eq>421 ± 44</eq></td><td>0.21</td>"
+            },
+            {
+              "location": "I:p16-b0"
+            }
+          ],
+          "source": "2608.30063v1"
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "52",
+          "unit": "%",
+          "condition": "Probability of being unbound assuming main-sequence nature, from 1000 realizations exceeding the local escape velocity; Table 1.",
+          "evidence": [
+            {
+              "location": "T:p7-b6",
+              "quote": "<tr><td>6</td><td>440 ± 48</td><td>-</td><td>52</td><td>-</td><td>42 ± 4</td><td>250+0-5</td></tr>"
+            },
+            {
+              "location": "I:p7-b6"
+            }
+          ],
+          "source": "2608.30063v1"
+        },
+        {
+          "value": "0.21",
+          "unit": "dimensionless",
+          "condition": "Probability of being unbound assuming main-sequence nature, listed as the fraction P_unbound in the Appendix table.",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<td><eq>421 ± 44</eq></td><td>0.21</td>"
+            },
+            {
+              "location": "I:p16-b0"
+            }
+          ],
+          "source": "2608.30063v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "[AG92] 20276",
+      "aliases": [
+        "Gaia DR3 2537649197407027584",
+        "[AG92] 20276"
+      ],
+      "object_type": "HB*",
+      "coordinates": {
+        "ra": {
+          "value": 14.371543833987083,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 1.471253873614445,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.08449999988079071,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.06920000165700912,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": 2.493,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -1.369,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.11500000208616257,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.12099999934434891,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "value": 17.25048828125,
+          "error": 0.0030990000814199448,
+          "system": "V",
+          "bibcode": "2022yCat.1355....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR3 2537649197407027584"
+      ]
+    },
+    "last_queried_at": "2026-10-24T04:40:15.860861+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000886_provenance.json",
+    "sha256": "0589e0f5b0bdc51a8c93c6e902dee2a702f776c0ce828d4cc1aded16955069a0"
+  },
+  "warnings": []
+}

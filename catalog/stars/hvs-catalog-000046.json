@@ -1,0 +1,194 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000046",
+  "display_name": "SDSS J154556.10+243708.94",
+  "sources": {
+    "0808.2469v2": {
+      "title": "MMT Hypervelocity Star Survey",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/0808.2469v2",
+      "records": [
+        "/stars/19"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "SDSS J154556.10+243708.94",
+      "evidence": [
+        {
+          "location": "I:p6-b0"
+        },
+        {
+          "location": "T:p7-b3",
+          "quote": "J154556.10+243708.94"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p7-b2",
+          "quote": "There are four HVS candidates"
+        },
+        {
+          "location": "T:p7-b4",
+          "quote": "the four stars are very possibly unbound"
+        },
+        {
+          "location": "T:p8-b9",
+          "quote": "4 additional unbound HVSs"
+        },
+        {
+          "location": "I:p4-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "15:45:56.10",
+          "unit": "hourangle",
+          "condition": "J2000 right ascension encoded in the SDSS designation SDSS J154556.10+243708.94 (Table 1 catalog column); the paper gives no separate RA column for HVSs",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<td>+0.6</td><td>20.30</td><td>83</td><td>39.36</td><td>+50.87</td><td>193</td><td>293</td><td>SDSS J154556.10+243708.9</td>"
+            },
+            {
+              "location": "T:p7-b3",
+              "quote": "J154556.10+243708.94"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "+24:37:08.94",
+          "unit": "deg",
+          "condition": "J2000 declination encoded in the SDSS designation SDSS J154556.10+243708.94 (Table 1 catalog column)",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<td>+0.6</td><td>20.30</td><td>83</td><td>39.36</td><td>+50.87</td><td>193</td><td>293</td><td>SDSS J154556.10+243708.9</td>"
+            },
+            {
+              "location": "T:p7-b3",
+              "quote": "J154556.10+243708.94"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "83",
+          "unit": "kpc",
+          "condition": "Galactocentric distance R_GC listed for the possible HVS SDSS J154556.10+243708.9, inferred assuming a main-sequence star",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<td>+0.6</td><td>20.30</td><td>83</td><td>39.36</td><td>+50.87</td><td>193</td><td>293</td><td>SDSS J154556.10+243708.9</td>"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "193",
+          "unit": "km/s",
+          "condition": "heliocentric radial velocity v_⊙ (Table 1); weighted average velocity measurement for this object",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<td>+0.6</td><td>20.30</td><td>83</td><td>39.36</td><td>+50.87</td><td>193</td><td>293</td><td>SDSS J154556.10+243708.9</td>"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "Columns include HVS number, stellar type, absolute magnitude $M_V$, apparent $V$ magnitude derived from SDSS photometry, Galactocentric distance $R$, Galactic coordinates (l, b), heliocentric radial velocity $v_{\\odot}$, minimum Galactic rest-frame velocity $v_{rf}$ (not a full space velocity), and catalog identification."
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "lower_bound": "293",
+          "unit": "km/s",
+          "condition": "minimum Galactic rest-frame velocity v_rf from Table 1; the paper states v_rf is not a full space velocity, so this is the reported lower limit on the star's rest-frame speed (proper motion unmeasured)",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<td>+0.6</td><td>20.30</td><td>83</td><td>39.36</td><td>+50.87</td><td>193</td><td>293</td><td>SDSS J154556.10+243708.9</td>"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "minimum Galactic rest-frame velocity $v_{rf}$ (not a full space velocity)"
+            },
+            {
+              "location": "T:p7-b3",
+              "quote": "All four stars have minimum rest frame velocities around +290 $\\mathrm{km\\,s}^{-1}$"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing.",
+    "last_queried_at": "2026-10-24T04:52:26.151789+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000046_provenance.json",
+    "sha256": "f39a5839587c458d7482a940635a3287f81177c0bc7262dabe87e04a4177d1d1"
+  },
+  "warnings": [
+    "0808.2469v2#/stars/19/quantities/3/values/0/evidence/1: quote audit unknown at T:p7-b6; check the paper evidence.",
+    "0808.2469v2#/stars/19/quantities/4/values/0/evidence/1: quote audit unknown at T:p7-b6; check the paper evidence.",
+    "0808.2469v2#/stars/19/quantities/4/values/0/evidence/2: quote audit unknown at T:p7-b3; check the paper evidence."
+  ]
+}

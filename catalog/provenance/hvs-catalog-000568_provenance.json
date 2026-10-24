@@ -1,0 +1,74 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000568",
+  "associations": [],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "queries": [
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 69.6,
+            "dec_deg": -54.6,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "f76ba9751f177b7a5350b29ca45cf6681146ab6c18819c81a4f5273ac371a678",
+        "queried_at": "2026-10-24T06:01:38.021695+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2108.01100v1#/stars/0",
+            "position": {
+              "ra_deg": 69.6,
+              "dec_deg": -54.6,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "69.6",
+                  "unit": "deg",
+                  "condition": "Equatorial right ascension reported for HVS3 by Przybilla et al. (2008).",
+                  "evidence": [
+                    {
+                      "location": "T:p14-b1",
+                      "quote": "HVS3 is\\mathrm { ~ a ~ } 8 \\pm 1 \\mathrm { M _ { \\odot } }star located at\\alpha = 6 9 . 6 ^ { \\circ } , \\delta = - 5 4 . 6 ^ { \\circ }"
+                    }
+                  ]
+                },
+                {
+                  "value": "-54.6",
+                  "unit": "deg",
+                  "condition": "Equatorial declination reported for HVS3 by Przybilla et al. (2008).",
+                  "evidence": [
+                    {
+                      "location": "T:p14-b1",
+                      "quote": "HVS3 is\\mathrm { ~ a ~ } 8 \\pm 1 \\mathrm { M _ { \\odot } }star located at\\alpha = 6 9 . 6 ^ { \\circ } , \\delta = - 5 4 . 6 ^ { \\circ }"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

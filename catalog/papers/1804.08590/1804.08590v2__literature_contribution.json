@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "arxiv_id": "1804.08590",
+    "version": "v2",
+    "title": "Constraining Solar position and velocity with a Nearby Hypervelocity Star",
+    "authors": [
+      "Kohei Hattori",
+      "Monica Valluri",
+      "Norberto Castro"
+    ]
+  },
+  "stars": [
+    {
+      "identifiers": [
+        {
+          "value": "LAMOST-HVS1",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Table 1. Basic properties of LAMOST-HVS1"
+            },
+            {
+              "location": "T:p4-b11",
+              "quote": "The nearby HVS candidate, LAMOST-HVS1"
+            }
+          ]
+        }
+      ],
+      "contribution_type": {
+        "value": "follow_up",
+        "evidence": [
+          {
+            "location": "T:p4-b7",
+            "quote": "recently discovered nearby HVS candidate, LAMOST-\nHVS1 (Zheng et al. 2014), is a good test case to examine\nthe accuracy of our method"
+          },
+          {
+            "location": "T:p4-b11",
+            "quote": "The nearby HVS candidate, LAMOST-HVS1, was dis-\ncovered by Zheng et al. (2014) through the LAMOST\nsurvey"
+          },
+          {
+            "location": "T:p11-b5",
+            "quote": "Gaia\nData Release 2 (DR2) revealed that LAMOST-HVS1\nis not a HVS ejected from the Galactic Center, but a\nhyper-runaway star ejected from the stellar disk of the\nMilky Way"
+          }
+        ]
+      },
+      "quantities": [
+        {
+          "quantity": "ra",
+          "values": [
+            {
+              "value": "138.033",
+              "unit": "deg",
+              "condition": "observed equatorial right ascension listed in Table 1",
+              "evidence": [
+                {
+                  "location": "I:p4-b0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "dec",
+          "values": [
+            {
+              "value": "9.280",
+              "unit": "deg",
+              "condition": "observed equatorial declination listed in Table 1",
+              "evidence": [
+                {
+                  "location": "I:p4-b0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "distance",
+          "values": [
+            {
+              "value": "16.276",
+              "error": "0.569",
+              "unit": "mag",
+              "condition": "distance modulus inferred from stellar properties and photometry (Table 1)",
+              "evidence": [
+                {
+                  "location": "I:p4-b0"
+                }
+              ]
+            },
+            {
+              "value": "18.00",
+              "lower_error": "4.03",
+              "upper_error": "5.59",
+              "unit": "kpc",
+              "condition": "heliocentric distance from spectroscopic/photometric analysis; fractional distance error ≈27%",
+              "evidence": [
+                {
+                  "location": "T:p5-b0",
+                  "quote": "d = 1 8 . 0 0 _ { - 4 . 0 3 } ^ { + 5 . 5 9 }kpc (fractional distance error of\\simeq 2 7 \\% )"
+                }
+              ]
+            },
+            {
+              "value": "≃13",
+              "unit": "kpc",
+              "condition": "previous distance estimate from Zheng et al. (2014), quoted as a possible closer distance",
+              "evidence": [
+                {
+                  "location": "T:p4-b11",
+                  "quote": "Even if the stellar distance is as close asd \\simeq 1 3kpc (Zheng et al. 2014)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "radial_velocity",
+          "values": [
+            {
+              "value": "611.65",
+              "error": "4.63",
+              "unit": "km/s",
+              "condition": "heliocentric line-of-sight velocity adopted from Huang et al. (2017)",
+              "evidence": [
+                {
+                  "location": "I:p4-b0"
+                },
+                {
+                  "location": "T:p5-b0",
+                  "quote": "The heliocentric line-of-sight velocityv _ { \\mathrm { l o s } }is adopted\nfrom Huang et al. (2017)."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "galactocentric_radius",
+          "values": [
+            {
+              "value": "≃24",
+              "unit": "kpc",
+              "condition": "approximate current Galactocentric radius of LAMOST-HVS1 used in the triaxial-halo test",
+              "evidence": [
+                {
+                  "location": "T:p8-b10",
+                  "quote": "within the current location of LAMOST-HVS1 (at the Galactocentric radius ofr \\simeq 2 4 \\mathrm { k p c } )"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "LAMOST-HVS1: Included as a follow-up of the previously discovered nearby HVS candidate that this paper analyzes. The paper's adopted HVS definition at T:p2-b2 is ejection from the Galactic Center rather than an explicit present-day Galactic-boundness criterion; eligibility here rests on the prior HVS-candidate identification (T:p4-b7, T:p4-b11). The note at T:p11-b5 reports that Gaia DR2 instead favored a disk hyper-runaway origin, which under follow_up does not remove eligibility. The paper provides no Gaia source ID.",
+    "LAMOST-HVS1: Table 1 reports expected Gaia errors rather than a measured parallax or measured proper-motion components, so no parallax or proper-motion values are extracted. The distance modulus and heliocentric distance are alternative reported distance measures. Section 5.5 (T:p11-b5) later states that LAMOST-HVS1 is a hyper-runaway star rather than a Galactic Center HVS; this does not change the tabulated observed/estimated quantities, but it affects the interpretation of the Galactic-origin mock predictions. Relevant locations: T:p4-b11, T:p5-b0, T:p8-b10, T:p11-b5."
+  ]
+}

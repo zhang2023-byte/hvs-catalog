@@ -1,0 +1,101 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000043",
+  "associations": [],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing.",
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J094014.56+530901.74",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "29312385471b5d46b93f7b3fe13ff5eb559032e151c3ef03d32997a5deac6972",
+        "queried_at": "2026-10-24T04:54:01.022709+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null
+      },
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 145.06066666666663,
+            "dec_deg": 53.150483333333334,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": null,
+        "queried_at": null,
+        "client_version": null,
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "0808.2469v2#/stars/16",
+            "position": {
+              "ra_deg": 145.06066666666663,
+              "dec_deg": 53.150483333333334,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "09h40m14.56s",
+                  "unit": "hourangle",
+                  "condition": "Equatorial right ascension from the SDSS catalog identifier for the target (first 'Possible HVSs' row in Table 1).",
+                  "evidence": [
+                    {
+                      "location": "T:p7-b3",
+                      "quote": "J094014.56+530901.74"
+                    },
+                    {
+                      "location": "T:p6-b0",
+                      "quote": "<tr><td></td><td>A</td><td>+1.3</td><td>20.18</td><td>65</td><td>162.98</td><td>+46.34</td><td>235</td><td>279</td><td>SDSS J094014.56+530901.7</td></tr>"
+                    },
+                    {
+                      "location": "I:p6-b0"
+                    }
+                  ]
+                },
+                {
+                  "value": "+53d09m01.74s",
+                  "unit": "deg",
+                  "condition": "Equatorial declination from the SDSS catalog identifier for the target (first 'Possible HVSs' row in Table 1).",
+                  "evidence": [
+                    {
+                      "location": "T:p7-b3",
+                      "quote": "J094014.56+530901.74"
+                    },
+                    {
+                      "location": "T:p6-b0",
+                      "quote": "<tr><td></td><td>A</td><td>+1.3</td><td>20.18</td><td>65</td><td>162.98</td><td>+46.34</td><td>235</td><td>279</td><td>SDSS J094014.56+530901.7</td></tr>"
+                    },
+                    {
+                      "location": "I:p6-b0"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

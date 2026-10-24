@@ -1,0 +1,223 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000208",
+  "display_name": "NHCb",
+  "sources": {
+    "1501.07824v1": {
+      "title": "Nearby Low-Mass Hypervelocity Stars",
+      "authors": [
+        "Yanqiong Zhang",
+        "Martin C. Smith",
+        "Jeffrey L. Carlin"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1501.07824v1",
+      "records": [
+        "/stars/1"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "NHCb",
+      "evidence": [
+        {
+          "location": "T:p3-b4",
+          "quote": "NHCb"
+        },
+        {
+          "location": "I:p3-b4"
+        }
+      ],
+      "source": "1501.07824v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p2-b5",
+          "quote": "all four candidates have significant probabilities that they are not bound to the Milky Way."
+        },
+        {
+          "location": "I:p4-b1"
+        },
+        {
+          "location": "T:p4-b3",
+          "quote": "we have presented a sample of candidate hypervelocity stars that may be unbound from the Milky Way."
+        }
+      ],
+      "source": "1501.07824v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "27.52",
+          "error": "0.57",
+          "unit": "mas/yr",
+          "condition": "Equatorial proper-motion component μ_α cos δ from Table 1.",
+          "evidence": [
+            {
+              "location": "T:p3-b4",
+              "quote": "<td><eq>\\mu_{\\alpha}cos\\delta</eq><eq>(\\mu mas/yr)</eq></td><td><eq>\\mu_{\\delta}</eq><eq>(\\mu mas/yr)</eq></td>"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCb</td><td>27.52 ± 0.57</td><td>-108.89 ± 0.57</td><td>1.1</td><td>-235.4 ± 10</td><td>436 ± 55</td></tr>"
+            }
+          ],
+          "source": "1501.07824v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-108.89",
+          "error": "0.57",
+          "unit": "mas/yr",
+          "condition": "Equatorial proper-motion component μ_δ from Table 1.",
+          "evidence": [
+            {
+              "location": "T:p3-b4",
+              "quote": "<td><eq>\\mu_{\\alpha}cos\\delta</eq><eq>(\\mu mas/yr)</eq></td><td><eq>\\mu_{\\delta}</eq><eq>(\\mu mas/yr)</eq></td>"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCb</td><td>27.52 ± 0.57</td><td>-108.89 ± 0.57</td><td>1.1</td><td>-235.4 ± 10</td><td>436 ± 55</td></tr>"
+            }
+          ],
+          "source": "1501.07824v1"
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "1.1",
+          "unit": "kpc",
+          "condition": "Photometric distance D* calculated assuming [Fe/H] = -1.5 dex.",
+          "evidence": [
+            {
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCb</td><td>27.52 ± 0.57</td><td>-108.89 ± 0.57</td><td>1.1</td><td>-235.4 ± 10</td><td>436 ± 55</td></tr>"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "∗Distance calculated assuming\\mathrm { [ F e / H ] = - 1 . 5 ~ d e x }. <sup>†</sup> In the Galactic rest frame."
+            }
+          ],
+          "source": "1501.07824v1"
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-235.4",
+          "error": "10",
+          "unit": "km/s",
+          "condition": "Radial velocity v_r from Table 1.",
+          "evidence": [
+            {
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCb</td><td>27.52 ± 0.57</td><td>-108.89 ± 0.57</td><td>1.1</td><td>-235.4 ± 10</td><td>436 ± 55</td></tr>"
+            }
+          ],
+          "source": "1501.07824v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "436",
+          "error": "55",
+          "unit": "km/s",
+          "condition": "Total velocity v_tot in the Galactic rest frame, using the distance calculated assuming [Fe/H] = -1.5 dex.",
+          "evidence": [
+            {
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCb</td><td>27.52 ± 0.57</td><td>-108.89 ± 0.57</td><td>1.1</td><td>-235.4 ± 10</td><td>436 ± 55</td></tr>"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "∗Distance calculated assuming\\mathrm { [ F e / H ] = - 1 . 5 ~ d e x }. <sup>†</sup> In the Galactic rest frame."
+            }
+          ],
+          "source": "1501.07824v1"
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.2",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -2.0.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "<table><tr><td></td><td><eq>[Fe/H] = -2.0</eq></td><td><eq>[Fe/H] = -1.5</eq></td><td><eq>[Fe/H] = -1.0</eq></td><td><eq>[Fe/H] = -0.5</eq></td></tr><tr><td>NHCa</td><td>4.3 %</td><td>27.5 %</td><td>77.8 %</td><td>98.7 %</td></tr><tr><td>NHCb</td><td>0.2 %</td><td>4.5 %</td><td>42.7 %</td><td>92.5 %</td></tr>"
+            }
+          ],
+          "source": "1501.07824v1"
+        },
+        {
+          "value": "4.5",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -1.5.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "<table><tr><td></td><td><eq>[Fe/H] = -2.0</eq></td><td><eq>[Fe/H] = -1.5</eq></td><td><eq>[Fe/H] = -1.0</eq></td><td><eq>[Fe/H] = -0.5</eq></td></tr><tr><td>NHCa</td><td>4.3 %</td><td>27.5 %</td><td>77.8 %</td><td>98.7 %</td></tr><tr><td>NHCb</td><td>0.2 %</td><td>4.5 %</td><td>42.7 %</td><td>92.5 %</td></tr>"
+            }
+          ],
+          "source": "1501.07824v1"
+        },
+        {
+          "value": "42.7",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -1.0.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "<table><tr><td></td><td><eq>[Fe/H] = -2.0</eq></td><td><eq>[Fe/H] = -1.5</eq></td><td><eq>[Fe/H] = -1.0</eq></td><td><eq>[Fe/H] = -0.5</eq></td></tr><tr><td>NHCa</td><td>4.3 %</td><td>27.5 %</td><td>77.8 %</td><td>98.7 %</td></tr><tr><td>NHCb</td><td>0.2 %</td><td>4.5 %</td><td>42.7 %</td><td>92.5 %</td></tr>"
+            }
+          ],
+          "source": "1501.07824v1"
+        },
+        {
+          "value": "92.5",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -0.5.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "<table><tr><td></td><td><eq>[Fe/H] = -2.0</eq></td><td><eq>[Fe/H] = -1.5</eq></td><td><eq>[Fe/H] = -1.0</eq></td><td><eq>[Fe/H] = -0.5</eq></td></tr><tr><td>NHCa</td><td>4.3 %</td><td>27.5 %</td><td>77.8 %</td><td>98.7 %</td></tr><tr><td>NHCb</td><td>0.2 %</td><td>4.5 %</td><td>42.7 %</td><td>92.5 %</td></tr>"
+            }
+          ],
+          "source": "1501.07824v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000208_provenance.json",
+    "sha256": "5c9a2bd3308fc37f716039ffebd3ac76d8cce22f6e7f6c7e68e4aa362183f710"
+  },
+  "warnings": []
+}

@@ -1,0 +1,82 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000295",
+  "display_name": "HVS18",
+  "sources": {
+    "1804.10179v3": {
+      "title": "Revisiting hypervelocity stars after Gaia DR2",
+      "authors": [
+        "Douglas Boubert",
+        "James Guillochon",
+        "Keith Hawkins",
+        "Idan Ginsburg",
+        "N. Wyn Evans",
+        "Jay Strader"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1804.10179v3",
+      "records": [
+        "/stars/14"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS18",
+      "evidence": [
+        {
+          "location": "T:p4-b6",
+          "quote": "HVS1,4-10,12-24 and others"
+        }
+      ],
+      "source": "1804.10179v3"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p4-b6",
+          "quote": "Table 1. The hypervelocity candidates withP _ { \\mathrm { b o u n d } } < 0 . 5subdi-\nvided by original discovery survey or paper."
+        }
+      ],
+      "source": "1804.10179v3"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "bound_probability",
+      "values": [
+        {
+          "upper_bound": "0.5",
+          "upper_inclusive": false,
+          "condition": "After Gaia DR2, from Table 1 (candidates with P_bound < 0.5); HVS18 is included in the Hypervelocity Star Survey sample 'HVS1,4-10,12-24 and others'",
+          "evidence": [
+            {
+              "location": "T:p4-b6",
+              "quote": "Table 1. The hypervelocity candidates with P_bound < 0.5 subdivided by original discovery survey or paper."
+            },
+            {
+              "location": "T:p4-b6",
+              "quote": "Hypervelocity Star Survey 32 HVS1,4-10,12-24 and others"
+            }
+          ],
+          "source": "1804.10179v3"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000295_provenance.json",
+    "sha256": "66d75239383227f9911b2d2a910b00edfdcf9011d6b603dd48f0e913303f3c2a"
+  },
+  "warnings": [
+    "1804.10179v3#/stars/14/quantities/0/values/0/evidence/0: quote audit unknown at T:p4-b6; check the paper evidence.",
+    "1804.10179v3#/stars/14/quantities/0/values/0/evidence/1: quote audit unknown at T:p4-b6; check the paper evidence."
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000648",
+  "display_name": "ID 11 (2401.05630)",
+  "sources": {
+    "2401.05630v1": {
+      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+      "authors": [
+        "A. Luna",
+        "T. Marchetti",
+        "M. Rejkuba",
+        "N. W. C. Leigh",
+        "J. Alonso-García",
+        "A. Valenzuela Navarro",
+        "D. Minniti",
+        "L. C. Smith"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "records": [
+        "/stars/14"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "ID 11",
+      "evidence": [
+        {
+          "location": "T:p16-b0",
+          "quote": "<td>11</td><td>17h46m06.37s</td><td>-27d50m16.34s</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p1-b13",
+          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+        },
+        {
+          "location": "T:p9-b10",
+          "quote": "65 were detected only in the VIRAC2 sample"
+        },
+        {
+          "location": "T:p17-b2",
+          "quote": "<td>11</td><td>19.51</td><td>10.6</td><td>2.48</td><td>1021.4</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "17h46m06.37s",
+          "unit": "hms",
+          "condition": "VIRAC2-only red sample star (ID 11), no Gaia DR3 counterpart; coordinates from VIRAC2",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "11 17h46m06.37s -27d50m16.34s 0.9934 0.4805 14.61 3.15"
+            },
+            {
+              "location": "I:p16-b0"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-27d50m16.34s",
+          "unit": "dms",
+          "condition": "VIRAC2-only red sample star (ID 11), no Gaia DR3 counterpart; coordinates from VIRAC2",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "11 17h46m06.37s -27d50m16.34s 0.9934 0.4805 14.61 3.15"
+            },
+            {
+              "location": "I:p16-b0"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "10.6",
+          "unit": "kpc",
+          "condition": "Heliocentric distance derived from the red clump calibration (median of the Monte Carlo distance distribution)",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "11 19.51 10.6 2.48 1021.4 899316 0.06 1.0"
+            },
+            {
+              "location": "I:p17-b2"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "2.48",
+          "unit": "kpc",
+          "condition": "Three-dimensional galactocentric distance computed from the RC heliocentric distance, assuming R0 = 8.122 kpc",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "11 19.51 10.6 2.48 1021.4 899316 0.06 1.0"
+            },
+            {
+              "location": "I:p17-b2"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T06:04:15.405720+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000648_provenance.json",
+    "sha256": "9d33983cf893a2368046a417b661b1c5da6976759fbbda0017ffffefa57fe9b4"
+  },
+  "warnings": [
+    "Coordinate reference frame was not reported; ICRS was assumed for matching.",
+    "2401.05630v1#/stars/14/quantities/0/values/0/evidence/0: quote audit unknown at T:p16-b0; check the paper evidence.",
+    "2401.05630v1#/stars/14/quantities/1/values/0/evidence/0: quote audit unknown at T:p16-b0; check the paper evidence.",
+    "2401.05630v1#/stars/14/quantities/2/values/0/evidence/0: quote audit unknown at T:p17-b2; check the paper evidence.",
+    "2401.05630v1#/stars/14/quantities/3/values/0/evidence/0: quote audit unknown at T:p17-b2; check the paper evidence."
+  ]
+}

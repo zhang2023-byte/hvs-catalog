@@ -1,0 +1,103 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000164",
+  "display_name": "HVS21",
+  "sources": {
+    "1401.7342v1": {
+      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "records": [
+        "/stars/17"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS21",
+      "evidence": [
+        {
+          "location": "T:p11-b0",
+          "quote": "<tr><td>21</td><td>356.8 ± 7.5</td>"
+        }
+      ],
+      "source": "1401.7342v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p6-b6",
+          "quote": "21 HVSs that are unbound on the basis of radial"
+        },
+        {
+          "location": "T:p11-b0",
+          "quote": "<tr><td>21</td><td>356.8 ± 7.5</td>"
+        }
+      ],
+      "source": "1401.7342v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "356.8",
+          "error": "7.5",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity v_helio (Table 1 column v_⊙).",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "21</td><td>356.8 ± 7.5</td><td>391.9</td><td>19.730</td><td>13229 ± 998</td><td>4.16 ± 0.31</td><td>65</td><td>3.70 ± 0.21</td><td>-0.45 ± 0.42</td><td>113 ± 21</td><td>224 ± 48</td><td>-0.18, -0.45</td>"
+            },
+            {
+              "location": "T:p11-b0",
+              "quote": "v_{\\odot}</eq>(km s<eq>^{-1}</eq>)"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "113",
+          "error": "21",
+          "unit": "kpc",
+          "condition": "Galactocentric radial distance R_GC from Table 1; the paper assumes the Sun is at R = 8 kpc.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "21</td><td>356.8 ± 7.5</td><td>391.9</td><td>19.730</td><td>13229 ± 998</td><td>4.16 ± 0.31</td><td>65</td><td>3.70 ± 0.21</td><td>-0.45 ± 0.42</td><td>113 ± 21</td><td>224 ± 48</td><td>-0.18, -0.45</td>"
+            },
+            {
+              "location": "T:p11-b0",
+              "quote": "R_{GC}</eq>(kpc)"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000164_provenance.json",
+    "sha256": "fe30600397e103799624451bec0546220374dce871597056bd14c8798a19a63b"
+  },
+  "warnings": []
+}

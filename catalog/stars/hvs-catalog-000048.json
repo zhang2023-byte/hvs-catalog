@@ -1,0 +1,125 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000048",
+  "display_name": "HVS9",
+  "sources": {
+    "0808.2469v2": {
+      "title": "MMT Hypervelocity Star Survey",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/0808.2469v2",
+      "records": [
+        "/stars/8"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS9",
+      "evidence": [
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    },
+    {
+      "value": "SDSS J102137.08-005234.86",
+      "evidence": [
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b11",
+          "quote": "7 B-type HVSs discovered in a targeted HVS"
+        },
+        {
+          "location": "T:p3-b11",
+          "quote": "we find 14 unbound HVSs"
+        },
+        {
+          "location": "I:p6-b0"
+        },
+        {
+          "location": "I:p4-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "628",
+          "unit": "km/s",
+          "condition": "Table 1 heliocentric radial velocity v_⊙; no uncertainty reported.",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>HVS9</td><td>B</td><td>-0.3</td><td>18.76</td><td>68</td><td>244.63</td><td>+44.38</td><td>628</td><td>485</td><td>SDSS J102137.08-005234.86</td></tr>"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "Galactocentric distanceR ,Galactic coordinates (l, b), heliocen- tric radial velocityv _ { \\odot }, minimum Galactic rest-frame ve- locityv _ { r f }(not a full space velocity)"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "68",
+          "unit": "kpc",
+          "condition": "Table 1 Galactocentric distance R_GC; no uncertainty reported.",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>HVS9</td><td>B</td><td>-0.3</td><td>18.76</td><td>68</td><td>244.63</td><td>+44.38</td><td>628</td><td>485</td><td>SDSS J102137.08-005234.86</td></tr>"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "Columns include HVS number, stellar type, absolute magnitudeM _ { V }, apparent Vmagnitude derived from SDSS photometry, Galactocentric distanceR"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T04:48:20.107095+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000048_provenance.json",
+    "sha256": "ca594f41625623a270d6b6e817bcc6b3223c928f370c76c37d630558c8c7b7bd"
+  },
+  "warnings": [
+    "0808.2469v2#/stars/8/quantities/0/values/0/evidence/1: quote audit unknown at T:p7-b6; check the paper evidence.",
+    "0808.2469v2#/stars/8/quantities/1/values/0/evidence/1: quote audit unknown at T:p7-b6; check the paper evidence."
+  ]
+}

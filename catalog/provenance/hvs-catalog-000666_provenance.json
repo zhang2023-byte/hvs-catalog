@@ -1,0 +1,74 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000666",
+  "associations": [],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "queries": [
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 265.9538749999999,
+            "dec_deg": -28.69478888888889,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "75934f12d3ec1d01b90aa817fd93e6ada24c53abb33c8bd58ab4795346ce56ab",
+        "queried_at": "2026-10-24T06:02:42.602565+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2401.05630v1#/stars/30",
+            "position": {
+              "ra_deg": 265.9538749999999,
+              "dec_deg": -28.69478888888889,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "17h43m48.93s",
+                  "unit": "hms",
+                  "condition": "ID 27 in the VIRAC2-only sample; equatorial right ascension from Table B1",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "<tr><td>27</td><td>17h43m48.93s</td><td>-28d41m41.24s</td><td>-0.0008</td><td>0.4631</td><td>14.52</td><td>3.06</td></tr>"
+                    }
+                  ]
+                },
+                {
+                  "value": "-28d41m41.24s",
+                  "unit": "dms",
+                  "condition": "ID 27 in the VIRAC2-only sample; equatorial declination from Table B1",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "<tr><td>27</td><td>17h43m48.93s</td><td>-28d41m41.24s</td><td>-0.0008</td><td>0.4631</td><td>14.52</td><td>3.06</td></tr>"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

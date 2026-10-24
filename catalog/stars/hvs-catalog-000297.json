@@ -1,0 +1,82 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000297",
+  "display_name": "HVS20",
+  "sources": {
+    "1804.10179v3": {
+      "title": "Revisiting hypervelocity stars after Gaia DR2",
+      "authors": [
+        "Douglas Boubert",
+        "James Guillochon",
+        "Keith Hawkins",
+        "Idan Ginsburg",
+        "N. Wyn Evans",
+        "Jay Strader"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1804.10179v3",
+      "records": [
+        "/stars/16"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS20",
+      "evidence": [
+        {
+          "location": "T:p4-b6",
+          "quote": "HVS1,4-10,12-24 and others"
+        }
+      ],
+      "source": "1804.10179v3"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p4-b6",
+          "quote": "Table 1. The hypervelocity candidates withP _ { \\mathrm { b o u n d } } < 0 . 5subdi-\nvided by original discovery survey or paper."
+        }
+      ],
+      "source": "1804.10179v3"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "bound_probability",
+      "values": [
+        {
+          "upper_bound": "0.5",
+          "upper_inclusive": false,
+          "unit": "dimensionless",
+          "condition": "After Gaia DR2; HVS20 is listed in Table 1 among candidates with P_bound < 0.5. This is reported only as the Table 1 inclusion threshold, not as a point estimate.",
+          "evidence": [
+            {
+              "location": "T:p4-b3",
+              "quote": "In Tab. 1, we list all candidates which haveP _ { \\mathrm { b o u n d } }< 0 5."
+            },
+            {
+              "location": "T:p4-b6",
+              "quote": "Hypervelocity Star Survey 32 HVS1,4-10,12-24 and others"
+            }
+          ],
+          "source": "1804.10179v3"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000297_provenance.json",
+    "sha256": "1412b2b8c0eac9a18aa3b8e36bfedbd2dc2296025dec94233f6da2e2f3e69675"
+  },
+  "warnings": [
+    "1804.10179v3#/stars/16/quantities/0/values/0/evidence/1: quote audit unknown at T:p4-b6; check the paper evidence."
+  ]
+}

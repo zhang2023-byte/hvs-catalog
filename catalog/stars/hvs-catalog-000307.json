@@ -1,0 +1,96 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000307",
+  "display_name": "Li2",
+  "sources": {
+    "1804.10179v3": {
+      "title": "Revisiting hypervelocity stars after Gaia DR2",
+      "authors": [
+        "Douglas Boubert",
+        "James Guillochon",
+        "Keith Hawkins",
+        "Idan Ginsburg",
+        "N. Wyn Evans",
+        "Jay Strader"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1804.10179v3",
+      "records": [
+        "/stars/31"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "Li2",
+      "evidence": [
+        {
+          "location": "T:p2-b9",
+          "quote": "We also do not con-\nsider Li2, the second candidate of Li et al. (2015), because\nthere are two radial velocity measurements in the literature\nwhich disagree"
+        }
+      ],
+      "source": "1804.10179v3"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p2-b6",
+          "quote": "claimed 19 low mass F, G and K type hypervelocity\nstar candidates"
+        },
+        {
+          "location": "T:p2-b9",
+          "quote": "We also do not con-\nsider Li2, the second candidate of Li et al. (2015), because\nthere are two radial velocity measurements in the literature\nwhich disagree"
+        }
+      ],
+      "source": "1804.10179v3"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-60",
+          "error": "10",
+          "unit": "km/s",
+          "condition": "LAMOST radial velocity measurement reported in the literature for Li2; the paper notes it disagrees with the SDSS value and that the star is likely an unresolved binary so the measurements are not representative of the true systemic velocity",
+          "evidence": [
+            {
+              "location": "T:p2-b9",
+              "quote": "We also do not con- sider Li2, the second candidate of Li et al. (2015), because there are two radial velocity measurements in the literature which disagree: LAMOST reports −60 ± 10 km s−1 whilst SDSS reports -160.8 ± 3.4 km s−1. The simplest explanation is that this star is an unresolved binary and thus the reported radial velocities are not representative of the true systemic velocity."
+            }
+          ],
+          "source": "1804.10179v3"
+        },
+        {
+          "value": "-160.8",
+          "error": "3.4",
+          "unit": "km/s",
+          "condition": "SDSS radial velocity measurement reported in the literature for Li2; the paper notes it disagrees with the LAMOST value and that the star is likely an unresolved binary so the measurements are not representative of the true systemic velocity",
+          "evidence": [
+            {
+              "location": "T:p2-b9",
+              "quote": "We also do not con- sider Li2, the second candidate of Li et al. (2015), because there are two radial velocity measurements in the literature which disagree: LAMOST reports −60 ± 10 km s−1 whilst SDSS reports -160.8 ± 3.4 km s−1."
+            }
+          ],
+          "source": "1804.10179v3"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000307_provenance.json",
+    "sha256": "2bb322acdd272ee42ae827b1bed1cafd8c8de10c908e1bb279da39cb2920797a"
+  },
+  "warnings": [
+    "1804.10179v3#/stars/31/quantities/0/values/0/evidence/0: quote audit unknown at T:p2-b9; check the paper evidence.",
+    "1804.10179v3#/stars/31/quantities/0/values/1/evidence/0: quote audit unknown at T:p2-b9; check the paper evidence."
+  ]
+}

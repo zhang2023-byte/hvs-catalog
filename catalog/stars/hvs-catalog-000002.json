@@ -1,0 +1,150 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000002",
+  "display_name": "HVS2",
+  "sources": {
+    "0709.1471v2": {
+      "title": "Hypervelocity Stars III. The Space Density and Ejection History of Main Sequence Stars from the Galactic Center",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon",
+        "Michael J. Kurtz",
+        "Benjamin C. Bromley"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/0709.1471v2",
+      "records": [
+        "/stars/1"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS2",
+      "evidence": [
+        {
+          "location": "T:p4-b0",
+          "quote": "hvs2"
+        },
+        {
+          "location": "T:p4-b4",
+          "quote": "HVS2"
+        }
+      ],
+      "source": "0709.1471v2"
+    },
+    {
+      "value": "US 708",
+      "evidence": [
+        {
+          "location": "T:p4-b0",
+          "quote": "US 708"
+        }
+      ],
+      "source": "0709.1471v2"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b10",
+          "quote": "Hirsch et al. (2005) reported a helium-rich sub-\nluminous O star leaving the Galaxy with a rest-frame ve-\nlocity of at least +717 km\\mathrm { s } ^ { - 1 }."
+        },
+        {
+          "location": "T:p4-b0",
+          "quote": "US 708"
+        },
+        {
+          "location": "T:p4-b4",
+          "quote": "HVS2"
+        }
+      ],
+      "source": "0709.1471v2"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "708",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity v_sun from Table 1 (weighted average of multiple observations; no error quoted in table)",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "hvs2 sdO +2.6 19.05 26 175.99 +47.05 708 717 32 US 708"
+            },
+            {
+              "location": "T:p4-b4",
+              "quote": "heliocentric radial velocity v_⊙, minimum Galactic rest-frame velocity v_rf (not a full space velocity)"
+            }
+          ],
+          "source": "0709.1471v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "26",
+          "unit": "kpc",
+          "condition": "Galactocentric distance R_GC from Table 1",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "hvs2 sdO +2.6 19.05 26 175.99 +47.05 708 717 32 US 708"
+            }
+          ],
+          "source": "0709.1471v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "lower_bound": "717",
+          "lower_inclusive": true,
+          "unit": "km/s",
+          "condition": "Minimum Galactic rest-frame velocity v_rf; explicitly not a full space velocity, so this is a lower limit on the total 3D rest-frame speed",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "hvs2 sdO +2.6 19.05 26 175.99 +47.05 708 717 32 US 708"
+            },
+            {
+              "location": "T:p4-b4",
+              "quote": "minimum Galactic rest-frame velocity v_rf (not a full space velocity)"
+            },
+            {
+              "location": "T:p1-b10",
+              "quote": "Hirsch et al. (2005) reported a helium-rich subluminous O star leaving the Galaxy with a rest-frame velocity of at least +717 km s−1."
+            }
+          ],
+          "source": "0709.1471v2"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000002_provenance.json",
+    "sha256": "0f8596f8f9f9468e1fe4388955fec85b002bd9956cf24609850e60c9e153bfe6"
+  },
+  "warnings": [
+    "0709.1471v2#/stars/1/quantities/0/values/0/evidence/0: quote audit unknown at T:p4-b0; check the paper evidence.",
+    "0709.1471v2#/stars/1/quantities/0/values/0/evidence/1: quote audit unknown at T:p4-b4; check the paper evidence.",
+    "0709.1471v2#/stars/1/quantities/1/values/0/evidence/0: quote audit unknown at T:p4-b0; check the paper evidence.",
+    "0709.1471v2#/stars/1/quantities/2/values/0/evidence/0: quote audit unknown at T:p4-b0; check the paper evidence.",
+    "0709.1471v2#/stars/1/quantities/2/values/0/evidence/1: quote audit unknown at T:p4-b4; check the paper evidence.",
+    "0709.1471v2#/stars/1/quantities/2/values/0/evidence/2: quote audit unknown at T:p1-b10; check the paper evidence."
+  ]
+}

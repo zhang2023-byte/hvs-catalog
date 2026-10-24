@@ -1,0 +1,147 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000109",
+  "display_name": "HVS16",
+  "sources": {
+    "1203.3543v1": {
+      "title": "MMT Hypervelocity Star Survey. II. Five New Unbound Stars",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1203.3543v1",
+      "records": [
+        "/stars/15"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS16",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        },
+        {
+          "location": "T:p5-b2",
+          "quote": "HVS15 and HVS16"
+        }
+      ],
+      "source": "1203.3543v1"
+    },
+    {
+      "value": "SDSS J122523.40+052233.84",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "1203.3543v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p5-b2",
+          "quote": "HVS15 and HVS16"
+        },
+        {
+          "location": "T:p5-b2",
+          "quote": "re-classify these three objects"
+        },
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "1203.3543v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "434",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity v_⊙ from MMT Blue Channel spectroscopy (Table 1); listed under \"Possible HVSs\"",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "HVS16</td><td>434</td><td>345</td><td>19.33</td><td>-0.03</td><td>74</td><td>285.86</td><td>+67.38</td><td>SDSS J122523.40+052233.84"
+            },
+            {
+              "location": "I:p5-b0"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "74",
+          "unit": "kpc",
+          "condition": "Galactocentric distance R derived from Girardi et al. (2002, 2004) main-sequence luminosity, assuming the Sun is 8 kpc from the Galactic center (Table 1, column R_GC)",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "HVS16</td><td>434</td><td>345</td><td>19.33</td><td>-0.03</td><td>74</td><td>285.86</td><td>+67.38</td><td>SDSS J122523.40+052233.84"
+            },
+            {
+              "location": "T:p6-b0",
+              "quote": "HVS number, heliocentric radial velocity v_⊙, minimum Galactic rest-frame velocity v_rf (not a full space velocity), de-reddened SDSS g-band magnitude, absolute magnitude M_g from Girardi et al. (2002, 2004) main sequence tracks, Galactocentric distance R, Galactic coordinates (l, b), and catalog identification."
+            },
+            {
+              "location": "I:p5-b0"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "lower_bound": "345",
+          "lower_inclusive": true,
+          "unit": "km/s",
+          "condition": "Minimum Galactic rest-frame velocity v_rf (radial component only, a lower limit to the true 3D velocity); from Table 1",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "HVS16</td><td>434</td><td>345</td><td>19.33</td><td>-0.03</td><td>74</td><td>285.86</td><td>+67.38</td><td>SDSS J122523.40+052233.84"
+            },
+            {
+              "location": "T:p4-b2",
+              "quote": "we note that v_rf represents the radial component of velocity in the Galactic rest frame, and is thus a lower limit to the true velocity of any HVS."
+            },
+            {
+              "location": "I:p5-b0"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T04:51:12.028623+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000109_provenance.json",
+    "sha256": "8de666c74cfb0b94a7c3ab519325b93f43a2f1a69db4b0636a28035a1443ee3d"
+  },
+  "warnings": [
+    "1203.3543v1#/stars/15/quantities/1/values/0/evidence/1: quote audit unknown at T:p6-b0; check the paper evidence.",
+    "1203.3543v1#/stars/15/quantities/2/values/0/evidence/1: quote audit unknown at T:p4-b2; check the paper evidence."
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000106",
+  "display_name": "HVS2",
+  "sources": {
+    "1203.3543v1": {
+      "title": "MMT Hypervelocity Star Survey. II. Five New Unbound Stars",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1203.3543v1",
+      "records": [
+        "/stars/1"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS2",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "1203.3543v1"
+    },
+    {
+      "value": "US708",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        }
+      ],
+      "source": "1203.3543v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "I:p5-b0"
+        },
+        {
+          "location": "T:p4-b8",
+          "quote": "Previously identified HVSs are marked with open magenta stars."
+        }
+      ],
+      "source": "1203.3543v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "708",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity v_⊙ listed for HVS2 (= US708) in Table 1; no uncertainty reported for this star (survey-average statistical uncertainty ±11 km/s, systematic 2 km/s).",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "HVS2</td><td>708</td><td>718</td><td>19.05</td><td>+2.6</td><td>26</td><td>175.99</td><td>+47.05</td><td>US708</td>"
+            },
+            {
+              "location": "T:p6-b0",
+              "quote": "HVS number, heliocentric radial velocityv _ { \\odot } ., minimum Galactic rest-frame velocityv _ { r f }(not a full space ve- locity)"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "718",
+          "unit": "km/s",
+          "condition": "Minimum Galactic rest-frame velocity v_rf = v_⊙ + 11.1 cos l cos b + 262.24 sin l cos b + 7.25 sin b; this is the radial component only and a lower limit to the star's true space velocity.",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "HVS2</td><td>708</td><td>718</td><td>19.05</td><td>+2.6</td><td>26</td><td>175.99</td><td>+47.05</td><td>US708</td>"
+            },
+            {
+              "location": "T:p4-b2",
+              "quote": "We note thatv _ {rf}represents the radial component of velocity in the Galactic rest frame, and is thus a lower limit to the true velocity of any HVS."
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "26",
+          "unit": "kpc",
+          "condition": "Galactocentric distance R_GC derived from Girardi et al. (2002, 2004) main-sequence tracks, assuming the Sun is 8 kpc from the Galactic center.",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "HVS2</td><td>708</td><td>718</td><td>19.05</td><td>+2.6</td><td>26</td><td>175.99</td><td>+47.05</td><td>US708</td>"
+            },
+            {
+              "location": "T:p4-b7",
+              "quote": "We then calculate heliocentric distances using de-reddened apparent magnitudes, and convert to Galac- tocentric distances R assuming that the Sun is 8 kpc from the Galactic center."
+            },
+            {
+              "location": "I:p4-b8"
+            }
+          ],
+          "source": "1203.3543v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000106_provenance.json",
+    "sha256": "9f6a7d32bf992c2ed0a872ee79628836369365da81cdd7490cefff9ea1f45c99"
+  },
+  "warnings": [
+    "1203.3543v1#/stars/1/quantities/1/values/0/evidence/1: quote audit unknown at T:p4-b2; check the paper evidence."
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000155",
+  "display_name": "HVS1",
+  "sources": {
+    "1401.7342v1": {
+      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "records": [
+        "/stars/0"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS1",
+      "evidence": [
+        {
+          "location": "T:p11-b0",
+          "quote": "<tr><td>1</td><td>833.0 ± 5.5</td>"
+        }
+      ],
+      "source": "1401.7342v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p6-b6",
+          "quote": "21 HVSs that are unbound on the basis of radial"
+        },
+        {
+          "location": "T:p11-b0",
+          "quote": "<tr><td>1</td><td>833.0 ± 5.5</td>"
+        }
+      ],
+      "source": "1401.7342v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "833.0",
+          "error": "5.5",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity from the v_⊙ column of Table 1.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "833.0 ± 5.5"
+            },
+            {
+              "location": "I:p11-b0"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "675.0",
+          "unit": "km/s",
+          "condition": "Line-of-sight Galactic rest-frame velocity v_rf from Table 1; this is a lower limit on the total space velocity, not a measured total 3D speed.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "675.0"
+            },
+            {
+              "location": "I:p11-b0"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "106",
+          "error": "14",
+          "unit": "kpc",
+          "condition": "Galactocentric radial distance R_GC from Table 1, calculated assuming the Sun is at R = 8 kpc.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "106 ± 14"
+            },
+            {
+              "location": "T:p5-b11",
+              "quote": "We calculate HVS Galacto-centric radial distances, R, assuming the Sun is at R = 8 kpc. Table 1 summarizes the results."
+            },
+            {
+              "location": "I:p11-b0"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-0.09",
+          "unit": "mas/yr",
+          "condition": "Predicted equatorial proper-motion component μ_α for a Galactic center origin, from the (μ_α, μ_δ)_GC column of Table 1; not a measured proper motion.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "-0.09, -0.35"
+            },
+            {
+              "location": "I:p11-b0"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-0.35",
+          "unit": "mas/yr",
+          "condition": "Predicted equatorial proper-motion component μ_δ for a Galactic center origin, from the (μ_α, μ_δ)_GC column of Table 1; not a measured proper motion.",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "-0.09, -0.35"
+            },
+            {
+              "location": "I:p11-b0"
+            }
+          ],
+          "source": "1401.7342v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000155_provenance.json",
+    "sha256": "0bc6852a2d9b5f422e269429d1705daf06274c6ee741976a3a3f5604251fa923"
+  },
+  "warnings": []
+}

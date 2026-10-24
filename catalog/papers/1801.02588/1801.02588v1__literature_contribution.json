@@ -1,0 +1,134 @@
+{
+  "metadata": {
+    "arxiv_id": "1801.02588",
+    "version": "v1",
+    "title": "Tidal breakup of triple stars in the Galactic Centre",
+    "authors": [
+      "Giacomo Fragione",
+      "Alessia Gualandris"
+    ]
+  },
+  "stars": [
+    {
+      "identifiers": [
+        {
+          "value": "HE0437-5439",
+          "evidence": [
+            {
+              "location": "T:p2-b1",
+              "quote": "inferred for HE0437-5439"
+            }
+          ]
+        }
+      ],
+      "contribution_type": {
+        "value": "follow_up",
+        "evidence": [
+          {
+            "location": "T:p2-b1",
+            "quote": "A few of the observed HVSs are particularly challenging\nto reconcile with an origin in the GC given that their travel\ntime from the GC is longer than their evolutionary time (see\nPerets 2009, for a list of candidates). The largest discrepancy\nbetween the two timescales is inferred for HE0437-5439"
+          }
+        ]
+      },
+      "quantities": [
+        {
+          "quantity": "distance",
+          "values": [
+            {
+              "value": "∼60",
+              "unit": "kpc",
+              "condition": "Distance quoted from Edelmann et al. (2005).",
+              "evidence": [
+                {
+                  "location": "T:p2-b1",
+                  "quote": "radial velocity of about7 2 0 \\mathrm { k m s ^ { - 1 } }at a distance of ∼ 60 kpc"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "radial_velocity",
+          "values": [
+            {
+              "value": "≈720",
+              "unit": "km/s",
+              "condition": "Heliocentric radial velocity quoted from Edelmann et al. (2005).",
+              "evidence": [
+                {
+                  "location": "T:p2-b1",
+                  "quote": "radial velocity of about7 2 0 \\mathrm { k m s ^ { - 1 } }at a distance of ∼ 60 kpc"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "identifiers": [
+        {
+          "value": "SDSS J121150.27+143716.2",
+          "evidence": [
+            {
+              "location": "T:p2-b2",
+              "quote": "The hot subdwarf SDSS J121150.27+143716.2"
+            }
+          ]
+        }
+      ],
+      "contribution_type": {
+        "value": "follow_up",
+        "evidence": [
+          {
+            "location": "T:p2-b2",
+            "quote": "a HVB (N´emeth et al. 2016)."
+          }
+        ]
+      },
+      "quantities": [
+        {
+          "quantity": "galactocentric_radius",
+          "values": [
+            {
+              "value": "5.7",
+              "unit": "kpc",
+              "condition": "Reported as '≈ 5.7 kpc away from the Galactic Centre' for the candidate HVB SDSS J121150.27+143716.2 (Németh et al. 2016); the paper does not state whether this is a three-dimensional or projected distance.",
+              "evidence": [
+                {
+                  "location": "T:p8-b6",
+                  "quote": "The recent discovery of a candidate HVB ≈ 5.7 kpc away from the Galactic Centre and travelling"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "galactic_rest_frame_velocity",
+          "values": [
+            {
+              "value": "570",
+              "unit": "km/s",
+              "condition": "Reported as 'travelling at ∼570 km s−1' for the candidate HVB SDSS J121150.27+143716.2 (Németh et al. 2016). The paper describes a speed ('travelling at') but does not explicitly specify the reference frame (heliocentric vs. Galactic rest frame) or whether it is a line-of-sight or total velocity.",
+              "evidence": [
+                {
+                  "location": "T:p8-b6",
+                  "quote": "travelling"
+                },
+                {
+                  "location": "T:p8-b6",
+                  "quote": "The recent discovery of a candidate HVB ≈ 5.7 kpc away from the Galactic Centre and travelling"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "HE0437-5439: T:p8-b6 gives the shortened form 'HE0437-543' in a passage clearly referring to the same ∼9 M⊙ main-sequence HVS discussed at T:p2-b1; this is treated as a typographical truncation, not a separate star. SDSS J121150.27+143716.2: the paper's unnamed 'candidate HVB' at T:p8-b6 is associated with this identifier through the shared Németh et al. (2016) citation and the direct HVB identification at T:p2-b2.",
+    "HE0437-5439: The paper gives only expected total proper-motion magnitudes of ≈0.01 mas yr−1 for a Galactic Centre origin and ≈2 mas yr−1 for an LMC origin (T:p8-b6), not measured equatorial proper-motion components; therefore they are not entered as proper_motion_ra or proper_motion_dec. The later text refers to the same object as “HE0437-543” (T:p8-b6), an apparent truncation of HE0437-5439.",
+    "SDSS J121150.27+143716.2: The target star SDSS J121150.27+143716.2 is treated in the paper only qualitatively as a candidate hypervelocity binary (T:p2-b2: 'The hot subdwarf SDSS J121150.27+143716.2 discovered by Tillich et al. (2011) has recently been shown to be a HVB (Németh et al. 2016). Its reconstructed trajectory in the Galactic potential appears inconsistent with an ejection from the GC...'). The only quantitative values for this star appear in T:p8-b6 (Németh et al. 2016): a distance of ≈5.7 kpc from the Galactic Centre and a speed of ∼570 km/s. Ambiguities: (1) The paper gives '5.7 kpc away from the Galactic Centre' without specifying whether this is a three-dimensional or projected galactocentric distance; recorded as galactocentric_radius with that caveat. (2) The velocity is described only as 'travelling at ∼570 km/s' without an explicit reference frame (heliocentric or Galactic rest frame) or indication of line-of-sight vs. total speed; recorded as galactic_rest_frame_velocity by the literal 'speed' reading, but this classification is uncertain. No other quantities (RA, Dec, parallax, proper motion, radial velocity) for this specific star are reported in the text."
+  ]
+}

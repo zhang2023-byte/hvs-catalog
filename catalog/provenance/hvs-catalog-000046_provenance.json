@@ -1,0 +1,101 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000046",
+  "associations": [],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing.",
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J154556.10+243708.94",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "33019e93c26cac99bae2509ce0e73987451c67fd16934810737653d84ef6a729",
+        "queried_at": "2026-10-24T04:52:26.151789+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null
+      },
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 236.48375,
+            "dec_deg": 24.61915,
+            "frame": "fk5",
+            "equinox": "J2000",
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": null,
+        "queried_at": null,
+        "client_version": null,
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "0808.2469v2#/stars/19",
+            "position": {
+              "ra_deg": 236.48375,
+              "dec_deg": 24.61915,
+              "frame": "fk5",
+              "equinox": "J2000",
+              "evidence": [
+                {
+                  "value": "15:45:56.10",
+                  "unit": "hourangle",
+                  "condition": "J2000 right ascension encoded in the SDSS designation SDSS J154556.10+243708.94 (Table 1 catalog column); the paper gives no separate RA column for HVSs",
+                  "evidence": [
+                    {
+                      "location": "T:p6-b0",
+                      "quote": "<td>+0.6</td><td>20.30</td><td>83</td><td>39.36</td><td>+50.87</td><td>193</td><td>293</td><td>SDSS J154556.10+243708.9</td>"
+                    },
+                    {
+                      "location": "T:p7-b3",
+                      "quote": "J154556.10+243708.94"
+                    },
+                    {
+                      "location": "I:p6-b0"
+                    }
+                  ]
+                },
+                {
+                  "value": "+24:37:08.94",
+                  "unit": "deg",
+                  "condition": "J2000 declination encoded in the SDSS designation SDSS J154556.10+243708.94 (Table 1 catalog column)",
+                  "evidence": [
+                    {
+                      "location": "T:p6-b0",
+                      "quote": "<td>+0.6</td><td>20.30</td><td>83</td><td>39.36</td><td>+50.87</td><td>193</td><td>293</td><td>SDSS J154556.10+243708.9</td>"
+                    },
+                    {
+                      "location": "T:p7-b3",
+                      "quote": "J154556.10+243708.94"
+                    },
+                    {
+                      "location": "I:p6-b0"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "fk5",
+              "equinox": "J2000",
+              "frame_basis": "coordinate_conditions",
+              "frame_assumed": false,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

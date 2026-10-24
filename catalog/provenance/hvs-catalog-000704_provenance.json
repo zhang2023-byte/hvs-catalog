@@ -1,0 +1,607 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000704",
+  "associations": [
+    {
+      "method": "paper",
+      "left": "2401.05630v1#/stars/41",
+      "right": "2401.05630v1#/stars/65",
+      "details": {
+        "identity_conflict": true,
+        "source": "2401.05630v1",
+        "evidence": [
+          {
+            "location": "T:p16-b0",
+            "quote": "<td>38</td><td>17h40m49.56s</td><td>-29d05m33.27s</td>"
+          },
+          {
+            "location": "T:p17-b0",
+            "quote": "<td>62</td><td>17h47m18.44s</td><td>-30d47m53.38s</td>"
+          }
+        ],
+        "identity_conflicts": [
+          {
+            "left": "2401.05630v1#/stars/41",
+            "right": "2401.05630v1#/stars/65",
+            "source": "2401.05630v1",
+            "evidence": [
+              {
+                "location": "T:p16-b0",
+                "quote": "<td>38</td><td>17h40m49.56s</td><td>-29d05m33.27s</td>"
+              },
+              {
+                "location": "T:p17-b0",
+                "quote": "<td>62</td><td>17h47m18.44s</td><td>-30d47m53.38s</td>"
+              }
+            ],
+            "reason": "Nearby extracted coordinates conflict with distinct coordinates in the records' own identifier evidence rows; possible reused row coordinates. Original values are retained; this is an evidence contradiction, not a corrected position."
+          }
+        ],
+        "reason": "Source identity evidence conflicts: Nearby extracted coordinates conflict with distinct coordinates in the records' own identifier evidence rows; possible reused row coordinates. Original values are retained; this is an evidence contradiction, not a corrected position."
+      },
+      "accepted": false
+    },
+    {
+      "method": "coordinates",
+      "left": "2401.05630v1#/stars/41",
+      "right": "2401.05630v1#/stars/65",
+      "details": {
+        "separation_arcsec": 0.0,
+        "threshold_arcsec": 5.0,
+        "left_position": {
+          "ra_deg": 266.82683333333335,
+          "dec_deg": -30.798161111111114,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "17h47m18.44s",
+              "unit": "hms",
+              "condition": "VIRAC2-only candidate HVS ID 38; equatorial position from Table B1",
+              "evidence": [
+                {
+                  "location": "T:p16-b0",
+                  "quote": "38</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+                }
+              ]
+            },
+            {
+              "value": "-30d47m53.38s",
+              "unit": "dms",
+              "condition": "VIRAC2-only candidate HVS ID 38; equatorial position from Table B1",
+              "evidence": [
+                {
+                  "location": "T:p16-b0",
+                  "quote": "38</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+                }
+              ]
+            }
+          ]
+        },
+        "right_position": {
+          "ra_deg": 266.82683333333335,
+          "dec_deg": -30.798161111111114,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "17h47m18.44s",
+              "unit": "hms",
+              "condition": "ID 62 in the VIRAC2-only sample without a Gaia DR3 counterpart; equatorial right ascension as reported in Table B1.",
+              "evidence": [
+                {
+                  "location": "T:p17-b0",
+                  "quote": "<tr><td>62</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+                }
+              ]
+            },
+            {
+              "value": "-30d47m53.38s",
+              "unit": "dms",
+              "condition": "ID 62 in the VIRAC2-only sample without a Gaia DR3 counterpart; equatorial declination as reported in Table B1.",
+              "evidence": [
+                {
+                  "location": "T:p17-b0",
+                  "quote": "<tr><td>62</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+                }
+              ]
+            }
+          ]
+        },
+        "coordinate_interpretations": {
+          "left": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          },
+          "right": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          }
+        },
+        "epoch_propagation": false,
+        "identity_conflicts": [
+          {
+            "left": "2401.05630v1#/stars/41",
+            "right": "2401.05630v1#/stars/65",
+            "source": "2401.05630v1",
+            "evidence": [
+              {
+                "location": "T:p16-b0",
+                "quote": "<td>38</td><td>17h40m49.56s</td><td>-29d05m33.27s</td>"
+              },
+              {
+                "location": "T:p17-b0",
+                "quote": "<td>62</td><td>17h47m18.44s</td><td>-30d47m53.38s</td>"
+              }
+            ],
+            "reason": "Nearby extracted coordinates conflict with distinct coordinates in the records' own identifier evidence rows; possible reused row coordinates. Original values are retained; this is an evidence contradiction, not a corrected position."
+          }
+        ],
+        "reason": "Source identity evidence conflicts: Nearby extracted coordinates conflict with distinct coordinates in the records' own identifier evidence rows; possible reused row coordinates. Original values are retained; this is an evidence contradiction, not a corrected position."
+      },
+      "accepted": false
+    }
+  ],
+  "simbad": {
+    "status": "matched",
+    "method": "coordinates",
+    "selected": {
+      "main_id": "2MASS J17471850-3047564",
+      "aliases": [
+        "2MASS J17471850-3047564",
+        "Gaia DR3 4055991128109479552"
+      ],
+      "position": {
+        "ra_deg": 266.827085384975,
+        "dec_deg": -30.79899185676472,
+        "frame": "icrs",
+        "equinox": null,
+        "evidence": []
+      },
+      "fields": {
+        "main_id": {
+          "value": "2MASS J17471850-3047564"
+        },
+        "nbref": {
+          "value": 1
+        },
+        "otype": {
+          "value": "LP?"
+        },
+        "ra": {
+          "value": 266.827085384975,
+          "unit": "deg"
+        },
+        "ra_prec": {
+          "value": 14
+        },
+        "dec": {
+          "value": -30.79899185676472,
+          "unit": "deg"
+        },
+        "dec_prec": {
+          "value": 14
+        },
+        "coo_err_maj": {
+          "value": 0.3172000050544739,
+          "unit": "mas"
+        },
+        "coo_err_maj_prec": {
+          "value": 4
+        },
+        "coo_err_min": {
+          "value": 0.24879999458789825,
+          "unit": "mas"
+        },
+        "coo_err_min_prec": {
+          "value": 4
+        },
+        "coo_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "coo_qual": {
+          "value": "A"
+        },
+        "coo_wavelength": {
+          "value": "O"
+        },
+        "coo_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "hpx": {
+          "value": 7377804
+        },
+        "pmra": {
+          "value": -3.279,
+          "unit": "mas / yr"
+        },
+        "pmra_prec": {
+          "value": 3
+        },
+        "pmdec": {
+          "value": -3.09,
+          "unit": "mas / yr"
+        },
+        "pmdec_prec": {
+          "value": 3
+        },
+        "pm_err_maj": {
+          "value": 0.3610000014305115,
+          "unit": "mas / yr"
+        },
+        "pm_err_maj_prec": {
+          "value": 3
+        },
+        "pm_err_min": {
+          "value": 0.23899999260902405,
+          "unit": "mas / yr"
+        },
+        "pm_err_min_prec": {
+          "value": 3
+        },
+        "pm_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "pm_qual": {
+          "value": "A"
+        },
+        "pm_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "plx_qual": {
+          "value": ""
+        },
+        "plx_bibcode": {
+          "value": ""
+        },
+        "rvz_type": {
+          "value": ""
+        },
+        "rvz_nature": {
+          "value": ""
+        },
+        "rvz_qual": {
+          "value": ""
+        },
+        "rvz_bibcode": {
+          "value": ""
+        },
+        "vlsr_wavelength": {
+          "value": ""
+        },
+        "vlsr_bibcode": {
+          "value": ""
+        },
+        "sp_type": {
+          "value": ""
+        },
+        "sp_qual": {
+          "value": ""
+        },
+        "sp_bibcode": {
+          "value": ""
+        },
+        "morph_type": {
+          "value": ""
+        },
+        "morph_qual": {
+          "value": ""
+        },
+        "morph_bibcode": {
+          "value": ""
+        },
+        "galdim_qual": {
+          "value": ""
+        },
+        "galdim_wavelength": {
+          "value": ""
+        },
+        "galdim_bibcode": {
+          "value": ""
+        },
+        "update_date": {
+          "value": "2023-10-06"
+        },
+        "otype_txt": {
+          "value": "LP?"
+        },
+        "rvz_wavelength": {
+          "value": ""
+        }
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "fields": {
+            "flux_err_prec": {
+              "value": 6
+            },
+            "flux_prec": {
+              "value": 6
+            },
+            "oidref": {
+              "value": 21693193
+            },
+            "filter": {
+              "value": "G"
+            },
+            "flux": {
+              "value": 19.083383560180664
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.004379000049084425
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2022yCat.1355....0G"
+            }
+          }
+        },
+        {
+          "band": "J",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 21693193
+            },
+            "filter": {
+              "value": "J"
+            },
+            "flux": {
+              "value": 12.10200023651123
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.02800000086426735
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2003yCat.2246....0C"
+            }
+          }
+        },
+        {
+          "band": "H",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 21693193
+            },
+            "filter": {
+              "value": "H"
+            },
+            "flux": {
+              "value": 10.151000022888184
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.027000000700354576
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2003yCat.2246....0C"
+            }
+          }
+        },
+        {
+          "band": "K",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 21693193
+            },
+            "filter": {
+              "value": "K"
+            },
+            "flux": {
+              "value": 9.295000076293945
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.026000000536441803
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2003yCat.2246....0C"
+            }
+          }
+        }
+      ]
+    },
+    "queries": [
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 266.82683333333335,
+            "dec_deg": -30.798161111111114,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "a88c5a78a8d14f6b9a6309c49a44fa031281e08c9079b4a743da1336b8f8e4cb",
+        "queried_at": "2026-10-24T06:01:40.369784+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2401.05630v1#/stars/65",
+            "position": {
+              "ra_deg": 266.82683333333335,
+              "dec_deg": -30.798161111111114,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "17h47m18.44s",
+                  "unit": "hms",
+                  "condition": "ID 62 in the VIRAC2-only sample without a Gaia DR3 counterpart; equatorial right ascension as reported in Table B1.",
+                  "evidence": [
+                    {
+                      "location": "T:p17-b0",
+                      "quote": "<tr><td>62</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+                    }
+                  ]
+                },
+                {
+                  "value": "-30d47m53.38s",
+                  "unit": "dms",
+                  "condition": "ID 62 in the VIRAC2-only sample without a Gaia DR3 counterpart; equatorial declination as reported in Table B1.",
+                  "evidence": [
+                    {
+                      "location": "T:p17-b0",
+                      "quote": "<tr><td>62</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ],
+    "matches": [
+      {
+        "main_id": "2MASS J17471850-3047564",
+        "method": "coordinates",
+        "separation_arcsec": 3.0905805104462525,
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        },
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 266.82683333333335,
+            "dec_deg": -30.798161111111114,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        }
+      }
+    ],
+    "bindings": [
+      {
+        "method": "coordinates",
+        "left": "2401.05630v1#/stars/65",
+        "right": "simbad:2MASS J17471850-3047564",
+        "details": {
+          "left_position": {
+            "ra_deg": 266.82683333333335,
+            "dec_deg": -30.798161111111114,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": [
+              {
+                "value": "17h47m18.44s",
+                "unit": "hms",
+                "condition": "ID 62 in the VIRAC2-only sample without a Gaia DR3 counterpart; equatorial right ascension as reported in Table B1.",
+                "evidence": [
+                  {
+                    "location": "T:p17-b0",
+                    "quote": "<tr><td>62</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+                  }
+                ]
+              },
+              {
+                "value": "-30d47m53.38s",
+                "unit": "dms",
+                "condition": "ID 62 in the VIRAC2-only sample without a Gaia DR3 counterpart; equatorial declination as reported in Table B1.",
+                "evidence": [
+                  {
+                    "location": "T:p17-b0",
+                    "quote": "<tr><td>62</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+                  }
+                ]
+              }
+            ]
+          },
+          "coordinate_interpretation": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          },
+          "right_position": {
+            "ra_deg": 266.827085384975,
+            "dec_deg": -30.79899185676472,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "separation_arcsec": 3.0905805104462525,
+          "threshold_arcsec": 5.0,
+          "epoch_propagation": false,
+          "selection": "nearest",
+          "query": {
+            "$ref": "#/simbad/queries/0"
+          },
+          "candidates": [
+            {
+              "$ref": "#/simbad/matches/0"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

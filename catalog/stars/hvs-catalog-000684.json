@@ -1,0 +1,143 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000684",
+  "display_name": "ID 44 (2401.05630)",
+  "sources": {
+    "2401.05630v1": {
+      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+      "authors": [
+        "A. Luna",
+        "T. Marchetti",
+        "M. Rejkuba",
+        "N. W. C. Leigh",
+        "J. Alonso-García",
+        "A. Valenzuela Navarro",
+        "D. Minniti",
+        "L. C. Smith"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "records": [
+        "/stars/47"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "ID 44",
+      "evidence": [
+        {
+          "location": "T:p16-b0",
+          "quote": "<td>44</td><td>17h44m41.96s</td><td>-30d50m34.58s</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p1-b13",
+          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+        },
+        {
+          "location": "T:p9-b10",
+          "quote": "65 were detected only in the VIRAC2 sample"
+        },
+        {
+          "location": "T:p17-b2",
+          "quote": "<td>44</td><td>17.11</td><td>11.39</td><td>3.29</td><td>929.66</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "17h44m41.96s",
+          "unit": "hms",
+          "condition": "VIRAC2-only star ID 44 (no Gaia DR3 counterpart) whose proper motion points away from a region within 0.5 deg of the GC; ICRS equatorial coordinates",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "44</td><td>17h44m41.96s</td><td>-30d50m34.58s</td><td>-1.7307</td><td>-0.8248</td><td>15.08</td><td>4.06</td>"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-30d50m34.58s",
+          "unit": "dms",
+          "condition": "VIRAC2-only star ID 44 (no Gaia DR3 counterpart) whose proper motion points away from a region within 0.5 deg of the GC; ICRS equatorial coordinates",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "44</td><td>17h44m41.96s</td><td>-30d50m34.58s</td><td>-1.7307</td><td>-0.8248</td><td>15.08</td><td>4.06</td>"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "11.39",
+          "unit": "kpc",
+          "condition": "Heliocentric distance from the RC photometric calibration (Table B2 derived parameters)",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "44</td><td>17.11</td><td>11.39</td><td>3.29</td><td>929.66</td><td>1668731</td><td>0.028</td><td>1.0</td>"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "3.29",
+          "unit": "kpc",
+          "condition": "Three-dimensional distance to the GC derived from the RC heliocentric distance assuming R0 = 8.122 kpc (Table B2 derived parameters)",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "44</td><td>17.11</td><td>11.39</td><td>3.29</td><td>929.66</td><td>1668731</td><td>0.028</td><td>1.0</td>"
+            },
+            {
+              "location": "T:p6-b4",
+              "quote": "we derive the distance with respect to the GC (r_GC) using Astropy"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T06:01:33.999028+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000684_provenance.json",
+    "sha256": "68ad7a0ca3e3f649370ea27cbeb6670955dcd345d420dfbc758dac335f6d7d58"
+  },
+  "warnings": [
+    "2401.05630v1#/stars/47/quantities/3/values/0/evidence/1: quote audit unknown at T:p6-b4; check the paper evidence."
+  ]
+}

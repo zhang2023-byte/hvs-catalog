@@ -1,0 +1,80 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000650",
+  "associations": [],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "queries": [
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 265.358125,
+            "dec_deg": -26.820241666666668,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "d385b2e851b00434ae34bd036f402132f2e4c8df33b6c7239b495f2593582dfe",
+        "queried_at": "2026-10-24T06:03:40.838474+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2401.05630v1#/stars/16",
+            "position": {
+              "ra_deg": 265.358125,
+              "dec_deg": -26.820241666666668,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "17h41m25.95s",
+                  "unit": "hms",
+                  "condition": "VIRAC2-only candidate HVS (no Gaia DR3 counterpart), equatorial coordinates from Table B1; J2000/ICRS",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "<tr><td>13</td><td>17h41m25.95s</td><td>-26d49m12.87s</td><td>1.3162</td><td>1.8978</td><td>14.14</td><td>1.99</td></tr>"
+                    },
+                    {
+                      "location": "I:p16-b0"
+                    }
+                  ]
+                },
+                {
+                  "value": "-26d49m12.87s",
+                  "unit": "dms",
+                  "condition": "VIRAC2-only candidate HVS (no Gaia DR3 counterpart), equatorial coordinates from Table B1; J2000/ICRS",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "<tr><td>13</td><td>17h41m25.95s</td><td>-26d49m12.87s</td><td>1.3162</td><td>1.8978</td><td>14.14</td><td>1.99</td></tr>"
+                    },
+                    {
+                      "location": "I:p16-b0"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "coordinate_conditions",
+              "frame_assumed": false,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

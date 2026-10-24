@@ -1,0 +1,137 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000036",
+  "display_name": "HVS2",
+  "sources": {
+    "0808.2469v2": {
+      "title": "MMT Hypervelocity Star Survey",
+      "authors": [
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/0808.2469v2",
+      "records": [
+        "/stars/1"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS2",
+      "evidence": [
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    },
+    {
+      "value": "US 708",
+      "evidence": [
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b11",
+          "quote": "a helium-rich subluminous O star leaving the"
+        },
+        {
+          "location": "T:p1-b11",
+          "quote": "Galaxy with a rest-frame velocity of at least +717 km"
+        },
+        {
+          "location": "I:p6-b0"
+        }
+      ],
+      "source": "0808.2469v2"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "708",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity v⊙ listed in Table 1 (HVS2 = US 708, sdO star)",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "heliocentric radial velocityv"
+            },
+            {
+              "location": "T:p1-b11",
+              "quote": "Hirsch et al. (2005) reported a helium-rich subluminous O star leaving the Galaxy with a rest-frame velocity of at least +717 km"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "26",
+          "unit": "kpc",
+          "condition": "Galactocentric distance R_GC from Table 1",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "lower_bound": "717",
+          "unit": "km/s",
+          "condition": "Minimum Galactic rest-frame velocity v_rf from radial velocity only (not a full space velocity); reported as 'at least +717 km/s'",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p1-b11",
+              "quote": "reported a helium-rich subluminous O star leaving the Galaxy with a rest-frame velocity of at least +717 km"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "minimum Galactic rest-frame velocityv"
+            }
+          ],
+          "source": "0808.2469v2"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000036_provenance.json",
+    "sha256": "22c8a03dc756a14ec15029d9b9deb56c38c65bbf68b269c8cb5dd1d5860b8767"
+  },
+  "warnings": [
+    "0808.2469v2#/stars/1/quantities/0/values/0/evidence/1: quote audit unknown at T:p7-b6; check the paper evidence.",
+    "0808.2469v2#/stars/1/quantities/2/values/0/evidence/2: quote audit unknown at T:p7-b6; check the paper evidence."
+  ]
+}

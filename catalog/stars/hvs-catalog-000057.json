@@ -1,0 +1,87 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000057",
+  "display_name": "HVS3",
+  "sources": {
+    "0811.0571v1": {
+      "title": "Hypervelocity Stars and the Galactic Center",
+      "authors": [
+        "Warren R. Brown"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/0811.0571v1",
+      "records": [
+        "/stars/14"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "HVS3",
+      "evidence": [
+        {
+          "location": "T:p6-b4",
+          "quote": "HVS3, the unbound star very near the LMC, has received considerable attention."
+        },
+        {
+          "location": "T:p5-b6",
+          "quote": "HVS3 is a 9\\mathrm { M _ { \\odot } }B star (Bonanos et al. 2008; Przybilla et al. 2008b)"
+        }
+      ],
+      "source": "0811.0571v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p4-b4",
+          "quote": "Edelmann et al. (2005) reported an 9\\mathrm { M _ { \\odot } }main sequence B star with a Galactic rest frame velocity\nof at least +548 km s<sup>−1</sup>, possibly ejected from the Large Magellanic Cloud (LMC)."
+        },
+        {
+          "location": "T:p6-b4",
+          "quote": "HVS3, the unbound star very near the LMC, has received considerable attention."
+        }
+      ],
+      "source": "0811.0571v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "lower_bound": "+548",
+          "lower_inclusive": true,
+          "unit": "km/s",
+          "condition": "Galactic rest-frame velocity reported for the 9 Msun B star identified as HVS3; 'at least' gives a lower limit. The paper describes this as a rest-frame/line-of-sight velocity, so it is retained as a lower bound on the star's Galactic-rest-frame speed. Possibly ejected from the LMC.",
+          "evidence": [
+            {
+              "location": "T:p4-b4",
+              "quote": "with a Galactic rest frame velocity\nof at least +548 km s<sup>−1</sup>, possibly ejected from the Large Magellanic Cloud (LMC)."
+            },
+            {
+              "location": "T:p6-b4",
+              "quote": "HVS3 is a 9\\mathrm { M _ { \\odot } }B star of half-solar abundance, a good match to the abundance of the LMC"
+            }
+          ],
+          "source": "0811.0571v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000057_provenance.json",
+    "sha256": "0de07df67ab1e65d4e3cf63c0c8d0521356d4b10dd89e89d411f7c8a7240afed"
+  },
+  "warnings": [
+    "0811.0571v1#/stars/14/identifiers/0/evidence/0: quote audit unknown at T:p6-b4; check the paper evidence.",
+    "0811.0571v1#/stars/14/identifiers/0/evidence/1: quote audit unknown at T:p5-b6; check the paper evidence.",
+    "0811.0571v1#/stars/14/contribution_type/evidence/1: quote audit unknown at T:p6-b4; check the paper evidence."
+  ]
+}

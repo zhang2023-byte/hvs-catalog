@@ -1,0 +1,160 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000651",
+  "display_name": "ID 14 (2401.05630)",
+  "sources": {
+    "2401.05630v1": {
+      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+      "authors": [
+        "A. Luna",
+        "T. Marchetti",
+        "M. Rejkuba",
+        "N. W. C. Leigh",
+        "J. Alonso-García",
+        "A. Valenzuela Navarro",
+        "D. Minniti",
+        "L. C. Smith"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "records": [
+        "/stars/17"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "ID 14",
+      "evidence": [
+        {
+          "location": "T:p16-b0",
+          "quote": "<td>14</td><td>17h42m14.52s</td><td>-27d48m39.42s</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p1-b13",
+          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+        },
+        {
+          "location": "T:p9-b10",
+          "quote": "65 were detected only in the VIRAC2 sample"
+        },
+        {
+          "location": "T:p17-b2",
+          "quote": "<td>14</td><td>18.24</td><td>10.77</td><td>2.65</td><td>947.92</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "17h42m14.52s",
+          "unit": "hourangle",
+          "condition": "Equatorial right ascension from the VIRAC2-only candidate list (Table B1); no epoch is specified.",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<td>14</td><td>17h42m14.52s</td><td>-27d48m39.42s</td><td>0.5691</td><td>1.2225</td><td>14.02</td><td>1.92</td>"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-27d48m39.42s",
+          "unit": "deg",
+          "condition": "Equatorial declination from the VIRAC2-only candidate list (Table B1); no epoch is specified.",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<td>14</td><td>17h42m14.52s</td><td>-27d48m39.42s</td><td>0.5691</td><td>1.2225</td><td>14.02</td><td>1.92</td>"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "10.77",
+          "unit": "kpc",
+          "condition": "Heliocentric distance derived from the red clump photometric calibration (Table B2).",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "<td>14</td><td>18.24</td><td>10.77</td><td>2.65</td><td>947.92</td><td>1136668</td><td>0.31</td><td>1.0</td>"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "2.65",
+          "unit": "kpc",
+          "condition": "Galactocentric distance r_GC derived using R0 = 8.122 kpc (Table B2).",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "<td>14</td><td>18.24</td><td>10.77</td><td>2.65</td><td>947.92</td><td>1136668</td><td>0.31</td><td>1.0</td>"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "1.0",
+          "unit": "dimensionless",
+          "condition": "P from Table B2, the probability of exceeding the escape velocity, P = V_tan,16th(r_GC)/V_esc(r_GC) using the galpy Irrgang13III potential; not a full dynamical bound/unbound calculation including radial velocity.",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "<td>14</td><td>18.24</td><td>10.77</td><td>2.65</td><td>947.92</td><td>1136668</td><td>0.31</td><td>1.0</td>"
+            },
+            {
+              "location": "T:p18-b0",
+              "quote": "The last column is the probability of exceeding the escape velocity"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T06:04:07.053823+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000651_provenance.json",
+    "sha256": "c85b107b2c32732ba44095ded308d87ef1d53ee6828001a7daeeac961613de2e"
+  },
+  "warnings": [
+    "Coordinate reference frame was not reported; ICRS was assumed for matching."
+  ]
+}

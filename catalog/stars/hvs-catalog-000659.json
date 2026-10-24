@@ -1,0 +1,143 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000659",
+  "display_name": "ID 21 (2401.05630)",
+  "sources": {
+    "2401.05630v1": {
+      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+      "authors": [
+        "A. Luna",
+        "T. Marchetti",
+        "M. Rejkuba",
+        "N. W. C. Leigh",
+        "J. Alonso-García",
+        "A. Valenzuela Navarro",
+        "D. Minniti",
+        "L. C. Smith"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "records": [
+        "/stars/24"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "ID 21",
+      "evidence": [
+        {
+          "location": "T:p16-b0",
+          "quote": "<td>21</td><td>17h42m12.50s</td><td>-28d57m57.80s</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p1-b13",
+          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+        },
+        {
+          "location": "T:p9-b10",
+          "quote": "65 were detected only in the VIRAC2 sample"
+        },
+        {
+          "location": "T:p17-b2",
+          "quote": "<td>21</td><td>14.3</td><td>11.39</td><td>3.27</td><td>774.61</td>"
+        }
+      ],
+      "source": "2401.05630v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "17h42m12.50s",
+          "unit": "hms",
+          "condition": "VIRAC2-only red sample with no Gaia DR3 counterpart; ID 21 equatorial right ascension from Table B1",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "21 17h42m12.50s -28d57m57.80s -0.4166 0.62 14.58 2.79"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-28d57m57.80s",
+          "unit": "dms",
+          "condition": "VIRAC2-only red sample with no Gaia DR3 counterpart; ID 21 equatorial declination from Table B1",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "21 17h42m12.50s -28d57m57.80s -0.4166 0.62 14.58 2.79"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "11.39",
+          "unit": "kpc",
+          "condition": "Heliocentric distance derived from the red clump photometric calibration for VIRAC2-only ID 21",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "21 14.3 11.39 3.27 774.61 711158 0.209 0.95"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "3.27",
+          "unit": "kpc",
+          "condition": "Galactocentric distance r_GC derived for VIRAC2-only ID 21 using the adopted Galactic-center and Solar parameters",
+          "evidence": [
+            {
+              "location": "T:p17-b2",
+              "quote": "21 14.3 11.39 3.27 774.61 711158 0.209 0.95"
+            }
+          ],
+          "source": "2401.05630v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-24T06:03:53.684123+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000659_provenance.json",
+    "sha256": "34cabeb8d5a8bcb50b6496ec6f1526081f0bb69a75fc93ca0172888a8e4d253f"
+  },
+  "warnings": [
+    "Coordinate reference frame was not reported; ICRS was assumed for matching.",
+    "2401.05630v1#/stars/24/quantities/0/values/0/evidence/0: quote audit unknown at T:p16-b0; check the paper evidence.",
+    "2401.05630v1#/stars/24/quantities/1/values/0/evidence/0: quote audit unknown at T:p16-b0; check the paper evidence.",
+    "2401.05630v1#/stars/24/quantities/2/values/0/evidence/0: quote audit unknown at T:p17-b2; check the paper evidence.",
+    "2401.05630v1#/stars/24/quantities/3/values/0/evidence/0: quote audit unknown at T:p17-b2; check the paper evidence."
+  ]
+}

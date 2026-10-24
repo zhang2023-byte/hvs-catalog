@@ -1,0 +1,87 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000190",
+  "associations": [],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing.",
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "NLTT 309-34",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "fae36c49ef3a996d9579486b0c369795fd86fb2b98891d232505a2aa57ce207e",
+        "queried_at": "2026-10-24T04:51:40.255037+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null
+      },
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 115.63816,
+            "dec_deg": 32.409389,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": null,
+        "queried_at": null,
+        "client_version": null,
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "1405.7760v1#/stars/2",
+            "position": {
+              "ra_deg": 115.63816,
+              "dec_deg": 32.409389,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "115.63816",
+                  "unit": "deg",
+                  "condition": "LMST_HVS3/J074233.15+322433.8; basic catalog position (Table 1; also listed in Table 2)",
+                  "evidence": [
+                    {
+                      "location": "T:p5-b0",
+                      "quote": "J074233.15+322433.8</td><td>115.63816</td><td>32.409389</td>"
+                    }
+                  ]
+                },
+                {
+                  "value": "32.409389",
+                  "unit": "deg",
+                  "condition": "LMST_HVS3/J074233.15+322433.8; basic catalog position (Table 1; also listed in Table 2)",
+                  "evidence": [
+                    {
+                      "location": "T:p5-b0",
+                      "quote": "J074233.15+322433.8</td><td>115.63816</td><td>32.409389</td>"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

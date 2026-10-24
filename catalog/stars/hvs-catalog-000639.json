@@ -1,0 +1,110 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000639",
+  "display_name": "J1332−3541",
+  "sources": {
+    "2311.13388v1": {
+      "title": "The photospheres of the hottest fastest stars in the Galaxy",
+      "authors": [
+        "Klaus Werner",
+        "Nicole Reindl",
+        "Thomas Rauch",
+        "Kareem El-Badry",
+        "Antoine Bédard"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2311.13388v1",
+      "records": [
+        "/stars/2"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "J1332−3541",
+      "evidence": [
+        {
+          "location": "T:p7-b6",
+          "quote": "E23 obtained a spectrum for J1332−3541 on MJD 60054.52 with"
+        }
+      ],
+      "source": "2311.13388v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b9",
+          "quote": "We perform nonlocal thermodynamic equilibrium (NLTE) model atmosphere analyses of the three hottest hypervelocity stars (space\nvelocities between ≈ 1500–2800 km s<sup>−1</sup>) known to date, which were recently discovered spectroscopically and identified as runaways\nfrom Type Ia supernovae."
+        },
+        {
+          "location": "T:p1-b14",
+          "quote": "El-Badry et al. (2023, hereafter E23) reported the discovery of\nfour hypervelocity WDs that appear to be hotter and smaller"
+        },
+        {
+          "location": "T:p8-b7",
+          "quote": "We performed detailed line identifications and NLTE spectral\nanalyses of the three hottest hypervelocity stars discovered spec-\ntroscopically and characterized preliminarily by E23."
+        }
+      ],
+      "source": "2311.13388v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "1.09",
+          "lower_error": "0.11",
+          "upper_error": "0.12",
+          "unit": "kpc",
+          "condition": "Spectroscopic distance from SED fit",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "d (kpc) (SED fit)</td><td>15<eq>_{-8}^{+4}</eq></td><td>2.5 ± 0.9</td><td>1.09<eq>_{-0.11}^{+0.12}</eq>"
+            },
+            {
+              "location": "T:p8-b3",
+              "quote": "we deriveE ( B - V ) = 0 . 0 3 8mag and a spectroscopic distance of 1 . 0 9 _ { - 0 . 1 1 } ^ { + 0 . 1 2 } kpc"
+            },
+            {
+              "location": "I:p8-b0"
+            }
+          ],
+          "source": "2311.13388v1"
+        },
+        {
+          "value": "1.63",
+          "lower_error": "0.68",
+          "upper_error": "1.19",
+          "unit": "kpc",
+          "condition": "Gaia distance determined by E23 assuming a flat prior on M_G,0",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "d (kpc) (Gaia)</td><td>4.0<eq>_{-1.7}^{+2.3}</eq></td><td>4.5<eq>_{-1.7}^{+2.2}</eq></td><td>1.63<eq>_{-0.68}^{+1.19}</eq>"
+            },
+            {
+              "location": "I:p8-b0"
+            }
+          ],
+          "source": "2311.13388v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000639_provenance.json",
+    "sha256": "47fe209d644ef4c375688f4ee55467f231913b022028ff19d7d997862d061455"
+  },
+  "warnings": [
+    "2311.13388v1#/stars/2/quantities/0/values/0/evidence/1: quote audit unknown at T:p8-b3; check the paper evidence."
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "metadata": {
+    "arxiv_id": "2507.19751",
+    "version": "v2",
+    "title": "Phase II of the LAMOST-Kepler/K2 Survey. II. Time Domain of Medium-resolution Spectroscopic Observations from 2018 to 2023",
+    "authors": [
+      "Mingfeng Qin",
+      "Jian-Ning Fu",
+      "Weikai Zong",
+      "Peter De Cat",
+      "Antonio Frasca",
+      "Tianqi Cang",
+      "Jiangtao Wang",
+      "Jianrong Shi",
+      "Ali Luo",
+      "Haotong Zhang",
+      "Hongliang Yan",
+      "J. Molenda- Żakowicz",
+      "R. O. Gray",
+      "Jiaxin Wang"
+    ]
+  },
+  "stars": [
+    {
+      "identifiers": [
+        {
+          "value": "KIC 7881304",
+          "evidence": [
+            {
+              "location": "T:p11-b6",
+              "quote": "This star, known as KIC 7881304, has been classified as a long-period variable by Yu et al. (2020)."
+            }
+          ]
+        },
+        {
+          "value": "EPIC 220496220",
+          "evidence": [
+            {
+              "location": "I:p17-b4"
+            }
+          ]
+        },
+        {
+          "value": "G17065374200707",
+          "evidence": [
+            {
+              "location": "I:p17-b4"
+            }
+          ]
+        }
+      ],
+      "contribution_type": {
+        "value": "candidates_found",
+        "evidence": [
+          {
+            "location": "T:p11-b6",
+            "quote": "Based on this, we consider KIC 7881304 a possible unbound high-velocity candidate."
+          },
+          {
+            "location": "T:p14-b4",
+            "quote": "Using the Galactic escape velocity curve, we identified one high-velocity star candidate that is not gravitationally bound to the Milky Way and 29 high-velocity star candidates that are bound."
+          },
+          {
+            "location": "I:p17-b4"
+          }
+        ]
+      },
+      "quantities": [
+        {
+          "quantity": "ra",
+          "values": [
+            {
+              "value": "13.10688",
+              "unit": "deg",
+              "condition": "J2000.0 right ascension listed in Table 5 for uid G17065374200707 / EPIC 220496220, the unbound high-velocity candidate.",
+              "evidence": [
+                {
+                  "location": "T:p17-b4",
+                  "quote": "G17065374200707</td><td>220496220</td><td>13.10688</td><td>6.68008</td><td>215.77</td><td>374.40</td><td>unbound"
+                },
+                {
+                  "location": "I:p17-b4"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "dec",
+          "values": [
+            {
+              "value": "6.68008",
+              "unit": "deg",
+              "condition": "J2000.0 declination listed in Table 5 for uid G17065374200707 / EPIC 220496220, the unbound high-velocity candidate.",
+              "evidence": [
+                {
+                  "location": "T:p17-b4",
+                  "quote": "G17065374200707</td><td>220496220</td><td>13.10688</td><td>6.68008</td><td>215.77</td><td>374.40</td><td>unbound"
+                },
+                {
+                  "location": "I:p17-b4"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "radial_velocity",
+          "values": [
+            {
+              "value": "215.77",
+              "unit": "km/s",
+              "condition": "Heliocentric radial velocity listed in Table 5 for uid G17065374200707 / EPIC 220496220; no uncertainty is given in the table excerpt.",
+              "evidence": [
+                {
+                  "location": "T:p17-b4",
+                  "quote": "G17065374200707</td><td>220496220</td><td>13.10688</td><td>6.68008</td><td>215.77</td><td>374.40</td><td>unbound"
+                },
+                {
+                  "location": "I:p17-b4"
+                }
+              ]
+            },
+            {
+              "lower_bound": "181.8",
+              "upper_bound": "349.2",
+              "unit": "km/s",
+              "condition": "Reported range of radial velocities from seven LAMOST-MRS spectra of KIC 7881304; the paper describes the star as RV-variable.",
+              "evidence": [
+                {
+                  "location": "T:p11-b6",
+                  "quote": "Seven LAMOST-MRS spectra indicate a variable RV ranging from 181.8 km\\mathrm { \\Omega } / \\mathrm { s }to 349.2 km/s."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "quantity": "galactic_rest_frame_velocity",
+          "values": [
+            {
+              "value": "374.40",
+              "unit": "km/s",
+              "condition": "V_gc tabulated in Table 5 for uid G17065374200707 / EPIC 220496220; the star is labeled unbound. The Table 5 note calls column 7 the Galactic standard-of-rest velocity, while the text defines V_G as the total velocity from U, V, W.",
+              "evidence": [
+                {
+                  "location": "T:p17-b4",
+                  "quote": "G17065374200707</td><td>220496220</td><td>13.10688</td><td>6.68008</td><td>215.77</td><td>374.40</td><td>unbound"
+                },
+                {
+                  "location": "I:p17-b4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "KIC 7881304: The prose explicitly calls this star a possible unbound high-velocity candidate (T:p11-b6) and the summary retains one unbound high-velocity candidate (T:p14-b4). The sole \"unbound\" row visible in Table 5 is uid G17065374200707 / KIC/EPIC 220496220 (I:p17-b4), but the paper does not explicitly cross-identify that row with KIC 7881304, and the table lists Times=8 whereas the text describes seven RV spectra. I group them as the paper's single unbound candidate while flagging the identifier inconsistency. The 29 high-velocity stars explicitly labeled bound are excluded.",
+    "KIC 7881304: The target appears as KIC 7881304 in the text (T:p11-b6), where it is described as the single unbound high-velocity candidate, and as uid G17065374200707 / EPIC 220496220 in the unbound row of Table 5 (T:p17-b4, I:p17-b4); I treated these as the same star because the supplied identifiers link them and the unbound label matches. The text reports seven spectra with an RV range of 181.8–349.2 km/s, whereas Table 5 gives Times=8 and RV=215.77 km/s. The tabulated V_gc=374.40 km/s also does not match the ~580 km/s weighted V_GC value indicated in Figure 8 (I:p12-b0), and Table 5's note describes column 7 as the Galactic standard-of-rest velocity. I therefore report the tabulated point values and the text's RV interval separately rather than reconciling them. No numerical bound/unbound probability is reported."
+  ]
+}

@@ -1,0 +1,366 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000268",
+  "display_name": "V* MT Tel",
+  "sources": {
+    "1704.07990v2": {
+      "title": "An artificial neural network to discover Hypervelocity stars: Candidates in Gaia DR1/TGAS",
+      "authors": [
+        "T. Marchetti",
+        "E. M. Rossi",
+        "G. Kordopatis",
+        "A. G. A. Brown",
+        "A. Rimoldi",
+        "E. Starkenburg",
+        "K. Youakim",
+        "R. Ashley"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1704.07990v2",
+      "records": [
+        "/stars/2"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "TYC 8374-757-1",
+      "evidence": [
+        {
+          "location": "T:p13-b9",
+          "quote": "TYC 8374-757-1 (HD 176387, MT Tel)"
+        }
+      ],
+      "source": "1704.07990v2"
+    },
+    {
+      "value": "HD 176387",
+      "evidence": [
+        {
+          "location": "T:p13-b9",
+          "quote": "TYC 8374-757-1 (HD 176387, MT Tel)"
+        }
+      ],
+      "source": "1704.07990v2"
+    },
+    {
+      "value": "MT Tel",
+      "evidence": [
+        {
+          "location": "T:p13-b9",
+          "quote": "TYC 8374-757-1 (HD 176387, MT Tel)"
+        }
+      ],
+      "source": "1704.07990v2"
+    },
+    {
+      "value": "HIP 93476",
+      "evidence": [
+        {
+          "location": "I:p16-b45"
+        }
+      ],
+      "source": "1704.07990v2"
+    },
+    {
+      "value": "Gaia DR1 6662886601414152448",
+      "evidence": [
+        {
+          "location": "I:p16-b45"
+        }
+      ],
+      "source": "1704.07990v2"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p13-b9",
+          "quote": "making MT Tel a hyper-runaway star candidate"
+        },
+        {
+          "location": "I:p12-b2"
+        }
+      ],
+      "source": "1704.07990v2"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "71.8",
+          "lower_error": "3.7",
+          "upper_error": "3.7",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity (HRV) from Table 2 for the runaway-star candidate TYC 8374-757-1; quoted symmetric uncertainty does not include the table-note velocity floor.",
+          "evidence": [
+            {
+              "location": "T:p12-b2",
+              "quote": "8374-757-1</td><td>71.8 ± 3.7</td><td></td><td>832+338-179</td><td></td><td>532+284-147</td><td></td><td>50.4%</td><td></td><td>8</td>"
+            },
+            {
+              "location": "I:p12-b2"
+            }
+          ],
+          "source": "1704.07990v2"
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "832",
+          "lower_error": "179",
+          "upper_error": "338",
+          "unit": "pc",
+          "condition": "Parallax-inferred distance d from the Bayesian/MCMC estimate using the Milky Way prior; median with 16th and 84th percentile uncertainties (Table 2).",
+          "evidence": [
+            {
+              "location": "T:p12-b2",
+              "quote": "8374-757-1</td><td>71.8 ± 3.7</td><td></td><td>832+338-179</td><td></td><td>532+284-147</td><td></td><td>50.4%</td><td></td><td>8</td>"
+            },
+            {
+              "location": "I:p12-b2"
+            }
+          ],
+          "source": "1704.07990v2"
+        },
+        {
+          "value": "∼8.1",
+          "unit": "mag",
+          "condition": "Distance modulus inferred from the PLZ relation in the WISE W1 band (Sesar et al. 2017) using period, [Fe/H], and [3.6] data from Monson et al. (2017); reported as consistent with the Gaia parallax.",
+          "evidence": [
+            {
+              "location": "T:p13-b9",
+              "quote": "We find a distance modulus ∼ 8 1, consistent with the parallax from Gaia, confirming our high-velocity determination."
+            }
+          ],
+          "source": "1704.07990v2"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "532",
+          "lower_error": "147",
+          "upper_error": "284",
+          "unit": "km/s",
+          "condition": "Median total velocity in the Galactic rest frame v_GC from Monte Carlo realizations using the parallax-inferred distance; uncertainties are the 16th and 84th percentiles. Target is classified as a hyper-runaway star candidate.",
+          "evidence": [
+            {
+              "location": "T:p12-b2",
+              "quote": "8374-757-1</td><td>71.8 ± 3.7</td><td></td><td>832+338-179</td><td></td><td>532+284-147</td><td></td><td>50.4%</td><td></td><td>8</td>"
+            },
+            {
+              "location": "I:p12-b2"
+            }
+          ],
+          "source": "1704.07990v2"
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "50.4",
+          "unit": "%",
+          "condition": "P^u, the fraction of Monte Carlo realizations with v_GC(d) > v_esc(d), using the parallax-inferred distance; listed for the runaway-star candidate TYC 8374-757-1.",
+          "evidence": [
+            {
+              "location": "T:p12-b2",
+              "quote": "8374-757-1</td><td>71.8 ± 3.7</td><td></td><td>832+338-179</td><td></td><td>532+284-147</td><td></td><td>50.4%</td><td></td><td>8</td>"
+            },
+            {
+              "location": "I:p12-b2"
+            }
+          ],
+          "source": "1704.07990v2"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "V* MT Tel",
+      "aliases": [
+        "2MASS J19021227-4639120",
+        "ASAS J190212-4639.2",
+        "CD-46 12764",
+        "CPC  0 17877",
+        "CPD-46  9578",
+        "CSV   8079",
+        "GCRV  6440 E",
+        "GEN# +1.00176387",
+        "GSC 08374-00757",
+        "Gaia DR2 6662886605712648832",
+        "Gaia DR3 6662886605712648832",
+        "HD 176387",
+        "HIC  93476",
+        "HIP 93476",
+        "PPM 324700",
+        "SAO 229444",
+        "SV* BV   588",
+        "SV* SON  7452",
+        "TIC 143765469",
+        "TYC 8374-757-1",
+        "V* MT Tel",
+        "WEB 16223",
+        "uvby98 100176387"
+      ],
+      "object_type": "RR*",
+      "coordinates": {
+        "ra": {
+          "value": 285.5511635671829,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": -46.65335660807889,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.024399999529123306,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.026200000196695328,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -138.766,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -116.22,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.028999999165534973,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.028999999165534973,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 2.0426,
+        "unit": "mas",
+        "error": 0.03009999915957451,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": 66.43,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": 0.00022161118419794512
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 0.14000000059604645,
+          "unit": "km / s"
+        },
+        "quality": "A",
+        "bibcode": "2021ApJ...919...85B",
+        "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "A5II-IIIkA0mA0",
+        "quality": "C",
+        "bibcode": "2020MNRAS.499.2701M"
+      },
+      "photometry": [
+        {
+          "band": "J",
+          "value": 8.387999534606934,
+          "error": 0.024000000208616257,
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 8.222999572753906,
+          "error": 0.04600000008940697,
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "K",
+          "value": 8.130999565124512,
+          "error": 0.028999999165534973,
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "V",
+          "value": 8.9399995803833,
+          "error": 0.019999999552965164,
+          "system": "V",
+          "bibcode": "2000A&A...355L..27H",
+          "quality": "D"
+        },
+        {
+          "band": "B",
+          "value": 9.140000343322754,
+          "error": 0.019999999552965164,
+          "system": "V",
+          "bibcode": "2000A&A...355L..27H",
+          "quality": "D"
+        },
+        {
+          "band": "G",
+          "value": 8.974433898925781,
+          "error": 0.011467999778687954,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "HD 176387",
+        "HIP 93476",
+        "TYC 8374-757-1"
+      ]
+    },
+    "last_queried_at": "2026-10-24T04:54:16.666183+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000268_provenance.json",
+    "sha256": "056e8b547b12d3c55b5fb80c4bc44424c776a6748ba2219437cb8a673d0adace"
+  },
+  "warnings": []
+}

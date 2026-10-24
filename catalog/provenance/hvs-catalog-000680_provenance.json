@@ -1,0 +1,80 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000680",
+  "associations": [],
+  "simbad": {
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "queries": [
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 265.46304166666664,
+            "dec_deg": -29.685555555555556,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "a30ea2e98682ff94354231e4e16a4110e2d385b21dfd0c93ec5bde30179fa540",
+        "queried_at": "2026-10-24T06:03:44.524766+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2401.05630v1#/stars/43",
+            "position": {
+              "ra_deg": 265.46304166666664,
+              "dec_deg": -29.685555555555556,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "17h41m51.13s",
+                  "unit": "hourangle",
+                  "condition": "VIRAC2-only star (no Gaia DR3 counterpart) with VIRAC2 proper motion pointing away from 0.5 deg around the GC; Table B1 entry ID 40",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "40</td><td>17h41m51.13s</td><td>-29d41m08.00s</td><td>-1.0688</td><td>0.3063</td><td>15.06</td><td>3.91"
+                    },
+                    {
+                      "location": "I:p16-b0"
+                    }
+                  ]
+                },
+                {
+                  "value": "-29d41m08.00s",
+                  "unit": "deg",
+                  "condition": "VIRAC2-only star (no Gaia DR3 counterpart) with VIRAC2 proper motion pointing away from 0.5 deg around the GC; Table B1 entry ID 40",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "17h41m51.13s</td><td>-29d41m08.00s</td><td>-1.0688</td><td>0.3063</td><td>15.06</td><td>3.91"
+                    },
+                    {
+                      "location": "I:p16-b0"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,390 @@
+{
+  "schema_version": 4,
+  "data_version": "2026-10-24-display-names",
+  "catalog_id": "hvs-catalog-000640",
+  "display_name": "UCAC3 91-182836",
+  "sources": {
+    "2401.02017v1": {
+      "title": "The origin of High-velocity stars considering the impact of the Large Magellanic Cloud",
+      "authors": [
+        "Jiwei Liao",
+        "Cuihua Du",
+        "Mingji Deng",
+        "Dashuang Ye",
+        "Hefan Li",
+        "Yang Huang",
+        "Jianrong Shi",
+        "Jun Ma"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2401.02017v1",
+      "records": [
+        "/stars/4"
+      ]
+    }
+  },
+  "identifiers": [
+    {
+      "value": "Gaia DR3 6098873935647575552",
+      "evidence": [
+        {
+          "location": "T:p7-b1",
+          "quote": "<tr><td>6098873935647575552</td><td>220.6411</td><td>-44.5675</td><td>163 ± 1</td><td>10.72+1.98-1.43</td><td>582+147-106</td><td>0.530</td><td>0.999</td><td>345+200-145</td></tr>"
+        }
+      ],
+      "source": "2401.02017v1"
+    }
+  ],
+  "contribution_types": [
+    {
+      "value": "candidates_found",
+      "evidence": [
+        {
+          "location": "T:p7-b1",
+          "quote": "Table 2. Basic parameters for the 9 unbound candidates"
+        },
+        {
+          "location": "T:p7-b1",
+          "quote": "<tr><td>6098873935647575552</td><td>220.6411</td><td>-44.5675</td><td>163 ± 1</td><td>10.72+1.98-1.43</td><td>582+147-106</td><td>0.530</td><td>0.999</td><td>345+200-145</td></tr>"
+        }
+      ],
+      "source": "2401.02017v1"
+    }
+  ],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "220.6411",
+          "unit": "deg",
+          "condition": "Gaia DR3 position (ICRS at Epoch 2016.0), from Table 2 of unbound candidates",
+          "evidence": [
+            {
+              "location": "T:p7-b1",
+              "quote": "6098873935647575552"
+            },
+            {
+              "location": "I:p7-b1"
+            }
+          ],
+          "source": "2401.02017v1"
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-44.5675",
+          "unit": "deg",
+          "condition": "Gaia DR3 position (ICRS at Epoch 2016.0), from Table 2 of unbound candidates",
+          "evidence": [
+            {
+              "location": "T:p7-b1",
+              "quote": "220.6411"
+            },
+            {
+              "location": "I:p7-b1"
+            }
+          ],
+          "source": "2401.02017v1"
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "10.72",
+          "lower_error": "1.43",
+          "upper_error": "1.98",
+          "unit": "kpc",
+          "condition": "Heliocentric distance from Bayesian analysis with generalized Gamma prior (Du et al. 2019)",
+          "evidence": [
+            {
+              "location": "T:p7-b1",
+              "quote": "10.72+1.98-1.43"
+            },
+            {
+              "location": "I:p7-b1"
+            }
+          ],
+          "source": "2401.02017v1"
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "163",
+          "error": "1",
+          "unit": "km/s",
+          "condition": "Corrected weighted mean radial velocity from spectroscopic surveys (Equation 1)",
+          "evidence": [
+            {
+              "location": "T:p7-b1",
+              "quote": "163 ± 1"
+            },
+            {
+              "location": "I:p7-b1"
+            }
+          ],
+          "source": "2401.02017v1"
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "582",
+          "lower_error": "106",
+          "upper_error": "147",
+          "unit": "km/s",
+          "condition": "Total velocity in the Galactocentric rest frame (nu_GC), Gala MilkyWayPotential",
+          "evidence": [
+            {
+              "location": "T:p7-b1",
+              "quote": "582+147-106"
+            },
+            {
+              "location": "I:p7-b1"
+            },
+            {
+              "location": "T:p4-b3",
+              "quote": "The HiVels sample is defined as stars with total velocities\\left( \\nu _ { \\mathrm { G C } } \\right)in the Galactocentric restframe"
+            }
+          ],
+          "source": "2401.02017v1"
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.530",
+          "unit": "dimensionless",
+          "condition": "P_ub, probability of exceeding the Galactic escape velocity curve under the Gala MilkyWayPotential (unbound candidate, P_ub > 0.5)",
+          "evidence": [
+            {
+              "location": "T:p7-b1",
+              "quote": "0.530"
+            },
+            {
+              "location": "I:p7-b1"
+            },
+            {
+              "location": "T:p7-b0",
+              "quote": "P _ { \\mathrm { u b } }"
+            }
+          ],
+          "source": "2401.02017v1"
+        }
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "UCAC3 91-182836",
+      "aliases": [
+        "2MASS J14423387-4434027",
+        "DENIS J144233.8-443402",
+        "Gaia DR2 6098873935647575552",
+        "Gaia DR3 6098873935647575552",
+        "PPMX J144233.8-443402",
+        "RAVE J144233.9-443403",
+        "TIC 129184987",
+        "UCAC3 91-182836",
+        "UCAC4 228-082807",
+        "USNO-B1.0 0454-00360324",
+        "WISE J144233.87-443402.8",
+        "WISEA J144233.86-443402.8"
+      ],
+      "object_type": "*",
+      "coordinates": {
+        "ra": {
+          "value": 220.64116514252,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": -44.56745698554,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.009999999776482582,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.011699999682605267,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -14.519,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -4.909,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.01600000075995922,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.01600000075995922,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.0872,
+        "unit": "mas",
+        "error": 0.016200000420212746,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": 163.54,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": 0.0005456595934609787
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 0.6700000166893005,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "A",
+        "bibcode": "2018yCat.1345....0G",
+        "wavelength": "O"
+      },
+      "photometry": [
+        {
+          "band": "J",
+          "value": 10.145000457763672,
+          "error": 0.024000000208616257,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 9.32699966430664,
+          "error": 0.02199999988079071,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "K",
+          "value": 9.118000030517578,
+          "error": 0.020999999716877937,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "R",
+          "value": 12.510000228881836,
+          "error": 0.07999999821186066,
+          "system": "V",
+          "bibcode": "2012yCat.1322....0Z",
+          "quality": "E"
+        },
+        {
+          "band": "B",
+          "value": 14.467000007629395,
+          "error": 0.026000000536441803,
+          "system": "V",
+          "bibcode": "2014AJ....148...81M",
+          "quality": "C"
+        },
+        {
+          "band": "V",
+          "value": 12.890000343322754,
+          "error": 0.03700000047683716,
+          "system": "V",
+          "bibcode": "2014AJ....148...81M",
+          "quality": "C"
+        },
+        {
+          "band": "g",
+          "value": 13.628999710083008,
+          "error": 0.02800000086426735,
+          "system": "V",
+          "bibcode": "2014AJ....148...81M",
+          "quality": "C"
+        },
+        {
+          "band": "r",
+          "value": 12.347000122070312,
+          "error": 0.03099999949336052,
+          "system": "V",
+          "bibcode": "2014AJ....148...81M",
+          "quality": "C"
+        },
+        {
+          "band": "i",
+          "value": 11.78600025177002,
+          "error": 0.05400000140070915,
+          "system": "V",
+          "bibcode": "2014AJ....148...81M",
+          "quality": "C"
+        },
+        {
+          "band": "G",
+          "value": 12.321496963500977,
+          "error": 0.0028059999458491802,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        },
+        {
+          "band": "I",
+          "value": 11.270000457763672,
+          "error": 0.019999999552965164,
+          "system": "V",
+          "bibcode": "2005yCat.2263....0D",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR3 6098873935647575552"
+      ]
+    },
+    "last_queried_at": "2026-10-24T04:54:27.084749+00:00"
+  },
+  "provenance": {
+    "path": "provenance/hvs-catalog-000640_provenance.json",
+    "sha256": "ffe39bd69f78f996211aa1c07ec363d9f43e7a3774a95e3031cb2e98710ea30b"
+  },
+  "warnings": []
+}
