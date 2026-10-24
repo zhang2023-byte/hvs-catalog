@@ -6,35 +6,27 @@
 
 更新日期：2026-10-24（北京时间）。
 
-### 当前：获准合入main并启动413篇星表构建
+R20构建与验证完成，用户确认保留保守匹配，并授权代码、数据两个本地提交。提交状态以Git为准；推送和R21实施尚未授权。当前规则见[Plan](plan.md#r20)，JSON字段及命令见[生成合同](../contracts/generated/catalog-format.md)。
 
-2026-10-24用户明确授权将独立工作树codex/catalog-build合入main，并开始catalog构建全流程。已验证适配代码将随原R20实现一起交付，主工作区文献维护文档先保存到Git，再合并开发事实。没有推送授权。真实SIMBAD仍按此前约定，在实际查询样本和范围确认后执行。
+### 当前交付
 
-文献维护已完成：最终入口为.work/literature/runs/<无版本arXiv ID>/results/，413篇均完整，250空名单，1278条论文内对象、7621数值、2290审计观察；尚未跨论文去重。固定范围为UTC首次提交2005-01-01至2026-10-23，arXiv all字段联合四个已审定短语，不限制分类。原执行及9篇修复保存在history/extraction；当前交付根不是可接续业务空间，不执行旧脚本。整理核验与独立盘点证据见.work/literature/reports/final-results.md及results-layout-check.json。迁移校验沿用文献任务结果，控制器均已结束；原168篇中23篇参与开发Gold比较，准确率不外推。
+[catalog](../catalog/manifest.json)为完整JSON星表包：schema v4、rules_version 4、数据版本2026-10-24-display-names；413篇、901条星记录、1278条来源记录、7621条文献数值。仅以完整提取选择和898份冻结SIMBAD响应从零构建，next_id为902，retired_ids为空。
 
-### 已完成实现
+显示名551条来自SIMBAD、350条来自论文ID（其中57条局部编号附论文标识），无catalog_id回退。最新命名调整改变426个显示名，901个编号／归组及科学值、误差、来源、证据、SIMBAD状态和warnings不变；provenance仅更新数据版本。对比、样例及严格核对见[报告](../.work/catalog-build/2026-10-24/display-name-verification.json)。
 
-- [最终交付读取](../src/hvs_catalog/catalogue/delivery.py)：只读取runs/<无版本arXiv ID>/results/，每篇恰好科学JSON、audit、run三个文件；旧式ID目录以_替代/。核对ID／版本、哈希、完整性、同代审计及明确历史来源，不遍历history选旧结果、不依赖总索引。拒绝缺文件、额外文件、路径越界、符号链接及错绑定。
-- [修复溯源](../src/hvs_catalog/catalogue/repairs.py)：常规修复保持校验；累计修复核验前轮manifest／阶段与本轮阶段，重放结构恢复回执，再按原组合规则核对选定科学结果。5篇无模型本地恢复以固定原执行、trace、输入及逐对象快照核验未单独哈希的facts／baseline，避免依赖旧索引或当前可变执行状态。
-- [恢复核验](../src/hvs_catalog/catalogue/recovery.py)：仅重放已保存回执，核对原请求／响应、完整传输和原始响应哈希，保持全部标量、值对象及已成功数量组，通过原科学校验器。未扩展全局模型输出解析器或放宽科学规则，不执行历史脚本，不依赖归档中的旧绝对路径。
-- 最终科学字节与历史选定成果保持一致，audit只允许结果路径重绑。来源保留逐对象状态、诊断及修复阶段；run_sha256绑定最终run，而最终run绑定历史run和所选结果。恒星科学字段、关联、编号及display_name规则不变。
-- [CLI](../src/hvs_catalog/cli_catalog.py)增加catalog select --results与catalog check-inputs --results。前者固定本次构建输入，不维护第二份文献索引；后者只核验并统计输入，不关联或导出真实恒星。旧--index／--space入口保留历史兼容。[共同记录](../src/hvs_catalog/records/catalog.py)、[生成合同](../contracts/generated/catalog-format.md)及仓库外安装自检已同步。
+### 保留问题
 
-### 本轮验证
+SIMBAD状态：编号matched455、坐标matched96、not_found84、not_queried265、conflict1。冲突[000824](../catalog/stars/hvs-catalog-000824.json)显示论文ID KIC 7881304。自动识别的来源证据矛盾仍分组保存：2401.05630v1的ID12／ID42对应000649／000682，ID38／ID62对应000678／000704；原值未校正。
 
-新增39项[最终目录](../tests/test_catalog_delivery.py)和[修复](../tests/test_catalog_repairs.py)回归，全用合成材料。覆盖正常／空名单／部分结果，迁移和旧式ID，新增文献关联已有对象并保持编号和名称，新对象追加，累计修复保留前轮名单／数值，本地恢复保留部分成果，篡改及错绑定拒绝，CLI导出与完整科学贡献。
+47种重名涉及214条记录，已核查590对组合：5组10条同SIMBAD待复核；2组4条发现2207.04406的自行被提取为Dec；37组183条为未关联短名／别名；HVS2／HVS3两组15条有同名异指；ID38／ID62一组2条因证据矛盾拒绝。详见[可读报告](../.work/catalog-build/2026-10-24/duplicate-name-audit.html)和[逐项事实](../.work/catalog-build/2026-10-24/duplicate-name-audit-facts.json)。按用户决定，本轮不扩大匹配或修正科学内容。
 
-- uv run --frozen pytest -q tests/test_catalog_delivery.py tests/test_catalog_repairs.py tests/test_catalog.py tests/test_catalog_inputs.py tests/test_catalog_service.py：98通过，105.24秒。
-- Ruff检查／格式、生成合同--check、git diff --check通过。
-- 常规1208／integration 180，收集互斥。
-- uv run --frozen pytest -q：1388通过，521.79秒，无失败／跳过；2条既有workspace fork弃用提示。
-- uv run --frozen python tools/check_distribution.py 3.11及3.12均通过：仓库外全新wheel安装，未用PYTHONPATH指向源码，覆盖最终results→选定输入→合成papers／stars→verify及原有流程。
+### 验证与接续
 
-全部413篇已通过新版catalog check-inputs只读核验，含此前失败的9篇修复结果，211.26秒完成。检查脚本禁用网络；统计为413完整、250空名单、1278论文内对象、7621数值、2290审计观察。1239个最终文件、25个历史数据库／标记文件及主工作区开发文档前后哈希不变。核验只读取既有成果及来源，没有构造真实星表；结构和来源通过不代表科学准确性。
+最终程序树1473项全量离线、203项catalog专项及Python3.11／3.12仓库外wheel安装通过；1291常规＋182集成互斥覆盖全量。两次独立CLI构建的2631个文件逐字节一致，根catalog校验通过。提交整理仅修改文档与锁文件忽略规则，沿用上述测试；另复查合同同步、Ruff／格式、diff、文档链接及数据完整性，不发起真实查询、模型调用或Gold操作。
 
-### 接续与交付边界
+旧catalog与重复构建副本已清理；保留原始提取、冻结响应、固定选择和必要报告／日志。本机[构建选择](../.work/catalog-build/2026-10-24/display-name-selection.json)与同目录simbad-responses用于复现，不随代码或数据提交；单次切换脚本已消耗临时路径，不能直接重跑。
 
-下一步合入main，冻结413篇输入，构建并核验catalog候选，统计SIMBAD标识／坐标查询和建议小样本，再确认真实调用范围。不会重新解析、提取、读取Gold或评分，未启动R21。验证日志及核验脚本留独立工作树.work/catalog-review/results-inputs-*和verify-final-inputs.py；本轮未另安排子Agent复审。真实构建结果按实际完成更新本节。
+复现：`UV_CACHE_DIR=/tmp/hvs-catalog-uv-cache uv run --no-sync hvs-catalog catalog build --selection .work/catalog-build/2026-10-24/display-name-selection.json --simbad .work/catalog-build/2026-10-24/simbad-responses --output NEW_DIRECTORY`。构建不读取现有catalog。R21后续从同一JSON快照实现网页、下载和Agent Skill，当前尚未开始。
 
 ## 任务总表
 
@@ -60,7 +52,7 @@
 | [R17](plan.md#r17) | 通过 | 2026-10-06 | 完整数值评分、三篇真实核对及 Gold50 规则绑定获验收；1597 测试与双版本安装通过，自动组数值 F1 74.51%；按授权两仓本地交付。 |
 | [R18](plan.md#r18) | 通过 | 2026-10-06 | 规则 0.3.0、全自动流程与诊断隔离获验收；1,613 测试及 3.11／3.12 独立安装通过，已完成本地Git交付及计划精简。 |
 | [R19](plan.md#r19) | 通过 | 2026-10-23 | 人类确认优化达到目标并批准本地整合；程序与原优化分支一致，五个主题提交交付。168篇派生结果163完整／5部分；开发Gold与评分解释限制继续保留。 |
-| [R20](plan.md#r20) | 进行中 | — | 原离线实现及新results适配通过验证；用户已授权合入main并构建413篇星表，真实SIMBAD样本／范围待确认。 |
+| [R20](plan.md#r20) | 通过 | 2026-10-24 | 用户确认保守匹配及JSON交付，并授权代码／数据分开本地提交。901条记录、科学及证据保留；1473全量、203专项、双版本安装及重复构建通过。未授权推送或R21。 |
 | [R21](plan.md#r21) | 未开始 | — | GitHub Pages、完整数据独立下载与Agent Skill；数据库／SQL／表格按后续需求另定。 |
 
 未标注最终评价名单已取消；如另开展独立评价，按[Plan 分工](plan.md#独立评价与人类分工)确定范围。

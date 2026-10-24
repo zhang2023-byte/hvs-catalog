@@ -3,26 +3,33 @@
 from dataclasses import dataclass
 from itertools import combinations
 
+from astropy.coordinates import SkyCoord
+
 from ..records.catalog import Association, AssociationOrigin
-from .identity import coordinate, gaia_conflicts, keys, names, separation
+from .identity import (
+    coordinate,
+    coordinate_interpretation,
+    gaia_conflicts,
+    keys,
+    names,
+    sky,
+)
 
 
 @dataclass
 class Node:
     key: str
     star: object
-    catalog_id: str | None = None
-    anchor: bool = False
-    previous_id: str | None = None
     origin: AssociationOrigin | None = None
 
 
 class Groups:
-    def __init__(self, nodes):
+    def __init__(self, nodes, conflicts=()):
         self.nodes = {n.key: n for n in nodes}
         self.parent = {key: key for key in self.nodes}
         self.members = {key: {key} for key in self.nodes}
         self.edges = []
+        self.conflicts = conflicts
 
     def find(self, key):
         while self.parent[key] != key:
@@ -36,12 +43,21 @@ class Groups:
         a, b = self.find(left), self.find(right)
         members = self.members[a] | self.members[b]
         group_names = [name for key in members for name in names(self.nodes[key].star)]
-        ids = {self.nodes[key].catalog_id for key in members} - {None}
         reason = rejection_reason
+        source_nodes = {
+            key.split(":", 1)[1] if key.startswith("@") else key for key in members
+        }
+        conflicts = [c for c in self.conflicts if {c.left, c.right} <= source_nodes]
+        if conflicts:
+            reason = "Source identity evidence conflicts: " + "; ".join(
+                c.reason for c in conflicts
+            )
+            details = {
+                **details,
+                "identity_conflicts": [c.model_dump(mode="json") for c in conflicts],
+            }
         if gaia_conflicts([*group_names, *external_names]):
             reason = "Conflicting Gaia identifiers within one release."
-        elif len(ids) > 1:
-            reason = "Distinct catalog IDs require an explicit identity revision."
         self.edges.append(
             Association(
                 left=left,
@@ -67,19 +83,30 @@ class Groups:
         return [sorted(v) for _, v in sorted(self.members.items())]
 
     def scientific(self, members):
-        return [
-            (key, self.nodes[key].star) for key in members if not self.nodes[key].anchor
-        ]
+        return [(key, self.nodes[key].star) for key in members]
 
 
-def associate(nodes, explicit=(), previous_links=()):
-    groups = Groups(nodes)
-    for left, right, details in previous_links:
+def associate(nodes, explicit=(), *, conflicts=()):
+    groups = Groups(nodes, conflicts)
+    for conflict in conflicts:
+        if conflict.left not in groups.nodes or conflict.right not in groups.nodes:
+            raise ValueError("Identity conflict names an unknown source node.")
+        if conflict.left == conflict.right or conflict.source not in {
+            conflict.left.split("#")[0],
+            conflict.right.split("#")[0],
+        }:
+            raise ValueError(
+                "Identity conflict requires distinct endpoints and their paper evidence."
+            )
         groups.join(
-            left,
-            right,
-            "previous",
-            details,
+            conflict.left,
+            conflict.right,
+            "paper",
+            {
+                "identity_conflict": True,
+                "source": conflict.source,
+                "evidence": [e.model_dump(mode="json") for e in conflict.evidence],
+            },
         )
     by_identifier = {}
     for node in nodes:
@@ -106,10 +133,21 @@ def associate(nodes, explicit=(), previous_links=()):
         )
     positions = {node.key: pos for node in nodes if (pos := coordinate(node.star))}
     pairs = []
-    for (left, lp), (right, rp) in combinations(sorted(positions.items()), 2):
-        distance = separation(lp, rp)
-        if distance <= 5.0 + 1e-9:
-            pairs.append((distance, left, right))
+    ordered = sorted(positions)
+    if ordered:
+        # Transform each position once; array separation uses the same spherical rule.
+        converted = [sky(positions[key]).icrs for key in ordered]
+        icrs = SkyCoord(
+            [p.ra.deg for p in converted],
+            [p.dec.deg for p in converted],
+            unit="deg",
+            frame="icrs",
+        )
+        for index, left in enumerate(ordered[:-1]):
+            distances = icrs[index].separation(icrs[index + 1 :]).arcsec
+            for right, distance in zip(ordered[index + 1 :], distances, strict=True):
+                if distance <= 5.0 + 1e-9:
+                    pairs.append((float(distance), left, right))
     for distance, left, right in sorted(pairs):
         # Keep every coordinate-only edge used to connect components.
         if groups.find(left) != groups.find(right):
@@ -122,6 +160,10 @@ def associate(nodes, explicit=(), previous_links=()):
                     "threshold_arcsec": 5.0,
                     "left_position": positions[left].model_dump(mode="json"),
                     "right_position": positions[right].model_dump(mode="json"),
+                    "coordinate_interpretations": {
+                        "left": coordinate_interpretation(positions[left]),
+                        "right": coordinate_interpretation(positions[right]),
+                    },
                     "epoch_propagation": False,
                 },
             )

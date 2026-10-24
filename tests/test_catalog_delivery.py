@@ -135,14 +135,16 @@ def test_final_cli_export_and_read_only_inspection(
         assert star["display_name"] == "Gaia DR3 1234567890123456789"
         assert star["quantities"][0]["values"][0]["value"] == "520"
         source = next(iter(star["sources"].values()))
-        assert source["result_status"] == ("partial" if partial else "complete")
-        assert source["objects"][0]["status"] == source["result_status"]
+        assert source["records"] == ["/stars/0"]
+        assert "result_status" not in source and "objects" not in source
+        assert paper.source.result_status == ("partial" if partial else "complete")
+        assert paper.source.objects[0].status == paper.source.result_status
         assert star["simbad"]["status"] == "not_queried"
     assert before == {p: p.read_bytes() for p in folder.iterdir()}
     assert not (root / ".state").exists()
 
 
-def test_final_migration_preserves_number_name_and_frozen_selection(prepared, tmp_path):
+def test_final_and_original_inputs_produce_same_science(prepared, tmp_path):
     root, _, history, original_ref = migrate_native(prepared, tmp_path)
     old = CatalogSelection(
         data_version="old",
@@ -151,7 +153,7 @@ def test_final_migration_preserves_number_name_and_frozen_selection(prepared, tm
     previous = tmp_path / "old-catalog"
     old_manifest = build_catalog(old, previous)
     selected = selection_from_results(root, "new")
-    manifest = build_catalog(selected, tmp_path / "new-catalog", previous=previous)
+    manifest = build_catalog(selected, tmp_path / "new-catalog")
     assert manifest.stars[0].catalog_id == old_manifest.stars[0].catalog_id
     assert manifest.stars[0].display_name == old_manifest.stars[0].display_name
     # A relocated delivery uses only references relative to its declared root.
@@ -295,7 +297,9 @@ def test_frozen_final_run_and_cli_argument_contract(prepared, tmp_path, capsys):
     )
 
 
-def test_old_style_id_and_final_input_increment(prepared, tmp_path, monkeypatch):
+def test_old_style_arxiv_id_and_complete_final_selection(
+    prepared, tmp_path, monkeypatch
+):
     import materials_helpers
     from test_roster import prepared as prepare_fixture
 
@@ -343,7 +347,7 @@ def test_old_style_id_and_final_input_increment(prepared, tmp_path, monkeypatch)
         selected = selection_from_results(root, "second")
         assert len(selected.papers) == 2
         output = tmp_path / "increment"
-        current = build_catalog(selected, output, previous=previous)
+        current = build_catalog(selected, output)
         assert len(current.stars) == 2
         old = next(
             s for s in current.stars if s.catalog_id == first.stars[0].catalog_id

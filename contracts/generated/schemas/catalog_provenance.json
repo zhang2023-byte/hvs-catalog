@@ -1,0 +1,526 @@
+{
+  "$defs": {
+    "AssociationOrigin": {
+      "additionalProperties": false,
+      "description": "Fixed paper identity evidence, including sources superseded by later versions.",
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/LiteratureMetadata"
+        },
+        "result_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Result Sha256",
+          "type": "string"
+        },
+        "pdf_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Pdf Sha256",
+          "type": "string"
+        },
+        "pdf_url": {
+          "title": "Pdf Url",
+          "type": "string"
+        },
+        "pdf_origin": {
+          "additionalProperties": true,
+          "title": "Pdf Origin",
+          "type": "object"
+        },
+        "result_index": {
+          "minimum": 0,
+          "title": "Result Index",
+          "type": "integer"
+        },
+        "identifiers": {
+          "items": {
+            "$ref": "#/$defs/LiteratureIdentifier"
+          },
+          "minItems": 1,
+          "title": "Identifiers",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source",
+        "result_sha256",
+        "pdf_sha256",
+        "pdf_url",
+        "pdf_origin",
+        "result_index",
+        "identifiers"
+      ],
+      "title": "AssociationOrigin",
+      "type": "object"
+    },
+    "IdentifierAssociation": {
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "const": "identifier",
+          "default": "identifier",
+          "title": "Method",
+          "type": "string"
+        },
+        "identifier": {
+          "title": "Identifier",
+          "type": "string"
+        },
+        "nodes": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Nodes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "identifier",
+        "nodes"
+      ],
+      "title": "IdentifierAssociation",
+      "type": "object"
+    },
+    "IdentityLink": {
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "enum": [
+            "identifier",
+            "coordinates",
+            "paper",
+            "simbad"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "left": {
+          "title": "Left",
+          "type": "string"
+        },
+        "right": {
+          "title": "Right",
+          "type": "string"
+        },
+        "accepted": {
+          "default": true,
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "historical": {
+          "default": false,
+          "title": "Historical",
+          "type": "boolean"
+        },
+        "details": {
+          "additionalProperties": true,
+          "title": "Details",
+          "type": "object"
+        },
+        "origins": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "description": "Local references only for origins absent from the current paper files.",
+          "title": "Origins",
+          "type": "object"
+        }
+      },
+      "required": [
+        "method",
+        "left",
+        "right",
+        "details"
+      ],
+      "title": "IdentityLink",
+      "type": "object"
+    },
+    "ImageEvidence": {
+      "additionalProperties": false,
+      "description": "A supplied image location without a text transcription.",
+      "properties": {
+        "location": {
+          "description": "Complete image location, such as I:p5-b6.",
+          "pattern": "^I:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location"
+      ],
+      "title": "ImageEvidence",
+      "type": "object"
+    },
+    "LiteratureIdentifier": {
+      "additionalProperties": false,
+      "description": "One reported identifier and its supporting evidence.",
+      "properties": {
+        "value": {
+          "description": "Star identifier.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this identifier.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "LiteratureIdentifier",
+      "type": "object"
+    },
+    "LiteratureMetadata": {
+      "additionalProperties": false,
+      "description": "Bibliographic identity of the fixed paper version.",
+      "properties": {
+        "arxiv_id": {
+          "description": "Bare arXiv identifier, without a version suffix.",
+          "pattern": "^(?:[0-9]{4}\\.[0-9]{4,5}|[a-zA-Z-]+(?:\\.[A-Z]{2})?/[0-9]{7})$",
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "version": {
+          "description": "arXiv paper version, such as v1; not a format version.",
+          "pattern": "^v[1-9][0-9]*$",
+          "title": "Version",
+          "type": "string"
+        },
+        "title": {
+          "description": "Paper title.",
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "authors": {
+          "description": "Paper authors in reported order.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "version",
+        "title",
+        "authors"
+      ],
+      "title": "LiteratureMetadata",
+      "type": "object"
+    },
+    "PublishedSimbad": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "not_queried",
+            "matched",
+            "not_found",
+            "ambiguous",
+            "conflict",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "method": {
+          "anyOf": [
+            {
+              "enum": [
+                "identifier",
+                "coordinates"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Method"
+        },
+        "selected": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SimbadCandidate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "queries": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Queries",
+          "type": "array"
+        },
+        "related_queries": {
+          "description": "Queries from other or superseded snapshots, used only by association evidence.",
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Related Queries",
+          "type": "array"
+        },
+        "matches": {
+          "description": "Query matches reference selected or alternatives instead of repeating data.",
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Matches",
+          "type": "array"
+        },
+        "related_matches": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Related Matches",
+          "type": "array"
+        },
+        "alternatives": {
+          "description": "Distinct frozen candidate representations required by matching evidence.",
+          "items": {
+            "$ref": "#/$defs/SimbadCandidate"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "bindings": {
+          "description": "Adopted coordinate matches with exact source, query, distance and selection.",
+          "items": {
+            "$ref": "#/$defs/IdentityLink"
+          },
+          "title": "Bindings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "PublishedSimbad",
+      "type": "object"
+    },
+    "SimbadCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "main_id": {
+          "minLength": 1,
+          "title": "Main Id",
+          "type": "string"
+        },
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkyPosition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fields": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "description": "Basic returned fields, including units, errors and references when available.",
+          "title": "Fields",
+          "type": "object"
+        },
+        "photometry": {
+          "description": "Returned photometry with explicit band, errors and references when available.",
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Photometry",
+          "type": "array"
+        }
+      },
+      "required": [
+        "main_id",
+        "aliases",
+        "position",
+        "fields",
+        "photometry"
+      ],
+      "title": "SimbadCandidate",
+      "type": "object"
+    },
+    "SkyPosition": {
+      "additionalProperties": false,
+      "description": "Coordinates used only for identity matching; no epoch propagation.",
+      "properties": {
+        "ra_deg": {
+          "exclusiveMaximum": 360,
+          "minimum": 0,
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "frame": {
+          "enum": [
+            "icrs",
+            "fk5",
+            "fk4"
+          ],
+          "title": "Frame",
+          "type": "string"
+        },
+        "equinox": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Equinox"
+        },
+        "evidence": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg",
+        "frame"
+      ],
+      "title": "SkyPosition",
+      "type": "object"
+    },
+    "TextEvidence": {
+      "additionalProperties": false,
+      "description": "An evidence excerpt attributed to one supplied text block.",
+      "properties": {
+        "location": {
+          "description": "Complete text location, such as T:p3-b5.",
+          "pattern": "^T:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "description": "Faithful excerpt from this text block.",
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "quote"
+      ],
+      "title": "TextEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 4,
+      "default": 4,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "data_version": {
+      "title": "Data Version",
+      "type": "string"
+    },
+    "catalog_id": {
+      "pattern": "^hvs-catalog-[0-9]{6,}$",
+      "title": "Catalog Id",
+      "type": "string"
+    },
+    "associations": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/IdentifierAssociation"
+          },
+          {
+            "$ref": "#/$defs/IdentityLink"
+          }
+        ]
+      },
+      "title": "Associations",
+      "type": "array"
+    },
+    "association_origins": {
+      "additionalProperties": {
+        "$ref": "#/$defs/AssociationOrigin"
+      },
+      "description": "Once-only identity evidence for superseded source versions or contents.",
+      "title": "Association Origins",
+      "type": "object"
+    },
+    "simbad": {
+      "$ref": "#/$defs/PublishedSimbad"
+    }
+  },
+  "required": [
+    "data_version",
+    "catalog_id",
+    "associations",
+    "simbad"
+  ],
+  "title": "StellarProvenance",
+  "type": "object"
+}

@@ -66,23 +66,17 @@ class ExplicitAssociation(Config):
     evidence: EvidenceList
 
 
+class AssociationConflict(ExplicitAssociation):
+    """Fixed source evidence that prevents two source records from being merged."""
+
+    reason: str = Field(min_length=1)
+
+
 class CatalogSelection(Config):
     schema_version: Literal[1] = 1
     data_version: str = Field(min_length=1)
     papers: list[PaperSelection]
-    simbad_refresh: list[CatalogId] = Field(
-        default_factory=list,
-        description="Existing catalog IDs whose external snapshots may be explicitly refreshed.",
-    )
     explicit_associations: list[ExplicitAssociation] = Field(default_factory=list)
-    identity_assignments: dict[str, CatalogId] = Field(
-        default_factory=dict,
-        description="Explicit source-node to catalog ID assignments for identity revisions.",
-    )
-    retired_ids: dict[CatalogId, list[CatalogId]] = Field(
-        default_factory=dict,
-        description="Explicit old to successor ID mappings; retired IDs are never reused.",
-    )
 
 
 class SourceObject(Config):
@@ -107,8 +101,8 @@ class CatalogSource(LiteratureMetadata):
     roster_rejected: dict[str, list[dict]]
     errors: list[dict]
     result_sha256: str
-    run_sha256: str
-    input_sha256: str
+    run_sha256: str | None
+    input_sha256: str | None
     pdf_sha256: str
     pdf_url: str = Field(
         description="Versioned arXiv reference URL; not a claim about the download method."
@@ -238,7 +232,7 @@ class Association(Config):
 
 
 class CatalogStar(Config):
-    schema_version: Literal[1] = 1
+    schema_version: Literal[1, 2, 3, 4] = 1
     data_version: str
     catalog_id: CatalogId
     display_name: str
@@ -282,9 +276,9 @@ class PublishedStar(Config):
 
 
 class CatalogManifest(Config):
-    schema_version: Literal[1] = 1
+    schema_version: Literal[1, 2, 3, 4] = 1
     data_version: str
-    rules_version: Literal[1] = 1
+    rules_version: Literal[1, 2, 3, 4] = 4
     software_version: str
     input_fingerprint: str
     simbad_fingerprint: str

@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from .catalogue import build_catalog, load_selection, verify_catalog
-from .catalogue.build import inherited_snapshots, prepare_groups
+from .catalogue.build import prepare_groups
 from .catalogue.delivery import inspect_results, selection_from_results
 from .catalogue.inputs import json_bytes, selection_from_index
 from .catalogue.simbad import AstroquerySimbad, collect_queries, queries_for, query_key
@@ -31,11 +31,9 @@ def add_catalog_commands(commands):
     build = sub.add_parser("build", help="离线构建新快照，不访问SIMBAD")
     build.add_argument("--selection", type=Path, required=True)
     build.add_argument("--output", type=Path, required=True)
-    build.add_argument("--previous", type=Path)
     build.add_argument("--simbad", type=Path, help="已冻结的SIMBAD响应目录")
     plan = sub.add_parser("query-plan", help="离线列出可审阅的SIMBAD查询范围")
     plan.add_argument("--selection", type=Path, required=True)
-    plan.add_argument("--previous", type=Path)
     plan.add_argument("--output", type=Path, required=True)
     query = sub.add_parser("query", help="对明确查询清单调用真实SIMBAD，保存响应")
     query.add_argument("--plan", type=Path, required=True)
@@ -72,7 +70,6 @@ def run_catalog_command(args):
             manifest = build_catalog(
                 load_selection(args.selection),
                 args.output,
-                previous=args.previous,
                 simbad=args.simbad,
             )
             result = {
@@ -89,16 +86,9 @@ def run_catalog_command(args):
             }
         elif name == "query-plan":
             selection = load_selection(args.selection)
-            papers, groups, _, old_stars, _, _ = prepare_groups(
-                selection, args.previous
-            )
-            old_by_id = {s.catalog_id: s for s in old_stars}
+            papers, groups = prepare_groups(selection)
             queries = {}
             for members in groups.groups():
-                if inherited_snapshots(
-                    groups, members, old_by_id, selection.simbad_refresh
-                ):
-                    continue
                 for query in queries_for(groups.scientific(members)):
                     queries[query_key(query)] = query.model_dump(mode="json")
             result = {

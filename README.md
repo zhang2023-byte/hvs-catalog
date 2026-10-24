@@ -2,7 +2,7 @@
 
 从高速星文献中整理对象、作者判断和测量值，保留原文依据，建设可回查来源与修订的星表。
 
-当前已接通arXiv获取、固定PDF、MinerU解析、名单与数值提取、结果保存和恢复，并实现跨论文关联、固定JSON星表构建与SIMBAD快照接口。星表离线代码已通过人类验收；正式数据构建等待文献补齐，真实SIMBAD调用另定样本与范围，网站留待后续。验收与现有结果入口见[Progress](.dev/progress.md)，星表命令与字段见[生成合同](contracts/generated/catalog-format.md)。
+当前已完成文献获取、PDF解析、名单与数值提取、来源核验、跨论文关联及SIMBAD补充。仓库中的[catalog](catalog/manifest.json)是可独立读取的JSON星表包，包含单星科学数据、论文来源和统一追溯文件；网页、下载入口与Agent Skill留待R21。数据版本与数量以manifest为准，构建状态见[Progress](.dev/progress.md)，命令与字段见[生成合同](contracts/generated/catalog-format.md)。
 
 ## 安装
 
@@ -60,7 +60,7 @@ hvs-catalog extract status --space /path/to/literature --execution EXECUTION_ID
 
 实验入口为`hvs-catalog benchmark --root /path/to/benchmark --help`。材料显式选择`mineru_local`或`mineru_cloud`，不隐式回退；纯文本／含图模式另由配置固定。`import-materials`、`preview`和`prepare`不请求模型；`run --round execNN`执行或接续，重复实验另建编号，已结束实验不能续跑。`status/check/report`查看保存事实，`score`读取明确指定的参考答案，旧评分不覆盖。
 
-文献空间及Benchmark均须整体保存，包含`.state/`及其共享证据和恢复记录；迁移使用共同备份恢复接口。`.work/`、凭据、PDF、私有Gold和运行结果不随代码提交或新克隆迁移。现有批次的派生补跑另存原执行与组成索引，不能用原执行状态代替最终派生交付；当前结果见Progress中的准确索引。
+文献空间及Benchmark均须整体保存，包含`.state/`及其共享证据和恢复记录；迁移使用共同备份恢复接口。`.work/`、凭据、PDF、私有Gold和原始运行结果不随Git克隆迁移；已纳入仓库的catalog随克隆交付，wheel只含程序。派生成果保留原执行与准确引用，当前本机输入入口见Progress。
 
 ## 开发入口
 

@@ -17,13 +17,17 @@ from hvs_catalog.records.catalog import SimbadQuery
 
 @pytest.mark.integration
 @pytest.mark.parametrize("failed", [False, True])
-def test_astroquery_basic_and_photometry_round_trip(failed):
+@pytest.mark.parametrize("unicode_text", [False, True])
+def test_astroquery_basic_and_photometry_round_trip(failed, unicode_text):
     requests = []
+    identifier = "HE 0000−0000" if unicode_text else "HD 1"
+    main_id = "Étoile α" if unicode_text else "HD 1"
+    aliases = [identifier, "HIP 2"]
     basic = Table(
         {
             "oid": [123],
-            "main_id": ["HD 1"],
-            "ids": ["HD 1|HIP 2"],
+            "main_id": [main_id],
+            "ids": ["|".join(aliases)],
             "ra": [10.0],
             "dec": [0.0],
             "pmra": [3.0],
@@ -64,7 +68,7 @@ def test_astroquery_basic_and_photometry_round_trip(failed):
             output = io.BytesIO()
             table.write(output, format="votable")
             self.send_response(200)
-            self.send_header("Content-Type", "application/x-votable+xml")
+            self.send_header("Content-Type", "application/x-votable+xml;charset=UTF-8")
             self.end_headers()
             self.wfile.write(output.getvalue())
 
@@ -87,12 +91,13 @@ def test_astroquery_basic_and_photometry_round_trip(failed):
     )
     try:
         response = AstroquerySimbad(client).query(
-            SimbadQuery(method="identifier", identifier="HD 1")
+            SimbadQuery(method="identifier", identifier=identifier)
         )
     finally:
         server.shutdown()
         server.server_close()
         worker.join()
+    assert f"WHERE id = '{identifier}'" in requests[0]
     if failed:
         assert response.error and not response.candidates
         assert "Service unavailable" in response.raw_response
@@ -100,7 +105,8 @@ def test_astroquery_basic_and_photometry_round_trip(failed):
         assert response.error is None
         assert len(requests) == 2
         candidate = response.candidates[0]
-        assert candidate.aliases == ["HD 1", "HIP 2"]
+        assert candidate.main_id == main_id
+        assert candidate.aliases == sorted(aliases)
         assert candidate.fields["rvz_radvel"] == {"value": 520.0, "unit": "km / s"}
         assert candidate.fields["pm_err_maj"]["value"] == 0.1
         assert candidate.photometry[0]["band"] == "V"
@@ -109,3 +115,12 @@ def test_astroquery_basic_and_photometry_round_trip(failed):
             == "FictionalPhotometry"
         )
         assert "VOTABLE" in response.raw_response
+        if unicode_text:
+            import json
+
+            raw_table = Table.read(
+                io.BytesIO(json.loads(response.raw_response)[0].encode("utf-8")),
+                format="votable",
+            )
+            assert raw_table["main_id"][0] == main_id
+            assert raw_table["ids"][0] == "|".join(aliases)

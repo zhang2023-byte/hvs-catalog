@@ -1,6 +1,7 @@
 """Validate complete snapshots and publish a new directory without overwriting old data."""
 
 import fcntl
+import json
 import os
 import shutil
 import tempfile
@@ -15,12 +16,12 @@ from .provenance import verify_associations
 
 def verify_catalog(root):
     root = Path(root).resolve()
-    manifest = CatalogManifest.model_validate_json(
-        (root / "manifest.json").read_bytes()
-    )
-    ids, display_names, nodes = set(), set(), set()
+    manifest, documents = _read_snapshot(root)
+    ids, nodes = set(), set()
     papers = {}
     expected_files = {"manifest.json"}
+    if manifest.schema_version in {2, 3, 4}:
+        expected_files.update(("papers/index.json", "stars/index.json"))
     for key, item in manifest.papers.items():
         science_raw = read_bound(root, item.science)
         science = LiteratureContribution.model_validate_json(science_raw)
@@ -43,24 +44,26 @@ def verify_catalog(root):
         papers[key] = science
         expected_files.update((item.science.path, item.audit.path))
     for item in manifest.stars:
-        star = CatalogStar.model_validate_json(read_bound(root, item.file))
+        star = documents[item.file.path]
         if (
             star.catalog_id != item.catalog_id
             or star.display_name != item.display_name
             or star.data_version != manifest.data_version
+            or star.schema_version != manifest.schema_version
             or item.file.path != "stars/" + star.catalog_id + ".json"
         ):
             raise ValueError("Star index differs from the stellar document.")
-        if (
-            star.catalog_id in ids
-            or star.display_name in display_names
-            or star.catalog_id in manifest.retired_ids
-        ):
+        if star.catalog_id in ids or star.catalog_id in manifest.retired_ids:
             raise ValueError("Duplicate or retired identity in the snapshot.")
         verify_associations(star, manifest, papers)
         ids.add(star.catalog_id)
-        display_names.add(star.display_name)
         expected_files.add(item.file.path)
+        if manifest.schema_version == 3:
+            expected_files.add("provenance/simbad/" + star.catalog_id + ".json")
+        elif manifest.schema_version == 4:
+            # The reader has checked the current or legacy per-star filename.
+            raw = json.loads(read_bound(root, item.file))
+            expected_files.add(raw["provenance"]["path"])
         expected_identifiers, expected_types, expected_quantities = [], [], {}
         local_nodes = []
         for key, source in star.sources.items():
@@ -124,6 +127,24 @@ def verify_catalog(root):
     return manifest
 
 
+def _read_snapshot(root):
+    if json.loads((root / "manifest.json").read_bytes()).get("schema_version") in {
+        2,
+        3,
+        4,
+    }:
+        from .readable import read_snapshot
+
+        return read_snapshot(root)
+    manifest = CatalogManifest.model_validate_json(
+        (root / "manifest.json").read_bytes()
+    )
+    return manifest, {
+        s.file.path: CatalogStar.model_validate_json(read_bound(root, s.file))
+        for s in manifest.stars
+    }
+
+
 def load_previous(root):
     manifest = verify_catalog(root)
     root = Path(root)
@@ -137,10 +158,8 @@ def load_previous(root):
         )
         for p in manifest.papers.values()
     ]
-    stars = [
-        CatalogStar.model_validate_json(read_bound(root, s.file))
-        for s in manifest.stars
-    ]
+    _, documents = _read_snapshot(root)
+    stars = [documents[s.file.path] for s in manifest.stars]
     return manifest, papers, stars
 
 

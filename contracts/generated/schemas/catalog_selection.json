@@ -177,44 +177,12 @@
       "title": "Papers",
       "type": "array"
     },
-    "simbad_refresh": {
-      "description": "Existing catalog IDs whose external snapshots may be explicitly refreshed.",
-      "items": {
-        "pattern": "^hvs-catalog-[0-9]{6,}$",
-        "type": "string"
-      },
-      "title": "Simbad Refresh",
-      "type": "array"
-    },
     "explicit_associations": {
       "items": {
         "$ref": "#/$defs/ExplicitAssociation"
       },
       "title": "Explicit Associations",
       "type": "array"
-    },
-    "identity_assignments": {
-      "additionalProperties": {
-        "pattern": "^hvs-catalog-[0-9]{6,}$",
-        "type": "string"
-      },
-      "description": "Explicit source-node to catalog ID assignments for identity revisions.",
-      "title": "Identity Assignments",
-      "type": "object"
-    },
-    "retired_ids": {
-      "description": "Explicit old to successor ID mappings; retired IDs are never reused.",
-      "patternProperties": {
-        "^hvs-catalog-[0-9]{6,}$": {
-          "items": {
-            "pattern": "^hvs-catalog-[0-9]{6,}$",
-            "type": "string"
-          },
-          "type": "array"
-        }
-      },
-      "title": "Retired Ids",
-      "type": "object"
     }
   },
   "required": [

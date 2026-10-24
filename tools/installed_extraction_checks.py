@@ -171,8 +171,22 @@ resume_extraction(space,eid,service=CallService(stored_configuration(get_executi
         stellar = json.loads((root/name/catalog_manifest.stars[0].file.path).read_bytes())
         assert stellar['quantities'][0]['values'][0]['value'] == '520'
         assert stellar['quantities'][0]['values'][0]['source'] == '2501.03333v1'
-        assert stellar['sources']['2501.03333v1']['objects'][0]['evidence_audit'][0]['quote'] == 'Installed warning quote'
+        assert set(stellar['sources']['2501.03333v1']) == {'title', 'authors', 'pdf_url', 'records'}
+        assert stellar['sources']['2501.03333v1']['records'] == ['/stars/0']
+        assert any('quote audit unknown' in w for w in stellar['warnings'])
+        published_audit = json.loads((root/name/catalog_manifest.papers['2501.03333v1'].audit.path).read_bytes())
+        assert published_audit['quote_mismatches'][0]['quote'] == 'Installed warning quote'
         assert stellar['simbad']['status'] == 'not_queried'
+        assert stellar['schema_version'] == 4
+        provenance = stellar['provenance']
+        trace_bytes = (root/name/provenance['path']).read_bytes()
+        assert digest(trace_bytes) == provenance['sha256']
+        simbad_trace = json.loads(trace_bytes)
+        assert 'associations' not in stellar and 'association_origins' not in stellar
+        assert 'provenance' not in stellar['simbad']
+        assert simbad_trace['associations'] == []
+        assert simbad_trace['catalog_id'] == stellar['catalog_id']
+        assert simbad_trace['simbad']['status'] == 'not_queried'
     assert (root/'catalog-one/manifest.json').read_bytes() == (root/'catalog-two/manifest.json').read_bytes()
     query_plan = subprocess.run([str(script), 'catalog', 'query-plan', '--selection', str(selection_path),
                                  '--output', str(root/'query-plan.json')], check=False,

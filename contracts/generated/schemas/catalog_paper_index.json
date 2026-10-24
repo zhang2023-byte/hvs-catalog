@@ -1,0 +1,96 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "PaperEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "science": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "audit": {
+          "$ref": "#/$defs/ArtifactRef"
+        },
+        "original_audit_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Original Audit Sha256",
+          "type": "string"
+        },
+        "pdf_url": {
+          "title": "Pdf Url",
+          "type": "string"
+        },
+        "pdf_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Pdf Sha256",
+          "type": "string"
+        },
+        "pdf_origin": {
+          "additionalProperties": true,
+          "title": "Pdf Origin",
+          "type": "object"
+        },
+        "incomplete": {
+          "additionalProperties": true,
+          "description": "Only unfinished paper/record states and retained scientific diagnostics; absence means complete.",
+          "title": "Incomplete",
+          "type": "object"
+        }
+      },
+      "required": [
+        "science",
+        "audit",
+        "original_audit_sha256",
+        "pdf_url",
+        "pdf_sha256",
+        "pdf_origin"
+      ],
+      "title": "PaperEntry",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": 4,
+      "enum": [
+        2,
+        3,
+        4
+      ],
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "papers": {
+      "additionalProperties": {
+        "$ref": "#/$defs/PaperEntry"
+      },
+      "title": "Papers",
+      "type": "object"
+    }
+  },
+  "required": [
+    "papers"
+  ],
+  "title": "PaperIndex",
+  "type": "object"
+}

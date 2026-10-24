@@ -2,7 +2,7 @@
 
 from ..records.catalog import AssociationOrigin, SimbadQuery, SkyPosition
 from ..records.literature_contribution import LiteratureMetadata
-from .identity import coordinate, separation
+from .identity import coordinate, keys, separation
 
 
 def paper_origin(source, science, index):
@@ -48,11 +48,22 @@ def verify_associations(star, manifest, papers):
                         "Association origin differs from its fixed source."
                     )
         if edge.method == "paper":
-            keys = {o.source.arxiv_id + o.source.version for o in edge.origins.values()}
-            if edge.details.get("source") not in keys or not edge.details.get(
+            paper_keys = {
+                o.source.arxiv_id + o.source.version for o in edge.origins.values()
+            }
+            if edge.details.get("source") not in paper_keys or not edge.details.get(
                 "evidence"
             ):
                 raise ValueError("Paper association origin or evidence is missing.")
+        if (
+            edge.method == "identifier"
+            and edge.accepted
+            and any(
+                edge.details.get("identifier") not in keys(origin)
+                for origin in edge.origins.values()
+            )
+        ):
+            raise ValueError("Identifier association is not supported by its origins.")
         if not edge.right.startswith("simbad:"):
             continue
         d = edge.details

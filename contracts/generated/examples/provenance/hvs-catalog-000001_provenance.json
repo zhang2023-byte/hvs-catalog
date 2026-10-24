@@ -1,0 +1,116 @@
+{
+  "schema_version": 4,
+  "data_version": "fictional-example",
+  "catalog_id": "hvs-catalog-000001",
+  "associations": [
+    {
+      "method": "identifier",
+      "identifier": "Gaia DR3 1234567890123456789",
+      "nodes": [
+        "2601.00001v1#/stars/0",
+        "2601.00002v1#/stars/0"
+      ]
+    }
+  ],
+  "simbad": {
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "HD 999999",
+      "aliases": [
+        "Gaia DR3 1234567890123456789"
+      ],
+      "position": {
+        "ra_deg": 10.0,
+        "dec_deg": 20.0,
+        "frame": "icrs",
+        "equinox": null,
+        "evidence": []
+      },
+      "fields": {
+        "plx_value": {
+          "value": 0.125,
+          "unit": "mas"
+        },
+        "plx_err": {
+          "value": 0.0625,
+          "unit": "mas"
+        },
+        "plx_qual": {
+          "value": "A"
+        },
+        "plx_bibcode": {
+          "value": "FictionalReference"
+        },
+        "plx_prec": {
+          "value": 4
+        },
+        "sp_type": {
+          "value": "B2V"
+        }
+      },
+      "photometry": []
+    },
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "Gaia DR3 1234567890123456789",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "queried_at": "2026-01-01T00:00:00+00:00",
+        "client_version": "fictional",
+        "service_version": null,
+        "error": null
+      }
+    ],
+    "matches": [
+      {
+        "main_id": "HD 999999",
+        "method": "identifier",
+        "identifier": "Gaia DR3 1234567890123456789",
+        "candidate": {
+          "$ref": "#/simbad/alternatives/0"
+        }
+      }
+    ],
+    "alternatives": [
+      {
+        "main_id": "HD 999999",
+        "aliases": [
+          "Gaia DR3 1234567890123456789"
+        ],
+        "position": {
+          "ra_deg": 10.0,
+          "dec_deg": 20.0,
+          "frame": "icrs"
+        },
+        "fields": {
+          "plx_value": {
+            "value": 0.125,
+            "unit": "mas"
+          },
+          "plx_err": {
+            "value": 0.0625,
+            "unit": "mas"
+          },
+          "plx_qual": {
+            "value": "A"
+          },
+          "plx_bibcode": {
+            "value": "FictionalReference"
+          },
+          "plx_prec": {
+            "value": 4
+          },
+          "sp_type": {
+            "value": "B2V"
+          }
+        },
+        "photometry": []
+      }
+    ]
+  }
+}

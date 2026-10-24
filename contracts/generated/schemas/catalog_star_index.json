@@ -1,0 +1,94 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "StarEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "catalog_id": {
+          "pattern": "^hvs-catalog-[0-9]{6,}$",
+          "title": "Catalog Id",
+          "type": "string"
+        },
+        "display_name": {
+          "title": "Display Name",
+          "type": "string"
+        },
+        "file": {
+          "$ref": "#/$defs/ArtifactRef"
+        }
+      },
+      "required": [
+        "catalog_id",
+        "display_name",
+        "file"
+      ],
+      "title": "StarEntry",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": 4,
+      "enum": [
+        2,
+        3,
+        4
+      ],
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "next_id": {
+      "minimum": 1,
+      "title": "Next Id",
+      "type": "integer"
+    },
+    "retired_ids": {
+      "patternProperties": {
+        "^hvs-catalog-[0-9]{6,}$": {
+          "items": {
+            "pattern": "^hvs-catalog-[0-9]{6,}$",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "title": "Retired Ids",
+      "type": "object"
+    },
+    "stars": {
+      "items": {
+        "$ref": "#/$defs/StarEntry"
+      },
+      "title": "Stars",
+      "type": "array"
+    }
+  },
+  "required": [
+    "next_id",
+    "retired_ids",
+    "stars"
+  ],
+  "title": "StarIndex",
+  "type": "object"
+}

@@ -15,7 +15,16 @@ from ..records.catalog import (
     SkyPosition,
 )
 from ..records.common import sha256_of
-from .identity import coordinate, gaia_conflicts, keys, names, separation, sky
+from .identity import (
+    coordinate,
+    coordinate_interpretation,
+    coordinate_warnings,
+    gaia_conflicts,
+    keys,
+    names,
+    separation,
+    sky,
+)
 from .inputs import json_bytes
 
 
@@ -65,6 +74,20 @@ def queries_for(stars):
 def resolve_simbad(stars, frozen):
     queries = queries_for(stars)
     history, candidates, warnings = [], [], []
+    coordinate_inputs = {}
+    for node, star in stars:
+        pos = coordinate(star)
+        if pos is not None:
+            query = SimbadQuery(
+                method="coordinates", position=pos.model_copy(update={"evidence": []})
+            )
+            coordinate_inputs.setdefault(query_key(query), []).append(
+                {
+                    "node": node,
+                    "position": pos.model_dump(mode="json"),
+                    "interpretation": coordinate_interpretation(pos),
+                }
+            )
     all_names = [name for _, star in stars for name in names(star)]
     any_failure = False
     if gaia_conflicts(all_names):
@@ -86,8 +109,20 @@ def resolve_simbad(stars, frozen):
                 "client_version": response.client_version if response else None,
                 "service_version": response.service_version if response else None,
                 "error": response.error if response else None,
+                **(
+                    {"coordinate_inputs": coordinate_inputs[query_key(query)]}
+                    if query.method == "coordinates"
+                    else {}
+                ),
             }
         )
+        if query.method == "coordinates":
+            for item in coordinate_inputs[query_key(query)]:
+                for warning in coordinate_warnings(
+                    SkyPosition.model_validate(item["position"])
+                ):
+                    if warning not in warnings:
+                        warnings.append(warning)
         if response and response.error:
             any_failure = True
         return response
@@ -219,39 +254,6 @@ def selected_candidates(snapshot):
     return list({sha256_of(c): c for c in values}.values())
 
 
-def previous_identity_conflicts(edges, members):
-    """Keep rejected fixed identity evidence on the affected current source group."""
-    conflicts = []
-    for edge in edges:
-        if (
-            edge.accepted
-            or edge.left not in members
-            or edge.method != "simbad"
-            or not edge.details.get("matched_identifiers")
-        ):
-            continue
-        evidence = edge.details["simbad_evidence"]
-        reason = edge.details["reason"]
-        conflicts.append(
-            SimbadSnapshot(
-                status="conflict",
-                reason=reason,
-                queries=[q for item in evidence for q in item["queries"]],
-                candidates=[
-                    {
-                        "main_id": item["candidate"]["main_id"],
-                        "method": "identifier",
-                        "rejected_candidate": item["candidate"],
-                        "source_node": edge.left,
-                        "reason": reason,
-                    }
-                    for item in evidence
-                ],
-            )
-        )
-    return conflicts
-
-
 def combine_snapshots(stars, snapshots):
     """Preserve every frozen input and reject incompatible external identities."""
     if not snapshots:
@@ -291,7 +293,7 @@ def combine_snapshots(stars, snapshots):
     if len({s.selected.main_id for s in selected}) > 1:
         reason = "Frozen SIMBAD identities resolve to different objects."
     elif gaia_conflicts([*reported, *external]):
-        reason = "Previous SIMBAD identity conflicts with new evidence."
+        reason = "Frozen SIMBAD identity conflicts with reported identifiers."
     if reason or unresolved:
         result = result.model_copy(
             update={
@@ -342,6 +344,7 @@ def coordinate_associations(stars, snapshot, origins):
                 origins={node: origins[node]},
                 details={
                     "left_position": pos.model_dump(mode="json"),
+                    "coordinate_interpretation": coordinate_interpretation(pos),
                     "right_position": chosen["candidate"]["position"],
                     "separation_arcsec": chosen["separation_arcsec"],
                     "threshold_arcsec": 5.0,
