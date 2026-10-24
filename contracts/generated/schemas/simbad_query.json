@@ -1,0 +1,103 @@
+{
+  "$defs": {
+    "SkyPosition": {
+      "additionalProperties": false,
+      "description": "Coordinates used only for identity matching; no epoch propagation.",
+      "properties": {
+        "ra_deg": {
+          "exclusiveMaximum": 360,
+          "minimum": 0,
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "frame": {
+          "enum": [
+            "icrs",
+            "fk5",
+            "fk4"
+          ],
+          "title": "Frame",
+          "type": "string"
+        },
+        "equinox": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Equinox"
+        },
+        "evidence": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg",
+        "frame"
+      ],
+      "title": "SkyPosition",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "method": {
+      "enum": [
+        "identifier",
+        "coordinates"
+      ],
+      "title": "Method",
+      "type": "string"
+    },
+    "identifier": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Identifier"
+    },
+    "position": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SkyPosition"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "radius_arcsec": {
+      "const": 5.0,
+      "default": 5.0,
+      "title": "Radius Arcsec",
+      "type": "number"
+    }
+  },
+  "required": [
+    "method"
+  ],
+  "title": "SimbadQuery",
+  "type": "object"
+}

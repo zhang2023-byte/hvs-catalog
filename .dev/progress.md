@@ -6,35 +6,35 @@
 
 更新日期：2026-10-24（北京时间）。
 
-### 当前：413篇按arXiv ID整理完成，直接读取最终results
+### 当前：获准合入main并启动413篇星表构建
 
-用户已明确授权统一全部413篇目录，每篇仅保留一套最终成果，旧结果和修复归档，不再维护结果索引，已有结果不重跑。本次整理与独立复核均完成；本轮仍为R19后文献维护，不启动R20实现。
+2026-10-24用户明确授权将独立工作树codex/catalog-build合入main，并开始catalog构建全流程。已验证适配代码将随原R20实现一起交付，主工作区文献维护文档先保存到Git，再合并开发事实。没有推送授权。真实SIMBAD仍按此前约定，在实际查询样本和范围确认后执行。
 
-**后续唯一读取位置：[文献runs目录](../.work/literature/runs)下的`*/results/literature_contribution.json`。** 目录为`runs/<无版本arXiv ID>/results/`，旧式ID的`/`在目录中替换为`_`；每篇恰好三个文件：科学JSON、evidence_audit.json、run.json。共413个论文目录，无exec编号、哈希子目录或修复子目录。科学内容字节不变；audit仅调整结果路径。最终run格式为`hvs.final-literature-result`，保存论文／版本、完整性、结果与审计引用及原运行来源；它不是一次新提取。
+文献维护已完成：最终入口为.work/literature/runs/<无版本arXiv ID>/results/，413篇均完整，250空名单，1278条论文内对象、7621数值、2290审计观察；尚未跨论文去重。固定范围为UTC首次提交2005-01-01至2026-10-23，arXiv all字段联合四个已审定短语，不限制分类。原执行及9篇修复保存在history/extraction；当前交付根不是可接续业务空间，不执行旧脚本。整理核验与独立盘点证据见.work/literature/reports/final-results.md及results-layout-check.json。迁移校验沿用文献任务结果，控制器均已结束；原168篇中23篇参与开发Gold比较，准确率不外推。
 
-[汇总及读取约定](../.work/literature/reports/final-results.md)与[核验摘要](../.work/literature/reports/results-layout-check.json)已更新。旧combined-413-index及分批索引仅在历史归档中保留，不再作为活动入口，也不再维护新总索引。
+### 已完成实现
 
-### 数量、范围与历史
+- [最终交付读取](../src/hvs_catalog/catalogue/delivery.py)：只读取runs/<无版本arXiv ID>/results/，每篇恰好科学JSON、audit、run三个文件；旧式ID目录以_替代/。核对ID／版本、哈希、完整性、同代审计及明确历史来源，不遍历history选旧结果、不依赖总索引。拒绝缺文件、额外文件、路径越界、符号链接及错绑定。
+- [修复溯源](../src/hvs_catalog/catalogue/repairs.py)：常规修复保持校验；累计修复核验前轮manifest／阶段与本轮阶段，重放结构恢复回执，再按原组合规则核对选定科学结果。5篇无模型本地恢复以固定原执行、trace、输入及逐对象快照核验未单独哈希的facts／baseline，避免依赖旧索引或当前可变执行状态。
+- [恢复核验](../src/hvs_catalog/catalogue/recovery.py)：仅重放已保存回执，核对原请求／响应、完整传输和原始响应哈希，保持全部标量、值对象及已成功数量组，通过原科学校验器。未扩展全局模型输出解析器或放宽科学规则，不执行历史脚本，不依赖归档中的旧绝对路径。
+- 最终科学字节与历史选定成果保持一致，audit只允许结果路径重绑。来源保留逐对象状态、诊断及修复阶段；run_sha256绑定最终run，而最终run绑定历史run和所选结果。恒星科学字段、关联、编号及display_name规则不变。
+- [CLI](../src/hvs_catalog/cli_catalog.py)增加catalog select --results与catalog check-inputs --results。前者固定本次构建输入，不维护第二份文献索引；后者只核验并统计输入，不关联或导出真实恒星。旧--index／--space入口保留历史兼容。[共同记录](../src/hvs_catalog/records/catalog.py)、[生成合同](../contracts/generated/catalog-format.md)及仓库外安装自检已同步。
 
-原168篇现168完整、846条论文内对象、5276数值、95空名单；新增245篇245完整、432对象、2345数值、155空名单。合计413完整、250空名单、1278对象、7621数值；非空名单163篇，其中22篇没有数值；1101对象含数值、177对象无数值。尚未跨论文去重，结构完整不代表科学准确率。
+### 本轮验证
 
-固定查询为UTC首次提交2005-01-01至2026-10-23，arXiv all字段联合四个短语hypervelocity star、hyper-velocity star、high velocity star、unbound star，不限制分类。413篇与保存的直接检索XML完全一致；旧597／429范围不活动，范围外184篇已清理。
+新增39项[最终目录](../tests/test_catalog_delivery.py)和[修复](../tests/test_catalog_repairs.py)回归，全用合成材料。覆盖正常／空名单／部分结果，迁移和旧式ID，新增文献关联已有对象并保持编号和名称，新对象追加，累计修复保留前轮名单／数值，本地恢复保留部分成果，篡改及错绑定拒绝，CLI导出与完整科学贡献。
 
-原运行空间完整移入[history/extraction](../.work/literature/history/extraction)，内部相对路径及文件内容保持不变，包含原数据库、执行、响应、旧结果、修复及旧索引。当前papers保留同字节独立文件，未使用符号链接。当前文献根为成果交付目录；公共业务接口只在历史空间只读核验。历史脚本保留当时路径，不直接执行或恢复。最终run中的result_ref和evidence_audit_ref相对当前文献根，source.run_ref相对source.root指定的历史根；历史嵌套修复空间仍用各自原根。
+- uv run --frozen pytest -q tests/test_catalog_delivery.py tests/test_catalog_repairs.py tests/test_catalog.py tests/test_catalog_inputs.py tests/test_catalog_service.py：98通过，105.24秒。
+- Ruff检查／格式、生成合同--check、git diff --check通过。
+- 常规1208／integration 180，收集互斥。
+- uv run --frozen pytest -q：1388通过，521.79秒，无失败／跳过；2条既有workspace fork弃用提示。
+- uv run --frozen python tools/check_distribution.py 3.11及3.12均通过：仓库外全新wheel安装，未用PYTHONPATH指向源码，覆盖最终results→选定输入→合成papers／stars→verify及原有流程。
 
-归档内`.state/backfill-2005-20261023`保留新增245篇的授权与解析／网络／格式修复；`.state/original-168-format-20261024`保留原5篇8阶段的本地恢复。本轮没有重跑任何材料；46个原解析复用事实沿用此前核验，原成功内容不变。旧部分／失败状态保持历史事实，不据此重跑。
+全部413篇已通过新版catalog check-inputs只读核验，含此前失败的9篇修复结果，211.26秒完成。检查脚本禁用网络；统计为413完整、250空名单、1278论文内对象、7621数值、2290审计观察。1239个最终文件、25个历史数据库／标记文件及主工作区开发文档前后哈希不变。核验只读取既有成果及来源，没有构造真实星表；结构和来源通过不代表科学准确性。
 
-### 本次验证与运行边界
+### 接续与交付边界
 
-整理脚本在归档`.state/migration/organize_results.py`，Ruff与格式检查通过；先只读预检，再持主空间及四个修复空间锁进行迁移，最后在新进程执行--verify。413篇集合、唯一性、版本和全部科学JSON／材料字节一致；旧168篇1023个受保护文件通过原哈希核对。44,178个持久化归档文件的路径／哈希整体一致，SQLite瞬时-shm除外。五个空间共12,517条记录的引用、检查点均通过；2290条审计观察对应相同科学JSON位置与原quote。独立程序仅遍历最终results，未读总索引，复算数量完全一致。
-
-0新增模型调用／0新增tokens／0重新解析；没有修改业务数据库、科学规则、提示、模型配置、源码或依赖。官方MinerU v4 vlm及DeepSeek v4.1-flash-1017／deepseek、名单Max／数值Low图文的历史冻结事实不变。所有控制器已结束，定时任务245此前已删除。本次为数据布局核验，未跑无关全量产品测试或读取Gold；新增245篇历史调用用量仍见归档报告。
-
-### R20与Git
-
-Plan已改为直接读取413篇最终results并校验同目录run／audit，R20仍待人类整体确认，不进行星表构建、SIMBAD、评分或R21。原168篇中23篇参与开发Gold比较，准确率不外推。
-
-本次在主工作树main整理工作材料，仅Plan／Progress及工作目录产物变动，未提交／推送；原R20文档变更保留。随后按用户清理要求，通过应用的可恢复归档移除了`literature-scope-cleanup`工作树：无独有提交，两份未提交的material_retention实现／测试由归档保存，忽略文件仅为虚拟环境及缓存。已核对Git工作树列表与目录均不再包含该树，主仓413篇成果仍齐全；其他工作树未改动。
+下一步合入main，冻结413篇输入，构建并核验catalog候选，统计SIMBAD标识／坐标查询和建议小样本，再确认真实调用范围。不会重新解析、提取、读取Gold或评分，未启动R21。验证日志及核验脚本留独立工作树.work/catalog-review/results-inputs-*和verify-final-inputs.py；本轮未另安排子Agent复审。真实构建结果按实际完成更新本节。
 
 ## 任务总表
 
@@ -60,7 +60,7 @@ Plan已改为直接读取413篇最终results并校验同目录run／audit，R20�
 | [R17](plan.md#r17) | 通过 | 2026-10-06 | 完整数值评分、三篇真实核对及 Gold50 规则绑定获验收；1597 测试与双版本安装通过，自动组数值 F1 74.51%；按授权两仓本地交付。 |
 | [R18](plan.md#r18) | 通过 | 2026-10-06 | 规则 0.3.0、全自动流程与诊断隔离获验收；1,613 测试及 3.11／3.12 独立安装通过，已完成本地Git交付及计划精简。 |
 | [R19](plan.md#r19) | 通过 | 2026-10-23 | 人类确认优化达到目标并批准本地整合；程序与原优化分支一致，五个主题提交交付。168篇派生结果163完整／5部分；开发Gold与评分解释限制继续保留。 |
-| [R20](plan.md#r20) | 未开始 | — | 展平单星JSON结构及display_name规则已确认，最终目录／命名／匹配／SIMBAD／字段与验收方案已更新；待人类整体确认后实施。 |
+| [R20](plan.md#r20) | 进行中 | — | 原离线实现及新results适配通过验证；用户已授权合入main并构建413篇星表，真实SIMBAD样本／范围待确认。 |
 | [R21](plan.md#r21) | 未开始 | — | GitHub Pages、完整数据独立下载与Agent Skill；数据库／SQL／表格按后续需求另定。 |
 
 未标注最终评价名单已取消；如另开展独立评价，按[Plan 分工](plan.md#独立评价与人类分工)确定范围。

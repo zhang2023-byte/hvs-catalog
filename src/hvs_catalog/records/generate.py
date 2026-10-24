@@ -290,6 +290,12 @@ def build_outputs():
         "schemas/extraction_input.json": _schema_json(ExtractionInput),
         "examples/run.json": run_example().model_dump_json(indent=2) + "\n",
     }
+    from ..catalogue.contracts import outputs as catalog_outputs
+
+    outputs.update(catalog_outputs())
+    outputs["README.md"] += (
+        "\n[Catalog format and commands](catalog-format.md) describe fixed JSON snapshots and explicit SIMBAD acquisition.\n"
+    )
     for stage in ("roster", "quantities"):
         blueprint = assemble_blueprint(stage)
         outputs[f"schemas/submission.{stage}.json"] = (

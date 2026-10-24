@@ -1,0 +1,1079 @@
+{
+  "$defs": {
+    "Association": {
+      "additionalProperties": false,
+      "properties": {
+        "left": {
+          "title": "Left",
+          "type": "string"
+        },
+        "right": {
+          "title": "Right",
+          "type": "string"
+        },
+        "method": {
+          "enum": [
+            "identifier",
+            "coordinates",
+            "paper",
+            "simbad",
+            "previous"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "accepted": {
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "details": {
+          "additionalProperties": true,
+          "title": "Details",
+          "type": "object"
+        },
+        "historical": {
+          "default": false,
+          "description": "True for an association adopted or considered in a previous snapshot.",
+          "title": "Historical",
+          "type": "boolean"
+        },
+        "origins": {
+          "additionalProperties": {
+            "$ref": "#/$defs/AssociationOrigin"
+          },
+          "description": "Identity-only provenance for every paper endpoint, including old versions.",
+          "title": "Origins",
+          "type": "object"
+        }
+      },
+      "required": [
+        "left",
+        "right",
+        "method",
+        "accepted",
+        "details"
+      ],
+      "title": "Association",
+      "type": "object"
+    },
+    "AssociationOrigin": {
+      "additionalProperties": false,
+      "description": "Fixed paper identity evidence, including sources superseded by later versions.",
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/LiteratureMetadata"
+        },
+        "result_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Result Sha256",
+          "type": "string"
+        },
+        "pdf_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Pdf Sha256",
+          "type": "string"
+        },
+        "pdf_url": {
+          "title": "Pdf Url",
+          "type": "string"
+        },
+        "pdf_origin": {
+          "additionalProperties": true,
+          "title": "Pdf Origin",
+          "type": "object"
+        },
+        "result_index": {
+          "minimum": 0,
+          "title": "Result Index",
+          "type": "integer"
+        },
+        "identifiers": {
+          "items": {
+            "$ref": "#/$defs/LiteratureIdentifier"
+          },
+          "minItems": 1,
+          "title": "Identifiers",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source",
+        "result_sha256",
+        "pdf_sha256",
+        "pdf_url",
+        "pdf_origin",
+        "result_index",
+        "identifiers"
+      ],
+      "title": "AssociationOrigin",
+      "type": "object"
+    },
+    "CatalogContributionType": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "description": "Contribution category. Scientific inclusion rules are separate.",
+          "enum": [
+            "candidates_found",
+            "follow_up"
+          ],
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this contribution type.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "evidence",
+        "source"
+      ],
+      "title": "CatalogContributionType",
+      "type": "object"
+    },
+    "CatalogIdentifier": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "description": "Star identifier.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this identifier.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "evidence",
+        "source"
+      ],
+      "title": "CatalogIdentifier",
+      "type": "object"
+    },
+    "CatalogQuantity": {
+      "additionalProperties": false,
+      "properties": {
+        "quantity": {
+          "enum": [
+            "ra",
+            "dec",
+            "distance",
+            "parallax",
+            "proper_motion_ra",
+            "proper_motion_dec",
+            "radial_velocity",
+            "galactocentric_radius",
+            "galactic_rest_frame_velocity",
+            "bound_probability",
+            "unbound_probability"
+          ],
+          "title": "Quantity",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/CatalogValue"
+          },
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "quantity",
+        "values"
+      ],
+      "title": "CatalogQuantity",
+      "type": "object"
+    },
+    "CatalogSource": {
+      "additionalProperties": false,
+      "properties": {
+        "arxiv_id": {
+          "description": "Bare arXiv identifier, without a version suffix.",
+          "pattern": "^(?:[0-9]{4}\\.[0-9]{4,5}|[a-zA-Z-]+(?:\\.[A-Z]{2})?/[0-9]{7})$",
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "version": {
+          "description": "arXiv paper version, such as v1; not a format version.",
+          "pattern": "^v[1-9][0-9]*$",
+          "title": "Version",
+          "type": "string"
+        },
+        "title": {
+          "description": "Paper title.",
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "authors": {
+          "description": "Paper authors in reported order.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        },
+        "paper_notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Paper Notes",
+          "type": "array"
+        },
+        "result_status": {
+          "enum": [
+            "complete",
+            "partial"
+          ],
+          "title": "Result Status",
+          "type": "string"
+        },
+        "roster_status": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ],
+          "title": "Roster Status",
+          "type": "string"
+        },
+        "roster_issues": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Roster Issues",
+          "type": "array"
+        },
+        "roster_rejected": {
+          "additionalProperties": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "title": "Roster Rejected",
+          "type": "object"
+        },
+        "errors": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "result_sha256": {
+          "title": "Result Sha256",
+          "type": "string"
+        },
+        "run_sha256": {
+          "title": "Run Sha256",
+          "type": "string"
+        },
+        "input_sha256": {
+          "title": "Input Sha256",
+          "type": "string"
+        },
+        "pdf_sha256": {
+          "title": "Pdf Sha256",
+          "type": "string"
+        },
+        "pdf_url": {
+          "description": "Versioned arXiv reference URL; not a claim about the download method.",
+          "title": "Pdf Url",
+          "type": "string"
+        },
+        "pdf_origin": {
+          "additionalProperties": true,
+          "description": "Original source-package provenance, including synthetic or local import origins.",
+          "title": "Pdf Origin",
+          "type": "object"
+        },
+        "objects": {
+          "items": {
+            "$ref": "#/$defs/SourceObject"
+          },
+          "title": "Objects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "version",
+        "title",
+        "authors",
+        "paper_notes",
+        "result_status",
+        "roster_status",
+        "roster_issues",
+        "roster_rejected",
+        "errors",
+        "result_sha256",
+        "run_sha256",
+        "input_sha256",
+        "pdf_sha256",
+        "pdf_url",
+        "pdf_origin",
+        "objects"
+      ],
+      "title": "CatalogSource",
+      "type": "object"
+    },
+    "CatalogValue": {
+      "additionalProperties": false,
+      "dependentRequired": {
+        "lower_inclusive": [
+          "lower_bound"
+        ],
+        "upper_inclusive": [
+          "upper_bound"
+        ]
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "lower_error"
+            ]
+          },
+          {
+            "required": [
+              "upper_error"
+            ]
+          }
+        ],
+        "required": [
+          "error"
+        ]
+      },
+      "oneOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "lower_bound"
+                ]
+              },
+              {
+                "required": [
+                  "upper_bound"
+                ]
+              }
+            ]
+          },
+          "required": [
+            "value"
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "required": [
+                "lower_bound"
+              ]
+            },
+            {
+              "required": [
+                "upper_bound"
+              ]
+            }
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "value"
+                ]
+              },
+              {
+                "required": [
+                  "error"
+                ]
+              },
+              {
+                "required": [
+                  "lower_error"
+                ]
+              },
+              {
+                "required": [
+                  "upper_error"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "value": {
+          "description": "Reported point value.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "error": {
+          "description": "Reported symmetric error.",
+          "minLength": 1,
+          "title": "Error",
+          "type": "string"
+        },
+        "lower_error": {
+          "description": "Reported lower error, preserving its original sign.",
+          "minLength": 1,
+          "title": "Lower Error",
+          "type": "string"
+        },
+        "upper_error": {
+          "description": "Reported upper error, preserving its original sign.",
+          "minLength": 1,
+          "title": "Upper Error",
+          "type": "string"
+        },
+        "lower_bound": {
+          "description": "Reported lower limit or interval endpoint.",
+          "minLength": 1,
+          "title": "Lower Bound",
+          "type": "string"
+        },
+        "upper_bound": {
+          "description": "Reported upper limit or interval endpoint.",
+          "minLength": 1,
+          "title": "Upper Bound",
+          "type": "string"
+        },
+        "lower_inclusive": {
+          "description": "Whether the reported lower bound is included.",
+          "title": "Lower Inclusive",
+          "type": "boolean"
+        },
+        "upper_inclusive": {
+          "description": "Whether the reported upper bound is included.",
+          "title": "Upper Inclusive",
+          "type": "boolean"
+        },
+        "unit": {
+          "description": "Unit, when applicable.",
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "condition": {
+          "description": "Relevant method, model, reference frame, or statistical meaning.",
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this value and its context.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence",
+        "source"
+      ],
+      "title": "CatalogValue",
+      "type": "object"
+    },
+    "ImageEvidence": {
+      "additionalProperties": false,
+      "description": "A supplied image location without a text transcription.",
+      "properties": {
+        "location": {
+          "description": "Complete image location, such as I:p5-b6.",
+          "pattern": "^I:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location"
+      ],
+      "title": "ImageEvidence",
+      "type": "object"
+    },
+    "LiteratureIdentifier": {
+      "additionalProperties": false,
+      "description": "One reported identifier and its supporting evidence.",
+      "properties": {
+        "value": {
+          "description": "Star identifier.",
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        },
+        "evidence": {
+          "description": "Evidence for this identifier.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextEvidence"
+              },
+              {
+                "$ref": "#/$defs/ImageEvidence"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "evidence"
+      ],
+      "title": "LiteratureIdentifier",
+      "type": "object"
+    },
+    "LiteratureMetadata": {
+      "additionalProperties": false,
+      "description": "Bibliographic identity of the fixed paper version.",
+      "properties": {
+        "arxiv_id": {
+          "description": "Bare arXiv identifier, without a version suffix.",
+          "pattern": "^(?:[0-9]{4}\\.[0-9]{4,5}|[a-zA-Z-]+(?:\\.[A-Z]{2})?/[0-9]{7})$",
+          "title": "Arxiv Id",
+          "type": "string"
+        },
+        "version": {
+          "description": "arXiv paper version, such as v1; not a format version.",
+          "pattern": "^v[1-9][0-9]*$",
+          "title": "Version",
+          "type": "string"
+        },
+        "title": {
+          "description": "Paper title.",
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "authors": {
+          "description": "Paper authors in reported order.",
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Authors",
+          "type": "array"
+        }
+      },
+      "required": [
+        "arxiv_id",
+        "version",
+        "title",
+        "authors"
+      ],
+      "title": "LiteratureMetadata",
+      "type": "object"
+    },
+    "QuoteMismatch": {
+      "additionalProperties": false,
+      "properties": {
+        "result_path": {
+          "description": "JSON Pointer to the evidence in the bound scientific result.",
+          "title": "Result Path",
+          "type": "string"
+        },
+        "location": {
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "description": "The submitted quote, preserved without changes.",
+          "title": "Quote",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "whitespace_difference",
+            "exact_match_elsewhere",
+            "unknown"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "result_path",
+        "location",
+        "quote",
+        "reason"
+      ],
+      "title": "QuoteMismatch",
+      "type": "object"
+    },
+    "RecordRef": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "minLength": 1,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "record_id",
+        "revision"
+      ],
+      "title": "RecordRef",
+      "type": "object"
+    },
+    "SimbadCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "main_id": {
+          "minLength": 1,
+          "title": "Main Id",
+          "type": "string"
+        },
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkyPosition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fields": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "description": "Basic returned fields, including units, errors and references when available.",
+          "title": "Fields",
+          "type": "object"
+        },
+        "photometry": {
+          "description": "Returned photometry with explicit band, errors and references when available.",
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Photometry",
+          "type": "array"
+        }
+      },
+      "required": [
+        "main_id",
+        "aliases",
+        "position",
+        "fields",
+        "photometry"
+      ],
+      "title": "SimbadCandidate",
+      "type": "object"
+    },
+    "SimbadSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "not_queried",
+            "matched",
+            "not_found",
+            "ambiguous",
+            "conflict",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "method": {
+          "anyOf": [
+            {
+              "enum": [
+                "identifier",
+                "coordinates"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Method"
+        },
+        "selected": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SimbadCandidate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "queries": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Queries",
+          "type": "array"
+        },
+        "candidates": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Candidates",
+          "type": "array"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "SimbadSnapshot",
+      "type": "object"
+    },
+    "SkyPosition": {
+      "additionalProperties": false,
+      "description": "Coordinates used only for identity matching; no epoch propagation.",
+      "properties": {
+        "ra_deg": {
+          "exclusiveMaximum": 360,
+          "minimum": 0,
+          "title": "Ra Deg",
+          "type": "number"
+        },
+        "dec_deg": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Dec Deg",
+          "type": "number"
+        },
+        "frame": {
+          "enum": [
+            "icrs",
+            "fk5",
+            "fk4"
+          ],
+          "title": "Frame",
+          "type": "string"
+        },
+        "equinox": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Equinox"
+        },
+        "evidence": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "ra_deg",
+        "dec_deg",
+        "frame"
+      ],
+      "title": "SkyPosition",
+      "type": "object"
+    },
+    "SourceObject": {
+      "additionalProperties": false,
+      "description": "A retained source object and its extraction completeness and diagnostics.",
+      "properties": {
+        "result_index": {
+          "minimum": 0,
+          "title": "Result Index",
+          "type": "integer"
+        },
+        "source_index": {
+          "minimum": 0,
+          "title": "Source Index",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "snapshot_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecordRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "repair_stage_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repair Stage Id"
+        },
+        "issues": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "rejected": {
+          "additionalProperties": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "title": "Rejected",
+          "type": "object"
+        },
+        "source_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Paths",
+          "type": "array"
+        },
+        "evidence_audit": {
+          "items": {
+            "$ref": "#/$defs/QuoteMismatch"
+          },
+          "title": "Evidence Audit",
+          "type": "array"
+        }
+      },
+      "required": [
+        "result_index",
+        "source_index",
+        "status",
+        "snapshot_ref",
+        "issues",
+        "rejected",
+        "source_paths",
+        "evidence_audit"
+      ],
+      "title": "SourceObject",
+      "type": "object"
+    },
+    "TextEvidence": {
+      "additionalProperties": false,
+      "description": "An evidence excerpt attributed to one supplied text block.",
+      "properties": {
+        "location": {
+          "description": "Complete text location, such as T:p3-b5.",
+          "pattern": "^T:p[1-9][0-9]*-b[0-9]+$",
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "description": "Faithful excerpt from this text block.",
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "quote"
+      ],
+      "title": "TextEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "data_version": {
+      "title": "Data Version",
+      "type": "string"
+    },
+    "catalog_id": {
+      "pattern": "^hvs-catalog-[0-9]{6,}$",
+      "title": "Catalog Id",
+      "type": "string"
+    },
+    "display_name": {
+      "title": "Display Name",
+      "type": "string"
+    },
+    "sources": {
+      "additionalProperties": {
+        "$ref": "#/$defs/CatalogSource"
+      },
+      "minProperties": 1,
+      "title": "Sources",
+      "type": "object"
+    },
+    "identifiers": {
+      "items": {
+        "$ref": "#/$defs/CatalogIdentifier"
+      },
+      "minItems": 1,
+      "title": "Identifiers",
+      "type": "array"
+    },
+    "contribution_types": {
+      "items": {
+        "$ref": "#/$defs/CatalogContributionType"
+      },
+      "minItems": 1,
+      "title": "Contribution Types",
+      "type": "array"
+    },
+    "quantities": {
+      "items": {
+        "$ref": "#/$defs/CatalogQuantity"
+      },
+      "title": "Quantities",
+      "type": "array"
+    },
+    "simbad": {
+      "$ref": "#/$defs/SimbadSnapshot"
+    },
+    "associations": {
+      "items": {
+        "$ref": "#/$defs/Association"
+      },
+      "title": "Associations",
+      "type": "array"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "data_version",
+    "catalog_id",
+    "display_name",
+    "sources",
+    "identifiers",
+    "contribution_types",
+    "quantities",
+    "simbad",
+    "associations",
+    "warnings"
+  ],
+  "title": "CatalogStar",
+  "type": "object"
+}

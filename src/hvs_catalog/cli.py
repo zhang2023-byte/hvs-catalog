@@ -68,6 +68,9 @@ def build_parser() -> argparse.ArgumentParser:
     from .cli_benchmark import add_benchmark_commands
 
     add_benchmark_commands(commands)
+    from .cli_catalog import add_catalog_commands
+
+    add_catalog_commands(commands)
     return parser
 
 
@@ -78,6 +81,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         # Show help until another top-level operation is implemented.
         parser.print_help()
         return 0
+    if args.command == "catalog":
+        from .cli_catalog import run_catalog_command
+
+        return run_catalog_command(args)
     if args.command == "gold":
         from .cli_gold import run_gold_command
 

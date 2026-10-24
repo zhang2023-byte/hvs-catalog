@@ -123,6 +123,62 @@ resume_extraction(space,eid,service=CallService(stored_configuration(get_executi
     assert roster_targets(restored,handle.execution_id)==targets
     assert resume_extraction(restored,handle.execution_id).outcome=='finished'
     assert len(seen)==4
+
+    from hvs_catalog.pipeline.results import current_result
+    from hvs_catalog.catalogue import verify_catalog
+    catalog_run_ref, _ = current_result(restored, handle.execution_id)
+    from hvs_catalog.catalogue.inputs import digest, json_bytes
+    from hvs_catalog.records.common import ArtifactRef
+    final_root = root/'final-delivery'
+    history = final_root/'history/extraction'
+    history.parent.mkdir(parents=True)
+    restore_workspace(root/'backup', history)
+    final_dir = final_root/'runs/2501.03333/results'
+    final_dir.mkdir(parents=True)
+    _, source_run = current_result(restored, handle.execution_id)
+    (final_dir/'literature_contribution.json').write_bytes(restored.read_file(source_run.result_ref))
+    def final_ref(path):
+        return ArtifactRef(path=str(path.relative_to(final_root)), sha256=digest(path.read_bytes())).model_dump()
+    final_audit = json.loads(restored.read_file(source_run.evidence_audit_ref))
+    final_audit['metadata']['result_ref'] = final_ref(final_dir/'literature_contribution.json')
+    (final_dir/'evidence_audit.json').write_bytes(json_bytes(final_audit))
+    (final_dir/'run.json').write_bytes(json_bytes({
+        'format':'hvs.final-literature-result', 'version':1,
+        'arxiv_id':'2501.03333', 'arxiv_version':'v1', 'completion':'complete',
+        'result_ref':final_ref(final_dir/'literature_contribution.json'),
+        'evidence_audit_ref':final_ref(final_dir/'evidence_audit.json'),
+        'source':{'root':'history/extraction','run_ref':catalog_run_ref.model_dump()},
+    }))
+    inputs = subprocess.run([str(script), 'catalog', 'check-inputs', '--results', str(final_root)],
+                            check=False, capture_output=True, text=True, timeout=30)
+    assert inputs.returncode == 0, inputs.stdout+inputs.stderr
+    assert json.loads(inputs.stdout)['values'] == 1
+    selection_path = root/'catalog-selection.json'
+    selected = subprocess.run([str(script), 'catalog', 'select', '--results', str(final_root),
+                               '--data-version', 'wheel-synthetic', '--output', str(selection_path)],
+                              check=False, capture_output=True, text=True, timeout=30)
+    assert selected.returncode == 0, selected.stdout+selected.stderr
+    for name in ('catalog-one', 'catalog-two'):
+        built = subprocess.run([str(script), 'catalog', 'build', '--selection', str(selection_path),
+                                '--output', str(root/name)], check=False, capture_output=True,
+                               text=True, timeout=30)
+        assert built.returncode == 0, built.stdout+built.stderr
+        checked = subprocess.run([str(script), 'catalog', 'verify', str(root/name)],
+                                 check=False, capture_output=True, text=True, timeout=30)
+        assert checked.returncode == 0, checked.stdout+checked.stderr
+        catalog_manifest = verify_catalog(root/name)
+        assert len(catalog_manifest.papers) == len(catalog_manifest.stars) == 1
+        stellar = json.loads((root/name/catalog_manifest.stars[0].file.path).read_bytes())
+        assert stellar['quantities'][0]['values'][0]['value'] == '520'
+        assert stellar['quantities'][0]['values'][0]['source'] == '2501.03333v1'
+        assert stellar['sources']['2501.03333v1']['objects'][0]['evidence_audit'][0]['quote'] == 'Installed warning quote'
+        assert stellar['simbad']['status'] == 'not_queried'
+    assert (root/'catalog-one/manifest.json').read_bytes() == (root/'catalog-two/manifest.json').read_bytes()
+    query_plan = subprocess.run([str(script), 'catalog', 'query-plan', '--selection', str(selection_path),
+                                 '--output', str(root/'query-plan.json')], check=False,
+                                capture_output=True, text=True, timeout=30)
+    assert query_plan.returncode == 0, query_plan.stdout+query_plan.stderr
+    assert len(seen) == 4
     from hvs_catalog.evaluation.adapt import prediction_from_execution
     from hvs_catalog.evaluation.gold import write_annotation
     from hvs_catalog.records.pdf_contribution import GoldAnnotation
