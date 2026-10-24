@@ -125,13 +125,39 @@ resume_extraction(space,eid,service=CallService(stored_configuration(get_executi
     assert len(seen)==4
 
     from hvs_catalog.pipeline.results import current_result
-    from hvs_catalog.records.catalog import CatalogSelection, PaperSelection
     from hvs_catalog.catalogue import verify_catalog
     catalog_run_ref, _ = current_result(restored, handle.execution_id)
-    selection = CatalogSelection(data_version='wheel-synthetic', papers=[
-        PaperSelection(workspace=str(restored.root), run_ref=catalog_run_ref)])
+    from hvs_catalog.catalogue.inputs import digest, json_bytes
+    from hvs_catalog.records.common import ArtifactRef
+    final_root = root/'final-delivery'
+    history = final_root/'history/extraction'
+    history.parent.mkdir(parents=True)
+    restore_workspace(root/'backup', history)
+    final_dir = final_root/'runs/2501.03333/results'
+    final_dir.mkdir(parents=True)
+    _, source_run = current_result(restored, handle.execution_id)
+    (final_dir/'literature_contribution.json').write_bytes(restored.read_file(source_run.result_ref))
+    def final_ref(path):
+        return ArtifactRef(path=str(path.relative_to(final_root)), sha256=digest(path.read_bytes())).model_dump()
+    final_audit = json.loads(restored.read_file(source_run.evidence_audit_ref))
+    final_audit['metadata']['result_ref'] = final_ref(final_dir/'literature_contribution.json')
+    (final_dir/'evidence_audit.json').write_bytes(json_bytes(final_audit))
+    (final_dir/'run.json').write_bytes(json_bytes({
+        'format':'hvs.final-literature-result', 'version':1,
+        'arxiv_id':'2501.03333', 'arxiv_version':'v1', 'completion':'complete',
+        'result_ref':final_ref(final_dir/'literature_contribution.json'),
+        'evidence_audit_ref':final_ref(final_dir/'evidence_audit.json'),
+        'source':{'root':'history/extraction','run_ref':catalog_run_ref.model_dump()},
+    }))
+    inputs = subprocess.run([str(script), 'catalog', 'check-inputs', '--results', str(final_root)],
+                            check=False, capture_output=True, text=True, timeout=30)
+    assert inputs.returncode == 0, inputs.stdout+inputs.stderr
+    assert json.loads(inputs.stdout)['values'] == 1
     selection_path = root/'catalog-selection.json'
-    selection_path.write_text(selection.model_dump_json(indent=2))
+    selected = subprocess.run([str(script), 'catalog', 'select', '--results', str(final_root),
+                               '--data-version', 'wheel-synthetic', '--output', str(selection_path)],
+                              check=False, capture_output=True, text=True, timeout=30)
+    assert selected.returncode == 0, selected.stdout+selected.stderr
     for name in ('catalog-one', 'catalog-two'):
         built = subprocess.run([str(script), 'catalog', 'build', '--selection', str(selection_path),
                                 '--output', str(root/name)], check=False, capture_output=True,

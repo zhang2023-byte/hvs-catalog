@@ -8,8 +8,13 @@ unless the selection provides a replacement for the same bare arXiv ID.
 
 ## Commands
 
+- `hvs-catalog catalog check-inputs --results LITERATURE_ROOT` verifies final results
+  and their historical provenance without associating or exporting stellar objects.
+- `hvs-catalog catalog select --results LITERATURE_ROOT --data-version VERSION --output SELECTION`
+  freezes the current runs/<bare-arxiv-id>/results files for this build.
+  This immutable build selection is not a separately maintained literature index.
 - `hvs-catalog catalog select --index INDEX --space SPACE --data-version VERSION --output SELECTION`
-  converts either existing execution-index reference spelling without guessing latest results.
+  retains legacy execution-index compatibility without guessing latest results.
 - `hvs-catalog catalog build --selection SELECTION --output NEW_DIRECTORY [--previous CATALOG] [--simbad RESPONSES]`
   publishes a new complete snapshot; an existing destination is never overwritten.
 - `hvs-catalog catalog verify CATALOG` validates hashes, references, source coverage,
@@ -22,6 +27,24 @@ unless the selection provides a replacement for the same bare arXiv ID.
   To refresh, list existing object IDs in selection.simbad_refresh and use a new
   response directory after approving its scope. Retirement keeps the original IDs
   for refresh selection; refreshing one member queries its entire merged group.
+
+## Final literature inputs
+
+Each final results directory contains exactly literature_contribution.json,
+evidence_audit.json and run.json. Old-style arXiv slashes become underscores in
+directory names only; the original ID and version remain in scientific metadata.
+Final run and audit references are relative to the delivery root. source.root is
+also relative to that root; source.run_ref is relative to the historical workspace.
+The final wrapper is not an execution and the delivery root needs no business database.
+Only explicitly referenced historical runs are read. Historical scripts are never run.
+Science bytes, paper/version, completion and audit observations must match the verified
+source; only the audit result path is rebound. CatalogSource.run_sha256 binds the selected
+final wrapper, which in turn binds the exact historical run and delivered file hashes.
+Cumulative repairs retain validated prior stages plus the selected later replacements.
+Local container recoveries replay their saved receipts against exact archived responses,
+preserve every scalar and accepted group, and pass the original scientific validators.
+This read-only compatibility path does not extend the live response parser.
+Missing files, changed hashes, escaping/symlink paths and inconsistent lineage are refused.
 
 ## Scientific and identity rules
 
@@ -79,6 +102,30 @@ Complete fictional record: [catalog_star.json](examples/catalog_star.json).
 The example uses placeholder hashes and fabricated papers; it is not catalog data.
 
 ## Fields
+
+#### FinalLiteratureResult
+
+The selected paper result and audit, stored in runs/<bare ID>/results/run.json.
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `format` | `hvs.final-literature-result` | yes |  |  |
+| `version` | `1` | yes |  |  |
+| `arxiv_id` | `string` | yes |  |  |
+| `arxiv_version` | `string` | yes |  |  |
+| `completion` | `complete` / `partial` | yes |  |  |
+| `result_ref` | `ArtifactRef` | yes |  | Final scientific file, relative to the delivery root. |
+| `evidence_audit_ref` | `ArtifactRef` | yes |  | Same-generation audit, relative to the delivery root. |
+| `source` | `FinalResultSource` | yes |  |  |
+
+#### FinalResultSource
+
+The exact historical run behind a final delivery; not a new extraction.
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `root` | `string` | yes | minLength 1 | Historical workspace root, relative to the delivery root. |
+| `run_ref` | `ArtifactRef` | yes |  | Original extraction or repair run, relative to the historical root. |
 
 #### CatalogSelection
 

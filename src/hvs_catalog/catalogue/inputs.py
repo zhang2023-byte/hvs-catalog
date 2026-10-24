@@ -161,7 +161,8 @@ def _native(space, raw):
 
 def _derived(space, raw):
     """Replay frozen repair fragments without scoring or reading Gold."""
-    from ..benchmark.repair import repaired_prediction, validate_fragments
+    from ..benchmark.repair import repaired_prediction
+    from .repairs import repair_inputs
 
     if (
         raw.get("version") != 1
@@ -169,32 +170,13 @@ def _derived(space, raw):
         or not raw.get("format_valid")
     ):
         raise ValueError("Unsupported or undelivered repair result.")
-    manifest = json.loads(
-        space.read_file(ArtifactRef.model_validate(raw["manifest_ref"]))
-    )
-    folder = resolve_within(space.root, raw["manifest_ref"]["path"]).parent
-    facts = json.loads((folder / "source-facts.json").read_bytes())
-    baselines = json.loads((folder / "baselines.json").read_bytes())
-    if (
-        sha256_of(facts) != manifest["source_facts_sha256"]
-        or sha256_of(baselines) != manifest["baselines_sha256"]
-    ):
-        raise ValueError("Frozen repair source facts changed.")
-    paper = raw["arxiv_id"]
-    if facts[paper]["summary"]["execution_id"] != raw["source_execution_id"]:
-        raise ValueError("Repair source execution does not match its paper.")
-    state = json.loads((folder / "state.json").read_bytes())
-    if state["finished"] is None:
-        raise ValueError("Repair is not finished.")
-    jobs = [j for j in state["jobs"] if j["paper"] == paper]
-    if not jobs:
-        raise ValueError("Selected repair has no matching stages.")
-    validate_fragments(folder, facts, jobs)
-    expected = repaired_prediction(baselines[paper], facts[paper], jobs)
     refs = raw["outputs"]
     retained = json.loads(
         space.read_file(ArtifactRef.model_validate(refs["retained-prediction.json"]))
     )
+    facts, baselines, jobs = repair_inputs(space, raw, retained)
+    paper = raw["arxiv_id"]
+    expected = repaired_prediction(baselines[paper], facts[paper], jobs)
     science_ref = ArtifactRef.model_validate(refs["literature_contribution.json"])
     science_bytes = space.read_file(science_ref)
     science = LiteratureContribution.model_validate_json(science_bytes)
@@ -275,6 +257,12 @@ def _derived(space, raw):
 
 
 def load_paper(selection):
+    if not selection.archive_ref:
+        raw = json.loads(read_bound(Path(selection.workspace), selection.run_ref))
+        if raw.get("format") == "hvs.final-literature-result":
+            from .delivery import load_final
+
+            return load_final(selection)
     base = open_workspace(Path(selection.workspace), read_only=True)
     space = base
     try:

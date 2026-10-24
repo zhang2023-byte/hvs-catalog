@@ -18,8 +18,37 @@ from .literature_contribution import (
 CatalogId = Annotated[str, Field(pattern=r"^hvs-catalog-[0-9]{6,}$")]
 
 
+class FinalResultSource(Config):
+    """The exact historical run behind a final delivery; not a new extraction."""
+
+    root: str = Field(
+        min_length=1,
+        description="Historical workspace root, relative to the delivery root.",
+    )
+    run_ref: ArtifactRef = Field(
+        description="Original extraction or repair run, relative to the historical root."
+    )
+
+
+class FinalLiteratureResult(Config):
+    """The selected paper result and audit, stored in runs/<bare ID>/results/run.json."""
+
+    format: Literal["hvs.final-literature-result"]
+    version: Literal[1]
+    arxiv_id: str
+    arxiv_version: str
+    completion: Literal["complete", "partial"]
+    result_ref: ArtifactRef = Field(
+        description="Final scientific file, relative to the delivery root."
+    )
+    evidence_audit_ref: ArtifactRef = Field(
+        description="Same-generation audit, relative to the delivery root."
+    )
+    source: FinalResultSource
+
+
 class PaperSelection(Config):
-    """Select an exact extraction generation; paths are relative to its workspace."""
+    """Select an exact extraction or final delivery; paths are relative to its declared root."""
 
     workspace: str = Field(min_length=1)
     run_ref: ArtifactRef

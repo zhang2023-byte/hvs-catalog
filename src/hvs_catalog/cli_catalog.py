@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .catalogue import build_catalog, load_selection, verify_catalog
 from .catalogue.build import inherited_snapshots, prepare_groups
+from .catalogue.delivery import inspect_results, selection_from_results
 from .catalogue.inputs import json_bytes, selection_from_index
 from .catalogue.simbad import AstroquerySimbad, collect_queries, queries_for, query_key
 from .records.catalog import SimbadQuery
@@ -16,11 +17,17 @@ from .workspace import WorkspaceError
 def add_catalog_commands(commands):
     catalog = commands.add_parser("catalog", help="固定JSON星表、身份关联与SIMBAD快照")
     sub = catalog.add_subparsers(dest="catalog_command", required=True)
-    select = sub.add_parser("select", help="将准确执行索引转为固定构建清单")
-    select.add_argument("--index", type=Path, required=True)
-    select.add_argument("--space", type=Path, required=True)
+    select = sub.add_parser("select", help="从最终results或历史索引固定本次构建输入")
+    source = select.add_mutually_exclusive_group(required=True)
+    source.add_argument("--results", type=Path, help="含runs目录的最终文献交付根")
+    source.add_argument("--index", type=Path, help="旧执行索引（仅历史兼容）")
+    select.add_argument("--space", type=Path, help="旧执行索引对应的业务空间")
     select.add_argument("--data-version", required=True)
     select.add_argument("--output", type=Path, required=True)
+    inspect = sub.add_parser(
+        "check-inputs", help="只读核验最终results与来源，不构造星表"
+    )
+    inspect.add_argument("--results", type=Path, required=True)
     build = sub.add_parser("build", help="离线构建新快照，不访问SIMBAD")
     build.add_argument("--selection", type=Path, required=True)
     build.add_argument("--output", type=Path, required=True)
@@ -47,9 +54,20 @@ def run_catalog_command(args):
     try:
         name = args.catalog_command
         if name == "select":
-            selection = selection_from_index(args.index, args.space, args.data_version)
+            if args.results:
+                if args.space:
+                    raise ValueError("--space is only valid with --index.")
+                selection = selection_from_results(args.results, args.data_version)
+            else:
+                if not args.space:
+                    raise ValueError("--index requires --space.")
+                selection = selection_from_index(
+                    args.index, args.space, args.data_version
+                )
             _write_new(args.output, selection)
             result = {"papers": len(selection.papers), "selection": str(args.output)}
+        elif name == "check-inputs":
+            result = {"valid": True, **inspect_results(args.results)}
         elif name == "build":
             manifest = build_catalog(
                 load_selection(args.selection),

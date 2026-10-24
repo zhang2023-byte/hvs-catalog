@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "FinalResultSource": {
+      "additionalProperties": false,
+      "description": "The exact historical run behind a final delivery; not a new extraction.",
+      "properties": {
+        "root": {
+          "description": "Historical workspace root, relative to the delivery root.",
+          "minLength": 1,
+          "title": "Root",
+          "type": "string"
+        },
+        "run_ref": {
+          "$ref": "#/$defs/ArtifactRef",
+          "description": "Original extraction or repair run, relative to the historical root."
+        }
+      },
+      "required": [
+        "root",
+        "run_ref"
+      ],
+      "title": "FinalResultSource",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The selected paper result and audit, stored in runs/<bare ID>/results/run.json.",
+  "properties": {
+    "format": {
+      "const": "hvs.final-literature-result",
+      "title": "Format",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "arxiv_id": {
+      "title": "Arxiv Id",
+      "type": "string"
+    },
+    "arxiv_version": {
+      "title": "Arxiv Version",
+      "type": "string"
+    },
+    "completion": {
+      "enum": [
+        "complete",
+        "partial"
+      ],
+      "title": "Completion",
+      "type": "string"
+    },
+    "result_ref": {
+      "$ref": "#/$defs/ArtifactRef",
+      "description": "Final scientific file, relative to the delivery root."
+    },
+    "evidence_audit_ref": {
+      "$ref": "#/$defs/ArtifactRef",
+      "description": "Same-generation audit, relative to the delivery root."
+    },
+    "source": {
+      "$ref": "#/$defs/FinalResultSource"
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "arxiv_id",
+    "arxiv_version",
+    "completion",
+    "result_ref",
+    "evidence_audit_ref",
+    "source"
+  ],
+  "title": "FinalLiteratureResult",
+  "type": "object"
+}
