@@ -1,0 +1,56 @@
+name: Deploy HVS Catalog Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9
+        with:
+          version: "0.11.3"
+
+      - name: Install locked runtime
+        run: uv sync --frozen --no-dev --python 3.12
+
+      - name: Verify catalog
+        run: uv run --no-sync hvs-catalog catalog verify catalog
+
+      - name: Build static site
+        env:
+          PAGES_REPOSITORY: ${{ github.server_url }}/${{ github.repository }}
+        run: >-
+          uv run --no-sync python tools/build_site.py
+          --catalog catalog --output .work/pages
+          --repository "$PAGES_REPOSITORY"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: .work/pages
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
