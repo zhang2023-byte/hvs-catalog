@@ -1,5 +1,30 @@
 {
   "$defs": {
+    "AppliedCorrection": {
+      "additionalProperties": false,
+      "description": "Marks a stellar item replaced by an approved correction; evidence is the fixed PDF.",
+      "properties": {
+        "decision": {
+          "minLength": 1,
+          "title": "Decision",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/CorrectionEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "decision",
+        "evidence"
+      ],
+      "title": "AppliedCorrection",
+      "type": "object"
+    },
     "ArtifactRef": {
       "additionalProperties": false,
       "properties": {
@@ -90,6 +115,18 @@
         "source": {
           "title": "Source",
           "type": "string"
+        },
+        "correction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppliedCorrection"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Approved fixed-PDF correction of this item; evidence above is the original extraction."
         }
       },
       "required": [
@@ -300,6 +337,30 @@
         "source": {
           "title": "Source",
           "type": "string"
+        },
+        "correction": {
+          "$ref": "#/$defs/AppliedCorrection",
+          "description": "Approved fixed-PDF correction of this item; evidence above is the original extraction."
+        },
+        "attribution": {
+          "default": "own",
+          "description": "This paper’s measurements/calculations or public catalog data; other-paper values; or quantity-definition mismatch.",
+          "enum": [
+            "own",
+            "cited",
+            "mismatch"
+          ],
+          "title": "Attribution",
+          "type": "string"
+        },
+        "attribution_reason": {
+          "description": "Reason for a reviewed exception.",
+          "title": "Attribution Reason",
+          "type": "string"
+        },
+        "standard": {
+          "$ref": "#/$defs/StandardValue",
+          "description": "Deterministic standard-unit derivation; original fields remain unchanged."
         }
       },
       "required": [
@@ -307,6 +368,34 @@
         "source"
       ],
       "title": "CatalogValue",
+      "type": "object"
+    },
+    "CorrectionEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "location": {
+          "description": "Table and row or precise passage in the fixed PDF.",
+          "minLength": 1,
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "location",
+        "quote"
+      ],
+      "title": "CorrectionEvidence",
       "type": "object"
     },
     "ImageEvidence": {
@@ -932,7 +1021,8 @@
             {
               "enum": [
                 "identifier",
-                "coordinates"
+                "coordinates",
+                "review"
               ],
               "type": "string"
             },
@@ -1122,6 +1212,130 @@
       "title": "SimbadVelocity",
       "type": "object"
     },
+    "StandardValue": {
+      "additionalProperties": false,
+      "description": "Deterministic unit conversion; decimal strings preserve reported precision.",
+      "properties": {
+        "unit": {
+          "enum": [
+            "km/s",
+            "kpc",
+            "deg",
+            "mas",
+            "mas/yr",
+            "1"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "lower_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Error"
+        },
+        "upper_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper Error"
+        },
+        "lower_bound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Bound"
+        },
+        "upper_bound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper Bound"
+        },
+        "lower_inclusive": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower Inclusive"
+        },
+        "upper_inclusive": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper Inclusive"
+        },
+        "approximate": {
+          "default": false,
+          "title": "Approximate",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "unit"
+      ],
+      "title": "StandardValue",
+      "type": "object"
+    },
     "StarSource": {
       "additionalProperties": false,
       "properties": {
@@ -1187,6 +1401,14 @@
   },
   "additionalProperties": false,
   "properties": {
+    "aliases": {
+      "description": "Approved display aliases, separate from original paper identifiers.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Aliases",
+      "type": "array"
+    },
     "data_version": {
       "title": "Data Version",
       "type": "string"
@@ -1239,8 +1461,11 @@
       "type": "array"
     },
     "schema_version": {
-      "const": 4,
-      "default": 4,
+      "default": 5,
+      "enum": [
+        4,
+        5
+      ],
       "title": "Schema Version",
       "type": "integer"
     },

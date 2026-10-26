@@ -1,0 +1,128 @@
+{
+  "$defs": {
+    "CorrectionEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "object": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reading label only; the build ignores it.",
+          "title": "Object"
+        },
+        "path": {
+          "pattern": "^.+v[0-9]+#/stars/[0-9]+/(identifiers/[0-9]+|quantities/[0-9]+/values/[0-9]+)$",
+          "title": "Path",
+          "type": "string"
+        },
+        "change": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "items": {},
+                "type": "array"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Changed fields as [extracted, corrected]; null means absent.",
+          "title": "Change"
+        },
+        "withdraw": {
+          "default": false,
+          "title": "Withdraw",
+          "type": "boolean"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/CorrectionEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "approved": {
+          "description": "Approval date followed by the approver or approval record.",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} \\S",
+          "title": "Approved",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "path",
+        "evidence",
+        "reason",
+        "approved"
+      ],
+      "title": "CorrectionEntry",
+      "type": "object"
+    },
+    "CorrectionEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "location": {
+          "description": "Table and row or precise passage in the fixed PDF.",
+          "minLength": 1,
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "location",
+        "quote"
+      ],
+      "title": "CorrectionEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 3,
+      "default": 3,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "corrections": {
+      "items": {
+        "$ref": "#/$defs/CorrectionEntry"
+      },
+      "title": "Corrections",
+      "type": "array"
+    }
+  },
+  "title": "CorrectionReviews",
+  "type": "object"
+}

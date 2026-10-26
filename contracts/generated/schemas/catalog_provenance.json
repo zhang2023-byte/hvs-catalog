@@ -52,6 +52,126 @@
       "title": "AssociationOrigin",
       "type": "object"
     },
+    "CorrectionDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "correct",
+          "default": "correct",
+          "title": "Type",
+          "type": "string"
+        },
+        "paper": {
+          "pattern": "^.+v[0-9]+$",
+          "title": "Paper",
+          "type": "string"
+        },
+        "science_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Science Sha256",
+          "type": "string"
+        },
+        "pdf_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Pdf Sha256",
+          "type": "string"
+        },
+        "path": {
+          "pattern": "^/stars/[0-9]+/(identifiers/[0-9]+|quantities/[0-9]+/values/[0-9]+)$",
+          "title": "Path",
+          "type": "string"
+        },
+        "original": {
+          "additionalProperties": true,
+          "title": "Original",
+          "type": "object"
+        },
+        "replacement": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Complete corrected item, or null to withdraw a value.",
+          "title": "Replacement"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/CorrectionEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "approved_by": {
+          "minLength": 1,
+          "title": "Approved By",
+          "type": "string"
+        },
+        "approved_on": {
+          "format": "date",
+          "title": "Approved On",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "paper",
+        "science_sha256",
+        "pdf_sha256",
+        "path",
+        "original",
+        "replacement",
+        "evidence",
+        "reason",
+        "approved_by",
+        "approved_on"
+      ],
+      "title": "CorrectionDecision",
+      "type": "object"
+    },
+    "CorrectionEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "location": {
+          "description": "Table and row or precise passage in the fixed PDF.",
+          "minLength": 1,
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "location",
+        "quote"
+      ],
+      "title": "CorrectionEvidence",
+      "type": "object"
+    },
     "IdentifierAssociation": {
       "additionalProperties": false,
       "properties": {
@@ -81,6 +201,132 @@
       "title": "IdentifierAssociation",
       "type": "object"
     },
+    "IdentityDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "merge",
+            "separate",
+            "name",
+            "simbad"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "groups": {
+          "description": "Source-record groups to merge or keep apart; name and SIMBAD target one complete group.",
+          "items": {
+            "items": {
+              "pattern": "^.+v[0-9]+#/stars/(0|[1-9][0-9]*)$",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "minItems": 1,
+          "title": "Groups",
+          "type": "array"
+        },
+        "papers": {
+          "additionalProperties": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "minProperties": 1,
+          "title": "Papers",
+          "type": "object"
+        },
+        "responses": {
+          "description": "SIMBAD query key to frozen response hash; changes invalidate the decision.",
+          "patternProperties": {
+            "^[0-9a-f]{64}$": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            }
+          },
+          "title": "Responses",
+          "type": "object"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/ReviewEvidence"
+          },
+          "minItems": 1,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "approved_by": {
+          "minLength": 1,
+          "title": "Approved By",
+          "type": "string"
+        },
+        "approved_on": {
+          "format": "date",
+          "title": "Approved On",
+          "type": "string"
+        },
+        "unresolved": {
+          "default": false,
+          "description": "A separate or unselected SIMBAD decision may record an unresolved identity.",
+          "title": "Unresolved",
+          "type": "boolean"
+        },
+        "display_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Display Name"
+        },
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "main_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For SIMBAD decisions, null revokes the correspondence.",
+          "title": "Main Id"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "groups",
+        "papers",
+        "reason",
+        "evidence",
+        "approved_by",
+        "approved_on"
+      ],
+      "title": "IdentityDecision",
+      "type": "object"
+    },
     "IdentityLink": {
       "additionalProperties": false,
       "properties": {
@@ -89,7 +335,8 @@
             "identifier",
             "coordinates",
             "paper",
-            "simbad"
+            "simbad",
+            "review"
           ],
           "title": "Method",
           "type": "string"
@@ -248,7 +495,8 @@
             {
               "enum": [
                 "identifier",
-                "coordinates"
+                "coordinates",
+                "review"
               ],
               "type": "string"
             },
@@ -337,6 +585,40 @@
         "status"
       ],
       "title": "PublishedSimbad",
+      "type": "object"
+    },
+    "ReviewEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "paper": {
+          "description": "Exact versioned paper key in the decision bindings.",
+          "title": "Paper",
+          "type": "string"
+        },
+        "location": {
+          "minLength": 1,
+          "title": "Location",
+          "type": "string"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote"
+        }
+      },
+      "required": [
+        "paper",
+        "location"
+      ],
+      "title": "ReviewEvidence",
       "type": "object"
     },
     "SimbadCandidate": {
@@ -474,9 +756,36 @@
   },
   "additionalProperties": false,
   "properties": {
+    "review_decisions": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "correct": "#/$defs/CorrectionDecision",
+            "merge": "#/$defs/IdentityDecision",
+            "name": "#/$defs/IdentityDecision",
+            "separate": "#/$defs/IdentityDecision",
+            "simbad": "#/$defs/IdentityDecision"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/IdentityDecision"
+          },
+          {
+            "$ref": "#/$defs/CorrectionDecision"
+          }
+        ]
+      },
+      "title": "Review Decisions",
+      "type": "array"
+    },
     "schema_version": {
-      "const": 4,
-      "default": 4,
+      "default": 5,
+      "enum": [
+        4,
+        5
+      ],
       "title": "Schema Version",
       "type": "integer"
     },

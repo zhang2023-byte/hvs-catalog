@@ -20,8 +20,9 @@ from .identity import (
     coordinate_interpretation,
     coordinate_warnings,
     gaia_conflicts,
-    keys,
+    identifier_key,
     names,
+    sdss_query_identifier,
     separation,
     sky,
 )
@@ -55,8 +56,33 @@ class FrozenSimbad:
         return response
 
 
+def identifier_inputs(stars):
+    """Bind original and query-only spellings to their exact source evidence."""
+    inputs = {}
+    for node, star in stars:
+        for identifier in star.identifiers:
+            original = identifier_key(identifier.value)
+            derived = sdss_query_identifier(identifier.value)
+            for key, derivation in (
+                (original, "reported_identifier"),
+                (derived, "sdss_standard_truncation"),
+            ):
+                if not key or (
+                    derivation == "sdss_standard_truncation" and key == original
+                ):
+                    continue
+                item = {
+                    "source_record": node,
+                    "original_identifier": identifier.model_dump(mode="json"),
+                    "derivation": derivation,
+                }
+                if item not in inputs.setdefault(key, []):
+                    inputs[key].append(item)
+    return inputs
+
+
 def queries_for(stars):
-    identifiers = sorted({key for _, star in stars for key in keys(star)})
+    identifiers = sorted(identifier_inputs(stars))
     queries = [
         SimbadQuery(method="identifier", identifier=name) for name in identifiers
     ]
@@ -73,6 +99,7 @@ def queries_for(stars):
 
 def resolve_simbad(stars, frozen):
     queries = queries_for(stars)
+    identifier_sources = identifier_inputs(stars)
     history, candidates, warnings = [], [], []
     coordinate_inputs = {}
     for node, star in stars:
@@ -109,6 +136,11 @@ def resolve_simbad(stars, frozen):
                 "client_version": response.client_version if response else None,
                 "service_version": response.service_version if response else None,
                 "error": response.error if response else None,
+                **(
+                    {"identifier_inputs": identifier_sources[query.identifier]}
+                    if query.method == "identifier"
+                    else {}
+                ),
                 **(
                     {"coordinate_inputs": coordinate_inputs[query_key(query)]}
                     if query.method == "coordinates"
@@ -236,6 +268,27 @@ def resolve_simbad(stars, frozen):
         )
     return result(
         "not_found", reason="No candidate matched the requested identifiers or radius."
+    )
+
+
+def reliable_identifier_match(snapshot):
+    """A query-only SDSS spelling cannot authorize an automatic object merge."""
+    if snapshot.status != "matched" or snapshot.method != "identifier":
+        return False
+    original_queries = {
+        q["query"]["identifier"]
+        for q in snapshot.queries
+        if q["query"]["method"] == "identifier"
+        and any(
+            item["derivation"] == "reported_identifier"
+            for item in q.get("identifier_inputs", [])
+        )
+    }
+    return any(
+        item.get("method") == "identifier"
+        and item["main_id"] == snapshot.selected.main_id
+        and item["identifier"] in original_queries
+        for item in snapshot.candidates
     )
 
 

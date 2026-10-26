@@ -48,7 +48,7 @@ def test_public_files_remove_execution_payload_and_pairwise_growth(build):
     assert "Recovered old failure" not in json.dumps(raw)
     assert list(raw)[-1] == "warnings"
     release = json.loads((path / "manifest.json").read_bytes())
-    assert release["schema_version"] == 4
+    assert release["schema_version"] == 5
     assert release["counts"] == {
         "papers": 8,
         "stars": 1,

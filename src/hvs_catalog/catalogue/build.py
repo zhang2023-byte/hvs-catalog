@@ -20,11 +20,13 @@ from .identity import (
 )
 from .inputs import digest, json_bytes, load_papers
 from .provenance import paper_origin
-from .publication import artifact, publish, verify_catalog
+from .publication import artifact, check_release, publish, verify_catalog
+from .review import Review
 from .simbad import (
     FrozenSimbad,
     combine_snapshots,
     coordinate_associations,
+    reliable_identifier_match,
     resolve_simbad,
     selected_candidates,
 )
@@ -34,44 +36,46 @@ def node_key(key, index):
     return f"{key}#/stars/{index}"
 
 
-def prepare_groups(selection):
+def prepare_groups(selection, *, review=None, frozen=None):
     """Compute identities from the complete selected extraction results."""
     papers = {p.key: p for p in sorted(load_papers(selection), key=lambda p: p.key)}
+    reviewed = Review(review, papers, frozen or FrozenSimbad())
     nodes = [
         Node(
-            node_key(key, i), star, origin=paper_origin(paper.source, paper.science, i)
+            node_key(key, i),
+            star,
+            origin=paper_origin(paper.source, reviewed.effective[key], i),
         )
         for key, paper in papers.items()
-        for i, star in enumerate(paper.science.stars)
+        for i, star in enumerate(reviewed.effective[key].stars)
     ]
     groups = associate(
-        nodes, selection.explicit_associations, conflicts=source_conflicts(nodes)
+        nodes,
+        selection.explicit_associations,
+        conflicts=source_conflicts(nodes),
+        separations=reviewed.separation_pairs(),
     )
+    reviewed.merge(groups)
+    groups.review = reviewed
     return papers, groups
 
 
-def build_catalog(selection, output, *, simbad=None, hook=None):
-    output = Path(output).resolve()
-    for paper in selection.papers:
-        workspace = Path(paper.workspace).resolve()
-        if (
-            output == workspace
-            or workspace in output.parents
-            or output in workspace.parents
-        ):
-            raise ValueError("Publish the catalog outside the input workspace.")
-    papers, groups = prepare_groups(selection)
+def prepare_snapshot(selection, *, simbad=None, review=None):
     frozen = FrozenSimbad(simbad)
+    papers, groups = prepare_groups(selection, review=review, frozen=frozen)
+    reviewed = groups.review
     snapshots = {}
     for members in groups.groups():
         scientific = groups.scientific(members)
         if not scientific:
             continue
-        snapshot = resolve_simbad(scientific, frozen)
+        snapshot = reviewed.simbad(
+            members, scientific, resolve_simbad(scientific, frozen), final=False
+        )
         snapshots[members[0]] = snapshot
     matches = {}
     for key, snapshot in snapshots.items():
-        if snapshot.status == "matched" and snapshot.method == "identifier":
+        if reliable_identifier_match(snapshot):
             matches.setdefault(snapshot.selected.main_id, []).append(key)
     for main_id, members in sorted(matches.items()):
         for left, right in pairwise(members):
@@ -106,6 +110,26 @@ def build_catalog(selection, output, *, simbad=None, hook=None):
                     ]
                 ],
             )
+    return papers, groups, snapshots, frozen
+
+
+def build_catalog(
+    selection, output, *, simbad=None, review=None, hook=None, queue=None, release=False
+):
+    """Publish a complete snapshot; the review queue is a separate working file."""
+    output = Path(output).resolve()
+    for paper in selection.papers:
+        workspace = Path(paper.workspace).resolve()
+        if (
+            output == workspace
+            or workspace in output.parents
+            or output in workspace.parents
+        ):
+            raise ValueError("Publish the catalog outside the input workspace.")
+    papers, groups, snapshots, frozen = prepare_snapshot(
+        selection, simbad=simbad, review=review
+    )
+    reviewed = groups.review
     next_id = 1
     files, stars, star_index = {}, [], []
     for members in groups.groups():
@@ -115,7 +139,9 @@ def build_catalog(selection, output, *, simbad=None, hook=None):
         catalog_id = f"hvs-catalog-{next_id:06d}"
         next_id += 1
         relevant = [s for key, s in snapshots.items() if key in members]
-        snapshot = combine_snapshots(scientific, relevant)
+        snapshot = reviewed.simbad(
+            members, scientific, combine_snapshots(scientific, relevant)
+        )
         sources, identifiers, types, quantities = {}, [], [], {}
         for node, star in scientific:
             key, index_text = node.split("#/stars/")
@@ -125,17 +151,14 @@ def build_catalog(selection, output, *, simbad=None, hook=None):
                     deep=True, update={"objects": []}
                 )
             sources[key].objects.append(paper.source.objects[int(index_text)])
-            identifiers.extend(
-                {**v.model_dump(mode="json"), "source": key} for v in star.identifiers
-            )
             types.append(
                 {**star.contribution_type.model_dump(mode="json"), "source": key}
             )
-            for quantity in star.quantities:
-                quantities.setdefault(quantity.quantity, []).extend(
-                    {**v.model_dump(mode="json"), "source": key}
-                    for v in quantity.values
-                )
+            for kind, quantity, item in reviewed.items(key, int(index_text)):
+                if kind == "identifier":
+                    identifiers.append(item)
+                else:
+                    quantities.setdefault(quantity, []).append(item)
         edges = [
             edge
             for edge in groups.edges
@@ -181,12 +204,16 @@ def build_catalog(selection, output, *, simbad=None, hook=None):
             warnings.append(
                 "Some evidence quotes have audit warnings; inspect sources."
             )
+        name_decision = reviewed.for_group(members, "name")
         stars.append(
             CatalogStar(
                 data_version=selection.data_version,
                 catalog_id=catalog_id,
-                display_name=display_name(scientific, snapshot, catalog_id),
+                display_name=name_decision.display_name
+                if name_decision
+                else display_name(scientific, snapshot, catalog_id),
                 sources=sources,
+                aliases=name_decision.aliases if name_decision else [],
                 identifiers=identifiers,
                 contribution_types=types,
                 quantities=[
@@ -194,6 +221,7 @@ def build_catalog(selection, output, *, simbad=None, hook=None):
                 ],
                 simbad=snapshot,
                 associations=edges,
+                review_decisions=reviewed.decisions_for(members),
                 warnings=list(dict.fromkeys(warnings)),
             )
         )
@@ -242,6 +270,7 @@ def build_catalog(selection, output, *, simbad=None, hook=None):
                 "explicit_associations": [
                     e.model_dump(mode="json") for e in selection.explicit_associations
                 ],
+                "review": reviewed.fingerprint,
             }
         ),
         simbad_fingerprint=sha256_of({"responses": frozen.used}),
@@ -253,6 +282,17 @@ def build_catalog(selection, output, *, simbad=None, hook=None):
     )
     from .readable import export_files
 
+    report = reviewed.report(groups, stars)
+    if queue is not None:
+        queue = Path(queue).resolve()
+        if queue == output or output in queue.parents:
+            raise ValueError("Write the review queue outside the catalog.")
+        temporary = queue.with_name(queue.name + ".tmp")
+        temporary.parent.mkdir(parents=True, exist_ok=True)
+        temporary.write_bytes(json_bytes(report))
+        temporary.replace(queue)
+    if release:
+        check_release(report)
     export_files(manifest, stars, papers, files)
     publish(output, files, hook=hook)
     return verify_catalog(output)

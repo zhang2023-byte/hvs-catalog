@@ -4,6 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
 
+from .catalog_review import AppliedCorrection, ReviewDecision, StandardValue
 from .common import ArtifactRef, Config, RecordRef
 from .evidence_audit import QuoteMismatch
 from .literature_contribution import (
@@ -113,8 +114,14 @@ class CatalogSource(LiteratureMetadata):
     objects: list[SourceObject]
 
 
+_CORRECTION = "Approved fixed-PDF correction of this item; evidence above is the original extraction."
+
+
 class CatalogIdentifier(LiteratureIdentifier):
     source: str
+    correction: AppliedCorrection | None = Field(
+        default=None, exclude_if=lambda v: v is None, description=_CORRECTION
+    )
 
 
 class CatalogContributionType(LiteratureContributionType):
@@ -123,6 +130,23 @@ class CatalogContributionType(LiteratureContributionType):
 
 class CatalogValue(LiteratureValue):
     source: str
+    correction: AppliedCorrection | None = Field(
+        default=None, exclude_if=lambda v: v is None, description=_CORRECTION
+    )
+    attribution: Literal["own", "cited", "mismatch"] = Field(
+        default="own",
+        description="This paper’s measurements/calculations or public catalog data; other-paper values; or quantity-definition mismatch.",
+    )
+    attribution_reason: str | None = Field(
+        default=None,
+        exclude_if=lambda v: v is None,
+        description="Reason for a reviewed exception.",
+    )
+    standard: StandardValue | None = Field(
+        default=None,
+        exclude_if=lambda v: v is None,
+        description="Deterministic standard-unit derivation; original fields remain unchanged.",
+    )
 
 
 class CatalogQuantity(Config):
@@ -184,9 +208,12 @@ class SimbadSnapshot(Config):
     status: Literal[
         "not_queried", "matched", "not_found", "ambiguous", "conflict", "failed"
     ]
-    method: Literal["identifier", "coordinates"] | None = None
+    method: Literal["identifier", "coordinates", "review"] | None = None
     selected: SimbadCandidate | None = None
-    queries: list[dict] = Field(default_factory=list)
+    queries: list[dict] = Field(
+        default_factory=list,
+        description="Frozen query history. Identifier entries include identifier_inputs binding source_record, original_identifier with evidence, and reported_identifier or sdss_standard_truncation derivation. Derived spellings are query-only, never automatic merge evidence.",
+    )
     candidates: list[dict] = Field(default_factory=list)
     reason: str | None = None
     warnings: list[str] = Field(default_factory=list)
@@ -218,7 +245,9 @@ class AssociationOrigin(Config):
 class Association(Config):
     left: str
     right: str
-    method: Literal["identifier", "coordinates", "paper", "simbad", "previous"]
+    method: Literal[
+        "identifier", "coordinates", "paper", "simbad", "previous", "review"
+    ]
     accepted: bool
     details: dict
     historical: bool = Field(
@@ -232,7 +261,8 @@ class Association(Config):
 
 
 class CatalogStar(Config):
-    schema_version: Literal[1, 2, 3, 4] = 1
+    aliases: list[str] = Field(default_factory=list, exclude_if=lambda v: not v)
+    schema_version: Literal[1, 2, 3, 4, 5] = 1
     data_version: str
     catalog_id: CatalogId
     display_name: str
@@ -242,6 +272,7 @@ class CatalogStar(Config):
     quantities: list[CatalogQuantity]
     simbad: SimbadSnapshot
     associations: list[Association]
+    review_decisions: list[ReviewDecision] = Field(default_factory=list)
     warnings: list[str]
 
     @model_validator(mode="after")
@@ -276,9 +307,9 @@ class PublishedStar(Config):
 
 
 class CatalogManifest(Config):
-    schema_version: Literal[1, 2, 3, 4] = 1
+    schema_version: Literal[1, 2, 3, 4, 5] = 1
     data_version: str
-    rules_version: Literal[1, 2, 3, 4] = 4
+    rules_version: Literal[1, 2, 3, 4, 5, 6] = 6
     software_version: str
     input_fingerprint: str
     simbad_fingerprint: str

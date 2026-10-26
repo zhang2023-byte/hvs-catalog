@@ -2,7 +2,7 @@
 
 从高速星文献中整理对象、作者判断和测量值，保留原文依据，建设可回查来源与修订的星表。
 
-当前已完成文献获取、PDF解析、名单与数值提取、来源核验、跨论文关联及SIMBAD补充。仓库中的[catalog](catalog/manifest.json)是可独立读取的JSON星表包，包含单星科学数据、论文来源和统一追溯文件；网页、下载入口与Agent Skill留待R21。数据版本与数量以manifest为准，构建状态见[Progress](.dev/progress.md)，命令与字段见[生成合同](contracts/generated/catalog-format.md)。
+当前已完成文献获取、PDF解析、名单与数值提取、来源核验、跨论文关联、SIMBAD补充及发布复核（身份归并、显示名、数值归属与转录更正）。仓库中的[catalog](catalog/manifest.json)是可独立读取的JSON星表包，包含单星科学数据、论文来源和统一追溯文件；它由固定提取成果、冻结SIMBAD响应和[人工复核输入](catalog-review)从零构建，网页与下载见R22。数据版本与数量以manifest为准，构建状态见[Progress](.dev/progress.md)，命令与字段见[生成合同](contracts/generated/catalog-format.md)。
 
 ## 安装
 

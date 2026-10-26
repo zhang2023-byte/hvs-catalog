@@ -4,29 +4,20 @@
 
 ## 当前交接
 
-更新日期：2026-10-24（北京时间）。
+更新日期：2026-10-26（北京时间）。**R21人类验收通过，已本地提交（代码文档、数据两次），推送待授权**，R22未开始。规则见[Plan R21](plan.md#r21)。
 
-R20构建与验证完成，用户确认保留保守匹配，并授权代码、数据两个本地提交。提交状态以Git为准；推送和R21实施尚未授权。当前规则见[Plan](plan.md#r20)，JSON字段及命令见[生成合同](../contracts/generated/catalog-format.md)。
+- catalog数据版本`2026-10-25-release-review`，schema5、rules_version6：413篇、666对象、1278来源、7621值（6693 own／741 cited／187 mismatch）。旧R20版本（901记录）在提交`7aebb0a`中。
+- 重建输入：选择`.work/catalog-build/2026-10-25/selection.json`、唯一SIMBAD快照同目录`r21-simbad-responses/`（1293份）、复核输入[catalog-review](../catalog-review)、文献根`.work/literature/`（构建读取其history核验来源）。发布命令：`hvs-catalog catalog build --selection … --simbad … --review catalog-review --output .work/catalog-build/<日期>/catalog --release`，核对后替换仓库`catalog/`；待复核清单随之写在`.work/catalog-build/<日期>/catalog.queue.json`，不进catalog，也不提交（`.gitignore`另忽略`*.queue.json`）。
+- 复核输入改为三文件（papers、identity、corrections），论文哈希只记一次；298条决定（58 merge、29 separate、71 name、12 simbad、128 correct）与原单文件逐条展开一致，只删除6662条逐值模板，保留3篇论文7个值的来源不明说明。按用户要求，151条不同的理由、说明、证据位置和批准人改写为英文，绑定与结构不变；catalog中已无中文。新增`catalog bind-review`、`catalog compare`；单星JSON为128处更正加`correction`标记。按用户要求，值字段`nature`/`nature_reason`更名为`attribution`/`attribution_reason`（papers.json例外键同名），重建后除字段名外只有哈希和输入指纹变化。
+- 与停点4验收候选对比：科学内容、归组、名称、SIMBAD和清单条目一致；差异仅为更正标记、英文理由文字、provenance键顺序和哈希/指纹。review-report.json已移出catalog（2161文件），check-release命令并入`build --release`。清单pending0／unresolved3（140、141、144）／resolved151。
+- 本次检查：两次`--release`从零构建2161文件及清单逐字节一致；verify通过；与R20的compare无源记录丢失；全量离线1532、Ruff、格式、生成合同、`git diff --check`通过；Python3.11/3.12仓库外wheel安装通过。全量中workspace_locking的2条fork警告来自arxiv传输测试遗留线程，与本次改动无关。
+- 工作区按用户授权清理：删除R21过程材料、R20旧构建与报告、早期检索、旧批准副本、main-integration日志和uv缓存；旧分支bundle移至`.work/archive/branch-history-2026-10-23/`。literature、benchmark保留。
 
-### 当前交付
+后续事项：2011.10206 Table 1坐标condition写为“Gaia DR2/J2015.5”，表注未说明坐标来源；Hivel8与SIMBAD J2000位置仅差0.05″，Hivel3/4/7/17约差10年，与J2015.5不符。未做correct，留待后续复核。R22默认值两问题继续保留。
 
-[catalog](../catalog/manifest.json)为完整JSON星表包：schema v4、rules_version 4、数据版本2026-10-24-display-names；413篇、901条星记录、1278条来源记录、7621条文献数值。仅以完整提取选择和898份冻结SIMBAD响应从零构建，next_id为902，retired_ids为空。
+接续：推送待用户授权；之后进入R22。
 
-显示名551条来自SIMBAD、350条来自论文ID（其中57条局部编号附论文标识），无catalog_id回退。最新命名调整改变426个显示名，901个编号／归组及科学值、误差、来源、证据、SIMBAD状态和warnings不变；provenance仅更新数据版本。对比、样例及严格核对见[报告](../.work/catalog-build/2026-10-24/display-name-verification.json)。
-
-### 保留问题
-
-SIMBAD状态：编号matched455、坐标matched96、not_found84、not_queried265、conflict1。冲突[000824](../catalog/stars/hvs-catalog-000824.json)显示论文ID KIC 7881304。自动识别的来源证据矛盾仍分组保存：2401.05630v1的ID12／ID42对应000649／000682，ID38／ID62对应000678／000704；原值未校正。
-
-47种重名涉及214条记录，已核查590对组合：5组10条同SIMBAD待复核；2组4条发现2207.04406的自行被提取为Dec；37组183条为未关联短名／别名；HVS2／HVS3两组15条有同名异指；ID38／ID62一组2条因证据矛盾拒绝。详见[可读报告](../.work/catalog-build/2026-10-24/duplicate-name-audit.html)和[逐项事实](../.work/catalog-build/2026-10-24/duplicate-name-audit-facts.json)。按用户决定，本轮不扩大匹配或修正科学内容。
-
-### 验证与接续
-
-最终程序树1473项全量离线、203项catalog专项及Python3.11／3.12仓库外wheel安装通过；1291常规＋182集成互斥覆盖全量。两次独立CLI构建的2631个文件逐字节一致，根catalog校验通过。提交整理仅修改文档与锁文件忽略规则，沿用上述测试；另复查合同同步、Ruff／格式、diff、文档链接及数据完整性，不发起真实查询、模型调用或Gold操作。
-
-旧catalog与重复构建副本已清理；保留原始提取、冻结响应、固定选择和必要报告／日志。本机[构建选择](../.work/catalog-build/2026-10-24/display-name-selection.json)与同目录simbad-responses用于复现，不随代码或数据提交；单次切换脚本已消耗临时路径，不能直接重跑。
-
-复现：`UV_CACHE_DIR=/tmp/hvs-catalog-uv-cache uv run --no-sync hvs-catalog catalog build --selection .work/catalog-build/2026-10-24/display-name-selection.json --simbad .work/catalog-build/2026-10-24/simbad-responses --output NEW_DIRECTORY`。构建不读取现有catalog。R21后续从同一JSON快照实现网页、下载和Agent Skill，当前尚未开始。
+环境：命令前置`UV_CACHE_DIR=/private/tmp/hvs-catalog-uv-cache uv run --no-sync`。
 
 ## 任务总表
 
@@ -52,7 +43,8 @@ SIMBAD状态：编号matched455、坐标matched96、not_found84、not_queried265
 | [R17](plan.md#r17) | 通过 | 2026-10-06 | 完整数值评分、三篇真实核对及 Gold50 规则绑定获验收；1597 测试与双版本安装通过，自动组数值 F1 74.51%；按授权两仓本地交付。 |
 | [R18](plan.md#r18) | 通过 | 2026-10-06 | 规则 0.3.0、全自动流程与诊断隔离获验收；1,613 测试及 3.11／3.12 独立安装通过，已完成本地Git交付及计划精简。 |
 | [R19](plan.md#r19) | 通过 | 2026-10-23 | 人类确认优化达到目标并批准本地整合；程序与原优化分支一致，五个主题提交交付。168篇派生结果163完整／5部分；开发Gold与评分解释限制继续保留。 |
-| [R20](plan.md#r20) | 通过 | 2026-10-24 | 用户确认保守匹配及JSON交付，并授权代码／数据分开本地提交。901条记录、科学及证据保留；1473全量、203专项、双版本安装及重复构建通过。未授权推送或R21。 |
-| [R21](plan.md#r21) | 未开始 | — | GitHub Pages、完整数据独立下载与Agent Skill；数据库／SQL／表格按后续需求另定。 |
+| [R20](plan.md#r20) | 通过 | 2026-10-24 | 用户确认保守匹配及JSON交付，并授权代码／数据分开本地提交。901条记录、科学及证据保留；1473全量、203专项、双版本安装及重复构建通过；历史验收保留。 |
+| [R21](plan.md#r21) | 通过 | 2026-10-26 | 666对象、298决定全生效，3条已记录未决；复核输入整理为三份英文文件，更正加标记，清单移出catalog；双构建一致、1532全量通过，catalog已替换，Git提交待授权。 |
+| [R22](plan.md#r22) | 未开始 | — | 网站与下载，依赖R21验收。 |
 
 未标注最终评价名单已取消；如另开展独立评价，按[Plan 分工](plan.md#独立评价与人类分工)确定范围。

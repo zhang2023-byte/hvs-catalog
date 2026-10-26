@@ -10,6 +10,7 @@ from pathlib import Path
 from ..records.catalog import CatalogManifest, CatalogStar
 from ..records.evidence_audit import EvidenceAudit
 from ..records.literature_contribution import LiteratureContribution
+from .corrections import corrected_items, corrected_papers, correction_node, marker
 from .inputs import LoadedPaper, digest, read_bound
 from .provenance import verify_associations
 
@@ -20,7 +21,7 @@ def verify_catalog(root):
     ids, nodes = set(), set()
     papers = {}
     expected_files = {"manifest.json"}
-    if manifest.schema_version in {2, 3, 4}:
+    if manifest.schema_version in {2, 3, 4, 5}:
         expected_files.update(("papers/index.json", "stars/index.json"))
     for key, item in manifest.papers.items():
         science_raw = read_bound(root, item.science)
@@ -43,6 +44,27 @@ def verify_catalog(root):
             raise ValueError("Source-object completeness mapping is incomplete.")
         papers[key] = science
         expected_files.update((item.science.path, item.audit.path))
+    corrections = {}
+    for star in documents.values():
+        local = {
+            f"{key}#/stars/{o.result_index}"
+            for key, source in star.sources.items()
+            for o in source.objects
+        }
+        for d in star.review_decisions:
+            if d.type != "correct":
+                continue
+            if correction_node(d) not in local:
+                raise ValueError("Correction is attached to another object.")
+            if d.paper not in manifest.papers or (d.science_sha256, d.pdf_sha256) != (
+                manifest.papers[d.paper].science.sha256,
+                manifest.papers[d.paper].source.pdf_sha256,
+            ):
+                raise ValueError("Applied correction has stale source bindings.")
+            if d.id in corrections and corrections[d.id] != d:
+                raise ValueError("Conflicting correction provenance.")
+            corrections[d.id] = d
+    effective = corrected_papers(papers, corrections.values())
     for item in manifest.stars:
         star = documents[item.file.path]
         if (
@@ -55,12 +77,21 @@ def verify_catalog(root):
             raise ValueError("Star index differs from the stellar document.")
         if star.catalog_id in ids or star.catalog_id in manifest.retired_ids:
             raise ValueError("Duplicate or retired identity in the snapshot.")
-        verify_associations(star, manifest, papers)
+        verify_associations(star, manifest, effective)
+        if manifest.schema_version == 5:
+            from .units import standard_value
+
+            for q in star.quantities:
+                for value in q.values:
+                    if value.standard != standard_value(q.quantity, value):
+                        raise ValueError(
+                            "Standard-unit derivation differs from the original value."
+                        )
         ids.add(star.catalog_id)
         expected_files.add(item.file.path)
         if manifest.schema_version == 3:
             expected_files.add("provenance/simbad/" + star.catalog_id + ".json")
-        elif manifest.schema_version == 4:
+        elif manifest.schema_version in {4, 5}:
             # The reader has checked the current or legacy per-star filename.
             raw = json.loads(read_bound(root, item.file))
             expected_files.add(raw["provenance"]["path"])
@@ -80,21 +111,27 @@ def verify_catalog(root):
                     raise ValueError("Duplicate or inconsistent source-object mapping.")
                 nodes.add(node)
                 local_nodes.append(node)
-                original = papers[key].stars[obj.result_index]
-                expected_identifiers.extend(
-                    {**v.model_dump(mode="json"), "source": key}
-                    for v in original.identifiers
-                )
+                original = effective[key].stars[obj.result_index]
                 expected_types.append(
                     {
                         **original.contribution_type.model_dump(mode="json"),
                         "source": key,
                     }
                 )
-                for q in original.quantities:
-                    expected_quantities.setdefault(q.quantity, []).extend(
-                        {**v.model_dump(mode="json"), "source": key} for v in q.values
-                    )
+                for kind, quantity, _, content, d in corrected_items(
+                    key, papers[key], obj.result_index, corrections.values()
+                ):
+                    if content is None:
+                        continue
+                    content = {
+                        **content,
+                        "source": key,
+                        **({"correction": marker(d)} if d else {}),
+                    }
+                    if kind == "identifier":
+                        expected_identifiers.append(content)
+                    else:
+                        expected_quantities.setdefault(quantity, []).append(content)
         if sorted(local_nodes) != sorted(item.nodes):
             raise ValueError("Manifest node index differs from embedded sources.")
         if (
@@ -103,7 +140,13 @@ def verify_catalog(root):
             or [v.model_dump(mode="json") for v in star.contribution_types]
             != expected_types
             or {
-                q.quantity: [v.model_dump(mode="json") for v in q.values]
+                q.quantity: [
+                    v.model_dump(
+                        mode="json",
+                        exclude={"attribution", "attribution_reason", "standard"},
+                    )
+                    for v in q.values
+                ]
                 for q in star.quantities
             }
             != expected_quantities
@@ -132,6 +175,7 @@ def _read_snapshot(root):
         2,
         3,
         4,
+        5,
     }:
         from .readable import read_snapshot
 
@@ -199,3 +243,11 @@ def publish(root, files, *, hook=None):
 
 def artifact(path, raw):
     return {"path": path, "sha256": digest(raw)}
+
+
+def check_release(queue):
+    """A release requires reviewed contributing papers and no pending review items."""
+    pending = queue["counts"]["pending"]
+    if pending:
+        raise ValueError(f"Release has {pending} pending review items.")
+    return queue

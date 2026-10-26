@@ -3,6 +3,7 @@
 from ..records.catalog import AssociationOrigin, SimbadQuery, SkyPosition
 from ..records.literature_contribution import LiteratureMetadata
 from .identity import coordinate, keys, separation
+from .simbad import identifier_inputs
 
 
 def paper_origin(source, science, index):
@@ -23,6 +24,60 @@ def paper_origin(source, science, index):
 def verify_associations(star, manifest, papers):
     """Require every paper endpoint and external coordinate binding to be interpretable."""
     external_bindings = []
+    for query in star.simbad.queries:
+        for binding in query.get("identifier_inputs", []):
+            node = binding["source_record"]
+            paper, index = node.split("#/stars/")
+            if (
+                paper not in star.sources
+                or not any(
+                    o.result_index == int(index) for o in star.sources[paper].objects
+                )
+                or binding
+                not in identifier_inputs([(node, papers[paper].stars[int(index)])]).get(
+                    query["query"].get("identifier"), []
+                )
+            ):
+                raise ValueError(
+                    "SIMBAD identifier query differs from its source evidence."
+                )
+    decisions = {d.id: d for d in star.review_decisions}
+    for d in decisions.values():
+        if d.type == "correct":
+            continue  # Original content and bindings were verified before constructing this view.
+        if any(
+            key not in manifest.papers or manifest.papers[key].science.sha256 != digest
+            for key, digest in d.papers.items()
+        ):
+            raise ValueError("Applied review decision has stale paper bindings.")
+        local = {
+            f"{key}#/stars/{o.result_index}"
+            for key, source in star.sources.items()
+            for o in source.objects
+        }
+        target = {n for g in d.groups for n in g}
+        if not local & target:
+            raise ValueError("Review decision does not affect this object.")
+        if d.type == "merge" and not target <= local:
+            raise ValueError("Applied merge is absent from source membership.")
+        if d.type in {"name", "simbad"} and target != local:
+            raise ValueError("Review decision targets a different final object group.")
+        if d.type == "name" and star.display_name != d.display_name:
+            raise ValueError("Display name differs from its approved decision.")
+        if d.type == "name" and star.aliases != d.aliases:
+            raise ValueError("Display aliases differ from their approved decision.")
+        if d.type == "separate" and sum(bool(set(g) & local) for g in d.groups) > 1:
+            raise ValueError("Object violates an approved separation.")
+    if star.aliases and not any(d.type == "name" for d in decisions.values()):
+        raise ValueError("Display aliases lack an approved name decision.")
+    if star.simbad.method == "review":
+        matching = [
+            d
+            for d in decisions.values()
+            if d.type == "simbad" and d.main_id == star.simbad.selected.main_id
+        ]
+        if len(matching) != 1:
+            raise ValueError("Reviewed SIMBAD correspondence lacks its decision.")
     for edge in star.associations:
         endpoints = {edge.left, edge.right}
         paper_endpoints = {e for e in endpoints if not e.startswith("simbad:")}
@@ -55,6 +110,12 @@ def verify_associations(star, manifest, papers):
                 "evidence"
             ):
                 raise ValueError("Paper association origin or evidence is missing.")
+        if edge.method == "review":
+            d = decisions.get(edge.details.get("decision_id"))
+            if d is None or d.type != "merge" or edge.details.get("reason") != d.reason:
+                raise ValueError(
+                    "Review association lacks its approved merge decision."
+                )
         if (
             edge.method == "identifier"
             and edge.accepted

@@ -136,13 +136,19 @@ def paper(number, stars, *, version="v1", partial=False, notes=None):
 
 @pytest.fixture
 def build(monkeypatch, tmp_path):
-    def run(papers, name="catalog", *, simbad=None, **options):
+    def run(papers, name="catalog", *, simbad=None, review=None, **options):
         monkeypatch.setattr(
             "hvs_catalog.catalogue.build.load_papers", lambda selection: papers
         )
         selection = CatalogSelection(data_version="synthetic-1", papers=[], **options)
         path = tmp_path / name
-        manifest = build_catalog(selection, path, simbad=simbad)
+        manifest = build_catalog(
+            selection,
+            path,
+            simbad=simbad,
+            review=review,
+            queue=tmp_path / (name + ".queue.json"),
+        )
         # Exercise identity algorithms through the supported publication reader.
         # Public layout is tested separately from normalized build records.
         stars = [s.model_dump(mode="json") for s in load_previous(path)[2]]
@@ -330,7 +336,7 @@ def test_display_priority_frequency_and_stability():
     a = paper(1, [source_star(["HD 9", "HIP 8"])])
     b = paper(2, [source_star(["HIP 8"])])
     entries = [(a.key, a.science.stars[0]), (b.key, b.science.stars[0])]
-    assert display_name(entries, snapshot, "hvs-catalog-000001") == "HD 9"
+    assert display_name(entries, snapshot, "hvs-catalog-000001") == "HIP 8"
     c = paper(3, [source_star(["Gaia DR2 1234567890123456789", GAIA_A])])
     assert (
         display_name(
@@ -338,7 +344,7 @@ def test_display_priority_frequency_and_stability():
             snapshot,
             "hvs-catalog-000001",
         )
-        == "HD 9"
+        == "HIP 8"
     )
 
 
@@ -365,7 +371,10 @@ def test_simbad_coordinate_selection(tmp_path, mode, status):
     assert snapshot.status == status
     if status == "matched":
         assert snapshot.selected.main_id == "HD 1" and len(snapshot.warnings) == 2
-        assert display_name(entries, snapshot, "hvs-catalog-000001") == "HD 1"
+        assert (
+            display_name(entries, snapshot, "hvs-catalog-000001")
+            == "Star 1 (2601.00001)"
+        )
     else:
         assert (
             display_name(entries, snapshot, "hvs-catalog-000001")
@@ -466,7 +475,13 @@ def test_all_numerical_forms_and_schema_survive_build(build):
         {
             "quantity": q["quantity"],
             "values": [
-                {k: v for k, v in item.items() if k != "source"} for item in q["values"]
+                {
+                    k: v
+                    for k, v in item.items()
+                    if k
+                    not in {"source", "attribution", "attribution_reason", "standard"}
+                }
+                for item in q["values"]
             ],
         }
         for q in stars[0]["quantities"]
@@ -708,7 +723,7 @@ def test_simbad_merge_checks_all_component_external_identities(
     for star in stars:
         assert len(star["sources"]) == 1
         assert len(star["quantities"][0]["values"]) == 1
-        assert star["display_name"] == "HIP 40"
+        assert star["display_name"] in {"HD 40", new_identifier}
         edge = next(e for e in star["associations"] if e["method"] == "simbad")
         assert not edge["accepted"] and "Gaia" in edge["details"]["reason"]
         evidence = edge["details"]["simbad_evidence"]

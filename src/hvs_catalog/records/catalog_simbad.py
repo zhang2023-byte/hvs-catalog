@@ -116,7 +116,7 @@ class SimbadSummary(Config):
     status: Literal[
         "not_queried", "matched", "not_found", "ambiguous", "conflict", "failed"
     ]
-    method: Literal["identifier", "coordinates"] | None = None
+    method: Literal["identifier", "coordinates", "review"] | None = None
     selected: SimbadScience | None = None
     reason: str | None = None
     match: SimbadMatchSummary | None = None

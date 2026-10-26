@@ -4,7 +4,7 @@
 The build command is offline. It reads exact extraction generations and optional frozen
 SIMBAD responses. It never refreshes the service implicitly or modifies source workspaces.
 Select the complete intended paper versions explicitly. Every build starts from these inputs;
-no previous catalog, numbering, grouping or SIMBAD decision is an input.
+no previous catalog, numbering or grouping is an input. Approved review decisions are explicit inputs.
 
 ## Commands
 
@@ -15,17 +15,73 @@ no previous catalog, numbering, grouping or SIMBAD decision is an input.
   This immutable build selection is not a separately maintained literature index.
 - `hvs-catalog catalog select --index INDEX --space SPACE --data-version VERSION --output SELECTION`
   retains legacy execution-index compatibility without guessing latest results.
-- `hvs-catalog catalog build --selection SELECTION --output NEW_DIRECTORY [--simbad RESPONSES]`
+- `hvs-catalog catalog build --selection SELECTION --output NEW_DIRECTORY [--simbad RESPONSES] [--review REVIEW_DIR] [--queue QUEUE] [--release]`
   publishes a new complete snapshot; an existing destination is never overwritten.
+  The review queue is written to QUEUE, by default NEW_DIRECTORY.queue.json beside the
+  catalog, never inside it. --release refuses to publish while the queue has pending items.
 - `hvs-catalog catalog verify CATALOG` validates hashes, references, source coverage,
   and exact scientific values and evidence, without authenticating scientific correctness.
-- `hvs-catalog catalog query-plan --selection SELECTION --output PLAN`
-  prepares an explicit query list for review. The list includes identifier queries
-  and possible coordinate fallbacks; remove queries outside the approved scope.
+- `hvs-catalog catalog query-plan --selection SELECTION --output PLAN [--review REVIEW_DIR] [--simbad RESPONSES]`
+  prepares identifier queries and possible coordinate fallbacks for approval.
+  Schema 2 records the final object groups, their query keys and review fingerprint;
+  query accepts legacy schema 1 lists and validates schema 2 object coverage.
 - `hvs-catalog catalog query --plan PLAN --output RESPONSES` explicitly contacts SIMBAD
   for only that list. Existing responses are reused, including failures.
   A refreshed response directory requires approval of the query scope. Rebuilding
   uses only the supplied frozen responses; missing responses remain not_queried.
+- `hvs-catalog catalog bind-review REVIEW_DIR --selection SELECTION [--simbad RESPONSES]`
+  fills only missing science/PDF hashes and SIMBAD response bindings, then rewrites the
+  three files in canonical layout. Existing bindings are never refreshed.
+- `hvs-catalog catalog compare OLD NEW` reports regrouped source records, display-name and
+  SIMBAD changes, value content and attribution differences, independent of catalog numbering.
+
+## Versioned review input and release checks
+
+Keep review inputs in a separate version-controlled repository directory, outside catalog and .work.
+The optional --review directory holds papers.json, identity.json and corrections.json; an omitted
+input is an empty review. Each file is valid JSON with one record or evidence item per line.
+papers.json is the binding table: each paper version and its science hash appear once, with
+the PDF hash for corrected papers. Decisions name papers through their source nodes and bind
+these table hashes. A changed paper makes its value review and every decision naming it stale;
+renewing a table hash re-approves all of them. values_reviewed false binds identity decisions
+for a paper whose values are not reviewed yet. approved is a date followed by the approver.
+object is a reading label; the build ignores it.
+Decision groups use exact versioned source nodes, for example 2601.00001v1#/stars/0.
+SIMBAD-dependent decisions also bind query keys and frozen response hashes.
+Changed bindings make only those decisions stale.
+Merge joins the listed groups; separate prevents direct and transitive joins across its groups.
+An unresolved separate decision retains distinct objects and records the reason.
+Name and SIMBAD decisions target exactly one complete final object group. Null main_id revokes
+the external correspondence; unresolved revocation retains an ambiguous status.
+Selection requires one representation in a bound frozen response.
+Conflicting manual decisions and incompatible Gaia or source evidence are rejected.
+Applied decisions, their reasons, evidence, approver and date are delivered in provenance.
+Corrections name the original item path, the changed fields as [extracted, corrected] pairs
+(null means absent) or withdraw, and PDF page/row evidence. Extracted fields must match.
+Provenance stores each applied decision in full, including the original and replacement items.
+Corrections apply before association and SIMBAD matching, only to an in-memory scientific view.
+Paper science files remain unchanged. Stellar JSON uses corrected items; provenance retains originals.
+A corrected identifier or value carries correction: its decision and the fixed-PDF evidence.
+Its evidence field remains the original extraction evidence.
+Exception paths always address original indices, including after withdrawals. Stale corrections enter the queue.
+Name decisions may add display aliases, stored separately from original scientific identifiers.
+Paper reviews bind the exact version and science hash. Exceptions use /stars/I/quantities/J/values/K.
+Unlisted values are own; exceptions are cited or mismatch. Own means this paper’s measurements/calculations or direct survey measurements. Results calculated by other papers remain cited, including adopted inputs, Paper I results and published derived catalogs (such as distance or escape-probability catalogs).
+Each build derives a review queue: possible identity pairs, rejected links, duplicate
+display names, external conflicts, stale decisions and unreviewed contributing papers.
+Different groups selecting the same SIMBAD main_id create identity items, regardless of match method.
+Coordinate-only correspondences above 1 arcsec create SIMBAD review items; approved selections
+resolve them, and approved revocations remove the correspondence. This gate does not change the 5-arcsec search radius.
+Each item is pending, resolved or explicitly unresolved. The queue is a working file for
+maintainers, never input and never part of the catalog; applied decisions are in provenance.
+Query planning accepts --review and --simbad to use the same final groups as the build.
+Refresh only after scope approval, into a new response directory; no implicit service requests occur.
+
+Values carry attribution (own, cited, mismatch), optional attribution_reason and optional standard.
+Standard units are km/s, kpc, deg, mas, mas/yr and dimensionless 1; decimal strings preserve
+reported precision. Errors, bounds, endpoint inclusion and approximation markers convert together.
+Ambiguous expressions, unknown units and distance modulus have no standard derivation.
+No default/latest measurement selection is stored in the stellar JSON.
 
 ## Final literature inputs
 
@@ -45,7 +101,7 @@ preserve every scalar and accepted group, and pass the original scientific valid
 This read-only compatibility path does not extend the live response parser.
 Missing files, changed hashes, escaping/symlink paths and inconsistent lineage are refused.
 
-## Readable publication format (schema version 4)
+## Readable publication format (schema version 5)
 
 manifest.json contains the data version, counts, build fingerprints and two hashed index references.
 papers/index.json binds each versioned paper to its science, audit and PDF provenance.
@@ -59,7 +115,7 @@ Paper-wide notes remain in papers. Execution errors, snapshots and repair-stage 
 provenance/<catalog_id>_provenance.json delivers all associations, historical origins and the complete SIMBAD trace.
 Each top-level stellar provenance reference binds that file by path and SHA-256; paths are catalog-root relative.
 The complete catalog is portable and verifiable without the original build workspace or network.
-The reader accepts versions 1, 2, 3 and 4 for verification.
+The reader accepts versions 1, 2, 3, 4 and 5 for verification.
 Earlier version-four provenance files without the _provenance suffix remain readable.
 
 ## Scientific and identity rules
@@ -71,22 +127,26 @@ Numerical strings, units, conditions, uncertainty forms, and source-specific dup
 are preserved. Paper-level notes retain their paper-wide scope in the original paper file.
 
 Files use unique hvs-catalog-NNNNNN IDs. Display names are readable, nonunique labels.
-Use the selected SIMBAD main_id for either identifier or coordinate matches.
-Otherwise use the shortest paper identifier containing a letter, after collapsing whitespace.
-Equal lengths prefer more distinct papers, then lexical order; no catalog-prefix whitelist applies.
-Generic local number labels (Star, Object, Obj, Source, ID, No, Row, Candidate or Target)
-append the bare arXiv ID, for example ID 7 (2601.00001). If several papers use the label,
-choose the first bare arXiv ID in lexical order. Compare label lengths before appending it.
-If no lettered identifier exists, use catalog_id. All original identifiers remain unchanged.
-Unresolved SIMBAD candidates are not selected for naming; paper labels remain available.
-Duplicate names are allowed. Neither names nor coordinate matches become identifier merge evidence.
+Use the lettered paper identifier used by the largest number of distinct papers.
+Votes ignore case, whitespace and hyphens; display the most common spelling.
+Ties prefer shorter labels, then fixed lexical order. SIMBAD main_id remains an external alias.
+Generic local labels (Star, Object, Obj, Source, ID, No, Row, Candidate or Target) are a fallback
+only when no other lettered label exists. Append the first bare arXiv ID in lexical order.
+If no lettered identifier exists, use catalog_id. Original identifiers remain unchanged unless an approved correct decision supplies the PDF transcription.
+Duplicate display names require an approved separation before release.
+Neither display names nor coordinate matches become identifier merge evidence.
+SDSS query-only spellings also never authorize automatic merging. Complete SDSS names may add
+SDSS JHHMMSS.ss+DDMMSS.s queries by truncation, not rounding; original names remain unchanged.
+Only qualified PSR B/J and RX J coordinate names extend the identifier namespaces; bare B/J names do not.
+Each identifier query records identifier_inputs in provenance: source_record, original_identifier
+with its evidence, and derivation (reported_identifier or sdss_standard_truncation).
 Coordinate-match warnings remain. Names are recalculated from current inputs without inheritance.
 
 Coordinates require a unique RA/Dec pair from one source object, linked by shared
 evidence locations or identical nonempty conditions. Descriptions need not be identical.
 Repeated identical coordinates share a query; different candidate values remain unused.
 Common hms/dms labels, sexagesimal typography and separate central/error-unit labels
-are parsed for queries only. All original scientific fields remain unchanged.
+are parsed for queries only. Approved correct decisions apply first; query parsing and standard-unit conversion do not modify that scientific view.
 Frames come from coordinate conditions, then coordinate quotes, then explicit Gaia
 coordinate provenance. Unlabelled modern equatorial coordinates may assume ICRS.
 Explicit incompatible or unsupported frames are never overridden by that assumption.
@@ -96,7 +156,7 @@ source nodes, original coordinate evidence, frame basis and whether ICRS was ass
 An assumed frame also adds an English warning, including when no candidate is found.
 Queries omit source provenance to retain reusable frozen response keys. Rules version 3
 adds automatic source-evidence conflict checks and fresh construction after version 2's coordinate policy.
-Rules version 4 changes display naming only; scientific identity and matching rules are unchanged.
+Rules version 5 adds bound reviews and paper-frequency display names; automatic identity rules remain unchanged.
 The association radius is 5 arcseconds. Every union checks the entire group's Gaia
 release identities, including all frozen representations of selected SIMBAD objects.
 SIMBAD merge edges retain the candidate and query evidence used by this check.
@@ -197,16 +257,169 @@ The exact historical run behind a final delivery; not a new extraction.
 | `papers` | list of `PaperSelection` | yes |  |  |
 | `explicit_associations` | list of `ExplicitAssociation` | no |  |  |
 
+#### PaperReviews
+
+Binding table and value review: each paper version and its hashes appear once.
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `schema_version` | `3` | no |  |  |
+| `method` | `string` | yes | minLength 1 | Review method shared by every paper entry. |
+| `approved` | `string` | yes | pattern `^[0-9]{4}-[0-9]{2}-[0-9]{2} \S` | Default approval for paper entries. |
+| `papers` | list of `ReviewedPaper` | no |  |  |
+
+#### ReviewedPaper
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `paper` | `string` | yes | pattern `^.+v[0-9]+$` |  |
+| `science_sha256` | `string` \| `null` | no |  | Fixed science hash; bind-review fills a missing value. Nullable: absent content is `null`, never a default value. |
+| `pdf_sha256` | `string` \| `null` | no |  | Fixed PDF hash, required only by corrections. Nullable: absent content is `null`, never a default value. |
+| `values_reviewed` | `boolean` | no |  | False binds identity decisions before the value review is complete. |
+| `note` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `approved` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `exceptions` | list of `ValueException` | no |  |  |
+
+#### ValueException
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `path` | `string` | yes | pattern `^/stars/[0-9]+/quantities/[0-9]+/values/[0-9]+$` |  |
+| `attribution` | `cited` / `mismatch` | yes |  |  |
+| `reason` | `string` | yes | minLength 1 |  |
+
+#### IdentityReviews
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `schema_version` | `3` | no |  |  |
+| `decisions` | list of `IdentityEntry` | no |  |  |
+
+#### IdentityEntry
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `id` | `string` | yes | minLength 1 |  |
+| `type` | `merge` / `separate` / `name` / `simbad` | yes |  |  |
+| `object` | `string` \| `null` | no |  | Reading label only; the build ignores it. Nullable: absent content is `null`, never a default value. |
+| `groups` | list of list of `string` | yes | minItems 1 |  |
+| `display_name` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `aliases` | list of `string` | no |  |  |
+| `main_id` | `string` \| `null` | no |  | SIMBAD object selected for the group. Nullable: absent content is `null`, never a default value. |
+| `revoke` | `boolean` | no |  | SIMBAD decision that leaves the group without a correspondence. |
+| `unresolved` | `boolean` | no |  |  |
+| `responses` | `object` | no |  | SIMBAD query key to response hash; bind-review fills an empty map. |
+| `reason` | `string` | yes | minLength 1 |  |
+| `evidence` | list of `ReviewEvidence` | yes | minItems 1 |  |
+| `approved` | `string` | yes | pattern `^[0-9]{4}-[0-9]{2}-[0-9]{2} \S` | Approval date followed by the approver or approval record. |
+
+#### ReviewEvidence
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `paper` | `string` | yes |  | Exact versioned paper key in the decision bindings. |
+| `location` | `string` | yes | minLength 1 |  |
+| `quote` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+
+#### CorrectionReviews
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `schema_version` | `3` | no |  |  |
+| `corrections` | list of `CorrectionEntry` | no |  |  |
+
+#### CorrectionEntry
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `id` | `string` | yes | minLength 1 |  |
+| `object` | `string` \| `null` | no |  | Reading label only; the build ignores it. Nullable: absent content is `null`, never a default value. |
+| `path` | `string` | yes | pattern `^.+v[0-9]+#/stars/[0-9]+/(identifiers/[0-9]+\|quantities/[0-9]+/values/[0-9]+)$` |  |
+| `change` | `object` \| `null` | no |  | Changed fields as [extracted, corrected]; null means absent. Nullable: absent content is `null`, never a default value. |
+| `withdraw` | `boolean` | no |  |  |
+| `evidence` | list of `CorrectionEvidence` | yes | minItems 1 |  |
+| `reason` | `string` | yes | minLength 1 |  |
+| `approved` | `string` | yes | pattern `^[0-9]{4}-[0-9]{2}-[0-9]{2} \S` | Approval date followed by the approver or approval record. |
+
+#### CorrectionEvidence
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `page` | `integer` | yes | minimum 1 |  |
+| `location` | `string` | yes | minLength 1 | Table and row or precise passage in the fixed PDF. |
+| `quote` | `string` | yes | minLength 1 |  |
+
+#### IdentityDecision
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `id` | `string` | yes | minLength 1 |  |
+| `type` | `merge` / `separate` / `name` / `simbad` | yes |  |  |
+| `groups` | list of list of `string` | yes | minItems 1 | Source-record groups to merge or keep apart; name and SIMBAD target one complete group. |
+| `papers` | `object` | yes |  |  |
+| `responses` | `object` | no |  | SIMBAD query key to frozen response hash; changes invalidate the decision. |
+| `reason` | `string` | yes | minLength 1 |  |
+| `evidence` | list of `ReviewEvidence` | yes | minItems 1 |  |
+| `approved_by` | `string` | yes | minLength 1 |  |
+| `approved_on` | `string` | yes |  |  |
+| `unresolved` | `boolean` | no |  | A separate or unselected SIMBAD decision may record an unresolved identity. |
+| `display_name` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `aliases` | list of `string` | no |  |  |
+| `main_id` | `string` \| `null` | no |  | For SIMBAD decisions, null revokes the correspondence. Nullable: absent content is `null`, never a default value. |
+
+#### CorrectionDecision
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `id` | `string` | yes | minLength 1 |  |
+| `type` | `correct` | no |  |  |
+| `paper` | `string` | yes | pattern `^.+v[0-9]+$` |  |
+| `science_sha256` | `string` | yes | pattern `^[0-9a-f]{64}$` |  |
+| `pdf_sha256` | `string` | yes | pattern `^[0-9a-f]{64}$` |  |
+| `path` | `string` | yes | pattern `^/stars/[0-9]+/(identifiers/[0-9]+\|quantities/[0-9]+/values/[0-9]+)$` |  |
+| `original` | `object` | yes |  |  |
+| `replacement` | `object` \| `null` | yes |  | Complete corrected item, or null to withdraw a value. Nullable: absent content is `null`, never a default value. |
+| `evidence` | list of `CorrectionEvidence` | yes | minItems 1 |  |
+| `reason` | `string` | yes | minLength 1 |  |
+| `approved_by` | `string` | yes | minLength 1 |  |
+| `approved_on` | `string` | yes |  |  |
+
+#### AppliedCorrection
+
+Marks a stellar item replaced by an approved correction; evidence is the fixed PDF.
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `decision` | `string` | yes | minLength 1 |  |
+| `evidence` | list of `CorrectionEvidence` | yes | minItems 1 |  |
+
+#### StandardValue
+
+Deterministic unit conversion; decimal strings preserve reported precision.
+
+| Field | Type | Required | Constraints | Notes |
+|---|---|---|---|---|
+| `unit` | `km/s` / `kpc` / `deg` / `mas` / `mas/yr` / `1` | yes |  |  |
+| `value` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `error` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `lower_error` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `upper_error` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `lower_bound` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `upper_bound` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `lower_inclusive` | `boolean` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `upper_inclusive` | `boolean` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `approximate` | `boolean` | no |  |  |
+
 #### CatalogRelease
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `schema_version` | `2` / `3` / `4` | no |  |  |
+| `schema_version` | `2` / `3` / `4` / `5` | no |  |  |
 | `data_version` | `string` | yes |  |  |
 | `counts` | `CatalogCounts` | yes |  |  |
 | `papers` | `ArtifactRef` | yes |  |  |
 | `stars` | `ArtifactRef` | yes |  |  |
-| `rules_version` | `1` / `2` / `3` / `4` | yes |  |  |
+| `rules_version` | `1` / `2` / `3` / `4` / `5` / `6` | yes |  |  |
 | `software_version` | `string` | yes |  |  |
 | `input_fingerprint` | `string` | yes | pattern `^[0-9a-f]{64}$` |  |
 | `simbad_fingerprint` | `string` | yes | pattern `^[0-9a-f]{64}$` |  |
@@ -225,7 +438,7 @@ The exact historical run behind a final delivery; not a new extraction.
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `schema_version` | `2` / `3` / `4` | no |  |  |
+| `schema_version` | `2` / `3` / `4` / `5` | no |  |  |
 | `papers` | `object` | yes |  |  |
 
 #### PaperEntry
@@ -244,7 +457,7 @@ The exact historical run behind a final delivery; not a new extraction.
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `schema_version` | `2` / `3` / `4` | no |  |  |
+| `schema_version` | `2` / `3` / `4` / `5` | no |  |  |
 | `next_id` | `integer` | yes | minimum 1 |  |
 | `retired_ids` | `object` | yes |  |  |
 | `stars` | list of `StarEntry` | yes |  |  |
@@ -261,6 +474,7 @@ The exact historical run behind a final delivery; not a new extraction.
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
+| `aliases` | list of `string` | no |  | Approved display aliases, separate from original paper identifiers. |
 | `data_version` | `string` | yes |  |  |
 | `catalog_id` | `string` | yes | pattern `^hvs-catalog-[0-9]{6,}$` |  |
 | `display_name` | `string` | yes |  |  |
@@ -269,7 +483,7 @@ The exact historical run behind a final delivery; not a new extraction.
 | `contribution_types` | list of `CatalogContributionType` | yes | minItems 1 |  |
 | `quantities` | list of `CatalogQuantity` | yes |  |  |
 | `warnings` | list of `string` | yes |  |  |
-| `schema_version` | `4` | no |  |  |
+| `schema_version` | `4` / `5` | no |  |  |
 | `simbad` | `SimbadSummary` | yes |  |  |
 | `provenance` | `ArtifactRef` | yes |  | Complete identity and SIMBAD evidence, relative to the catalog root and bound by SHA-256. |
 
@@ -294,7 +508,7 @@ The exact historical run behind a final delivery; not a new extraction.
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `method` | `identifier` / `coordinates` / `paper` / `simbad` | yes |  |  |
+| `method` | `identifier` / `coordinates` / `paper` / `simbad` / `review` | yes |  |  |
 | `left` | `string` | yes |  |  |
 | `right` | `string` | yes |  |  |
 | `accepted` | `boolean` | no |  |  |
@@ -307,7 +521,7 @@ The exact historical run behind a final delivery; not a new extraction.
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `status` | `not_queried` / `matched` / `not_found` / `ambiguous` / `conflict` / `failed` | yes |  |  |
-| `method` | `identifier` / `coordinates` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `method` | `identifier` / `coordinates` / `review` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `selected` | `SimbadScience` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `reason` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `match` | `SimbadMatchSummary` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
@@ -430,7 +644,8 @@ The exact historical run behind a final delivery; not a new extraction.
 
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
-| `schema_version` | `4` | no |  |  |
+| `review_decisions` | list of `IdentityDecision` \| `CorrectionDecision` | no |  |  |
+| `schema_version` | `4` / `5` | no |  |  |
 | `data_version` | `string` | yes |  |  |
 | `catalog_id` | `string` | yes | pattern `^hvs-catalog-[0-9]{6,}$` |  |
 | `associations` | list of `IdentifierAssociation` \| `IdentityLink` | yes |  |  |
@@ -442,7 +657,7 @@ The exact historical run behind a final delivery; not a new extraction.
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `status` | `not_queried` / `matched` / `not_found` / `ambiguous` / `conflict` / `failed` | yes |  |  |
-| `method` | `identifier` / `coordinates` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `method` | `identifier` / `coordinates` / `review` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `selected` | `SimbadCandidate` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `reason` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `queries` | list of `object` | no |  |  |
@@ -459,6 +674,7 @@ The exact historical run behind a final delivery; not a new extraction.
 | `value` | `string` | yes | minLength 1 | Star identifier. |
 | `evidence` | list of `TextEvidence` \| `ImageEvidence` | yes | minItems 1 | Evidence for this identifier. |
 | `source` | `string` | yes |  |  |
+| `correction` | `AppliedCorrection` \| `null` | no |  | Approved fixed-PDF correction of this item; evidence above is the original extraction. Nullable: absent content is `null`, never a default value. |
 
 #### CatalogContributionType
 
@@ -491,6 +707,10 @@ The exact historical run behind a final delivery; not a new extraction.
 | `condition` | `string` | no | minLength 1 | Relevant method, model, reference frame, or statistical meaning. |
 | `evidence` | list of `TextEvidence` \| `ImageEvidence` | yes | minItems 1 | Evidence for this value and its context. |
 | `source` | `string` | yes |  |  |
+| `correction` | `AppliedCorrection` | no |  | Approved fixed-PDF correction of this item; evidence above is the original extraction. |
+| `attribution` | `own` / `cited` / `mismatch` | no |  | This paper’s measurements/calculations or public catalog data; other-paper values; or quantity-definition mismatch. |
+| `attribution_reason` | `string` | no |  | Reason for a reviewed exception. |
+| `standard` | `StandardValue` | no |  | Deterministic standard-unit derivation; original fields remain unchanged. |
 
 #### Association
 
@@ -498,7 +718,7 @@ The exact historical run behind a final delivery; not a new extraction.
 |---|---|---|---|---|
 | `left` | `string` | yes |  |  |
 | `right` | `string` | yes |  |  |
-| `method` | `identifier` / `coordinates` / `paper` / `simbad` / `previous` | yes |  |  |
+| `method` | `identifier` / `coordinates` / `paper` / `simbad` / `previous` / `review` | yes |  |  |
 | `accepted` | `boolean` | yes |  |  |
 | `details` | `object` | yes |  |  |
 | `historical` | `boolean` | no |  | True for an association adopted or considered in a previous snapshot. |
@@ -523,9 +743,9 @@ Fixed paper identity evidence, including sources superseded by later versions.
 | Field | Type | Required | Constraints | Notes |
 |---|---|---|---|---|
 | `status` | `not_queried` / `matched` / `not_found` / `ambiguous` / `conflict` / `failed` | yes |  |  |
-| `method` | `identifier` / `coordinates` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
+| `method` | `identifier` / `coordinates` / `review` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `selected` | `SimbadCandidate` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
-| `queries` | list of `object` | no |  |  |
+| `queries` | list of `object` | no |  | Frozen query history. Identifier entries include identifier_inputs binding source_record, original_identifier with evidence, and reported_identifier or sdss_standard_truncation derivation. Derived spellings are query-only, never automatic merge evidence. |
 | `candidates` | list of `object` | no |  |  |
 | `reason` | `string` \| `null` | no |  | Nullable: absent content is `null`, never a default value. |
 | `warnings` | list of `string` | no |  |  |

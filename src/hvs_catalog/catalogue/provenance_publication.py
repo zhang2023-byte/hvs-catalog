@@ -8,14 +8,17 @@ from .inputs import json_bytes, read_bound
 from .simbad_publication import _origin_refs, compact_simbad
 
 
-def split_document(document):
+def split_document(document, *, schema_version=5):
     """Move identity evidence without changing the version-two scientific content."""
     from .publication import artifact
 
     raw = copy.deepcopy(document)
-    raw["schema_version"] = 4
+    raw["schema_version"] = schema_version
     trace = {k: raw[k] for k in ("schema_version", "data_version", "catalog_id")}
     trace["associations"] = raw.pop("associations")
+    decisions = raw.pop("review_decisions", [])
+    if decisions:
+        trace["review_decisions"] = decisions
     if "association_origins" in raw:
         trace["association_origins"] = raw.pop("association_origins")
     trace["simbad"] = raw["simbad"]
@@ -48,6 +51,8 @@ def restore_document(raw, root):
         public.data_version,
     ):
         raise ValueError("Stellar provenance belongs to another star or data version.")
+    if trace["schema_version"] != public.schema_version:
+        raise ValueError("Stellar provenance schema differs from the star.")
     _expand(trace, trace)
     expected_origins = _origin_refs({k: trace[k] for k in ("simbad", "associations")})
     if set(trace.get("association_origins", {})) != expected_origins:
@@ -57,7 +62,7 @@ def restore_document(raw, root):
     result = copy.deepcopy(raw)
     result["schema_version"] = 2
     result.pop("provenance")
-    for field in ("associations", "association_origins", "simbad"):
+    for field in ("associations", "association_origins", "simbad", "review_decisions"):
         if field in trace:
             result[field] = trace[field]
     return result

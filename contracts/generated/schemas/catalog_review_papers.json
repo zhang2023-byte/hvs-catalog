@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "ReviewedPaper": {
+      "additionalProperties": false,
+      "properties": {
+        "paper": {
+          "pattern": "^.+v[0-9]+$",
+          "title": "Paper",
+          "type": "string"
+        },
+        "science_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fixed science hash; bind-review fills a missing value.",
+          "title": "Science Sha256"
+        },
+        "pdf_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fixed PDF hash, required only by corrections.",
+          "title": "Pdf Sha256"
+        },
+        "values_reviewed": {
+          "default": true,
+          "description": "False binds identity decisions before the value review is complete.",
+          "title": "Values Reviewed",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "approved": {
+          "anyOf": [
+            {
+              "description": "Approval date followed by the approver or approval record.",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} \\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved"
+        },
+        "exceptions": {
+          "items": {
+            "$ref": "#/$defs/ValueException"
+          },
+          "title": "Exceptions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "paper"
+      ],
+      "title": "ReviewedPaper",
+      "type": "object"
+    },
+    "ValueException": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "pattern": "^/stars/[0-9]+/quantities/[0-9]+/values/[0-9]+$",
+          "title": "Path",
+          "type": "string"
+        },
+        "attribution": {
+          "enum": [
+            "cited",
+            "mismatch"
+          ],
+          "title": "Attribution",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "attribution",
+        "reason"
+      ],
+      "title": "ValueException",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Binding table and value review: each paper version and its hashes appear once.",
+  "properties": {
+    "schema_version": {
+      "const": 3,
+      "default": 3,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "method": {
+      "description": "Review method shared by every paper entry.",
+      "minLength": 1,
+      "title": "Method",
+      "type": "string"
+    },
+    "approved": {
+      "description": "Default approval for paper entries.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2} \\S",
+      "title": "Approved",
+      "type": "string"
+    },
+    "papers": {
+      "items": {
+        "$ref": "#/$defs/ReviewedPaper"
+      },
+      "title": "Papers",
+      "type": "array"
+    }
+  },
+  "required": [
+    "method",
+    "approved"
+  ],
+  "title": "PaperReviews",
+  "type": "object"
+}

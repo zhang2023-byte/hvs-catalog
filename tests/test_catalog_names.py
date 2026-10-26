@@ -20,7 +20,7 @@ CATALOG_ID = "hvs-catalog-000001"
         ([GAIA_A, "HVS2", "US 708"], "HVS2"),
         ([GAIA_A, "2MASS J01020304+0506078"], "2MASS J01020304+0506078"),
         (["0012", "1234567890123456789", "12-34"], CATALOG_ID),
-        (["  Star   12  ", GAIA_A], "Star 12 (2601.00001)"),
+        (["  Star   12  ", GAIA_A], GAIA_A),
         (["ID 7"], "ID 7 (2601.00001)"),
         (["Object 3"], "Object 3 (2601.00001)"),
         (["No. 5"], "No. 5 (2601.00001)"),
@@ -28,7 +28,7 @@ CATALOG_ID = "hvs-catalog-000001"
         ([GAIA_B, GAIA_A, "US 708"], "US 708"),
     ],
 )
-def test_shortest_lettered_name_keeps_raw_evidence(identifiers, expected):
+def test_lettered_name_uses_local_labels_only_as_fallback(identifiers, expected):
     p = paper(1, [source_star(identifiers)])
     original = p.science.model_dump()
     assert (

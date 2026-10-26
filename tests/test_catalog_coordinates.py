@@ -281,7 +281,7 @@ def test_frozen_coordinate_enrichment_preserves_source_science(build, tmp_path):
         assert after[0][field] == before[0][field]
     assert after[0]["simbad"]["method"] == "coordinates"
     assert before[0]["display_name"] == "Star 1 (2601.00001)"
-    assert after[0]["display_name"] == "HD 9"
+    assert after[0]["display_name"] == "Star 1 (2601.00001)"
     assert any("ICRS was assumed" in w for w in after[0]["warnings"])
     edge = next(e for e in after[0]["associations"] if e["right"] == "simbad:HD 9")
     assert edge["details"]["coordinate_interpretation"]["frame_assumed"]

@@ -24,12 +24,13 @@ class Node:
 
 
 class Groups:
-    def __init__(self, nodes, conflicts=()):
+    def __init__(self, nodes, conflicts=(), separations=None):
         self.nodes = {n.key: n for n in nodes}
         self.parent = {key: key for key in self.nodes}
         self.members = {key: {key} for key in self.nodes}
         self.edges = []
         self.conflicts = conflicts
+        self.separations = separations or {}
 
     def find(self, key):
         while self.parent[key] != key:
@@ -44,6 +45,17 @@ class Groups:
         members = self.members[a] | self.members[b]
         group_names = [name for key in members for name in names(self.nodes[key].star)]
         reason = rejection_reason
+        excluded = [
+            d
+            for pair, decisions in self.separations.items()
+            if set(pair) <= members
+            for d in decisions
+        ]
+        if excluded:
+            reason = "Separated by approved review: " + ", ".join(
+                sorted({d.id for d in excluded})
+            )
+            details = {**details, "review_decisions": sorted({d.id for d in excluded})}
         source_nodes = {
             key.split(":", 1)[1] if key.startswith("@") else key for key in members
         }
@@ -86,8 +98,8 @@ class Groups:
         return [(key, self.nodes[key].star) for key in members]
 
 
-def associate(nodes, explicit=(), *, conflicts=()):
-    groups = Groups(nodes, conflicts)
+def associate(nodes, explicit=(), *, conflicts=(), separations=None):
+    groups = Groups(nodes, conflicts, separations)
     for conflict in conflicts:
         if conflict.left not in groups.nodes or conflict.right not in groups.nodes:
             raise ValueError("Identity conflict names an unknown source node.")

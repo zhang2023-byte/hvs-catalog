@@ -12,6 +12,7 @@ from .catalog import (
     CatalogQuantity,
     SimbadCandidate,
 )
+from .catalog_review import ReviewDecision
 from .catalog_simbad import CompactSimbad, SimbadSummary
 from .common import ArtifactRef, Config
 
@@ -35,7 +36,7 @@ class IdentifierAssociation(Config):
 
 
 class IdentityLink(Config):
-    method: Literal["identifier", "coordinates", "paper", "simbad"]
+    method: Literal["identifier", "coordinates", "paper", "simbad", "review"]
     left: str
     right: str
     accepted: bool = True
@@ -51,7 +52,7 @@ class PublishedSimbad(Config):
     status: Literal[
         "not_queried", "matched", "not_found", "ambiguous", "conflict", "failed"
     ]
-    method: Literal["identifier", "coordinates"] | None = None
+    method: Literal["identifier", "coordinates", "review"] | None = None
     selected: SimbadCandidate | None = None
     reason: str | None = None
     queries: list[dict] = Field(default_factory=list)
@@ -86,6 +87,11 @@ class PublishedSimbad(Config):
 
 
 class StellarScience(Config):
+    aliases: list[str] = Field(
+        default_factory=list,
+        exclude_if=lambda v: not v,
+        description="Approved display aliases, separate from original paper identifiers.",
+    )
     data_version: str
     catalog_id: CatalogId
     display_name: str
@@ -112,6 +118,7 @@ class StellarScience(Config):
 
 
 class LegacyStellarRecord(StellarScience):
+    review_decisions: list[ReviewDecision] = Field(default_factory=list)
     schema_version: Literal[2] = 2
     simbad: PublishedSimbad
     associations: list[IdentifierAssociation | IdentityLink]
@@ -124,7 +131,7 @@ class VersionThreeStellarRecord(LegacyStellarRecord):
 
 
 class StellarRecord(StellarScience):
-    schema_version: Literal[4] = 4
+    schema_version: Literal[4, 5] = 5
     simbad: SimbadSummary
     provenance: ArtifactRef = Field(
         description="Complete identity and SIMBAD evidence, relative to the catalog root and bound by SHA-256."
@@ -132,7 +139,8 @@ class StellarRecord(StellarScience):
 
 
 class StellarProvenance(Config):
-    schema_version: Literal[4] = 4
+    review_decisions: list[ReviewDecision] = Field(default_factory=list)
+    schema_version: Literal[4, 5] = 5
     data_version: str
     catalog_id: CatalogId
     associations: list[IdentifierAssociation | IdentityLink]
@@ -172,7 +180,7 @@ class PaperEntry(Config):
 
 
 class PaperIndex(Config):
-    schema_version: Literal[2, 3, 4] = 4
+    schema_version: Literal[2, 3, 4, 5] = 5
     papers: dict[str, PaperEntry]
 
 
@@ -183,7 +191,7 @@ class StarEntry(Config):
 
 
 class StarIndex(Config):
-    schema_version: Literal[2, 3, 4] = 4
+    schema_version: Literal[2, 3, 4, 5] = 5
     next_id: int = Field(ge=1)
     retired_ids: dict[CatalogId, list[CatalogId]]
     stars: list[StarEntry]
@@ -197,12 +205,12 @@ class CatalogCounts(Config):
 
 
 class CatalogRelease(Config):
-    schema_version: Literal[2, 3, 4] = 4
+    schema_version: Literal[2, 3, 4, 5] = 5
     data_version: str
     counts: CatalogCounts
     papers: ArtifactRef
     stars: ArtifactRef
-    rules_version: Literal[1, 2, 3, 4]
+    rules_version: Literal[1, 2, 3, 4, 5, 6]
     software_version: str
     input_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
     simbad_fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")

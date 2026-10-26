@@ -23,6 +23,14 @@ BRACKETED = re.compile(r"\[[A-Za-z][A-Za-z0-9.+-]*\]\s*\S+.*")
 def identifier_key(value):
     """Recognize complete namespaces, retaining component case and release."""
     value = normalize_catalog_identifier(" ".join(value.split()))
+    qualified = value.translate(str.maketrans({"−": "-", "–": "-", "—": "-"}))
+    for namespace, body in (
+        ("PSR", r"[BJ]\d{4,6}[+-]\d{2,6}"),
+        ("RX", r"J\d{4,6}(?:\.\d+)?[+-]\d{4,6}(?:\.\d+)?"),
+    ):
+        match = re.fullmatch(namespace + r"\s*(" + body + ")", qualified, re.IGNORECASE)
+        if match:
+            return namespace + " " + match[1].upper()
     match = GAIA.fullmatch(value)
     if match:
         return "Gaia " + match[1].upper() + " " + match[2]
@@ -35,6 +43,19 @@ def identifier_key(value):
     if BRACKETED.fullmatch(value):
         return value
     return None
+
+
+def sdss_query_identifier(value):
+    """Derive the IAU query spelling by truncation, never an identity merge key."""
+    value = " ".join(value.split()).translate(
+        str.maketrans({"−": "-", "–": "-", "—": "-"})
+    )
+    match = re.fullmatch(
+        r"SDSS\s*J(\d{6})\.(\d{2,})([+-])(\d{6})\.(\d+)", value, re.IGNORECASE
+    )
+    if not match:
+        return None
+    return f"SDSS J{match[1]}.{match[2][:2]}{match[3]}{match[4]}.{match[5][:1]}"
 
 
 def gaia_conflicts(names):
@@ -255,20 +276,33 @@ LOCAL_LABEL = re.compile(
 )
 
 
+def normalized_name(value):
+    """Normalize only case, whitespace and hyphens for review and display votes."""
+    return re.sub(r"[\s\-‐‑–—−]+", "", value).casefold()
+
+
 def display_name(stars, snapshot, catalog_id):
-    """Choose a readable label without changing any identity-matching evidence."""
-    if snapshot.status == "matched" and snapshot.selected is not None:
-        return snapshot.selected.main_id
-    votes = defaultdict(set)
+    """Choose the most widely used paper label; never use names as identity keys."""
+    votes, spellings = defaultdict(set), defaultdict(lambda: defaultdict(set))
     for node, star in stars:
         paper = re.sub(r"v\d+$", "", node.split("#", 1)[0])
         for name in names(star):
             label = " ".join(name.split())
             if any(character.isalpha() for character in label):
-                votes[label].add(paper)
+                key = normalized_name(label)
+                votes[key].add(paper)
+                spellings[key][label].add(paper)
     if not votes:
         return catalog_id
-    best = min(votes, key=lambda label: (len(label), -len(votes[label]), label))
-    if LOCAL_LABEL.fullmatch(best):
-        return f"{best} ({min(votes[best])})"
-    return best
+    labels = {
+        key: min(forms, key=lambda s: (-len(forms[s]), len(s), s))
+        for key, forms in spellings.items()
+    }
+    eligible = [
+        key for key, label in labels.items() if not LOCAL_LABEL.fullmatch(label)
+    ]
+    best = min(
+        eligible or votes, key=lambda k: (-len(votes[k]), len(labels[k]), labels[k])
+    )
+    label = labels[best]
+    return f"{label} ({min(votes[best])})" if LOCAL_LABEL.fullmatch(label) else label

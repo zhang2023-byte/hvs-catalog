@@ -177,7 +177,7 @@ resume_extraction(space,eid,service=CallService(stored_configuration(get_executi
         published_audit = json.loads((root/name/catalog_manifest.papers['2501.03333v1'].audit.path).read_bytes())
         assert published_audit['quote_mismatches'][0]['quote'] == 'Installed warning quote'
         assert stellar['simbad']['status'] == 'not_queried'
-        assert stellar['schema_version'] == 4
+        assert stellar['schema_version'] == 5
         provenance = stellar['provenance']
         trace_bytes = (root/name/provenance['path']).read_bytes()
         assert digest(trace_bytes) == provenance['sha256']

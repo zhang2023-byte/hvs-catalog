@@ -169,17 +169,29 @@ def stellar_document(star, papers):
         if edge.method == "previous" or left == right:
             continue
         missing = {}
+        outdated = False
         for node, origin in edge.origins.items():
             node = _plain_node(node)
             key = origin.source.arxiv_id + origin.source.version
             current = papers.get(key)
             if current and origin.result_sha256 == current.source.result_sha256:
-                continue
+                if (
+                    origin.identifiers
+                    == current.science.stars[origin.result_index].identifiers
+                ):
+                    continue
+            else:
+                outdated = True
             name = node + "@" + origin.result_sha256
             origins[name] = origin.model_dump(mode="json")
             missing[node] = _ref("#/association_origins/" + _pointer_key(name))
-        historical = edge.historical or bool(missing)
-        if edge.method == "identifier" and edge.accepted and not historical:
+        historical = edge.historical or outdated
+        if (
+            edge.method == "identifier"
+            and edge.accepted
+            and not historical
+            and not missing
+        ):
             identifier = edge.details["identifier"]
             identifiers.setdefault(identifier, set()).update((left, right))
             continue
@@ -226,12 +238,12 @@ def stellar_document(star, papers):
     return raw
 
 
-def export_files(manifest, stars, papers, files, *, schema_version=4):
+def export_files(manifest, stars, papers, files, *, schema_version=5):
     from .publication import artifact
 
     if schema_version == 3:
         from .simbad_publication import split_document
-    elif schema_version == 4:
+    elif schema_version in {4, 5}:
         from .provenance_publication import split_document
     elif schema_version != 2:
         raise ValueError("Unsupported readable catalog schema version.")
@@ -259,8 +271,13 @@ def export_files(manifest, stars, papers, files, *, schema_version=4):
     for star in sorted(stars, key=lambda s: s.catalog_id):
         path = "stars/" + star.catalog_id + ".json"
         document = stellar_document(star, papers)
-        if schema_version in {3, 4}:
-            document, trace_path, trace_bytes = split_document(document)
+        if schema_version in {3, 4, 5}:
+            if schema_version in {4, 5}:
+                document, trace_path, trace_bytes = split_document(
+                    document, schema_version=schema_version
+                )
+            else:
+                document, trace_path, trace_bytes = split_document(document)
             files[trace_path] = trace_bytes
         files[path] = json_bytes(document)
         index["stars"].append(
@@ -299,8 +316,7 @@ def export_files(manifest, stars, papers, files, *, schema_version=4):
             "stars": artifact("stars/index.json", files["stars/index.json"]),
         }
     )
-    CatalogRelease.model_validate(release)
-    files["manifest.json"] = json_bytes(release)
+    files["manifest.json"] = json_bytes(CatalogRelease.model_validate(release))
 
 
 def _expand(value, document, stack=()):
@@ -412,6 +428,8 @@ def _star(raw, papers):
             deep=True, update={"objects": [paper.source.objects[i] for i in indices]}
         )
     result["sources"] = sources
+    result["aliases"] = public.aliases
+    result["review_decisions"] = public.review_decisions
     simbad = public.simbad
     result["simbad"] = {
         "status": simbad.status,
@@ -511,11 +529,20 @@ def read_snapshot(root):
         raw = json.loads(read_bound(root, entry.file))
         if raw.get("schema_version") != release.schema_version:
             raise ValueError("Star schema version differs from the manifest.")
+        if release.schema_version == 5 and any(
+            "attribution" not in value
+            or (value["attribution"] != "own" and not value.get("attribution_reason"))
+            for quantity in raw["quantities"]
+            for value in quantity["values"]
+        ):
+            raise ValueError(
+                "Reviewed catalog values require attribution and exception reasons."
+            )
         if release.schema_version == 3:
             from .simbad_publication import restore_document
 
             raw = restore_document(raw, root)
-        elif release.schema_version == 4:
+        elif release.schema_version in {4, 5}:
             from .provenance_publication import restore_document
 
             raw = restore_document(raw, root)
