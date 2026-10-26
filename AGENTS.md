@@ -1,5 +1,9 @@
-# 开发入口
+# Agent entry
 
-1. 开发规则见 [Plan](.dev/plan.md#开发规则)，按变更涉及的验证、Git 和交接章节执行。
-2. 当前任务与接续状态见 [Progress](.dev/progress.md#当前交接)，由其中链接进入 Plan 的具体关卡。
-3. 再按 [任务读取表](.dev/plan.md#按任务读取) 查看相关要求、代码、测试及生成合同；核对实际文件和 Git 状态，不默认通读计划或历史材料。
+1. Read [Maintenance](docs/maintenance.md) for roles, authorization, verification, Git and
+   documentation rules.
+2. For literature processing, read [Pipeline](docs/pipeline.md); for catalog formats and
+   commands, the [generated contracts](contracts/generated/README.md).
+3. There is no progress log. Check the actual files, Git state and
+   [KNOWN_ISSUES](catalog-review/KNOWN_ISSUES.md) before starting; read only the sections the
+   task needs.

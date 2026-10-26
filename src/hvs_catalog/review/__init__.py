@@ -1,6 +1,6 @@
 """Shared pending-question/decision interfaces.
 
-See ../../../.dev/plan.md for shared requirements; workspace/runtime provide
+See ../../../docs/pipeline.md for shared requirements; workspace/runtime provide
 saving, locking, and recovery.
 """
 
