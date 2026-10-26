@@ -422,7 +422,7 @@ R00–R18 已完成，已完成任务只保留成果／实现入口；历史验�
 
 - 构建只读冻结响应，不联网，一个数据版本对应一份完整快照。冻结的是SIMBAD原始返回，不是旧结论：匹配、状态和名称每次重新推导；查询日期在provenance中记录。
 - 身份决定基本稳定后，按最终对象组生成query-plan，人类批准范围后全量查询到新目录，作为该数据版本的唯一快照，再重建。不与旧响应目录混用，因为query命令会复用目录中已有的响应，包括失败的。失败响应不删改，移到同级目录后只重试一次。重查后新出现的SIMBAD冲突、合并或被SIMBAD否定的决定进入待复核清单。
-- 依赖SIMBAD的决定绑定响应哈希，响应刷新后重新复核。开发迭代中只为新出现的对象补查到同一目录；每次公开发布前按同一流程全量刷新。
+- 依赖SIMBAD的决定绑定响应哈希，响应刷新后重新复核。开发迭代中只为新出现的对象补查到同一目录；每个新数据版本发布前按同一流程全量刷新。首次公开沿用该版本2026-10-25的全量快照，见[R22数据版本](#数据版本)。
 
 ### 数值归属标记
 
@@ -451,7 +451,7 @@ R00–R18 已完成，已完成任务只保留成果／实现入口；历史验�
 
 ## R22
 
-**GitHub Pages静态网站与数据下载。** 只读R21验收的catalog生成，按本节从头实现，不参考上一轮网站。网站只回答三个问题：这是哪颗星；文献认为它多快、多远、是否束缚；每个数来自哪篇论文哪一页。其余信息留在下载数据里。参考形态是Open Exoplanet Catalogue：一张总表，每个对象一页，紧凑参数表。
+**GitHub Pages静态网站与数据下载。** 只读R21验收的catalog生成，按本节从头实现，不参考上一轮网站；旧仓`stella_hvs`只参考其`deploy-pages.yml`，不参考页面、样式或主图。网站只回答三个问题：这是哪颗星；文献认为它多快、多远、是否束缚；每个数来自哪篇论文哪一页。其余信息留在下载数据里。参考形态是Open Exoplanet Catalogue：一张总表，每个对象一页，紧凑参数表。本节于2026-10-26按当前catalog核对修订并获用户审定，由Codex实施。
 
 ### 页面
 
@@ -461,21 +461,22 @@ R00–R18 已完成，已完成任务只保留成果／实现入口；历史验�
 
 ```
 HVS Catalog
-Published measurements of hypervelocity star candidates, extracted from 413 papers.
+Published measurements of hypervelocity star candidates from 163 papers.
 Values were extracted automatically; check the original paper before use.   Download · About
 
-[ Search name, alias or Gaia DR3 ID ]   □ Has 3D velocity   □ Studied in ≥2 papers    N stars
+[ Search name, alias or Gaia DR3 ID ]   □ Has v_GRF   □ Studied in ≥2 papers    N stars
 
-Name       v_GRF [km/s]   d [kpc]   RV [km/s]   P_unbound   Papers   First
-S5-HVS1    …              …         …           …           19       2019
-HVS1       732 ± 109      …         …           …           33       2005
+Name       v_GRF [km/s]     d [kpc]   RV [km/s]   P_unbound   P_bound   Papers   First
+S5-HVS1    …                …         …           …           …         20       2019
+HVS1       731.61 ± 109.15  …         …           —           …         32       2005
 ```
 
-- 列为Name、v_GRF、d（日心距离）、RV、P_unbound、Papers（研究该对象的论文数）、First（星表中最早论文的年份）。单位写在列头，单元格只放数字。
+- 列为Name、v_GRF、d（日心距离）、RV、P_unbound、P_bound、Papers（该对象sources中的论文数）、First（其中最早论文的年份）。单位写在列头，单元格只放数字。P_bound单列，因为77个对象（含HVS1、US 708、HVS4–10）有own P_bound而无own P_unbound。
+- 页面上的论文数和对象数由生成步骤从catalog计算：当前413篇提取成果中163篇有恒星结果，首页写有结果的篇数，About同时说明两者。
 - 默认按v_GRF降序。点表头可改排序；有点估计的在前，只有界限的随后，缺失的最后，三者不混排。
 - 一页显示全部，不分页、不选列；其余量只在CSV里。
-- 搜索对名称、全部别名和Gaia DR3号即时过滤，忽略大小写和空白；无结果时显示一行说明。两个筛选是勾选框。
-- 悬停数值显示来源论文简称，如Li et al. 2022。窄屏时表格内部横向滚动，Name列固定，正文不横向溢出。
+- 搜索对名称、全部别名和Gaia DR3号即时过滤，忽略大小写和空白；无结果时显示一行说明。两个筛选是勾选框，Has v_GRF指有可显示的v_GRF默认值。
+- 悬停数值显示来源论文简称，如Li et al. 2022（第一作者姓，由arXiv ID推年份）；该论文对此量有N>1个own值时加“1 of N values”。窄屏时表格内部横向滚动，Name列固定，正文不横向溢出。
 
 恒星页：
 
@@ -483,42 +484,46 @@ HVS1       732 ± 109      …         …           …           33       2005
 HVS1
 also SDSS J090744.99+024506.9 · [BGK2006] HV 1 · +8 more
 Gaia DR3 577294697514301440 · RA 09:07:44.99  Dec +02:45:06.9 (SIMBAD)
-SIMBAD · Gaia Archive
+SIMBAD · Gaia DR3
 
 Latest values
-v_GRF       732 ± 109 km/s     Li et al. 2022
-d           …                  …
-P_unbound   …                  …
+v_GRF       731.61 ± 109.15 km/s   Li et al. 2022
+d           161 ± 13 kpc           Kreuzer et al. 2020
+P_bound     …                      …
 
 Literature                                   □ Show quoted and non-comparable values
-Year  Paper              v_GRF        d     RV    P_unbound
-2022  Li et al.          732 ± 109    …     …     …
+Year  Paper              v_GRF        d     RV    P_bound
+2022  Li et al.          731.61 ± 109.15  …     …     …
 2018  Irrgang et al.     690 +40 −20  …     …     …    +2
 2005  Brown et al.       —            …     …     —
 
 Download JSON · Report an error
 ```
 
-- 页头：显示名；最常用的3个别名，其余点+N more展开；Gaia DR3号（有才显示）；坐标优先用SIMBAD，否则用最近论文的值，注明来源，显示时分秒；SIMBAD和Gaia Archive链接。合并只有坐标依据时，页头下加一行小字说明。
-- Latest values：每个量一行，只列有own值的量，依次为v_GRF、d、r_GC、RV、P_unbound、P_bound、视差、自行。值与首页同源，后附来源论文，链接到arXiv。
-- Literature：每篇研究该对象的论文一行，按年份倒序；只列该对象有值的量。没有数值的论文也列出，单元格为—。同篇多个值时显示首个值并标+N，点开逐条列出值和condition。cited和mismatch默认隐藏，勾选后以灰色显示，并标quoted或not comparable。
-- 点击任一值弹出证据：论文、原文数值与单位、condition、引文（去掉HTML标签，显示为纯文本）、固定PDF第N页链接。页码须用真实PDF核对。图像证据没有quote时写明"image evidence, no text quote"。弹窗可用键盘打开和关闭，不只靠颜色或悬停。经R21更正的值显示更正后的数值，注明已按固定PDF更正，并给出`correction`中的PDF页码与引文。
+- 页头：显示名；最常用的3个别名（按使用论文数，SIMBAD别名随后），其余点+N more展开；Gaia DR3号（有才显示；EDR3与DR3的source_id相同，标为EDR3的也算，共555个对象）；坐标优先用SIMBAD，否则用默认值规则选出的论文RA/Dec，注明来源，显示时分秒，两者都没有（47个对象）时省略此行；SIMBAD（matched时）和Gaia DR3（有号时，链到VizieR `I/355/gaiadr3`该source_id的记录）链接。
+- 身份提示从provenance判断，不匹配warning文字：组内有已采用的跨论文坐标关联时（45个对象，含HVS1），页头下加一行小字“Some papers were linked by position only.”；SIMBAD按坐标匹配时（81个对象），SIMBAD链接旁注“matched by position”。
+- Latest values：每个量一行，只列有默认值的量，依次为v_GRF、d、r_GC、RV、P_unbound、P_bound、视差、μα*、μδ。值与首页同源，后附来源论文，链接到arXiv。
+- Literature：每篇研究该对象的论文一行，按年份倒序；只列该对象有值的量。没有数值的论文也列出，单元格为—。单元格显示该篇按默认值规则选出的代表值，同篇其余值标+N，点开逐条列出值和condition。cited和mismatch默认隐藏，勾选后以灰色显示，并标quoted或not comparable。
+- 点击任一值弹出证据：论文、原文数值与单位、condition、引文、固定PDF第N页链接（`pdf_url#page=N`，N取证据位置`T:pN-bM`／`I:pN-bM`中的1起物理页）。引文显示为纯文本：表格标签转为单元格` | `和换行，其余HTML标签去掉；约1900条含解析残留的LaTeX，照原文显示，不渲染、不改写。页码须用真实PDF抽查核对。图像证据没有quote时写明"image evidence, no text quote"。弹窗可用键盘打开和关闭，不只靠颜色或悬停。经R21更正的值显示更正后的数值，注明已按固定PDF更正，并给出`correction`中的PDF页码与引文。
 - 页底只放本星JSON下载，以及预填对象名的GitHub issue纠错链接。不显示SIMBAD测光、误差椭圆、warning、审计信息和内部编号。
 
-About：一页，依次写范围、方法（LLM从固定PDF提取，未逐值人工核验）、"Latest"的含义（最近一篇论文的own值，不是最佳值）、单位约定、下载、引用和纠错。引用和许可在人类确定前用占位。
+About：一页，依次写范围、方法（LLM从固定PDF提取，未逐值人工核验）、"Latest"的含义（按[默认值规则](#默认值规则)选出的本篇own值，带误差者优先，不是最佳值；同篇多值取第一个；年份来自arXiv ID）、单位约定、下载、引用和纠错（含已知问题文件链接）。引用和许可在人类确定前用占位。
 
 ### 默认值规则
 
-- 每个量取最近一篇论文的own值；cited和mismatch不参与。"最近"按arXiv ID的提交年月和编号排序，显示的年份也由arXiv ID推得。同篇有多个own值时，取JSON中该论文该量的第一个，其余计入+N。
-- 优先点估计：任何论文给过点估计，就取最近的点估计；只有界限时才取最近的界限，显示为> 或 <。
-- P_unbound只用论文直接报告的未束缚概率，不由P_bound推算。
+- 候选只取有`standard`派生的own值；cited、mismatch及不能派生的值（如距离模数）不参与，只在Literature显示原文。
+- 按档次选取：带误差的点估计 > 无误差的点估计 > 界限（单侧显示为> 或 <，两侧显示为a–b）；取最高非空档中最近一篇论文的值。"最近"按arXiv ID的提交年月和编号排序，显示的年份也由arXiv ID推得。带误差优先避免图上估读的近期约数压过正式测量（如US 708的RV取917 ± 7而非约750）；相比只按点估计与界限分档，按当前catalog改变20个默认值，其中v_GRF、d、RV共10个。
+- 同篇在该档有多个候选时，取JSON中该论文该量的第一个，其余计入+N；Literature中该篇的代表值用同一规则。这只是可复现约定，不表示论文更看重该值；默认值来源论文对该量有多个own值很常见（v_GRF 95例、P_unbound 166例，多为不同势模型或总速度与最小速度并列），悬停和About须说明。
+- P_unbound只用论文直接报告的未束缚概率，不由P_bound推算；P_bound同样单列。
+- 没有own候选时显示—，不回退到cited。cited值多转引自本星表外的论文，挂在转引者名下会错误归属；星页勾选Show quoted可见。当前只有cited的对象：距离45、RV 16、P_unbound 9、v_GRF 4；v_GRF只有mismatch的35个。
 - 显示用R21的标准单位派生值，保留原文有效位数。约数前加~。误差写法：对称为± e，非对称为+u −l。缺失为—。
 - 默认值只在生成步骤中计算一次，首页、恒星页Latest和CSV共用，浏览器不重新做科学判断。
 
-2026-10-25记录两个待定问题，留R22实施前审定；本轮不改变数据或上述默认值规则：
+2026-10-26审定：同篇新旧数据版本并存（12处，11处为2402.10714的DR2对比视差，DR3已排在前）不另设规则。论文列出但明确不采用的值仍可能成为默认值（如2108.02796中S1的DR2 RVS值），区分需新增标记，属于科学规则变更，不在R22处理；已记入[已知问题](../catalog-review/KNOWN_ISSUES.md)。
 
-- 没有own值时，是否显示cited并标注出处？当前只有cited的对象数为：距离45、RV 16、P_ub 9、v_GRF 4；另有37个对象的v_GRF只有mismatch。
-- 同一篇论文同时列出新旧数据版本（如Gaia DR2与DR3）时，默认值如何选择？现行“同篇该量的第一个own值”规则是否需要调整，待审定。
+### 数据版本
+
+首次公开使用当前catalog（`2026-10-25-release-review`，SIMBAD快照为该版本于2026-10-25全量查询所得），R22和其后的文档收尾都不重建catalog。期间发现的数据或规则问题简要记入[catalog-review/KNOWN_ISSUES.md](../catalog-review/KNOWN_ISSUES.md)（对象、论文、问题、拟处理），下一个数据版本按R21复核循环统一处理，届时按R21全量刷新SIMBAD。该文件不是构建输入。
 
 ### 不做
 
@@ -526,11 +531,13 @@ About：一页，依次写范围、方法（LLM从固定PDF提取，未逐值人
 
 ### 下载与实现
 
-- 下载只有两样：完整catalog目录（或克隆仓库），以及一份stars.csv。
-- stars.csv一星一行：名称、别名、Gaia DR3号、RA/Dec（deg）、Papers、First，以及每个默认量的值、误差、界限标记和来源arXiv ID。单位写在列名里，值列都是纯数字；不放condition、证据和状态列。
+- 下载只有两样：完整catalog目录的zip（由生成步骤从catalog打包，固定时间戳与顺序以便重复生成一致；也可克隆仓库），以及一份stars.csv。恒星页另提供该星原始JSON的副本。
+- stars.csv一星一行：名称、别名（以`; `连接）、Gaia DR3号、RA/Dec（deg）、Papers、First，以及Latest values各量的值、对称或上下误差、上下界、界限与约数标记和来源arXiv ID。单位写在列名里（如`v_grf_km_s`），值、误差和界限列都是纯数字，~、>、<只放在标记列；不放condition、证据和状态列。
 - 首页索引和CSV由同一生成步骤产出。README补读取catalog和CSV的最小示例。
-- 用tools/下的生成脚本，以--catalog和--output生成可独立预览的静态站，使用原生HTML/CSS/JavaScript，不引入框架、CDN或外部脚本。
-- 恒星页按需加载对应JSON。恒星页地址用显示名生成的短地址，重名时加最短区分后缀，不暴露catalog_id。使用相对路径和hash导航，支持刷新、前进后退和Pages子路径。
+- 用tools/下的生成脚本，以--catalog、--output和--repository（GitHub仓库地址，用于issue链接）生成可独立预览的静态站，使用原生HTML/CSS/JavaScript，不引入框架、CDN或外部脚本。默认值、显示字符串、引文清理、页码链接、来源简称和+N分组都由Python生成为视图JSON，JS只渲染；规则用合成数据的pytest覆盖。
+- 恒星页按需加载对应视图JSON。恒星页地址用显示名生成的短地址，重名时加最短区分后缀，不暴露catalog_id。使用相对路径和hash导航，支持刷新、前进后退和Pages子路径。
+- 部署参照旧仓`deploy-pages.yml`的官方三步（configure-pages、upload-pages-artifact、deploy-pages），改为在CI中checkout后按锁文件用uv安装，先`hvs-catalog catalog verify catalog`，再运行生成脚本产出站点并上传；生成站点不提交进Git。只用`workflow_dispatch`手动触发，不随push部署；不设`enablement: true`，由人类公开仓库后在Settings → Pages选GitHub Actions再触发。issue链接用`${{ github.server_url }}/${{ github.repository }}`。CI只部署，不跑浏览器测试。
+- 真实浏览器验证用Playwright，作为开发依赖并写入锁文件；浏览器二进制按工程准备本地安装，测试只访问本机回环服务。
 - 文本一律转义，不执行资料中的HTML，不依赖在线数据库。
 - 视觉：系统字体、浅色底、一种强调色；数字用等宽数字并右对齐；不用阴影、渐变、卡片和图标装饰。
 - 先只生成首页，以及HVS1、US 708、S5-HVS1和一颗单篇Gaia候选的恒星页，交桌面与手机截图。人类确认后再全量生成。
@@ -543,6 +550,6 @@ About：一页，依次写范围、方法（LLM从固定PDF提取，未逐值人
   - 从HVS1的最新速度两次点击到达PDF原页；
   - pandas读取stars.csv后不清洗单位即可按速度筛选；
   - 任何页面都不出现位置码、哈希或内部编号。
-- 程序核对：每个默认值来自该对象own值中年份最近的论文，cited和mismatch从不成为默认值；页面、CSV与catalog数据版本一致。
+- 程序核对：每个默认值符合[默认值规则](#默认值规则)的档次、最近论文与同篇首个，cited、mismatch和无派生值从不成为默认值；US 708的RV为917 ± 7、S5-HVS1的距离来自8884 pc而非距离模数；页面、CSV、zip与catalog数据版本一致。
 - 用真实浏览器在1440×900和390×844下验证搜索、排序、筛选、证据弹窗与页码、导航和下载。离线检查按共同验证要求执行。
 - 许可、正式引用、公开仓库、Pages目标和上传由人类决定并手动完成，开发交付不自动公开。
