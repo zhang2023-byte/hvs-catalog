@@ -6,7 +6,8 @@ literature with the quoted text and PDF page behind every value.
 This repository holds the catalog, the review inputs it is built from, the extraction and
 build software, and the generator for the static website. The website lets you search the
 catalog, read each star's values by paper and open the source page; its About page explains
-what the data are and how to read them. The website is not yet published; see
+what the data are and how to read them. Visit the
+[website](https://zhang2023-byte.github.io/hvs-catalog/); see
 [Maintenance](docs/maintenance.md#website) to build it locally.
 
 The current data version is `2026-10-25-release-review`: 666 objects from 163 of 413 papers
