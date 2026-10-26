@@ -1,20 +1,15 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000573",
-  "display_name": "J1443+1453",
+  "display_name": "LSPM J1257+0715",
   "sources": {
-    "2206.13002v1": {
-      "title": "60 candidate high-velocity stars originating from the Sagittarius dwarf spheroidal galaxy in Gaia EDR3",
+    "2402.10714v1": {
+      "title": "Hypervelocity star candidates from Gaia DR2 and DR3 proper motions and parallaxes",
       "authors": [
-        "Hefan Li",
-        "Cuihua Du",
-        "Jun Ma",
-        "Jianrong Shi",
-        "Heidi Jo Newberg",
-        "Yunsong Piao"
+        "Ralf-Dieter Scholz"
       ],
-      "pdf_url": "https://arxiv.org/pdf/2206.13002v1",
+      "pdf_url": "https://arxiv.org/pdf/2402.10714v1",
       "records": [
         "/stars/0"
       ]
@@ -22,58 +17,273 @@
   },
   "identifiers": [
     {
-      "value": "J1443+1453",
+      "value": "Gaia DR3 3730485894679948928",
       "evidence": [
         {
-          "location": "T:p2-b2",
-          "quote": "Huang et al. (2021) discover a candidate HVS (J1443+1453)"
+          "location": "T:p18-b5",
+          "quote": "No.62 = Gaia DR3 3730485894679948928"
         }
       ],
-      "source": "2206.13002v1"
+      "source": "2402.10714v1"
+    },
+    {
+      "value": "LSPM J1257+0715",
+      "evidence": [
+        {
+          "location": "T:p18-b5",
+          "quote": "was already known before Gaia as LSPM J1257+0715"
+        }
+      ],
+      "source": "2402.10714v1"
     }
   ],
   "contribution_types": [
     {
-      "value": "follow_up",
+      "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p2-b2",
-          "quote": "Huang et al. (2021) discover a candidate HVS (J1443+1453)"
+          "location": "T:p17-b16",
+          "quote": "Our shortlist of eleven HVS candidates briefly described below"
         },
         {
-          "location": "T:p8-b3",
-          "quote": "We test this star using our method and find similar results."
+          "location": "T:p3-b5",
+          "quote": "the limit was increased to vtan_g>700 km/s"
+        },
+        {
+          "location": "T:p1-b12",
+          "quote": "it is unbound to the Galactic potential."
         }
       ],
-      "source": "2206.13002v1"
+      "source": "2402.10714v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "galactic_rest_frame_velocity",
+      "quantity": "parallax",
       "values": [
         {
-          "value": "559",
-          "unit": "km/s",
-          "condition": "Total velocity of the candidate high-velocity star J1443+1453 discovered by Huang et al. (2021), as quoted in this paper; probably originating from Sgr",
+          "value": "0.898",
+          "error": "0.179",
+          "unit": "mas",
+          "condition": "Gaia DR3; this study's shortlist and Table 2",
           "evidence": [
             {
-              "location": "T:p2-b2",
-              "quote": "Recently, Huang et al. (2021) discover a candidate HVS (J1443+1453) with a total velocity of\n559 km\\mathrm { s } ^ { - 1 }that is probably from Sgr."
+              "location": "T:p18-b5",
+              "quote": "Here, the DR3 parallax (0.898±0.179 mas) is more significant but 10% smaller than in DR2"
+            },
+            {
+              "location": "I:p19-b0"
             }
           ],
-          "source": "2206.13002v1"
+          "source": "2402.10714v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "0.898",
+            "error": "0.179",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.995",
+          "error": "0.236",
+          "unit": "mas",
+          "condition": "Gaia DR2; previous measurement reported for comparison",
+          "evidence": [
+            {
+              "location": "T:p18-b5",
+              "quote": "than in DR2 (0.995±0.236 mas), wherein this candidate would have been selected with low priority only"
+            }
+          ],
+          "source": "2402.10714v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "0.995",
+            "error": "0.236",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-14.28",
+          "error": "0.22",
+          "unit": "mas/yr",
+          "condition": "Gaia DR3, equatorial proper-motion component pmRA",
+          "evidence": [
+            {
+              "location": "I:p19-b0"
+            }
+          ],
+          "source": "2402.10714v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-14.28",
+            "error": "0.22",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-84.19",
+          "error": "0.16",
+          "unit": "mas/yr",
+          "condition": "Gaia DR3, equatorial proper-motion component pmDE",
+          "evidence": [
+            {
+              "location": "I:p19-b0"
+            }
+          ],
+          "source": "2402.10714v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-84.19",
+            "error": "0.16",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "LSPM J1257+0715",
+      "aliases": [
+        "2MASS J12573725+0715261",
+        "Gaia DR2 3730485894679948928",
+        "Gaia DR3 3730485894679948928",
+        "LSPM J1257+0715",
+        "TIC 422273847",
+        "USNO-B1.0 0972-00264332"
+      ],
+      "object_type": "PM*",
+      "coordinates": {
+        "ra": {
+          "value": 194.40528246712998,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 7.257314423050002,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.1459999978542328,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.09040000289678574,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -14.275,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -189.843,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.22100000083446503,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.16200000047683716,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.8981,
+        "unit": "mas",
+        "error": 0.1793999969959259,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "photometry": [
+        {
+          "band": "B",
+          "value": 20.100000381469727,
+          "system": "V",
+          "bibcode": "2003AJ....125..984M",
+          "quality": "E"
+        },
+        {
+          "band": "R",
+          "value": 18.0,
+          "system": "V",
+          "bibcode": "2003AJ....125..984M",
+          "quality": "E"
+        },
+        {
+          "band": "G",
+          "value": 18.420047760009766,
+          "error": 0.0030769999139010906,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 16.038999557495117,
+          "error": 0.1850000023841858,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "D"
+        },
+        {
+          "band": "J",
+          "value": 16.416000366210938,
+          "error": 0.12700000405311584,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "D"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR3 3730485894679948928",
+        "LSPM J1257+0715"
+      ]
+    },
+    "last_queried_at": "2026-10-25T12:08:12.310694+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000573_provenance.json",
-    "sha256": "678579338fdaf3ae49368dcda66d66ed11e2179bb482c4b3ee0ec44422fe331a"
+    "sha256": "34e3d8c268932c1cc02fb76e3f02ed561203d91fc7ebbdf55cacdb969dcf8e02"
   },
-  "warnings": []
+  "warnings": [
+    "2402.10714v1#/stars/0/quantities/0/values/1/evidence/0: quote audit unknown at T:p18-b5; check the paper evidence."
+  ]
 }

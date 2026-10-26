@@ -1,57 +1,184 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000445",
   "associations": [],
+  "review_decisions": [
+    {
+      "id": "R21-correct-060",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/36/quantities/2/values/0",
+      "original": {
+        "value": "-54.087",
+        "error": "0.040",
+        "unit": "mas/yr",
+        "condition": "Equatorial proper motion μ_α cos δ from Table 2 / Table A1.",
+        "evidence": [
+          {
+            "location": "T:p9-b0",
+            "quote": "SG-HVS37</td><td>217.396790</td><td>-3.753</td><td>-54.087"
+          },
+          {
+            "location": "I:p9-b0"
+          },
+          {
+            "location": "T:p18-b0",
+            "quote": "-54.087"
+          },
+          {
+            "location": "I:p18-b0"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "-3.753",
+        "error": "0.040",
+        "unit": "mas/yr",
+        "condition": "Equatorial proper motion μ_α cos δ from Table 2 / Table A1.",
+        "evidence": [
+          {
+            "location": "T:p9-b0",
+            "quote": "SG-HVS37</td><td>217.396790</td><td>-3.753</td><td>-54.087"
+          },
+          {
+            "location": "I:p9-b0"
+          },
+          {
+            "location": "T:p18-b0",
+            "quote": "-54.087"
+          },
+          {
+            "location": "I:p18-b0"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 9,
+          "location": "Table 2, SG-HVS37, Gaia 1280443412952917632, proper_motion_ra",
+          "quote": "SG-HVS37 217.396790 -3.753 -54.087 -112.495 2.912 582.995 0.61 0.59 0.74 0.81 0.75\n1280443412952917632 26.915099 0.040 0.039 2.455 0.371 91.517"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-correct-061",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/36/quantities/3/values/0",
+      "original": {
+        "value": "2.455",
+        "error": "0.039",
+        "unit": "mas/yr",
+        "condition": "Equatorial proper motion μ_δ from Table 2 / Table A1.",
+        "evidence": [
+          {
+            "location": "T:p9-b0",
+            "quote": "-54.087</td><td>2.455"
+          },
+          {
+            "location": "I:p9-b0"
+          },
+          {
+            "location": "T:p18-b0",
+            "quote": "2.455"
+          },
+          {
+            "location": "I:p18-b0"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "-54.087",
+        "error": "0.039",
+        "unit": "mas/yr",
+        "condition": "Equatorial proper motion μ_δ from Table 2 / Table A1.",
+        "evidence": [
+          {
+            "location": "T:p9-b0",
+            "quote": "-54.087</td><td>2.455"
+          },
+          {
+            "location": "I:p9-b0"
+          },
+          {
+            "location": "T:p18-b0",
+            "quote": "2.455"
+          },
+          {
+            "location": "I:p18-b0"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 9,
+          "location": "Table 2, SG-HVS37, Gaia 1280443412952917632, proper_motion_dec",
+          "quote": "SG-HVS37 217.396790 -3.753 -54.087 -112.495 2.912 582.995 0.61 0.59 0.74 0.81 0.75\n1280443412952917632 26.915099 0.040 0.039 2.455 0.371 91.517"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    }
+  ],
   "simbad": {
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "Gaia DR3 5252768161477321472",
+      "main_id": "SDSS J142935.23+265454.3",
       "aliases": [
-        "Gaia DR2 5252768161477321472",
-        "Gaia DR3 5252768161477321472"
+        "Gaia DR2 1280443412952917632",
+        "Gaia DR3 1280443412952917632",
+        "SDSS J142935.23+265454.3"
       ],
       "position": {
-        "ra_deg": 151.81213347368,
-        "dec_deg": -63.07208631475,
+        "ra_deg": 217.39679355910414,
+        "dec_deg": 26.915181905024443,
         "frame": "icrs",
         "equinox": null,
         "evidence": []
       },
       "fields": {
         "main_id": {
-          "value": "Gaia DR3 5252768161477321472"
+          "value": "SDSS J142935.23+265454.3"
         },
         "nbref": {
-          "value": 1
+          "value": 4
         },
         "otype": {
           "value": "HV*"
         },
         "ra": {
-          "value": 151.81213347368,
+          "value": 217.39679355910414,
           "unit": "deg"
         },
         "ra_prec": {
           "value": 14
         },
         "dec": {
-          "value": -63.07208631475,
+          "value": 26.915181905024443,
           "unit": "deg"
         },
         "dec_prec": {
           "value": 14
         },
         "coo_err_maj": {
-          "value": 0.009600000455975533,
+          "value": 0.030500000342726707,
           "unit": "mas"
         },
         "coo_err_maj_prec": {
           "value": 4
         },
         "coo_err_min": {
-          "value": 0.009600000455975533,
+          "value": 0.03139999881386757,
           "unit": "mas"
         },
         "coo_err_min_prec": {
@@ -71,31 +198,31 @@
           "value": "2020yCat.1350....0G"
         },
         "hpx": {
-          "value": 9554729
+          "value": 2329113
         },
         "pmra": {
-          "value": -4.449,
+          "value": -3.753,
           "unit": "mas / yr"
         },
         "pmra_prec": {
           "value": 3
         },
         "pmdec": {
-          "value": 3.207,
+          "value": -54.087,
           "unit": "mas / yr"
         },
         "pmdec_prec": {
           "value": 3
         },
         "pm_err_maj": {
-          "value": 0.013000000268220901,
+          "value": 0.03999999910593033,
           "unit": "mas / yr"
         },
         "pm_err_maj_prec": {
           "value": 3
         },
         "pm_err_min": {
-          "value": 0.010999999940395355,
+          "value": 0.039000000804662704,
           "unit": "mas / yr"
         },
         "pm_err_min_prec": {
@@ -112,14 +239,14 @@
           "value": "2020yCat.1350....0G"
         },
         "plx_value": {
-          "value": 0.0651,
+          "value": 0.3343,
           "unit": "mas"
         },
         "plx_prec": {
           "value": 4
         },
         "plx_err": {
-          "value": 0.010700000450015068,
+          "value": 0.042100001126527786,
           "unit": "mas"
         },
         "plx_err_prec": {
@@ -135,33 +262,33 @@
           "value": "v"
         },
         "rvz_radvel": {
-          "value": 64.84,
+          "value": -117.421,
           "unit": "km / s"
         },
         "rvz_radvel_prec": {
-          "value": 2
+          "value": 3
         },
         "rvz_redshift": {
-          "value": 0.00021630635354519256
+          "value": -0.0003915976218797912
         },
         "rvz_redshift_prec": {
           "value": 6
         },
         "rvz_err": {
-          "value": 0.8199999928474426,
+          "value": 3.3306000232696533,
           "unit": "km / s"
         },
         "rvz_err_prec": {
-          "value": 2
+          "value": 4
         },
         "rvz_nature": {
           "value": "s"
         },
         "rvz_qual": {
-          "value": "A"
+          "value": "C"
         },
         "rvz_bibcode": {
-          "value": "2018yCat.1345....0G"
+          "value": "2021A&A...651A..79B"
         },
         "vlsr_wavelength": {
           "value": ""
@@ -170,13 +297,13 @@
           "value": ""
         },
         "sp_type": {
-          "value": ""
+          "value": "A7IV"
         },
         "sp_qual": {
-          "value": ""
+          "value": "C"
         },
         "sp_bibcode": {
-          "value": ""
+          "value": "2021ApJS..252....3L"
         },
         "morph_type": {
           "value": ""
@@ -197,7 +324,7 @@
           "value": ""
         },
         "update_date": {
-          "value": "2022-02-03"
+          "value": "2025-07-31"
         },
         "otype_txt": {
           "value": "HV*"
@@ -217,25 +344,185 @@
               "value": 6
             },
             "oidref": {
-              "value": 15837948
+              "value": 21051954
             },
             "filter": {
               "value": "G"
             },
             "flux": {
-              "value": 13.339336395263672
+              "value": 16.020122528076172
             },
             "system": {
               "value": "V"
             },
             "flux_err": {
-              "value": 0.0027650000993162394
+              "value": 0.002795000094920397
             },
             "qual": {
               "value": "C"
             },
             "bibcode": {
-              "value": "2020yCat.1350....0G"
+              "value": "2022yCat.1355....0G"
+            }
+          }
+        },
+        {
+          "band": "u",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 21051954
+            },
+            "filter": {
+              "value": "u"
+            },
+            "flux": {
+              "value": 17.190000534057617
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.008999999612569809
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2020ApJS..249....3A"
+            }
+          }
+        },
+        {
+          "band": "g",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 21051954
+            },
+            "filter": {
+              "value": "g"
+            },
+            "flux": {
+              "value": 16.297000885009766
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.004000000189989805
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2020ApJS..249....3A"
+            }
+          }
+        },
+        {
+          "band": "r",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 21051954
+            },
+            "filter": {
+              "value": "r"
+            },
+            "flux": {
+              "value": 16.04800033569336
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.004000000189989805
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2020ApJS..249....3A"
+            }
+          }
+        },
+        {
+          "band": "i",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 21051954
+            },
+            "filter": {
+              "value": "i"
+            },
+            "flux": {
+              "value": 15.954999923706055
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.004000000189989805
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2020ApJS..249....3A"
+            }
+          }
+        },
+        {
+          "band": "z",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 21051954
+            },
+            "filter": {
+              "value": "z"
+            },
+            "flux": {
+              "value": 15.940999984741211
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.007000000216066837
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2020ApJS..249....3A"
             }
           }
         }
@@ -245,22 +532,36 @@
       {
         "query": {
           "method": "identifier",
-          "identifier": "Gaia DR2 5252768161477321472",
+          "identifier": "Gaia EDR3 1280443412952917632",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "874b45a50a5e76e137715c1ed0f094f82a47b675ecb21ee7324d29e5f2bad236",
-        "queried_at": "2026-10-24T04:49:10.455198+00:00",
+        "response_sha256": "2df4b6a3d0d7a1684f6b4656b6f0bb9e0b0524eb81ba14f916998dbc5fde74f3",
+        "queried_at": "2026-10-25T11:55:15.794933+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2207.04406v2#/stars/36",
+            "original_identifier": {
+              "value": "Gaia EDR3 1280443412952917632",
+              "evidence": [
+                {
+                  "location": "I:p9-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       }
     ],
     "matches": [
       {
-        "main_id": "Gaia DR3 5252768161477321472",
+        "main_id": "SDSS J142935.23+265454.3",
         "method": "identifier",
-        "identifier": "Gaia DR2 5252768161477321472",
+        "identifier": "Gaia EDR3 1280443412952917632",
         "candidate": {
           "$ref": "#/simbad/selected"
         }

@@ -1,19 +1,20 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000375",
-  "display_name": "TYC  269-444-1",
+  "display_name": "J1604+1000",
   "sources": {
-    "1807.00427v1": {
-      "title": "The high velocity stars in the Local Stellar Halo from Gaia and LAMOST",
+    "2007.03350v4": {
+      "title": "A proto-helium white dwarf stripped by a substellar companion via common-envelope ejection -- Uncovering the true nature of a candidate hypervelocity B-type star",
       "authors": [
-        "Cuihua Du",
-        "Hefan Li",
-        "Shuai Liu",
-        "Thomas Donlon",
-        "Heidi Jo Newberg"
+        "Andreas Irrgang",
+        "Stephan Geier",
+        "Ulrich Heber",
+        "Thomas Kupfer",
+        "Kareem El-Badry",
+        "Steven Bloemen"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1807.00427v1",
+      "pdf_url": "https://arxiv.org/pdf/2007.03350v4",
       "records": [
         "/stars/0"
       ]
@@ -21,102 +22,94 @@
   },
   "identifiers": [
     {
-      "value": "HiVel14",
+      "value": "SDSS J160429.12+100002.2",
       "evidence": [
         {
-          "location": "T:p6-b0",
-          "quote": "<tr><td>HiVel14</td><td>3817216883707348352</td>"
+          "location": "T:p1-b11",
+          "quote": "stars: individual: SDSS J160429.12+100002.2"
         }
       ],
-      "source": "1807.00427v1"
+      "source": "2007.03350v4"
     },
     {
-      "value": "Gaia DR1 3817216883707348352",
+      "value": "J1604+1000",
       "evidence": [
         {
-          "location": "T:p6-b0",
-          "quote": "<tr><td>HiVel14</td><td>3817216883707348352</td>"
-        },
-        {
-          "location": "I:p6-b0"
+          "location": "T:p1-b13",
+          "quote": "SDSS J160429.12+100002.2 (J1604+1000 for short)"
         }
       ],
-      "source": "1807.00427v1"
+      "source": "2007.03350v4"
     }
   ],
   "contribution_types": [
     {
-      "value": "candidates_found",
+      "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p7-b1",
-          "quote": "3 HiVel stars (Hivel14, HiVel15 and HiVel16)\nare unbound due to their very high velocity"
+          "location": "T:p1-b1",
+          "quote": "Uncovering the true nature of a candidate hypervelocity B-type star"
+        },
+        {
+          "location": "T:p2-b1",
+          "quote": "the star seemed to be a hy-\npervelocity star, that is, an object that is gravitationally unbound\nto our Galaxy."
+        },
+        {
+          "location": "T:p2-b2",
+          "quote": "In the meantime, high-quality follow-up spectra were taken\nduring the Hyper-MUCHFUSS project."
+        },
+        {
+          "location": "T:p7-b9",
+          "quote": "is well below zero illustrates that\nthe conditionx = 0 . 8is already more than enough to make the\nsystem gravitationally bound to the Milky Way"
         }
       ],
-      "source": "1807.00427v1"
+      "source": "2007.03350v4"
     }
   ],
   "quantities": [
     {
-      "quantity": "proper_motion_ra",
+      "quantity": "ra",
       "values": [
         {
-          "value": "14.31",
-          "error": "2.82",
-          "unit": "mas/yr",
-          "condition": "TGAS proper motion in right ascension, μα cos δ",
+          "value": "16 04 29.12",
+          "unit": "hourangle",
+          "condition": "From the SDSS coordinate designation J160429.12+100002.2",
           "evidence": [
             {
-              "location": "T:p6-b0",
-              "quote": "HiVel14</td><td>3817216883707348352</td><td>249.93</td><td>58.72</td><td>14.31 ± 2.82</td><td>-31.89 ± 1.38"
-            },
-            {
-              "location": "I:p6-b0"
+              "location": "T:p1-b11",
+              "quote": "SDSS J160429.12+100002.2"
             }
           ],
-          "source": "1807.00427v1"
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "241.1213333333333333333333334",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "proper_motion_dec",
+      "quantity": "dec",
       "values": [
         {
-          "value": "-31.89",
-          "error": "1.38",
-          "unit": "mas/yr",
-          "condition": "TGAS proper motion in declination, μδ",
+          "value": "+10 00 02.2",
+          "unit": "deg",
+          "condition": "From the SDSS coordinate designation J160429.12+100002.2",
           "evidence": [
             {
-              "location": "T:p6-b0",
-              "quote": "14.31 ± 2.82</td><td>-31.89 ± 1.38"
-            },
-            {
-              "location": "I:p6-b0"
+              "location": "T:p1-b11",
+              "quote": "SDSS J160429.12+100002.2"
             }
           ],
-          "source": "1807.00427v1"
-        }
-      ]
-    },
-    {
-      "quantity": "radial_velocity",
-      "values": [
-        {
-          "value": "753",
-          "error": "3",
-          "unit": "km/s",
-          "condition": "Heliocentric radial velocity RV⊙ from LAMOST",
-          "evidence": [
-            {
-              "location": "T:p6-b0",
-              "quote": "753 ± 3</td><td>3680"
-            },
-            {
-              "location": "I:p6-b0"
-            }
-          ],
-          "source": "1807.00427v1"
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "10.00061111111111111111111111",
+            "approximate": false
+          }
         }
       ]
     },
@@ -124,20 +117,518 @@
       "quantity": "distance",
       "values": [
         {
-          "value": "334.7",
-          "error": "185.5",
-          "unit": "pc",
-          "condition": "Heliocentric distance D⊙ from Bayesian estimate of Astraatmadja & Bailer-Jones (2016)",
+          "value": "6.0",
+          "error": "0.9",
+          "unit": "kpc",
+          "condition": "Spectrophotometric distance from preliminary atmospheric parameters assuming a typical BHB mass of 0.5 ± 0.1 Msun",
           "evidence": [
             {
-              "location": "T:p6-b1",
-              "quote": "334.7 ± 185.5</td><td>-"
-            },
-            {
-              "location": "I:p6-b1"
+              "location": "T:p2-b1",
+              "quote": "d } = 6 . 0 \\overset { \\_ } { \\pm } 0 . 9kpc"
             }
           ],
-          "source": "1807.00427v1"
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "6.0",
+            "error": "0.9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "5.0",
+          "lower_error": "1.0",
+          "upper_error": "0.4",
+          "unit": "kpc",
+          "condition": "Bayesian inference, Roche-lobe filling factor x = 1.0",
+          "evidence": [
+            {
+              "location": "I:p7-b0"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "5.0",
+            "lower_error": "1.0",
+            "upper_error": "0.4",
+            "approximate": false
+          }
+        },
+        {
+          "value": "5.0",
+          "lower_error": "1.0",
+          "upper_error": "0.4",
+          "unit": "kpc",
+          "condition": "Bayesian inference, Roche-lobe filling factor x = 0.9",
+          "evidence": [
+            {
+              "location": "I:p7-b0"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "5.0",
+            "lower_error": "1.0",
+            "upper_error": "0.4",
+            "approximate": false
+          }
+        },
+        {
+          "value": "4.4",
+          "lower_error": "0.7",
+          "upper_error": "0.9",
+          "unit": "kpc",
+          "condition": "Bayesian inference, Roche-lobe filling factor x = 0.8",
+          "evidence": [
+            {
+              "location": "I:p7-b0"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "4.4",
+            "lower_error": "0.7",
+            "upper_error": "0.9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "3.9",
+          "lower_error": "0.7",
+          "upper_error": "0.8",
+          "unit": "kpc",
+          "condition": "Bayesian inference, Roche-lobe filling factor x = 0.7",
+          "evidence": [
+            {
+              "location": "I:p7-b0"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "3.9",
+            "lower_error": "0.7",
+            "upper_error": "0.8",
+            "approximate": false
+          }
+        },
+        {
+          "value": "3.4",
+          "lower_error": "0.6",
+          "upper_error": "0.8",
+          "unit": "kpc",
+          "condition": "Bayesian inference, Roche-lobe filling factor x = 0.6",
+          "evidence": [
+            {
+              "location": "I:p7-b0"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "3.4",
+            "lower_error": "0.6",
+            "upper_error": "0.8",
+            "approximate": false
+          }
+        },
+        {
+          "value": "3.2",
+          "lower_error": "0.7",
+          "upper_error": "0.8",
+          "unit": "kpc",
+          "condition": "Bayesian inference, Roche-lobe filling factor x = 0.5",
+          "evidence": [
+            {
+              "location": "I:p7-b0"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "3.2",
+            "lower_error": "0.7",
+            "upper_error": "0.8",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "parallax",
+      "values": [
+        {
+          "value": "0.117 - Z",
+          "error": "0.073",
+          "unit": "mas",
+          "condition": "Gaia EDR3 parallax; Z is the parallax bias, with Z = -0.017 mas adopted",
+          "evidence": [
+            {
+              "location": "T:p5-b13",
+              "quote": "Gaia\nEDR3 parallax( \\varpi = 0 . 1 1 7 - Zmas; Z is the parallax bias or\n“zero point”;\\sigma _ { \\varpi } = 0 . 0 7 3mas)."
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own"
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-345",
+          "error": "3",
+          "unit": "km/s",
+          "condition": "Previous high negative radial velocity from Geier et al. (2017)",
+          "evidence": [
+            {
+              "location": "T:p1-b14",
+              "quote": "high negative radial velocity( - 3 4 5 \\pm 3 \\mathrm { k m s ^ { - 1 } }: Geier et al. 2017)"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "cited",
+          "attribution_reason": "The condition names earlier measurements of Brown 2012 and Geier 2015/2017; adopted values are also cited.",
+          "standard": {
+            "unit": "km/s",
+            "value": "-345",
+            "error": "3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-320.6",
+          "error": "4.0",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; BOSS spectrum on HJD 2455706.8079; not corrected for gravitational redshift; not used for the radial-velocity curve because exposure time is about half the orbital period",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-320.6",
+            "error": "4.0",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-383.8",
+          "error": "3.3",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; ESI (5200) on HJD 2457579.8213; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-383.8",
+            "error": "3.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-370.5",
+          "error": "4.4",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; ESI (5200) on HJD 2457579.8427; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-370.5",
+            "error": "4.4",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-343.3",
+          "error": "3.2",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; ESI (8000) on HJD 2457579.8654; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-343.3",
+            "error": "3.2",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-315.2",
+          "error": "11.6",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; blue-arm ISIS (2.0 Å) on HJD 2457959.3798; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-315.2",
+            "error": "11.6",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-308.0",
+          "error": "11.5",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; blue-arm ISIS (2.0 Å) on HJD 2457959.3908; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-308.0",
+            "error": "11.5",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-378.6",
+          "error": "11.0",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; blue-arm ISIS (1.2 Å) on HJD 2457961.4907; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-378.6",
+            "error": "11.0",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-323.5",
+          "error": "11.2",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; blue-arm ISIS (1.2 Å) on HJD 2457961.5132; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-323.5",
+            "error": "11.2",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-343.5",
+          "error": "6.8",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; ESI (8000) on HJD 2458255.0640; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-343.5",
+            "error": "6.8",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-369.0",
+          "error": "5.3",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; ESI (8000) on HJD 2458255.0821; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-369.0",
+            "error": "5.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-323.4",
+          "error": "4.0",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; X-shooter on HJD 2458564.7278; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-323.4",
+            "error": "4.0",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-337.9",
+          "error": "3.2",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; X-shooter on HJD 2458565.7407; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-337.9",
+            "error": "3.2",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-375.8",
+          "error": "3.2",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; X-shooter on HJD 2458565.7668; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-375.8",
+            "error": "3.2",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-359.3",
+          "error": "4.4",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; X-shooter on HJD 2458565.8164; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-359.3",
+            "error": "4.4",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-317.4",
+          "error": "3.4",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; X-shooter on HJD 2458565.8427; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-317.4",
+            "error": "3.4",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-318.5",
+          "error": "4.0",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity; X-shooter on HJD 2458565.8693; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p2-b8"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-318.5",
+            "error": "4.0",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-348.3",
+          "error": "1.4",
+          "unit": "km/s",
+          "condition": "Systemic radial velocity from Keplerian fit; not corrected for gravitational redshift",
+          "evidence": [
+            {
+              "location": "I:p5-b0"
+            }
+          ],
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-348.3",
+            "error": "1.4",
+            "approximate": false
+          }
         }
       ]
     },
@@ -145,19 +636,24 @@
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "644",
+          "value": "740",
+          "error": "140",
           "unit": "km/s",
-          "condition": "Total velocity in the Galactic rest frame, Vgsr",
+          "condition": "Preliminary BHB interpretation using Gaia EDR3 proper motions and BHB mass/distance",
           "evidence": [
             {
-              "location": "T:p6-b1",
-              "quote": "641 ± 6</td><td>644</td><td>334.7 ± 185.5"
-            },
-            {
-              "location": "I:p6-b1"
+              "location": "T:p2-b1",
+              "quote": "v _ { \\mathrm { G r f } } \\ = \\ 7 4 0 \\pm 1 4 0 \\mathrm { k m s ^ { - 1 } }"
             }
           ],
-          "source": "1807.00427v1"
+          "source": "2007.03350v4",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "740",
+            "error": "140",
+            "approximate": false
+          }
         }
       ]
     }
@@ -166,34 +662,33 @@
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "TYC  269-444-1",
+      "main_id": "GALEX J160429.1+100002",
       "aliases": [
-        "2MASS J11124678+0624290",
-        "EPIC 201855156",
-        "Gaia DR1 3817216883707348352",
-        "Gaia DR2 3817216888003015936",
-        "Gaia DR3 3817216888003015936",
-        "TIC 290905626",
-        "TYC  269-444-1"
+        "GALEX J160429.1+100002",
+        "Gaia DR2 4454897279513044992",
+        "Gaia DR3 4454897279513044992",
+        "SDSS J160429.12+100002.1",
+        "SDSS J160429.12+100002.2",
+        "SDSS J160429.12+100002.3"
       ],
-      "object_type": "*",
+      "object_type": "WD*",
       "coordinates": {
         "ra": {
-          "value": 168.19498167045,
+          "value": 241.12140117251,
           "unit": "deg"
         },
         "dec": {
-          "value": 6.408125779190001,
+          "value": 10.00069225533,
           "unit": "deg"
         },
         "frame": "icrs",
         "error_ellipse": {
           "major": {
-            "value": 0.015599999576807022,
+            "value": 0.05400000140070915,
             "unit": "mas"
           },
           "minor": {
-            "value": 0.01510000042617321,
+            "value": 0.0421999990940094,
             "unit": "mas"
           },
           "angle": {
@@ -207,20 +702,20 @@
       },
       "proper_motion": {
         "ra_cosdec": {
-          "value": 16.398,
+          "value": -19.263,
           "unit": "mas / yr"
         },
         "dec": {
-          "value": -32.332,
+          "value": -26.242,
           "unit": "mas / yr"
         },
         "error_ellipse": {
           "major": {
-            "value": 0.02199999988079071,
+            "value": 0.06800000369548798,
             "unit": "mas / yr"
           },
           "minor": {
-            "value": 0.017000000923871994,
+            "value": 0.06300000101327896,
             "unit": "mas / yr"
           },
           "angle": {
@@ -232,75 +727,62 @@
         "bibcode": "2020yCat.1350....0G"
       },
       "parallax": {
-        "value": 3.6006,
+        "value": 0.1173,
         "unit": "mas",
-        "error": 0.01940000057220459,
+        "error": 0.07259999960660934,
         "quality": "A",
         "bibcode": "2020yCat.1350....0G"
       },
-      "velocity": {
-        "radial_velocity": {
-          "value": 7.11,
-          "unit": "km / s"
-        },
-        "redshift": {
-          "value": 2.371668840916996e-05
-        },
-        "reported_as": "v",
-        "error": {
-          "value": 0.8299999833106995,
-          "unit": "km / s"
-        },
-        "nature": "s",
-        "quality": "A",
-        "bibcode": "2018yCat.1345....0G",
-        "wavelength": "O"
+      "spectral_type": {
+        "value": "DAB:",
+        "quality": "D",
+        "bibcode": "2015MNRAS.446.4078K"
       },
       "photometry": [
         {
-          "band": "V",
-          "value": 11.930000305175781,
-          "error": 0.2199999988079071,
-          "system": "V",
-          "bibcode": "2000A&A...355L..27H",
-          "quality": "D"
+          "band": "u",
+          "value": 17.26799964904785,
+          "error": 0.008999999612569809,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
         },
         {
-          "band": "B",
-          "value": 12.34000015258789,
-          "error": 0.23000000417232513,
-          "system": "V",
-          "bibcode": "2000A&A...355L..27H",
-          "quality": "D"
+          "band": "g",
+          "value": 16.926000595092773,
+          "error": 0.004000000189989805,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
         },
         {
-          "band": "J",
-          "value": 10.529999732971191,
-          "error": 0.023000000044703484,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
+          "band": "r",
+          "value": 17.283000946044922,
+          "error": 0.004999999888241291,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
         },
         {
-          "band": "H",
-          "value": 10.263999938964844,
-          "error": 0.027000000700354576,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
+          "band": "i",
+          "value": 17.534000396728516,
+          "error": 0.006000000052154064,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
         },
         {
-          "band": "K",
-          "value": 10.180999755859375,
-          "error": 0.023000000044703484,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
+          "band": "z",
+          "value": 17.753000259399414,
+          "error": 0.017999999225139618,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
           "quality": "C"
         },
         {
           "band": "G",
-          "value": 11.496359825134277,
-          "error": 0.0027699999045580626,
+          "value": 17.12830924987793,
+          "error": 0.002899999963119626,
           "system": "V",
           "bibcode": "2020yCat.1350....0G",
           "quality": "C"
@@ -309,14 +791,14 @@
     },
     "match": {
       "identifiers": [
-        "Gaia DR1 3817216883707348352"
+        "SDSS J160429.12+100002.2"
       ]
     },
-    "last_queried_at": "2026-10-24T04:53:57.311928+00:00"
+    "last_queried_at": "2026-10-25T11:50:04.120417+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000375_provenance.json",
-    "sha256": "88b00f8bf742688afad66ed97837ecd65424be100c4d59b44202c3a3696a02c4"
+    "sha256": "617e7b7d12227274a3126f50c4540a0e0dacca87b3e5d0c62908ee1756b5f6f7"
   },
   "warnings": []
 }

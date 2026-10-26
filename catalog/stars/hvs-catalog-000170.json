@@ -1,88 +1,102 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000170",
-  "display_name": "HVS6",
+  "display_name": "J1644",
   "sources": {
-    "1401.7342v1": {
-      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+    "1703.10455v1": {
+      "title": "Spectroscopic twin to the hypervelocity sdO star US 708 and three fast sdB stars from the Hyper-MUCHFUSS project",
       "authors": [
-        "Warren R. Brown",
-        "Margaret J. Geller",
-        "Scott J. Kenyon"
+        "E. Ziegerer",
+        "U. Heber",
+        "S. Geier",
+        "A. Irrgang",
+        "T. Kupfer",
+        "F. Fürst",
+        "J. Schaffenroth"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "pdf_url": "https://arxiv.org/pdf/1703.10455v1",
       "records": [
-        "/stars/3"
+        "/stars/2"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS6",
+      "value": "SDSS J164419.44+452326.7",
       "evidence": [
         {
-          "location": "T:p11-b0",
-          "quote": "<tr><td>6</td><td>609.4 ± 6.8</td>"
+          "location": "T:p2-b10",
+          "quote": "J164419.44+452326.7 (J1644)"
+        },
+        {
+          "location": "T:p4-b0",
+          "quote": "SDSS J164419.44+452326.7"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1703.10455v1"
+    },
+    {
+      "value": "J1644",
+      "evidence": [
+        {
+          "location": "T:p2-b10",
+          "quote": "J164419.44+452326.7 (J1644)"
+        }
+      ],
+      "source": "1703.10455v1"
     }
   ],
   "contribution_types": [
     {
-      "value": "candidates_found",
+      "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p6-b6",
-          "quote": "21 HVSs that are unbound on the basis of radial"
+          "location": "T:p1-b10",
+          "quote": "three candidates among the sdB stars"
         },
         {
-          "location": "T:p11-b0",
-          "quote": "<tr><td>6</td><td>609.4 ± 6.8</td>"
+          "location": "T:p2-b8",
+          "quote": "The Hyper-MUCHFUSS project was started with the aim to find potentially unbound hot subdwarfs."
+        },
+        {
+          "location": "T:p2-b10",
+          "quote": "SDSS J163213.05+205124.0 (J1632) and SDSS J164419.44+452326.7 (J1644) have previously been investigated by Tillich et al. (2011) and are now revisited here."
+        },
+        {
+          "location": "T:p8-b185",
+          "quote": "two known hot subdwarfs from the first Hyper-MUCHFUSS campaign"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1703.10455v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "radial_velocity",
+      "quantity": "distance",
       "values": [
         {
-          "value": "609.4",
-          "error": "6.8",
-          "unit": "km/s",
-          "condition": "heliocentric radial velocity (Table 1 v_⊙ column)",
-          "evidence": [
-            {
-              "location": "T:p11-b0",
-              "quote": "<tr><td>6</td><td>609.4 ± 6.8</td><td>501.4</td><td>18.966</td><td>12190 ± 546</td><td>4.30 ± 0.23</td><td>170</td><td>3.06 ± 0.11</td><td>+0.25 ± 0.28</td><td>58 ± 7</td><td>94 ± 13</td><td>-0.58, -0.66</td></tr>"
-            }
-          ],
-          "source": "1401.7342v1"
-        }
-      ]
-    },
-    {
-      "quantity": "galactocentric_radius",
-      "values": [
-        {
-          "value": "58",
-          "error": "7",
+          "value": "4.1",
+          "error": "0.3",
           "unit": "kpc",
-          "condition": "Galactocentric radial distance R_GC, calculated assuming the Sun is at R = 8 kpc",
+          "condition": "Spectroscopic heliocentric distance from Table 1, based on the adopted mean ESI+BOSS atmospheric parameters for J1644.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "<tr><td>6</td><td>609.4 ± 6.8</td><td>501.4</td><td>18.966</td><td>12190 ± 546</td><td>4.30 ± 0.23</td><td>170</td><td>3.06 ± 0.11</td><td>+0.25 ± 0.28</td><td>58 ± 7</td><td>94 ± 13</td><td>-0.58, -0.66</td></tr>"
+              "location": "T:p4-b0",
+              "quote": "<eq>4.1^{+0.3}_{-0.3}</eq>"
             },
             {
-              "location": "T:p5-b11",
-              "quote": "We calculate HVS Galacto-centric radial distances, R, assuming the Sun is at R = 8 kpc."
+              "location": "I:p4-b0"
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "4.1",
+            "error": "0.3",
+            "approximate": false
+          }
         }
       ]
     },
@@ -90,20 +104,120 @@
       "quantity": "proper_motion_ra",
       "values": [
         {
-          "value": "-0.58",
+          "value": "4.7",
+          "error": "2.8",
           "unit": "mas/yr",
-          "condition": "predicted proper motion for a Galactic center origin from trajectory modeling; not an observed proper motion",
+          "condition": "Tillich et al. (2011) catalogue proper-motion component; adopted for the primary J1644 kinematic solution.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "<tr><td>6</td><td>609.4 ± 6.8</td><td>501.4</td><td>18.966</td><td>12190 ± 546</td><td>4.30 ± 0.23</td><td>170</td><td>3.06 ± 0.11</td><td>+0.25 ± 0.28</td><td>58 ± 7</td><td>94 ± 13</td><td>-0.58, -0.66</td></tr>"
+              "location": "I:p6-b0"
             },
             {
-              "location": "T:p11-b0",
-              "quote": "<eq>(\\mu_\\alpha, \\mu_\\delta)_GC</eq>"
+              "location": "T:p5-b7",
+              "quote": "we use the proper motion obtained by Tillich et al. (2011)"
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1703.10455v1",
+          "attribution": "cited",
+          "attribution_reason": "Condition and quote reread under the new definition: this input value comes from another paper; later adoption does not change its cited nature.",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "4.7",
+            "error": "2.8",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-1.1",
+          "error": "3.2",
+          "unit": "mas/yr",
+          "condition": "APOP catalogue proper-motion component; one of the catalogue values used for the alternative J1644b weighted-mean solution.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p5-b7",
+              "quote": "weighted mean of the catalogue values"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-1.1",
+            "error": "3.2",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-7",
+          "error": "5.9",
+          "unit": "mas/yr",
+          "condition": "PPMXL catalogue proper-motion component; one of the catalogue values used for the alternative J1644b weighted-mean solution.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p5-b7",
+              "quote": "weighted mean of the catalogue values"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-7",
+            "error": "5.9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-1",
+          "error": "3",
+          "unit": "mas/yr",
+          "condition": "SDSS catalogue proper-motion component; one of the catalogue values used for the alternative J1644b weighted-mean solution.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p5-b7",
+              "quote": "weighted mean of the catalogue values"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-1",
+            "error": "3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-2",
+          "error": "6",
+          "unit": "mas/yr",
+          "condition": "USNO-B1.0 catalogue proper-motion component; one of the catalogue values used for the alternative J1644b weighted-mean solution.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p5-b7",
+              "quote": "weighted mean of the catalogue values"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-2",
+            "error": "6",
+            "approximate": false
+          }
         }
       ]
     },
@@ -111,31 +225,428 @@
       "quantity": "proper_motion_dec",
       "values": [
         {
-          "value": "-0.66",
+          "value": "-26.1",
+          "error": "3.3",
           "unit": "mas/yr",
-          "condition": "predicted proper motion for a Galactic center origin from trajectory modeling; not an observed proper motion",
+          "condition": "Tillich et al. (2011) catalogue proper-motion component; adopted for the primary J1644 kinematic solution.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "<tr><td>6</td><td>609.4 ± 6.8</td><td>501.4</td><td>18.966</td><td>12190 ± 546</td><td>4.30 ± 0.23</td><td>170</td><td>3.06 ± 0.11</td><td>+0.25 ± 0.28</td><td>58 ± 7</td><td>94 ± 13</td><td>-0.58, -0.66</td></tr>"
+              "location": "I:p6-b0"
             },
             {
-              "location": "T:p11-b0",
-              "quote": "<eq>(\\mu_\\alpha, \\mu_\\delta)_GC</eq>"
+              "location": "T:p5-b7",
+              "quote": "we use the proper motion obtained by Tillich et al. (2011)"
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1703.10455v1",
+          "attribution": "cited",
+          "attribution_reason": "Condition and quote reread under the new definition: this input value comes from another paper; later adoption does not change its cited nature.",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-26.1",
+            "error": "3.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-16.4",
+          "error": "3.2",
+          "unit": "mas/yr",
+          "condition": "APOP catalogue proper-motion component; one of the catalogue values used for the alternative J1644b weighted-mean solution.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p5-b7",
+              "quote": "weighted mean of the catalogue values"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-16.4",
+            "error": "3.2",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-27.5",
+          "error": "5.9",
+          "unit": "mas/yr",
+          "condition": "PPMXL catalogue proper-motion component; one of the catalogue values used for the alternative J1644b weighted-mean solution.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p5-b7",
+              "quote": "weighted mean of the catalogue values"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-27.5",
+            "error": "5.9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-26",
+          "error": "3",
+          "unit": "mas/yr",
+          "condition": "SDSS catalogue proper-motion component; one of the catalogue values used for the alternative J1644b weighted-mean solution.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p5-b7",
+              "quote": "weighted mean of the catalogue values"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-26",
+            "error": "3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-26",
+          "error": "3",
+          "unit": "mas/yr",
+          "condition": "USNO-B1.0 catalogue proper-motion component; one of the catalogue values used for the alternative J1644b weighted-mean solution.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p5-b7",
+              "quote": "weighted mean of the catalogue values"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-26",
+            "error": "3",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-309",
+          "error": "9",
+          "unit": "km/s",
+          "condition": "Adopted heliocentric radial velocity in Table 1; this is the SDSS-BOSS value marked adopted for the kinematic calculations in Table A.1.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "-309 ± 9"
+            },
+            {
+              "location": "T:p12-b0",
+              "quote": "SDSS-BOSS"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-309",
+            "error": "9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-314",
+          "error": "5",
+          "unit": "km/s",
+          "condition": "SDSS measurement from Tillich et al. (2011) listed in Table A.1.",
+          "evidence": [
+            {
+              "location": "T:p12-b0",
+              "quote": "-314 ± 5"
+            },
+            {
+              "location": "I:p12-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "cited",
+          "attribution_reason": "Condition and quote reread under the new definition: this input value comes from another paper; later adoption does not change its cited nature.",
+          "standard": {
+            "unit": "km/s",
+            "value": "-314",
+            "error": "5",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-299",
+          "error": "10",
+          "unit": "km/s",
+          "condition": "ESI/Keck measurement listed in Table A.1 and marked adopted for the kinematic calculations.",
+          "evidence": [
+            {
+              "location": "T:p12-b0",
+              "quote": "-299 ± 10"
+            },
+            {
+              "location": "I:p12-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-299",
+            "error": "10",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "514",
+          "error": "69",
+          "unit": "km/s",
+          "condition": "Present-day Galactic rest-frame velocity for the primary J1644 solution using the Tillich et al. (2011) proper motion.",
+          "evidence": [
+            {
+              "location": "T:p7-b5",
+              "quote": "the highestv _ { \\mathrm { g r f } } = 5 1 4 \\pm 6 9km s<sup>−1</sup>"
+            },
+            {
+              "location": "I:p8-b87"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "514",
+            "error": "69",
+            "approximate": false
+          }
+        },
+        {
+          "value": "422",
+          "error": "69",
+          "unit": "km/s",
+          "condition": "Present-day Galactic rest-frame velocity for the alternative J1644b solution using the weighted mean of the catalogue proper motions.",
+          "evidence": [
+            {
+              "location": "T:p7-b5",
+              "quote": "v _ { \\mathrm { g r f } } = 4 2 2 \\stackrel { \\cdot } { \\pm } 6 9km\\mathbf { s } ^ { - 1 }"
+            },
+            {
+              "location": "I:p8-b121"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "422",
+            "error": "69",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "GALEX J164419.4+452327",
+      "aliases": [
+        "GALEX J164419.4+452327",
+        "Gaia DR2 1406119962829248896",
+        "Gaia DR3 1406119962829248896",
+        "SDSS J164419.44+452326.7",
+        "SDSS J164419.45+452326.4",
+        "SDSS J164419.45+452326.7",
+        "USNO-B1.0 1353-00272067"
+      ],
+      "object_type": "HS*",
+      "coordinates": {
+        "ra": {
+          "value": 251.08103389709999,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 45.39077325749,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.06129999831318855,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.07769999653100967,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -1.945,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -21.227,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.08399999886751175,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.10100000351667404,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.336,
+        "unit": "mas",
+        "error": 0.07410000264644623,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -310.0,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.0010335146191657874
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 4.0,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "C",
+        "bibcode": "2024A&A...690A.368G",
+        "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "sdB",
+        "quality": "D",
+        "bibcode": "2004ApJ...607..426K"
+      },
+      "photometry": [
+        {
+          "band": "B",
+          "value": 17.0,
+          "system": "V",
+          "bibcode": "2003AJ....125..984M",
+          "quality": "E"
+        },
+        {
+          "band": "R",
+          "value": 17.399999618530273,
+          "system": "V",
+          "bibcode": "2003AJ....125..984M",
+          "quality": "E"
+        },
+        {
+          "band": "i",
+          "value": 17.975000381469727,
+          "error": 0.00800000037997961,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
+        },
+        {
+          "band": "z",
+          "value": 18.267000198364258,
+          "error": 0.023000000044703484,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "G",
+          "value": 17.338361740112305,
+          "error": 0.0029990000184625387,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        },
+        {
+          "band": "u",
+          "value": 16.9060001373291,
+          "error": 0.007000000216066837,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
+        },
+        {
+          "band": "g",
+          "value": 17.08799934387207,
+          "error": 0.004000000189989805,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
+        },
+        {
+          "band": "r",
+          "value": 17.61199951171875,
+          "error": 0.006000000052154064,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "SDSS J164419.44+452326.7"
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:43:23.094398+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000170_provenance.json",
-    "sha256": "8077233a7af40b7bdf0b7c5d07ca259ed8db1216dbc412f85edadcde44ef38e7"
+    "sha256": "b4dbae380eb009d32bd7c3b8ba09735154f0186088b013780107d48491515f21"
   },
-  "warnings": []
+  "warnings": [
+    "1703.10455v1#/stars/2/contribution_type/evidence/2: quote audit unknown at T:p2-b10; check the paper evidence.",
+    "1703.10455v1#/stars/2/contribution_type/evidence/3: quote audit unknown at T:p8-b185; check the paper evidence."
+  ]
 }

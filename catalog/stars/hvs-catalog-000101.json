@@ -1,45 +1,56 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000101",
-  "display_name": "SDSS J074817.52+360034.4",
+  "display_name": "LMST_HVS21",
   "sources": {
-    "1112.2088v3": {
-      "title": "Metal-poor hypervelocity star candidates from the Sloan Digital Sky Survey",
+    "1405.7760v1": {
+      "title": "The Nearest High-Velocity Stars Revealed by LAMOST Data Release 1",
       "authors": [
-        "Yinbi Li",
+        "Jing Zhong",
+        "Li Chen",
+        "Chao Liu",
+        "Richard de Grijs",
+        "Jinliang Hou",
+        "Shiyin Shen",
+        "Zhengyi Shao",
+        "Jing Li",
         "Ali Luo",
-        "Gang Zhao",
-        "Youjun Lu",
-        "Juanjuan Ren",
-        "Fang Zuo"
+        "Jianrong Shi",
+        "Haotong Zhang",
+        "Ming Yang",
+        "Licai Deng",
+        "Ge Jin",
+        "Yong Zhang",
+        "Yonghui Hou",
+        "Zhenchao Zhang"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1112.2088v3",
+      "pdf_url": "https://arxiv.org/pdf/1405.7760v1",
       "records": [
-        "/stars/5"
+        "/stars/20"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "SDSS J074817.52+360034.4",
+      "value": "LMST_HVS21",
       "evidence": [
         {
-          "location": "T:p9-b0",
-          "quote": "SDSS J074817.52+360034.4</td><td>mpHVS6"
+          "location": "T:p5-b1",
+          "quote": "LMST_HVS21</td><td>J122723.65+482136.1"
         }
       ],
-      "source": "1112.2088v3"
+      "source": "1405.7760v1"
     },
     {
-      "value": "mpHVS6",
+      "value": "J122723.65+482136.1",
       "evidence": [
         {
-          "location": "T:p9-b0",
-          "quote": "SDSS J074817.52+360034.4</td><td>mpHVS6"
+          "location": "T:p5-b1",
+          "quote": "LMST_HVS21</td><td>J122723.65+482136.1"
         }
       ],
-      "source": "1112.2088v3"
+      "source": "1405.7760v1"
     }
   ],
   "contribution_types": [
@@ -47,15 +58,23 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p4-b1",
-          "quote": "There are totally 13 objects (mpHVS1–\nmpHVS13, “mp” means metal-poor) as listed in Table 1, which are unbound to the Galaxy\nin the Xue08 model"
+          "location": "T:p1-b3",
+          "quote": "We report the discovery of 28 candidate high-velocity stars (HVSs)"
         },
         {
-          "location": "T:p7-b3",
-          "quote": "only mpHVS1 is unbound with high statistical\nsignificance, although all 13 HVS candidates are unbound in some Galactic potential models."
+          "location": "T:p5-b1",
+          "quote": "Table 2: Spatial Positions and Kinematic Parameters of the 28 HVS Candidates."
+        },
+        {
+          "location": "T:p4-b16",
+          "quote": "sample of 28 HVSs selected from the LAMOST DR1"
+        },
+        {
+          "location": "T:p1-b6",
+          "quote": "Hypervelocity stars (HVSs) move suficiently fast\nso that they can escape from the Galaxy’s gravita-\ntional pull."
         }
       ],
-      "source": "1112.2088v3"
+      "source": "1405.7760v1"
     }
   ],
   "quantities": [
@@ -63,16 +82,30 @@
       "quantity": "ra",
       "values": [
         {
-          "value": "07h48m17.52s",
-          "unit": "hourangle",
-          "condition": "Right ascension parsed from the SDSS catalog designation listed for mpHVS6 in Table 1.",
+          "value": "186.84858",
+          "unit": "deg",
+          "condition": "J2000 equatorial coordinates listed for the candidate (Table 1 and Table 2)",
           "evidence": [
             {
-              "location": "T:p9-b0",
-              "quote": "SDSS J074817.52+360034.4</td><td>mpHVS6</td><td>-5.16±3.64</td><td>-16.66±3.64</td><td>335±8</td><td>313±8</td><td>19.37</td><td>6149</td><td>4.12</td><td>-1.21±0.06</td>"
+              "location": "T:p5-b0",
+              "quote": "J122723.65+482136.1</td><td>186.84858</td><td>48.360029"
+            },
+            {
+              "location": "T:p5-b1",
+              "quote": "LMST_HVS21</td><td>J122723.65+482136.1</td><td>186.84858</td><td>48.360029"
+            },
+            {
+              "location": "T:p6-b0",
+              "quote": "LMST_HVS21</td><td>186.84858</td><td>48.360029"
             }
           ],
-          "source": "1112.2088v3"
+          "source": "1405.7760v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "186.84858",
+            "approximate": false
+          }
         }
       ]
     },
@@ -80,70 +113,30 @@
       "quantity": "dec",
       "values": [
         {
-          "value": "+36d00m34.4s",
+          "value": "48.360029",
           "unit": "deg",
-          "condition": "Declination parsed from the SDSS catalog designation listed for mpHVS6 in Table 1.",
+          "condition": "J2000 equatorial coordinates listed for the candidate (Table 1 and Table 2)",
           "evidence": [
             {
-              "location": "T:p9-b0",
-              "quote": "SDSS J074817.52+360034.4</td><td>mpHVS6</td><td>-5.16±3.64</td><td>-16.66±3.64</td><td>335±8</td><td>313±8</td><td>19.37</td><td>6149</td><td>4.12</td><td>-1.21±0.06</td>"
-            }
-          ],
-          "source": "1112.2088v3"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_ra",
-      "values": [
-        {
-          "value": "-5.16",
-          "error": "3.64",
-          "unit": "mas/yr",
-          "condition": "μ_α cos δ from SDSS and USNO-B, as listed in Table 1.",
-          "evidence": [
+              "location": "T:p5-b0",
+              "quote": "J122723.65+482136.1</td><td>186.84858</td><td>48.360029"
+            },
             {
-              "location": "T:p9-b0",
-              "quote": "SDSS J074817.52+360034.4</td><td>mpHVS6</td><td>-5.16±3.64</td><td>-16.66±3.64</td><td>335±8</td><td>313±8</td><td>19.37</td><td>6149</td><td>4.12</td><td>-1.21±0.06</td>"
-            }
-          ],
-          "source": "1112.2088v3"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_dec",
-      "values": [
-        {
-          "value": "-16.66",
-          "error": "3.64",
-          "unit": "mas/yr",
-          "condition": "μ_δ from SDSS and USNO-B, as listed in Table 1.",
-          "evidence": [
+              "location": "T:p5-b1",
+              "quote": "LMST_HVS21</td><td>J122723.65+482136.1</td><td>186.84858</td><td>48.360029"
+            },
             {
-              "location": "T:p9-b0",
-              "quote": "SDSS J074817.52+360034.4</td><td>mpHVS6</td><td>-5.16±3.64</td><td>-16.66±3.64</td><td>335±8</td><td>313±8</td><td>19.37</td><td>6149</td><td>4.12</td><td>-1.21±0.06</td>"
+              "location": "T:p6-b0",
+              "quote": "LMST_HVS21</td><td>186.84858</td><td>48.360029"
             }
           ],
-          "source": "1112.2088v3"
-        }
-      ]
-    },
-    {
-      "quantity": "radial_velocity",
-      "values": [
-        {
-          "value": "335",
-          "error": "8",
-          "unit": "km s^-1",
-          "condition": "Heliocentric radial velocity RV_⊙ from the SEGUE Stellar Parameter Pipeline, as listed in Table 1.",
-          "evidence": [
-            {
-              "location": "T:p9-b0",
-              "quote": "SDSS J074817.52+360034.4</td><td>mpHVS6</td><td>-5.16±3.64</td><td>-16.66±3.64</td><td>335±8</td><td>313±8</td><td>19.37</td><td>6149</td><td>4.12</td><td>-1.21±0.06</td>"
-            }
-          ],
-          "source": "1112.2088v3"
+          "source": "1405.7760v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "48.360029",
+            "approximate": false
+          }
         }
       ]
     },
@@ -151,17 +144,164 @@
       "quantity": "distance",
       "values": [
         {
-          "value": "6.7",
-          "error": "0.4",
+          "value": "0.9",
           "unit": "kpc",
-          "condition": "Heliocentric distance D_⊙ from Table 2.",
+          "condition": "Heliocentric photometric distance derived by the authors (Table 2, D_sun)",
           "evidence": [
             {
-              "location": "T:p9-b1",
-              "quote": "<tr><td>mpHVS6</td><td>-13.9±0.4</td><td>-0.4±0.0</td><td>3.0±0.2</td><td>-388±52</td><td>-259±119</td><td>-111±104</td><td>6.7±0.4</td></tr>"
+              "location": "T:p5-b1",
+              "quote": "LMST_HVS21</td><td>J122723.65+482136.1</td><td>186.84858</td><td>48.360029</td><td>0.033</td><td>0.9</td><td>8.2"
+            },
+            {
+              "location": "T:p5-b1",
+              "quote": "D_{\\odot}</eq>kpc"
+            },
+            {
+              "location": "I:p5-b1"
             }
           ],
-          "source": "1112.2088v3"
+          "source": "1405.7760v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "0.9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "5099",
+          "unit": "pc (column header in the paper reads kpc)",
+          "condition": "Distance from Pickles & Depagne (2010) adopted in Table 3 to recompute space velocities (see notes on the column unit)",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "LMST_HVS21</td><td>186.84858</td><td>48.360029</td><td>5099</td><td>1322</td><td>-1394</td><td>608</td><td>2015</td><td>1"
+            },
+            {
+              "location": "T:p6-b0",
+              "quote": "D_{\\odot}</eq> kpc"
+            },
+            {
+              "location": "T:p6-b4",
+              "quote": "we use additional available photo-metric distances from Pickles & Depagne (2010) and Gontcharov et al. (2011) to recalculate the total ve-locities of our sample"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1405.7760v1",
+          "attribution": "cited",
+          "attribution_reason": "Table 3 adopts the derived distances of Pickles & Depagne 2010 / Gontcharov 2011; the velocities this paper recalculates from them are own. The unit question in the original table is kept as reported."
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "15.3",
+          "error": "3.5",
+          "unit": "mas/yr",
+          "condition": "mu_alpha*cos(delta) from UCAC4 (Table 1)",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "J122723.65+482136.1</td><td>186.84858</td><td>48.360029</td><td>15.3 ± 3.5</td><td>-88.2 ± 3.7"
+            },
+            {
+              "location": "T:p5-b0",
+              "quote": "µ<sub>α</sub> cos(δ) and µ<sub>δ</sub> were taken from the UCAC4"
+            }
+          ],
+          "source": "1405.7760v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "15.3",
+            "error": "3.5",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-88.2",
+          "error": "3.7",
+          "unit": "mas/yr",
+          "condition": "mu_delta from UCAC4 (Table 1)",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "J122723.65+482136.1</td><td>186.84858</td><td>48.360029</td><td>15.3 ± 3.5</td><td>-88.2 ± 3.7"
+            },
+            {
+              "location": "T:p5-b0",
+              "quote": "µ<sub>α</sub> cos(δ) and µ<sub>δ</sub> were taken from the UCAC4"
+            }
+          ],
+          "source": "1405.7760v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-88.2",
+            "error": "3.7",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-209",
+          "unit": "km/s",
+          "condition": "V_r^a from the LAMOST 1D pipeline (Table 1)",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "J122723.65+482136.1</td><td>186.84858</td><td>48.360029</td><td>15.3 ± 3.5</td><td>-88.2 ± 3.7</td><td>17.04</td><td>15.88</td><td>15.44</td><td>15.28</td><td>15.19</td><td>14.36</td><td>13.96</td><td>13.84</td><td>13.89</td><td>-1.11</td><td>-209</td><td>-213"
+            },
+            {
+              "location": "T:p5-b0",
+              "quote": "V<sup>a</sup><sub>r</sub> was obtained from the LAMOST 1D pipeline,whileV _ { \\mathrm { r } } ^ { b }is based on our IRAF reduction"
+            }
+          ],
+          "source": "1405.7760v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-209",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-213",
+          "unit": "km/s",
+          "condition": "V_r^b from the authors' IRAF reduction (Table 1)",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "-209</td><td>-213</td><td>G0"
+            },
+            {
+              "location": "T:p5-b0",
+              "quote": "V _ { \\mathrm { r } } ^ { b }is based on our IRAF reduction"
+            },
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1405.7760v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-213",
+            "approximate": false
+          }
         }
       ]
     },
@@ -169,17 +309,26 @@
       "quantity": "galactocentric_radius",
       "values": [
         {
-          "value": "14.3",
-          "error": "0.4",
+          "value": "8.2",
           "unit": "kpc",
-          "condition": "Galactocentric distance D_G from Table 3.",
+          "condition": "Galactocentric distance r_gc derived from the authors' 6D phase-space analysis (Table 2)",
           "evidence": [
             {
-              "location": "T:p10-b0",
-              "quote": "<tr><td>mpHVS6</td><td>14.3±0.4</td><td>479±166</td><td>447</td><td>564</td></tr>"
+              "location": "T:p5-b1",
+              "quote": "LMST_HVS21</td><td>J122723.65+482136.1</td><td>186.84858</td><td>48.360029</td><td>0.033</td><td>0.9</td><td>8.2</td><td>-8.2</td><td>0.2</td><td>0.8"
+            },
+            {
+              "location": "T:p5-b1",
+              "quote": "rgc is the galactrocentric distance"
             }
           ],
-          "source": "1112.2088v3"
+          "source": "1405.7760v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "8.2",
+            "approximate": false
+          }
         }
       ]
     },
@@ -187,53 +336,89 @@
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "479",
-          "error": "166",
-          "unit": "km s^-1",
-          "condition": "3D total velocity V_G relative to the Galactocentric rest frame, as listed in Table 3.",
+          "value": "323",
+          "error": "22",
+          "unit": "km/s",
+          "condition": "Total space velocity V_gt in the Galactic rest frame from the authors' photometric distance (Table 2)",
           "evidence": [
             {
-              "location": "T:p10-b0",
-              "quote": "<tr><td>mpHVS6</td><td>14.3±0.4</td><td>479±166</td><td>447</td><td>564</td></tr>"
+              "location": "T:p5-b1",
+              "quote": "LMST_HVS21</td><td>J122723.65+482136.1</td><td>186.84858</td><td>48.360029</td><td>0.033</td><td>0.9</td><td>8.2</td><td>-8.2</td><td>0.2</td><td>0.8</td><td>298 ± 26</td><td>-113 ± 5</td><td>-43 ± 22</td><td>323 ± 22"
             },
             {
-              "location": "T:p10-b0",
-              "quote": "D _ { \\mathrm { G } }andV _ { \\mathrm { G } }are the Galactocentric distance and 3D total velocity relative"
+              "location": "T:p5-b1",
+              "quote": "V<sub>gt</sub> is the total (space) velocity in the Galactic rest frame"
+            },
+            {
+              "location": "I:p5-b1"
             }
           ],
-          "source": "1112.2088v3"
+          "source": "1405.7760v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "323",
+            "error": "22",
+            "approximate": false
+          }
+        },
+        {
+          "value": "2015",
+          "unit": "km/s",
+          "condition": "Total velocity in the Galactic rest frame recomputed with the literature-based distance of Pickles & Depagne (2010) (Table 3)",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "LMST_HVS21</td><td>186.84858</td><td>48.360029</td><td>5099</td><td>1322</td><td>-1394</td><td>608</td><td>2015</td><td>1"
+            },
+            {
+              "location": "T:p6-b4",
+              "quote": "Based on these literature-based distances, the derived total velocities and (U, V, W) components in the Galactic rest frame are listed in Table 3"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1405.7760v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "2015",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
     "status": "matched",
-    "method": "identifier",
+    "method": "coordinates",
     "selected": {
-      "main_id": "SDSS J074817.52+360034.4",
+      "main_id": "2MASS J12272365+4821361",
       "aliases": [
-        "Gaia DR2 894773422994006912",
-        "Gaia DR3 894773422994006912",
-        "SDSS J074817.52+360034.4"
+        "2MASS J12272365+4821361",
+        "Gaia DR3 1544013431220858496",
+        "LAMOST J122723.65+482136.1",
+        "TIC 416540691"
       ],
-      "object_type": "*",
+      "object_type": "HV*",
       "coordinates": {
         "ra": {
-          "value": 117.07303043592,
+          "value": 186.84851793909996,
           "unit": "deg"
         },
         "dec": {
-          "value": 36.00956490237,
+          "value": 48.36003422477,
           "unit": "deg"
         },
         "frame": "icrs",
         "error_ellipse": {
           "major": {
-            "value": 0.20569999516010284,
+            "value": 0.015599999576807022,
             "unit": "mas"
           },
           "minor": {
-            "value": 0.17309999465942383,
+            "value": 0.01940000057220459,
             "unit": "mas"
           },
           "angle": {
@@ -247,20 +432,20 @@
       },
       "proper_motion": {
         "ra_cosdec": {
-          "value": -0.99,
+          "value": 11.263,
           "unit": "mas / yr"
         },
         "dec": {
-          "value": -14.344,
+          "value": -91.702,
           "unit": "mas / yr"
         },
         "error_ellipse": {
           "major": {
-            "value": 0.3310000002384186,
+            "value": 0.01899999938905239,
             "unit": "mas / yr"
           },
           "minor": {
-            "value": 0.21199999749660492,
+            "value": 0.026000000536441803,
             "unit": "mas / yr"
           },
           "angle": {
@@ -272,95 +457,117 @@
         "bibcode": "2020yCat.1350....0G"
       },
       "parallax": {
-        "value": 0.173,
+        "value": 1.1057,
         "unit": "mas",
-        "error": 0.25920000672340393,
+        "error": 0.030799999833106995,
         "quality": "A",
         "bibcode": "2020yCat.1350....0G"
       },
       "velocity": {
         "radial_velocity": {
-          "value": 335.0,
+          "value": -20.0,
           "unit": "km / s"
         },
         "redshift": {
-          "value": 0.0011180647529194232
+          "value": -6.671059388796419e-05
         },
         "reported_as": "v",
-        "error": {
-          "value": 8.0,
-          "unit": "km / s"
-        },
-        "nature": "s",
         "quality": "D",
-        "bibcode": "2012ApJ...744L..24L"
+        "bibcode": "2014ApJ...789L...2Z",
+        "wavelength": "O"
       },
       "spectral_type": {
-        "value": "F5",
-        "quality": "E",
-        "bibcode": "2020ApJS..249....3A"
+        "value": "G0",
+        "quality": "D",
+        "bibcode": "2014ApJ...789L...2Z"
       },
       "photometry": [
         {
           "band": "G",
-          "value": 18.977401733398438,
-          "error": 0.003717999905347824,
+          "value": 15.465444564819336,
+          "error": 0.0027660001069307327,
           "system": "V",
           "bibcode": "2020yCat.1350....0G",
           "quality": "C"
         },
         {
-          "band": "u",
-          "value": 20.329999923706055,
-          "error": 0.05000000074505806,
-          "system": "A",
-          "bibcode": "2009ApJS..182..543A",
+          "band": "J",
+          "value": 14.364999771118164,
+          "error": 0.03200000151991844,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
           "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 13.961999893188477,
+          "error": 0.03999999910593033,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "K",
+          "value": 13.840999603271484,
+          "error": 0.04399999976158142,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "u",
+          "value": 17.040000915527344,
+          "system": "V",
+          "bibcode": "2014ApJ...789L...2Z",
+          "quality": "D"
         },
         {
           "band": "g",
-          "value": 19.364999771118164,
-          "error": 0.012000000104308128,
-          "system": "A",
-          "bibcode": "2009ApJS..182..543A",
-          "quality": "C"
+          "value": 15.880000114440918,
+          "system": "V",
+          "bibcode": "2014ApJ...789L...2Z",
+          "quality": "D"
         },
         {
           "band": "r",
-          "value": 18.981000900268555,
-          "error": 0.010999999940395355,
-          "system": "A",
-          "bibcode": "2009ApJS..182..543A",
-          "quality": "C"
+          "value": 15.4399995803833,
+          "system": "V",
+          "bibcode": "2014ApJ...789L...2Z",
+          "quality": "D"
         },
         {
           "band": "i",
-          "value": 18.81999969482422,
-          "error": 0.012000000104308128,
-          "system": "A",
-          "bibcode": "2009ApJS..182..543A",
-          "quality": "C"
+          "value": 15.279999732971191,
+          "system": "V",
+          "bibcode": "2014ApJ...789L...2Z",
+          "quality": "D"
         },
         {
           "band": "z",
-          "value": 18.799999237060547,
-          "error": 0.03999999910593033,
-          "system": "A",
-          "bibcode": "2009ApJS..182..543A",
-          "quality": "C"
+          "value": 15.1899995803833,
+          "system": "V",
+          "bibcode": "2014ApJ...789L...2Z",
+          "quality": "D"
         }
       ]
     },
     "match": {
-      "identifiers": [
-        "SDSS J074817.52+360034.4"
+      "coordinates": [
+        {
+          "source_record": "1405.7760v1#/stars/20",
+          "separation_arcsec": 0.1493062972039457,
+          "radius_arcsec": 5.0
+        }
       ]
     },
-    "last_queried_at": "2026-10-24T04:39:27.873494+00:00"
+    "last_queried_at": "2026-10-25T11:51:16.205806+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000101_provenance.json",
-    "sha256": "23d1875d264fbf5f180e8c5f28fcf88b8c5464d9ac62e8df9c7a1c792b5c9c99"
+    "sha256": "1b6bff8a7ae105011eb6a22e42ec589956edb0f0beb8d4a04537980c6bd859d5"
   },
-  "warnings": []
+  "warnings": [
+    "Association based on coordinates only; no epoch propagation.",
+    "1405.7760v1#/stars/20/quantities/2/values/1/evidence/2: quote audit unknown at T:p6-b4; check the paper evidence."
+  ]
 }

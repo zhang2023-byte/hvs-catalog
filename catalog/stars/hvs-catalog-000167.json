@@ -1,32 +1,80 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000167",
-  "display_name": "HVS5",
+  "display_name": "R 51",
   "sources": {
-    "1401.7342v1": {
-      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+    "1611.05504v2": {
+      "title": "Gaia TGAS search for Large Magellanic Cloud runaway supergiant stars:Candidate hypervelocity star discovery, and the nature of R71",
       "authors": [
-        "Warren R. Brown",
-        "Margaret J. Geller",
-        "Scott J. Kenyon"
+        "Daniel J. Lennon",
+        "Roeland P. van der Marel",
+        "Mercedes Ramos Lerate",
+        "William O'Mullane",
+        "Johannes Sahlmann"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "pdf_url": "https://arxiv.org/pdf/1611.05504v2",
       "records": [
-        "/stars/2"
+        "/stars/0"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS5",
+      "value": "Sk-67 2",
       "evidence": [
         {
-          "location": "T:p11-b0",
-          "quote": "<tr><td>5</td><td>545.5 ± 4.3</td>"
+          "location": "T:p1-b10",
+          "quote": "Sk-67 2 (HIP 22237), is a candidate hypervelocity star, the TGAS proper motion implying a very large peculiar transverse velocity (∼360 km/s) directed radially away from the LMC centre."
+        },
+        {
+          "location": "I:p4-b4"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1611.05504v2"
+    },
+    {
+      "value": "HIP 22237",
+      "evidence": [
+        {
+          "location": "T:p1-b10",
+          "quote": "Sk-67 2 (HIP 22237), is a candidate hypervelocity star, the TGAS proper motion implying a very large peculiar transverse velocity (∼360 km/s) directed radially away from the LMC centre."
+        },
+        {
+          "location": "I:p4-b4"
+        }
+      ],
+      "source": "1611.05504v2"
+    },
+    {
+      "value": "HDE 270754",
+      "evidence": [
+        {
+          "location": "I:p4-b4"
+        },
+        {
+          "location": "I:p7-b0"
+        }
+      ],
+      "source": "1611.05504v2"
+    },
+    {
+      "value": "R 51",
+      "evidence": [
+        {
+          "location": "I:p7-b0"
+        }
+      ],
+      "source": "1611.05504v2"
+    },
+    {
+      "value": "Gaia DR1 4662413602288962560",
+      "evidence": [
+        {
+          "location": "I:p7-b0"
+        }
+      ],
+      "source": "1611.05504v2"
     }
   ],
   "contribution_types": [
@@ -34,15 +82,19 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p6-b6",
-          "quote": "21 HVSs that are unbound on the basis of radial"
+          "location": "T:p1-b10",
+          "quote": "Sk-67 2 (HIP 22237), is a candidate hypervelocity star, the TGAS proper motion implying a very large peculiar transverse velocity (∼360 km/s) directed radially away from the LMC centre."
         },
         {
-          "location": "T:p11-b0",
-          "quote": "<tr><td>5</td><td>545.5 ± 4.3</td>"
+          "location": "T:p4-b8",
+          "quote": "Therefore Sk-67 2 is clearly unbound with respect to the LMC and, as we argue below, a possible hypervelocity star."
+        },
+        {
+          "location": "T:p5-b7",
+          "quote": "We conclude that Sk-67 2 is a candidate hypervelocity star that if confirmed, by for example Gaia Data Release 2 (DR2), would warrant further investigation as to the nature of its origin."
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1611.05504v2"
     }
   ],
   "quantities": [
@@ -50,95 +102,272 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "545.5",
-          "error": "4.3",
+          "value": "320",
+          "error": "1",
           "unit": "km/s",
-          "condition": "Heliocentric radial velocity from the Table 1 v_⊙ column.",
+          "condition": "Measured from weak metal lines in high-resolution FEROS 2004 and VLT/UVES 2001 and 2012 spectra; the same value was obtained for all three epochs.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "<tr><td>5</td><td>545.5 ± 4.3</td><td>650.1</td><td>17.557</td><td>12000 ± 350</td><td>3.89 ± 0.13</td><td>132</td><td>3.58 ± 0.11</td><td>-0.68 ± 0.25</td><td>50 ± 5</td><td>66 ± 7</td><td>-0.44, -1.21</td></tr>"
+              "location": "T:p4-b7",
+              "quote": "Radial velocities measured from\nthe weak metal lines in these data lead to a radial velocity\nof 320 ± 1 km/s for all three epochs."
+            },
+            {
+              "location": "T:p7-b0",
+              "quote": "<tr><td>Sk-67 <eq>2^a</eq></td><td>22237</td><td>251.4</td><td>27.8</td><td>256.7</td><td>24.6</td><td>359.3</td><td>26.2</td><td>320</td><td>43.0</td><td>R 51, HDE 270754</td><td>B1.5 <eq>Ia^+</eq></td><td>4662413602288962560</td></tr>"
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1611.05504v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "320",
+            "error": "1",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "galactocentric_radius",
+      "quantity": "distance",
       "values": [
         {
-          "value": "50",
-          "error": "5",
+          "value": "50.1",
+          "error": "2.5",
           "unit": "kpc",
-          "condition": "Galactocentric radial distance R_GC, calculated assuming the Sun is at R = 8 kpc.",
+          "condition": "LMC distance adopted to convert proper motions to velocities for the sample, including Sk-67 2; this is not a direct target parallax distance.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "<tr><td>5</td><td>545.5 ± 4.3</td><td>650.1</td><td>17.557</td><td>12000 ± 350</td><td>3.89 ± 0.13</td><td>132</td><td>3.58 ± 0.11</td><td>-0.68 ± 0.25</td><td>50 ± 5</td><td>66 ± 7</td><td>-0.44, -1.21</td></tr>"
-            },
-            {
-              "location": "T:p5-b11",
-              "quote": "We calculate HVS Galacto-centric radial distances, R, assuming the Sun is at R = 8 kpc. Table 1 summarizes the results."
+              "location": "T:p2-b7",
+              "quote": "assuming a distance to the LMC of5 0 . 1 \\pm 2 . 5\nkpc"
             }
           ],
-          "source": "1401.7342v1"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_ra",
-      "values": [
+          "source": "1611.05504v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "50.1",
+            "error": "2.5",
+            "approximate": false
+          }
+        },
         {
-          "value": "-0.44",
-          "unit": "mas/yr",
-          "condition": "Predicted proper motion for a Galactic center origin, corresponding to the trajectory with the smallest Galactic pericenter passage.",
+          "value": "50.6",
+          "unit": "kpc",
+          "condition": "Distance in the LMC-centric three-dimensional position/velocity geometry that yields the minimum angle between the position and velocity vectors; the actual distance remains a one-parameter family.",
           "evidence": [
             {
-              "location": "T:p8-b13",
-              "quote": "An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
-            },
-            {
-              "location": "T:p11-b0",
-              "quote": "<tr><td>5</td><td>545.5 ± 4.3</td><td>650.1</td><td>17.557</td><td>12000 ± 350</td><td>3.89 ± 0.13</td><td>132</td><td>3.58 ± 0.11</td><td>-0.68 ± 0.25</td><td>50 ± 5</td><td>66 ± 7</td><td>-0.44, -1.21</td></tr>"
+              "location": "T:p5-b2",
+              "quote": "The minimum angle be-\ntween its position and velocity vectors in this frame is 5.3±5.2\ndegrees, attained for a distance that is 50.6 kpc"
             }
           ],
-          "source": "1401.7342v1"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_dec",
-      "values": [
-        {
-          "value": "-1.21",
-          "unit": "mas/yr",
-          "condition": "Predicted proper motion for a Galactic center origin, corresponding to the trajectory with the smallest Galactic pericenter passage.",
-          "evidence": [
-            {
-              "location": "T:p8-b13",
-              "quote": "An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
-            },
-            {
-              "location": "T:p11-b0",
-              "quote": "<tr><td>5</td><td>545.5 ± 4.3</td><td>650.1</td><td>17.557</td><td>12000 ± 350</td><td>3.89 ± 0.13</td><td>132</td><td>3.58 ± 0.11</td><td>-0.68 ± 0.25</td><td>50 ± 5</td><td>66 ± 7</td><td>-0.44, -1.21</td></tr>"
-            }
-          ],
-          "source": "1401.7342v1"
+          "source": "1611.05504v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "50.6",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "HD 270754",
+      "aliases": [
+        "2MASS J04470444-6706530",
+        "AP J04470444-6706530",
+        "ARDB    6",
+        "CPD-67   345",
+        "GCRV 24833",
+        "GEN# +1.00270754",
+        "GSC 08888-00911",
+        "GV   9",
+        "Gaia DR1 4662413602288962560",
+        "Gaia DR2 4662413606586588160",
+        "Gaia DR3 4662413606586588160",
+        "HD 270754",
+        "HIC  22237",
+        "HIP 22237",
+        "IRAS 04470-6712",
+        "IRAS F04470-6712",
+        "JP11  3775",
+        "LB  3384",
+        "RMC  51",
+        "SK -67    2",
+        "SSTISAGEMC J044704.44-670653.1",
+        "TIC 294872353",
+        "TYC 8888-911-1",
+        "UBV    4686",
+        "UBV M  28865",
+        "UCAC2   2362280",
+        "[FD82]  15",
+        "[VKN2011] J044704.2-670652",
+        "uvby98 100270754"
+      ],
+      "object_type": "s*b",
+      "coordinates": {
+        "ra": {
+          "value": 71.76854581883,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": -67.11475586768,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.01769999973475933,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.019200000911951065,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": 0.743,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": 0.96,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.024000000208616257,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.024000000208616257,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.0404,
+        "unit": "mas",
+        "error": 0.03530000150203705,
+        "quality": "A",
+        "bibcode": "2018yCat.1345....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": 307.4,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": 0.0010259022660923378
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 0.5,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "A",
+        "bibcode": "2024A&A...688A.104S",
+        "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "B1.5Ia",
+        "quality": "C",
+        "bibcode": "1972A&AS....6..249A"
+      },
+      "photometry": [
+        {
+          "band": "J",
+          "value": 11.019000053405762,
+          "error": 0.023000000044703484,
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 11.003000259399414,
+          "error": 0.024000000208616257,
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "K",
+          "value": 10.916999816894531,
+          "error": 0.01899999938905239,
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "U",
+          "value": 10.35099983215332,
+          "error": 0.10400000214576721,
+          "system": "V",
+          "bibcode": "2009AJ....138.1003B",
+          "quality": "D"
+        },
+        {
+          "band": "B",
+          "value": 11.218999862670898,
+          "error": 0.0949999988079071,
+          "system": "V",
+          "bibcode": "2009AJ....138.1003B",
+          "quality": "C"
+        },
+        {
+          "band": "I",
+          "value": 10.991999626159668,
+          "error": 0.1809999942779541,
+          "system": "V",
+          "bibcode": "2009AJ....138.1003B",
+          "quality": "D"
+        },
+        {
+          "band": "V",
+          "value": 11.260000228881836,
+          "system": "V",
+          "bibcode": "1978A&AS...31..243R",
+          "quality": "D"
+        },
+        {
+          "band": "G",
+          "value": 11.171914100646973,
+          "error": 0.002948000095784664,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR1 4662413602288962560",
+        "HIP 22237"
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:56:30.993844+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000167_provenance.json",
-    "sha256": "cd31ea64e51ab05952053f05f5ea84adeb6330c9736ba9a99143f0f329f2a311"
+    "sha256": "bf8fbe9123fa1e537fe65cc37deb74f0de26c590b2146c87ae144f0647e43691"
   },
   "warnings": [
-    "1401.7342v1#/stars/2/quantities/2/values/0/evidence/0: quote audit unknown at T:p8-b13; check the paper evidence.",
-    "1401.7342v1#/stars/2/quantities/3/values/0/evidence/0: quote audit unknown at T:p8-b13; check the paper evidence."
+    "1611.05504v2#/stars/0/contribution_type/evidence/2: quote audit unknown at T:p5-b7; check the paper evidence."
   ]
 }

@@ -1,10 +1,225 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000312",
   "associations": [],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "Gaia DR3 4050754184394584192",
+      "aliases": [
+        "Gaia DR2 4050754184394584192",
+        "Gaia DR3 4050754184394584192"
+      ],
+      "position": {
+        "ra_deg": 272.67947639832505,
+        "dec_deg": -28.60703642471333,
+        "frame": "icrs",
+        "equinox": null,
+        "evidence": []
+      },
+      "fields": {
+        "main_id": {
+          "value": "Gaia DR3 4050754184394584192"
+        },
+        "nbref": {
+          "value": 1
+        },
+        "otype": {
+          "value": "*"
+        },
+        "ra": {
+          "value": 272.67947639832505,
+          "unit": "deg"
+        },
+        "ra_prec": {
+          "value": 14
+        },
+        "dec": {
+          "value": -28.60703642471333,
+          "unit": "deg"
+        },
+        "dec_prec": {
+          "value": 14
+        },
+        "coo_err_maj": {
+          "value": 3.591399908065796,
+          "unit": "mas"
+        },
+        "coo_err_maj_prec": {
+          "value": 4
+        },
+        "coo_err_min": {
+          "value": 3.533900022506714,
+          "unit": "mas"
+        },
+        "coo_err_min_prec": {
+          "value": 4
+        },
+        "coo_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "coo_qual": {
+          "value": "C"
+        },
+        "coo_wavelength": {
+          "value": "O"
+        },
+        "coo_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "hpx": {
+          "value": 7368278
+        },
+        "pm_qual": {
+          "value": ""
+        },
+        "pm_bibcode": {
+          "value": ""
+        },
+        "plx_prec": {
+          "value": 32767
+        },
+        "plx_qual": {
+          "value": ""
+        },
+        "plx_bibcode": {
+          "value": ""
+        },
+        "rvz_type": {
+          "value": ""
+        },
+        "rvz_nature": {
+          "value": ""
+        },
+        "rvz_qual": {
+          "value": ""
+        },
+        "rvz_bibcode": {
+          "value": ""
+        },
+        "vlsr_wavelength": {
+          "value": ""
+        },
+        "vlsr_bibcode": {
+          "value": ""
+        },
+        "sp_type": {
+          "value": ""
+        },
+        "sp_qual": {
+          "value": ""
+        },
+        "sp_bibcode": {
+          "value": ""
+        },
+        "morph_type": {
+          "value": ""
+        },
+        "morph_qual": {
+          "value": ""
+        },
+        "morph_bibcode": {
+          "value": ""
+        },
+        "galdim_qual": {
+          "value": ""
+        },
+        "galdim_wavelength": {
+          "value": ""
+        },
+        "galdim_bibcode": {
+          "value": ""
+        },
+        "update_date": {
+          "value": "2022-01-20"
+        },
+        "otype_txt": {
+          "value": "*"
+        },
+        "rvz_wavelength": {
+          "value": ""
+        }
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "fields": {
+            "flux_err_prec": {
+              "value": 6
+            },
+            "flux_prec": {
+              "value": 6
+            },
+            "oidref": {
+              "value": 16526143
+            },
+            "filter": {
+              "value": "G"
+            },
+            "flux": {
+              "value": 18.186140060424805
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.009914999827742577
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2020yCat.1350....0G"
+            }
+          }
+        }
+      ]
+    },
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "Gaia DR2 4050754184394584192",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "87191dbaeccd319d715ebf7c5ea57ffa3173460de3eee9ff87b60dc1b16af0c8",
+        "queried_at": "2026-10-25T11:52:53.927574+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "1907.06348v1#/stars/15",
+            "original_identifier": {
+              "value": "Gaia DR2 4050754184394584192",
+              "evidence": [
+                {
+                  "location": "I:p9-b1"
+                },
+                {
+                  "location": "T:p9-b1",
+                  "quote": "TABLE 2 HVS identified from tangential velocity selection of Gaia DR2 5D information"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      }
+    ],
+    "matches": [
+      {
+        "main_id": "Gaia DR3 4050754184394584192",
+        "method": "identifier",
+        "identifier": "Gaia DR2 4050754184394584192",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      }
+    ]
   }
 }

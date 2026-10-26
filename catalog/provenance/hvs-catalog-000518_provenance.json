@@ -1,475 +1,155 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000518",
-  "associations": [
+  "associations": [],
+  "review_decisions": [
     {
-      "method": "simbad",
-      "left": "2003.12766v1#/stars/26",
-      "right": "2101.10878v1#/stars/6",
-      "details": {
-        "main_id": "SDSS J232229.47+043651.4",
-        "basis": "Reliable identifier queries.",
-        "simbad_evidence": [
+      "id": "R21-correct-124",
+      "type": "correct",
+      "paper": "2401.05630v1",
+      "science_sha256": "cdd66187169e6dfa8037ef23a3dfc0b495ee15ab5787330f337f3b33876ea954",
+      "pdf_sha256": "21cf6c80f1c9bb9c758e29a22482867a05bafe91ce7d67f696ed023874109783",
+      "path": "/stars/41/quantities/0/values/0",
+      "original": {
+        "value": "17h47m18.44s",
+        "unit": "hms",
+        "condition": "VIRAC2-only candidate HVS ID 38; equatorial position from Table B1",
+        "evidence": [
           {
-            "node": "2003.12766v1#/stars/26",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/0"
-              }
-            ]
-          },
-          {
-            "node": "2101.10878v1#/stars/6",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/1"
-              }
-            ]
+            "location": "T:p16-b0",
+            "quote": "38</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
           }
         ]
-      }
+      },
+      "replacement": {
+        "value": "17h40m49.56s",
+        "unit": "hms",
+        "condition": "VIRAC2-only candidate HVS ID 38; equatorial position from Table B1",
+        "evidence": [
+          {
+            "location": "T:p16-b0",
+            "quote": "38</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 16,
+          "location": "Table B1, ID 38",
+          "quote": "ID 38 17h40m49.56s -29d05m33.27s"
+        }
+      ],
+      "reason": "The matching ID row of the fixed PDF is clear; the extraction copied another star's coordinates by mistake. The coordinates of this row in the original are used.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-correct-125",
+      "type": "correct",
+      "paper": "2401.05630v1",
+      "science_sha256": "cdd66187169e6dfa8037ef23a3dfc0b495ee15ab5787330f337f3b33876ea954",
+      "pdf_sha256": "21cf6c80f1c9bb9c758e29a22482867a05bafe91ce7d67f696ed023874109783",
+      "path": "/stars/41/quantities/1/values/0",
+      "original": {
+        "value": "-30d47m53.38s",
+        "unit": "dms",
+        "condition": "VIRAC2-only candidate HVS ID 38; equatorial position from Table B1",
+        "evidence": [
+          {
+            "location": "T:p16-b0",
+            "quote": "38</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "-29d05m33.27s",
+        "unit": "dms",
+        "condition": "VIRAC2-only candidate HVS ID 38; equatorial position from Table B1",
+        "evidence": [
+          {
+            "location": "T:p16-b0",
+            "quote": "38</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 16,
+          "location": "Table B1, ID 38",
+          "quote": "ID 38 17h40m49.56s -29d05m33.27s"
+        }
+      ],
+      "reason": "The matching ID row of the fixed PDF is clear; the extraction copied another star's coordinates by mistake. The coordinates of this row in the original are used.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
     }
   ],
   "simbad": {
-    "status": "matched",
-    "method": "identifier",
-    "selected": {
-      "main_id": "SDSS J232229.47+043651.4",
-      "aliases": [
-        "Gaia DR2 2660715403600483584",
-        "Gaia DR3 2660715403600483584",
-        "SDSS J232229.47+043651.4"
-      ],
-      "position": {
-        "ra_deg": 350.62282129078994,
-        "dec_deg": 4.61430650612,
-        "frame": "icrs",
-        "equinox": null,
-        "evidence": []
-      },
-      "fields": {
-        "main_id": {
-          "value": "SDSS J232229.47+043651.4"
-        },
-        "nbref": {
-          "value": 6
-        },
-        "otype": {
-          "value": "HV*"
-        },
-        "ra": {
-          "value": 350.62282129078994,
-          "unit": "deg"
-        },
-        "ra_prec": {
-          "value": 14
-        },
-        "dec": {
-          "value": 4.61430650612,
-          "unit": "deg"
-        },
-        "dec_prec": {
-          "value": 14
-        },
-        "coo_err_maj": {
-          "value": 0.10170000046491623,
-          "unit": "mas"
-        },
-        "coo_err_maj_prec": {
-          "value": 4
-        },
-        "coo_err_min": {
-          "value": 0.0860000029206276,
-          "unit": "mas"
-        },
-        "coo_err_min_prec": {
-          "value": 4
-        },
-        "coo_err_angle": {
-          "value": 90,
-          "unit": "deg"
-        },
-        "coo_qual": {
-          "value": "A"
-        },
-        "coo_wavelength": {
-          "value": "O"
-        },
-        "coo_bibcode": {
-          "value": "2020yCat.1350....0G"
-        },
-        "hpx": {
-          "value": 4839813
-        },
-        "pmra": {
-          "value": 1.898,
-          "unit": "mas / yr"
-        },
-        "pmra_prec": {
-          "value": 3
-        },
-        "pmdec": {
-          "value": -1.234,
-          "unit": "mas / yr"
-        },
-        "pmdec_prec": {
-          "value": 3
-        },
-        "pm_err_maj": {
-          "value": 0.13899999856948853,
-          "unit": "mas / yr"
-        },
-        "pm_err_maj_prec": {
-          "value": 3
-        },
-        "pm_err_min": {
-          "value": 0.10100000351667404,
-          "unit": "mas / yr"
-        },
-        "pm_err_min_prec": {
-          "value": 3
-        },
-        "pm_err_angle": {
-          "value": 90,
-          "unit": "deg"
-        },
-        "pm_qual": {
-          "value": "A"
-        },
-        "pm_bibcode": {
-          "value": "2020yCat.1350....0G"
-        },
-        "plx_value": {
-          "value": 0.0595,
-          "unit": "mas"
-        },
-        "plx_prec": {
-          "value": 4
-        },
-        "plx_err": {
-          "value": 0.19050000607967377,
-          "unit": "mas"
-        },
-        "plx_err_prec": {
-          "value": 4
-        },
-        "plx_qual": {
-          "value": "A"
-        },
-        "plx_bibcode": {
-          "value": "2018yCat.1345....0G"
-        },
-        "rvz_type": {
-          "value": "v"
-        },
-        "rvz_radvel": {
-          "value": 133.0,
-          "unit": "km / s"
-        },
-        "rvz_radvel_prec": {
-          "value": 0
-        },
-        "rvz_redshift": {
-          "value": 0.000443738698620022
-        },
-        "rvz_nature": {
-          "value": ""
-        },
-        "rvz_qual": {
-          "value": "D"
-        },
-        "rvz_bibcode": {
-          "value": "2012ApJ...751...55B"
-        },
-        "vlsr_wavelength": {
-          "value": ""
-        },
-        "vlsr_bibcode": {
-          "value": ""
-        },
-        "sp_type": {
-          "value": "B"
-        },
-        "sp_qual": {
-          "value": "E"
-        },
-        "sp_bibcode": {
-          "value": "2012ApJ...751...55B"
-        },
-        "morph_type": {
-          "value": ""
-        },
-        "morph_qual": {
-          "value": ""
-        },
-        "morph_bibcode": {
-          "value": ""
-        },
-        "galdim_qual": {
-          "value": ""
-        },
-        "galdim_wavelength": {
-          "value": ""
-        },
-        "galdim_bibcode": {
-          "value": ""
-        },
-        "update_date": {
-          "value": "2025-05-12"
-        },
-        "otype_txt": {
-          "value": "HV*"
-        },
-        "rvz_wavelength": {
-          "value": "O"
-        }
-      },
-      "photometry": [
-        {
-          "band": "u",
-          "fields": {
-            "flux_err_prec": {
-              "value": 3
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 8267853
-            },
-            "filter": {
-              "value": "u"
-            },
-            "flux": {
-              "value": 18.520999908447266
-            },
-            "system": {
-              "value": "A"
-            },
-            "flux_err": {
-              "value": 0.017000000923871994
-            },
-            "qual": {
-              "value": "C"
-            },
-            "bibcode": {
-              "value": "2011yCat.2306....0A"
-            }
-          }
-        },
-        {
-          "band": "g",
-          "fields": {
-            "flux_err_prec": {
-              "value": 3
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 8267853
-            },
-            "filter": {
-              "value": "g"
-            },
-            "flux": {
-              "value": 17.604000091552734
-            },
-            "system": {
-              "value": "A"
-            },
-            "flux_err": {
-              "value": 0.004999999888241291
-            },
-            "qual": {
-              "value": "B"
-            },
-            "bibcode": {
-              "value": "2011yCat.2306....0A"
-            }
-          }
-        },
-        {
-          "band": "r",
-          "fields": {
-            "flux_err_prec": {
-              "value": 3
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 8267853
-            },
-            "filter": {
-              "value": "r"
-            },
-            "flux": {
-              "value": 17.797000885009766
-            },
-            "system": {
-              "value": "A"
-            },
-            "flux_err": {
-              "value": 0.006000000052154064
-            },
-            "qual": {
-              "value": "B"
-            },
-            "bibcode": {
-              "value": "2011yCat.2306....0A"
-            }
-          }
-        },
-        {
-          "band": "i",
-          "fields": {
-            "flux_err_prec": {
-              "value": 3
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 8267853
-            },
-            "filter": {
-              "value": "i"
-            },
-            "flux": {
-              "value": 17.989999771118164
-            },
-            "system": {
-              "value": "A"
-            },
-            "flux_err": {
-              "value": 0.00800000037997961
-            },
-            "qual": {
-              "value": "B"
-            },
-            "bibcode": {
-              "value": "2011yCat.2306....0A"
-            }
-          }
-        },
-        {
-          "band": "z",
-          "fields": {
-            "flux_err_prec": {
-              "value": 3
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 8267853
-            },
-            "filter": {
-              "value": "z"
-            },
-            "flux": {
-              "value": 18.111000061035156
-            },
-            "system": {
-              "value": "A"
-            },
-            "flux_err": {
-              "value": 0.023000000044703484
-            },
-            "qual": {
-              "value": "C"
-            },
-            "bibcode": {
-              "value": "2011yCat.2306....0A"
-            }
-          }
-        },
-        {
-          "band": "G",
-          "fields": {
-            "flux_err_prec": {
-              "value": 6
-            },
-            "flux_prec": {
-              "value": 6
-            },
-            "oidref": {
-              "value": 8267853
-            },
-            "filter": {
-              "value": "G"
-            },
-            "flux": {
-              "value": 17.701963424682617
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.0032220000866800547
-            },
-            "qual": {
-              "value": "C"
-            },
-            "bibcode": {
-              "value": "2020yCat.1350....0G"
-            }
-          }
-        }
-      ]
-    },
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
     "queries": [
       {
         "query": {
-          "method": "identifier",
-          "identifier": "SDSS J232229.47+043651.4",
-          "position": null,
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 265.20649999999995,
+            "dec_deg": -29.092575,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
           "radius_arcsec": 5.0
         },
-        "response_sha256": "4366cc56749de10f4b0745c55dd8bcd2c844e3583e0d1fa5eca16010d1fbfdd6",
-        "queried_at": "2026-10-24T04:52:00.029617+00:00",
+        "response_sha256": "9c1fb5a1685464c11566b04af361cb35c4263c95f77081f759c8736f258134e8",
+        "queried_at": "2026-10-25T11:52:52.684930+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
-      },
-      {
-        "query": {
-          "method": "identifier",
-          "identifier": "Gaia EDR3 2660715403600483584",
-          "position": null,
-          "radius_arcsec": 5.0
-        },
-        "response_sha256": "c0e9cbdb17d17bbfc55599dd06d5c269ea518a2db22a240e0bd04912543ffcaa",
-        "queried_at": "2026-10-24T04:50:22.762153+00:00",
-        "client_version": "0.4.11",
-        "service_version": null,
-        "error": null
-      }
-    ],
-    "matches": [
-      {
-        "main_id": "SDSS J232229.47+043651.4",
-        "method": "identifier",
-        "identifier": "SDSS J232229.47+043651.4",
-        "candidate": {
-          "$ref": "#/simbad/selected"
-        }
-      },
-      {
-        "main_id": "SDSS J232229.47+043651.4",
-        "method": "identifier",
-        "identifier": "Gaia EDR3 2660715403600483584",
-        "candidate": {
-          "$ref": "#/simbad/selected"
-        }
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2401.05630v1#/stars/41",
+            "position": {
+              "ra_deg": 265.20649999999995,
+              "dec_deg": -29.092575,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "17h40m49.56s",
+                  "unit": "hms",
+                  "condition": "VIRAC2-only candidate HVS ID 38; equatorial position from Table B1",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "38</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+                    }
+                  ]
+                },
+                {
+                  "value": "-29d05m33.27s",
+                  "unit": "dms",
+                  "condition": "VIRAC2-only candidate HVS ID 38; equatorial position from Table B1",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "38</td><td>17h47m18.44s</td><td>-30d47m53.38s</td><td>-1.4012</td><td>-1.2797</td><td>14.26</td><td>2.13</td></tr>"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
       }
     ]
   }

@@ -1,57 +1,168 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000469",
-  "associations": [],
+  "associations": [
+    {
+      "method": "review",
+      "left": "2207.04406v2#/stars/83",
+      "right": "2402.10714v1#/stars/8",
+      "details": {
+        "decision_id": "R21-merge-066",
+        "reason": "Follow-up studies of the same Shen/El-Badry/Hollands supernova-survivor sample; full names and abbreviations correspond by citation and object description, not by automatic similar-name matching. 2407.03424v2 pp.8–9 states it reuses the El-Badry 2023 and Werner 2024 samples."
+      }
+    },
+    {
+      "method": "review",
+      "left": "2402.10714v1#/stars/8",
+      "right": "2407.03424v2#/stars/2",
+      "details": {
+        "decision_id": "R21-merge-066",
+        "reason": "Follow-up studies of the same Shen/El-Badry/Hollands supernova-survivor sample; full names and abbreviations correspond by citation and object description, not by automatic similar-name matching. 2407.03424v2 pp.8–9 states it reuses the El-Badry 2023 and Werner 2024 samples."
+      }
+    },
+    {
+      "method": "review",
+      "left": "2407.03424v2#/stars/2",
+      "right": "2502.04451v1#/stars/2",
+      "details": {
+        "decision_id": "R21-merge-066",
+        "reason": "Follow-up studies of the same Shen/El-Badry/Hollands supernova-survivor sample; full names and abbreviations correspond by citation and object description, not by automatic similar-name matching. 2407.03424v2 pp.8–9 states it reuses the El-Badry 2023 and Werner 2024 samples."
+      }
+    },
+    {
+      "method": "review",
+      "left": "2502.04451v1#/stars/2",
+      "right": "2510.12197v1#/stars/2",
+      "details": {
+        "decision_id": "R21-merge-066",
+        "reason": "Follow-up studies of the same Shen/El-Badry/Hollands supernova-survivor sample; full names and abbreviations correspond by citation and object description, not by automatic similar-name matching. 2407.03424v2 pp.8–9 states it reuses the El-Badry 2023 and Werner 2024 samples."
+      }
+    }
+  ],
+  "review_decisions": [
+    {
+      "id": "R21-merge-066",
+      "type": "merge",
+      "groups": [
+        [
+          "2207.04406v2#/stars/83",
+          "2402.10714v1#/stars/8"
+        ],
+        [
+          "2407.03424v2#/stars/2"
+        ],
+        [
+          "2502.04451v1#/stars/2"
+        ],
+        [
+          "2510.12197v1#/stars/2"
+        ]
+      ],
+      "papers": {
+        "2207.04406v2": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+        "2402.10714v1": "16ff2dba33ace5be79b5e759f7cfe48d106c036a7f83c450b9c82823f925b10c",
+        "2407.03424v2": "b04bd3fc9083a47697a0b7da905b324f2f94497d36bbe5afba66ad0fdfe96298",
+        "2502.04451v1": "37ae23cc0699bc243a37653b44a068b891b1156713e2f6b9b27c72e78b8ca631",
+        "2510.12197v1": "7b7ee79df4f5c8209f2c0dfcb70c865921b8f19e47c182087d97fd7f6d5be25a"
+      },
+      "responses": {},
+      "reason": "Follow-up studies of the same Shen/El-Badry/Hollands supernova-survivor sample; full names and abbreviations correspond by citation and object description, not by automatic similar-name matching. 2407.03424v2 pp.8–9 states it reuses the El-Badry 2023 and Werner 2024 samples.",
+      "evidence": [
+        {
+          "paper": "2207.04406v2",
+          "location": "I:p19-b0"
+        },
+        {
+          "paper": "2402.10714v1",
+          "location": "T:p18-b0",
+          "quote": "No.56 = D6-3 = Gaia DR3 2156908318076164224"
+        },
+        {
+          "paper": "2402.10714v1",
+          "location": "T:p18-b0",
+          "quote": "LSPM J1852+6202"
+        },
+        {
+          "paper": "2407.03424v2",
+          "location": "T:p9-b10",
+          "quote": "<tr><td>D6-3</td><td>2393+377-391</td><td>0.7</td><td>1.1</td></tr>"
+        },
+        {
+          "paper": "2502.04451v1",
+          "location": "T:p3-b8",
+          "quote": "and D6-3 are reasonably well produced at their respec-"
+        },
+        {
+          "paper": "2510.12197v1",
+          "location": "T:p1-b9",
+          "quote": "two hypervelocity stars that were dubbed D6-1 and D6-3"
+        },
+        {
+          "paper": "2510.12197v1",
+          "location": "T:p6-b2",
+          "quote": "D6-1 and D6-3 are similar to those of D6-2"
+        }
+      ],
+      "approved_by": "Project lead (stop 1 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
+    }
+  ],
   "simbad": {
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "Gaia DR3 4063270135632421888",
+      "main_id": "LSPM J1852+6202",
       "aliases": [
-        "Gaia DR2 4063270135632421888",
-        "Gaia DR3 4063270135632421888"
+        "Gaia DR2 2156908318076164224",
+        "Gaia DR3 2156908318076164224",
+        "LSPM J1852+6202",
+        "USNO-B1.0 1520-00281819"
       ],
       "position": {
-        "ra_deg": 271.9264405163179,
-        "dec_deg": -26.7705044302225,
+        "ra_deg": 283.0077676956299,
+        "dec_deg": 62.03525566135,
         "frame": "icrs",
         "equinox": null,
         "evidence": []
       },
       "fields": {
         "main_id": {
-          "value": "Gaia DR3 4063270135632421888"
+          "value": "LSPM J1852+6202"
         },
         "nbref": {
-          "value": 1
+          "value": 14
         },
         "otype": {
-          "value": "*"
+          "value": "EB*"
         },
         "ra": {
-          "value": 271.9264405163179,
+          "value": 283.0077676956299,
           "unit": "deg"
         },
         "ra_prec": {
           "value": 14
         },
         "dec": {
-          "value": -26.7705044302225,
+          "value": 62.03525566135,
           "unit": "deg"
         },
         "dec_prec": {
           "value": 14
         },
         "coo_err_maj": {
-          "value": 3.729599952697754,
+          "value": 0.08950000256299973,
           "unit": "mas"
         },
         "coo_err_maj_prec": {
           "value": 4
         },
         "coo_err_min": {
-          "value": 2.9779999256134033,
+          "value": 0.10429999977350235,
           "unit": "mas"
         },
         "coo_err_min_prec": {
@@ -62,7 +173,7 @@
           "unit": "deg"
         },
         "coo_qual": {
-          "value": "C"
+          "value": "A"
         },
         "coo_wavelength": {
           "value": "O"
@@ -71,22 +182,65 @@
           "value": "2020yCat.1350....0G"
         },
         "hpx": {
-          "value": 7391045
+          "value": 3923393
+        },
+        "pmra": {
+          "value": 9.406,
+          "unit": "mas / yr"
+        },
+        "pmra_prec": {
+          "value": 3
+        },
+        "pmdec": {
+          "value": 211.788,
+          "unit": "mas / yr"
+        },
+        "pmdec_prec": {
+          "value": 3
+        },
+        "pm_err_maj": {
+          "value": 0.13600000739097595,
+          "unit": "mas / yr"
+        },
+        "pm_err_maj_prec": {
+          "value": 3
+        },
+        "pm_err_min": {
+          "value": 0.14900000393390656,
+          "unit": "mas / yr"
+        },
+        "pm_err_min_prec": {
+          "value": 3
+        },
+        "pm_err_angle": {
+          "value": 90,
+          "unit": "deg"
         },
         "pm_qual": {
-          "value": ""
+          "value": "A"
         },
         "pm_bibcode": {
-          "value": ""
+          "value": "2020yCat.1350....0G"
+        },
+        "plx_value": {
+          "value": 0.4232,
+          "unit": "mas"
         },
         "plx_prec": {
-          "value": 32767
+          "value": 4
+        },
+        "plx_err": {
+          "value": 0.09939999878406525,
+          "unit": "mas"
+        },
+        "plx_err_prec": {
+          "value": 4
         },
         "plx_qual": {
-          "value": ""
+          "value": "A"
         },
         "plx_bibcode": {
-          "value": ""
+          "value": "2020yCat.1350....0G"
         },
         "rvz_type": {
           "value": ""
@@ -134,16 +288,68 @@
           "value": ""
         },
         "update_date": {
-          "value": "2022-01-20"
+          "value": "2026-04-02"
         },
         "otype_txt": {
-          "value": "*"
+          "value": "EB*"
         },
         "rvz_wavelength": {
           "value": ""
         }
       },
       "photometry": [
+        {
+          "band": "B",
+          "fields": {
+            "flux_prec": {
+              "value": 1
+            },
+            "oidref": {
+              "value": 4018716
+            },
+            "filter": {
+              "value": "B"
+            },
+            "flux": {
+              "value": 18.5
+            },
+            "system": {
+              "value": "V"
+            },
+            "qual": {
+              "value": "E"
+            },
+            "bibcode": {
+              "value": "2003AJ....125..984M"
+            }
+          }
+        },
+        {
+          "band": "R",
+          "fields": {
+            "flux_prec": {
+              "value": 1
+            },
+            "oidref": {
+              "value": 4018716
+            },
+            "filter": {
+              "value": "R"
+            },
+            "flux": {
+              "value": 18.799999237060547
+            },
+            "system": {
+              "value": "V"
+            },
+            "qual": {
+              "value": "E"
+            },
+            "bibcode": {
+              "value": "2003AJ....125..984M"
+            }
+          }
+        },
         {
           "band": "G",
           "fields": {
@@ -154,19 +360,19 @@
               "value": 6
             },
             "oidref": {
-              "value": 16526150
+              "value": 4018716
             },
             "filter": {
               "value": "G"
             },
             "flux": {
-              "value": 19.07993507385254
+              "value": 18.245784759521484
             },
             "system": {
               "value": "V"
             },
             "flux_err": {
-              "value": 0.02457300014793873
+              "value": 0.0035149999894201756
             },
             "qual": {
               "value": "C"
@@ -182,22 +388,108 @@
       {
         "query": {
           "method": "identifier",
-          "identifier": "Gaia DR2 4063270135632421888",
+          "identifier": "Gaia DR3 2156908318076164224",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "994ac938a9fbb9809944c4963af5027160b65a8bd2688f729259087e27361a81",
-        "queried_at": "2026-10-24T04:42:41.005431+00:00",
+        "response_sha256": "9000278034dcebdfdf437f83289b139a61e7a814fa7a856f69d3df54527b50ae",
+        "queried_at": "2026-10-25T12:02:53.067367+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2402.10714v1#/stars/8",
+            "original_identifier": {
+              "value": "Gaia DR3 2156908318076164224",
+              "evidence": [
+                {
+                  "location": "T:p18-b0",
+                  "quote": "No.56 = D6-3 = Gaia DR3 2156908318076164224"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "Gaia EDR3 2156908318076164224",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "4c9f39eb0af3531293626837654cf3fb847c71ac07b60a41f0e6f6a92794f6e4",
+        "queried_at": "2026-10-25T11:42:52.660780+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2207.04406v2#/stars/83",
+            "original_identifier": {
+              "value": "Gaia EDR3 2156908318076164224",
+              "evidence": [
+                {
+                  "location": "I:p19-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "LSPM J1852+6202",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "a0cba20eebe873e3303ff16c4b30abbc2016172c6dc23eb65bb09373c6832a55",
+        "queried_at": "2026-10-25T11:48:48.780284+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2402.10714v1#/stars/8",
+            "original_identifier": {
+              "value": "LSPM J1852+6202",
+              "evidence": [
+                {
+                  "location": "T:p18-b0",
+                  "quote": "LSPM J1852+6202"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       }
     ],
     "matches": [
       {
-        "main_id": "Gaia DR3 4063270135632421888",
+        "main_id": "LSPM J1852+6202",
         "method": "identifier",
-        "identifier": "Gaia DR2 4063270135632421888",
+        "identifier": "Gaia DR3 2156908318076164224",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      },
+      {
+        "main_id": "LSPM J1852+6202",
+        "method": "identifier",
+        "identifier": "Gaia EDR3 2156908318076164224",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      },
+      {
+        "main_id": "LSPM J1852+6202",
+        "method": "identifier",
+        "identifier": "LSPM J1852+6202",
         "candidate": {
           "$ref": "#/simbad/selected"
         }

@@ -1,102 +1,39 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000347",
   "associations": [
     {
-      "method": "identifier",
-      "identifier": "Gaia DR2 2629296824480015744",
-      "nodes": [
-        "1805.03194v3#/stars/2",
-        "1812.00559v1#/stars/9"
-      ]
-    },
-    {
-      "method": "coordinates",
-      "left": "1812.00559v1#/stars/9",
-      "right": "2407.02593v1#/stars/2",
+      "method": "simbad",
+      "left": "1907.06348v1#/stars/53",
+      "right": "2012.02123v2#/stars/5",
       "details": {
-        "separation_arcsec": 0.12976124545393306,
-        "threshold_arcsec": 5.0,
-        "left_position": {
-          "ra_deg": 335.83338,
-          "dec_deg": -2.51967,
-          "frame": "icrs",
-          "equinox": null,
-          "evidence": [
-            {
-              "value": "335.83338",
-              "unit": "deg",
-              "condition": "Equatorial right ascension listed in Table 2 for GLHV-22.",
-              "evidence": [
-                {
-                  "location": "T:p5-b51",
-                  "quote": "GLHV-22</td><td>2629296824480015744</td><td>335.83338</td><td>-2.51967"
-                }
-              ]
+        "main_id": "Gaia DR3 5847216962695435392",
+        "basis": "Reliable identifier queries.",
+        "simbad_evidence": [
+          {
+            "node": "1907.06348v1#/stars/53",
+            "candidate": {
+              "$ref": "#/simbad/selected"
             },
-            {
-              "value": "-2.51967",
-              "unit": "deg",
-              "condition": "Equatorial declination listed in Table 2 for GLHV-22.",
-              "evidence": [
-                {
-                  "location": "T:p5-b51",
-                  "quote": "GLHV-22</td><td>2629296824480015744</td><td>335.83338</td><td>-2.51967"
-                }
-              ]
-            }
-          ]
-        },
-        "right_position": {
-          "ra_deg": 335.8334,
-          "dec_deg": -2.5197,
-          "frame": "icrs",
-          "equinox": null,
-          "evidence": [
-            {
-              "value": "335.8334",
-              "unit": "deg",
-              "condition": "Gaia DR3 astrometry (ICRS equatorial coordinates), Table 1",
-              "evidence": [
-                {
-                  "location": "T:p5-b0",
-                  "quote": "<tr><td>2629296824480015744</td><td>star 3</td><td>APO</td><td>335.8334</td><td>-2.5197</td><td>638</td><td>11.36</td><td>-165.6</td><td>0.2</td><td>22</td><td>Hattori et al. (2018)</td></tr>"
-                }
-              ]
-            },
-            {
-              "value": "-2.5197",
-              "unit": "deg",
-              "condition": "Gaia DR3 astrometry (ICRS equatorial coordinates), Table 1",
-              "evidence": [
-                {
-                  "location": "T:p5-b0",
-                  "quote": "<tr><td>2629296824480015744</td><td>star 3</td><td>APO</td><td>335.8334</td><td>-2.5197</td><td>638</td><td>11.36</td><td>-165.6</td><td>0.2</td><td>22</td><td>Hattori et al. (2018)</td></tr>"
-                }
-              ]
-            }
-          ]
-        },
-        "coordinate_interpretations": {
-          "left": {
-            "frame": "icrs",
-            "equinox": null,
-            "frame_basis": "assumed_icrs",
-            "frame_assumed": true,
-            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
-            "epoch_propagation": false
+            "queries": [
+              {
+                "$ref": "#/simbad/queries/0"
+              }
+            ]
           },
-          "right": {
-            "frame": "icrs",
-            "equinox": null,
-            "frame_basis": "coordinate_conditions",
-            "frame_assumed": false,
-            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
-            "epoch_propagation": false
+          {
+            "node": "2012.02123v2#/stars/5",
+            "candidate": {
+              "$ref": "#/simbad/selected"
+            },
+            "queries": [
+              {
+                "$ref": "#/simbad/queries/1"
+              }
+            ]
           }
-        },
-        "epoch_propagation": false
+        ]
       }
     }
   ],
@@ -104,54 +41,51 @@
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "UCAC4 438-122419",
+      "main_id": "Gaia DR3 5847216962695435392",
       "aliases": [
-        "2MASS J22231983-0231107",
-        "Gaia DR2 2629296824480015744",
-        "Gaia DR3 2629296824480015744",
-        "RAVE J222319.8-023111",
-        "UCAC4 438-122419"
+        "Gaia DR2 5847216962695435392",
+        "Gaia DR3 5847216962695435392"
       ],
       "position": {
-        "ra_deg": 335.83274361394,
-        "dec_deg": -2.51961443794,
+        "ra_deg": 207.65995665415,
+        "dec_deg": -68.85035345505,
         "frame": "icrs",
         "equinox": null,
         "evidence": []
       },
       "fields": {
         "main_id": {
-          "value": "UCAC4 438-122419"
+          "value": "Gaia DR3 5847216962695435392"
         },
         "nbref": {
-          "value": 8
+          "value": 1
         },
         "otype": {
           "value": "HV*"
         },
         "ra": {
-          "value": 335.83274361394,
+          "value": 207.65995665415,
           "unit": "deg"
         },
         "ra_prec": {
           "value": 14
         },
         "dec": {
-          "value": -2.51961443794,
+          "value": -68.85035345505,
           "unit": "deg"
         },
         "dec_prec": {
           "value": 14
         },
         "coo_err_maj": {
-          "value": 0.03680000081658363,
+          "value": 0.009999999776482582,
           "unit": "mas"
         },
         "coo_err_maj_prec": {
           "value": 4
         },
         "coo_err_min": {
-          "value": 0.03359999880194664,
+          "value": 0.011300000362098217,
           "unit": "mas"
         },
         "coo_err_min_prec": {
@@ -171,31 +105,31 @@
           "value": "2020yCat.1350....0G"
         },
         "hpx": {
-          "value": 4782663
+          "value": 10636025
         },
         "pmra": {
-          "value": 148.063,
+          "value": -15.919,
           "unit": "mas / yr"
         },
         "pmra_prec": {
           "value": 3
         },
         "pmdec": {
-          "value": -13.816,
+          "value": -7.314,
           "unit": "mas / yr"
         },
         "pmdec_prec": {
           "value": 3
         },
         "pm_err_maj": {
-          "value": 0.04399999976158142,
+          "value": 0.012000000104308128,
           "unit": "mas / yr"
         },
         "pm_err_maj_prec": {
           "value": 3
         },
         "pm_err_min": {
-          "value": 0.03999999910593033,
+          "value": 0.01600000075995922,
           "unit": "mas / yr"
         },
         "pm_err_min_prec": {
@@ -212,14 +146,14 @@
           "value": "2020yCat.1350....0G"
         },
         "plx_value": {
-          "value": 1.5222,
+          "value": 0.0939,
           "unit": "mas"
         },
         "plx_prec": {
           "value": 4
         },
         "plx_err": {
-          "value": 0.041600000113248825,
+          "value": 0.014100000262260437,
           "unit": "mas"
         },
         "plx_err_prec": {
@@ -235,20 +169,20 @@
           "value": "v"
         },
         "rvz_radvel": {
-          "value": -228.95,
+          "value": 260.08,
           "unit": "km / s"
         },
         "rvz_radvel_prec": {
           "value": 2
         },
         "rvz_redshift": {
-          "value": -0.0007634036035102376
+          "value": 0.0008679101326487526
         },
         "rvz_redshift_prec": {
           "value": 6
         },
         "rvz_err": {
-          "value": 1.4800000190734863,
+          "value": 18.15999984741211,
           "unit": "km / s"
         },
         "rvz_err_prec": {
@@ -258,10 +192,10 @@
           "value": "s"
         },
         "rvz_qual": {
-          "value": "B"
+          "value": "E"
         },
         "rvz_bibcode": {
-          "value": "2020AJ....160...83S"
+          "value": "2018yCat.1345....0G"
         },
         "vlsr_wavelength": {
           "value": ""
@@ -270,13 +204,13 @@
           "value": ""
         },
         "sp_type": {
-          "value": "G3"
+          "value": ""
         },
         "sp_qual": {
-          "value": "D"
+          "value": ""
         },
         "sp_bibcode": {
-          "value": "2021ApJS..252....3L"
+          "value": ""
         },
         "morph_type": {
           "value": ""
@@ -297,7 +231,7 @@
           "value": ""
         },
         "update_date": {
-          "value": "2025-10-31"
+          "value": "2022-02-04"
         },
         "otype_txt": {
           "value": "HV*"
@@ -308,134 +242,6 @@
       },
       "photometry": [
         {
-          "band": "R",
-          "fields": {
-            "flux_err_prec": {
-              "value": 2
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 11241306
-            },
-            "filter": {
-              "value": "R"
-            },
-            "flux": {
-              "value": 11.45300006866455
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.029999999329447746
-            },
-            "qual": {
-              "value": "D"
-            },
-            "bibcode": {
-              "value": "2012yCat.1322....0Z"
-            }
-          }
-        },
-        {
-          "band": "B",
-          "fields": {
-            "flux_err_prec": {
-              "value": 1
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 11241306
-            },
-            "filter": {
-              "value": "B"
-            },
-            "flux": {
-              "value": 12.414999961853027
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.10000000149011612
-            },
-            "qual": {
-              "value": "D"
-            },
-            "bibcode": {
-              "value": "2012yCat.1322....0Z"
-            }
-          }
-        },
-        {
-          "band": "V",
-          "fields": {
-            "flux_err_prec": {
-              "value": 1
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 11241306
-            },
-            "filter": {
-              "value": "V"
-            },
-            "flux": {
-              "value": 11.61400032043457
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.10000000149011612
-            },
-            "qual": {
-              "value": "D"
-            },
-            "bibcode": {
-              "value": "2012yCat.1322....0Z"
-            }
-          }
-        },
-        {
-          "band": "r",
-          "fields": {
-            "flux_err_prec": {
-              "value": 1
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 11241306
-            },
-            "filter": {
-              "value": "r"
-            },
-            "flux": {
-              "value": 11.361000061035156
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.30000001192092896
-            },
-            "qual": {
-              "value": "E"
-            },
-            "bibcode": {
-              "value": "2012yCat.1322....0Z"
-            }
-          }
-        },
-        {
           "band": "G",
           "fields": {
             "flux_err_prec": {
@@ -445,121 +251,25 @@
               "value": 6
             },
             "oidref": {
-              "value": 11241306
+              "value": 16526185
             },
             "filter": {
               "value": "G"
             },
             "flux": {
-              "value": 11.36290454864502
+              "value": 14.108853340148926
             },
             "system": {
               "value": "V"
             },
             "flux_err": {
-              "value": 0.002776999957859516
+              "value": 0.002761000068858266
             },
             "qual": {
               "value": "C"
             },
             "bibcode": {
-              "value": "2022yCat.1355....0G"
-            }
-          }
-        },
-        {
-          "band": "J",
-          "fields": {
-            "flux_err_prec": {
-              "value": 3
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 11241306
-            },
-            "filter": {
-              "value": "J"
-            },
-            "flux": {
-              "value": 9.934000015258789
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.023000000044703484
-            },
-            "qual": {
-              "value": "C"
-            },
-            "bibcode": {
-              "value": "2003yCat.2246....0C"
-            }
-          }
-        },
-        {
-          "band": "H",
-          "fields": {
-            "flux_err_prec": {
-              "value": 3
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 11241306
-            },
-            "filter": {
-              "value": "H"
-            },
-            "flux": {
-              "value": 9.510000228881836
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.023000000044703484
-            },
-            "qual": {
-              "value": "C"
-            },
-            "bibcode": {
-              "value": "2003yCat.2246....0C"
-            }
-          }
-        },
-        {
-          "band": "K",
-          "fields": {
-            "flux_err_prec": {
-              "value": 3
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 11241306
-            },
-            "filter": {
-              "value": "K"
-            },
-            "flux": {
-              "value": 9.383999824523926
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.023000000044703484
-            },
-            "qual": {
-              "value": "C"
-            },
-            "bibcode": {
-              "value": "2003yCat.2246....0C"
+              "value": "2020yCat.1350....0G"
             }
           }
         }
@@ -569,43 +279,76 @@
       {
         "query": {
           "method": "identifier",
-          "identifier": "Gaia DR2 2629296824480015744",
+          "identifier": "Gaia DR2 5847216962695435392",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "d9a5cb58456ab92488d44ebbffbaba19a2fa73412f058b5d8befddcfa79c4c46",
-        "queried_at": "2026-10-24T04:47:49.206743+00:00",
+        "response_sha256": "2e2852ffeab955e8e7eda7455ac829310aa39d11d739557f852aed5f64cae466",
+        "queried_at": "2026-10-25T11:58:38.502045+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "1907.06348v1#/stars/53",
+            "original_identifier": {
+              "value": "Gaia DR2 5847216962695435392",
+              "evidence": [
+                {
+                  "location": "I:p10-b0"
+                },
+                {
+                  "location": "T:p9-b2",
+                  "quote": "TABLE 3 HVS identified from total velocity selection of Gaia DR2 6D information"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       },
       {
         "query": {
           "method": "identifier",
-          "identifier": "Gaia DR3 2629296824480015744",
+          "identifier": "Gaia EDR3 5847216962695435392",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "ab541ac5b8118f1c3fcb453de434caf7abb0adcb2277c38003a1557f20c6b722",
-        "queried_at": "2026-10-24T04:53:53.612010+00:00",
+        "response_sha256": "65678a85718737526c70f71f3aff6f568365659caaf05c8dfa81e2d65135f4ac",
+        "queried_at": "2026-10-25T11:57:07.818682+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2012.02123v2#/stars/5",
+            "original_identifier": {
+              "value": "Gaia EDR3 5847216962695435392",
+              "evidence": [
+                {
+                  "location": "T:p8-b0",
+                  "quote": "5847216962695435392"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       }
     ],
     "matches": [
       {
-        "main_id": "UCAC4 438-122419",
+        "main_id": "Gaia DR3 5847216962695435392",
         "method": "identifier",
-        "identifier": "Gaia DR2 2629296824480015744",
+        "identifier": "Gaia DR2 5847216962695435392",
         "candidate": {
           "$ref": "#/simbad/selected"
         }
       },
       {
-        "main_id": "UCAC4 438-122419",
+        "main_id": "Gaia DR3 5847216962695435392",
         "method": "identifier",
-        "identifier": "Gaia DR3 2629296824480015744",
+        "identifier": "Gaia EDR3 5847216962695435392",
         "candidate": {
           "$ref": "#/simbad/selected"
         }

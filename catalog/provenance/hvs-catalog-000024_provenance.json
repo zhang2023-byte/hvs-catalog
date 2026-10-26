@@ -1,10 +1,40 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000024",
   "associations": [],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "RX J0822-4300",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "0a1f339bb3ab9e2bbe4bcf474c272393d6eaf19a66a305dac3c5c27932eb69b2",
+        "queried_at": "2026-10-25T13:17:19.401263+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0712.4230v1#/stars/2",
+            "original_identifier": {
+              "value": "RX J0822−4300",
+              "evidence": [
+                {
+                  "location": "T:p1-b8",
+                  "quote": "RX J0822−4300"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -1,30 +1,50 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000552",
-  "display_name": "SMSS J203951.96-101210.9",
+  "display_name": "OGLE BLG-LPV-262377",
   "sources": {
-    "2012.02123v2": {
-      "title": "Gaia EDR3 in 6D: Searching for unbound stars in the Galaxy",
+    "2401.10635v1": {
+      "title": "Seventeen 2 Micron All Sky Survey (2MASS) hypervelocity stars (HVS) from Gaia DR3",
       "authors": [
-        "Tommaso Marchetti"
+        "Parthasarathy Mudumba"
       ],
-      "pdf_url": "https://arxiv.org/pdf/2012.02123v2",
+      "pdf_url": "https://arxiv.org/pdf/2401.10635v1",
       "records": [
-        "/stars/18"
+        "/stars/1"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "Gaia EDR3 6901673112193397248",
+      "value": "2MASS J18213211-1740598",
       "evidence": [
         {
-          "location": "T:p12-b0",
-          "quote": "6901673112193397248"
+          "location": "T:p3-b0",
+          "quote": "2MASS J18213211-1740598"
         }
       ],
-      "source": "2012.02123v2"
+      "source": "2401.10635v1"
+    },
+    {
+      "value": "OGLE BLG-LPV-262377",
+      "evidence": [
+        {
+          "location": "T:p3-b0",
+          "quote": "OGLE BLG-LPV-262377"
+        }
+      ],
+      "source": "2401.10635v1"
+    },
+    {
+      "value": "Gaia DR3 4096520535498750976",
+      "evidence": [
+        {
+          "location": "T:p3-b0",
+          "quote": "Gaia DR3 4096520535498750976"
+        }
+      ],
+      "source": "2401.10635v1"
     }
   ],
   "contribution_types": [
@@ -32,140 +52,42 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p11-b5",
-          "quote": "we find a total of 12 stars with reliable Gaia measurements\n<sub>an</sub>d <sub>w</sub>ithP _ { \\mathrm { u b } } ~ > ~ 0 . 5 ."
-        },
-        {
-          "location": "T:p11-b9",
-          "quote": "<sub>w</sub>ithP _ { \\mathrm { u b } } > 5 0 \\%<sub>an</sub>dP _ { \\mathrm { u b } } > 8 0 \\%<sub>re</sub>d<sub>uces,</sub> <sub>respec</sub>ti<sub>ve</sub>l<sub>y,</sub> t<sub>o</sub> 12 <sub>an</sub>d 3<sub>;</sub>"
+          "location": "T:p2-b2",
+          "quote": "These velocities and radial velocities (Table 1) clearly indicate that these seventeen 2MASS stars are HVS."
         }
       ],
-      "source": "2012.02123v2"
+      "source": "2401.10635v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "ra",
-      "values": [
-        {
-          "value": "309.967",
-          "unit": "deg",
-          "condition": "Present-day equatorial right ascension from Gaia EDR3, as listed in Table 5 for the zero-point-corrected clean sample.",
-          "evidence": [
-            {
-              "location": "I:p12-b0"
-            },
-            {
-              "location": "T:p12-b0",
-              "quote": "<tr><td>6901673112193397248</td><td>(309.967, -10.203)</td>"
-            }
-          ],
-          "source": "2012.02123v2"
-        }
-      ]
-    },
-    {
-      "quantity": "dec",
-      "values": [
-        {
-          "value": "-10.203",
-          "unit": "deg",
-          "condition": "Present-day equatorial declination from Gaia EDR3, as listed in Table 5 for the zero-point-corrected clean sample.",
-          "evidence": [
-            {
-              "location": "I:p12-b0"
-            },
-            {
-              "location": "T:p12-b0",
-              "quote": "<tr><td>6901673112193397248</td><td>(309.967, -10.203)</td>"
-            }
-          ],
-          "source": "2012.02123v2"
-        }
-      ]
-    },
-    {
       "quantity": "distance",
       "values": [
         {
-          "value": "10726",
-          "lower_error": "1711",
-          "upper_error": "2468",
+          "value": "7836",
           "unit": "pc",
-          "condition": "Median distance from inverting Monte Carlo parallax samples after applying the parallax zero-point correction; uncertainties are the 16th and 84th percentiles, from Table 5.",
+          "condition": "Adopted heliocentric distance from Bailer-Jones et al. (2021), as listed in Table 1.",
           "evidence": [
             {
-              "location": "I:p12-b0"
+              "location": "T:p2-b0",
+              "quote": "J18213211-1740598</td><td>13.8</td><td>-1.6</td><td>8.99</td><td>15.98</td><td>-712</td><td>7836"
             },
             {
-              "location": "T:p12-b0",
-              "quote": "<tr><td>6901673112193397248</td><td>(309.967, -10.203)</td><td>(35.99, -28.68)</td><td>0.118 ± 0.017</td><td>6.933 ± 0.018</td><td>-10.591 ± 0.013</td><td>-455.382 ± 2.084</td><td>12.88</td><td>10726<eq>^{+2468}_{-1711}</eq></td>"
-            }
-          ],
-          "source": "2012.02123v2"
-        }
-      ]
-    },
-    {
-      "quantity": "parallax",
-      "values": [
-        {
-          "value": "0.118",
-          "error": "0.017",
-          "unit": "mas",
-          "condition": "Zero-point-corrected Gaia EDR3 parallax, tabulated as ϖ − ϖ_zp in Table 5; not the raw uncorrected parallax.",
-          "evidence": [
-            {
-              "location": "I:p12-b0"
+              "location": "T:p2-b2",
+              "quote": "The distances given in Table 1 are from Bailer-Jones et al. (2021)."
             },
             {
-              "location": "T:p12-b0",
-              "quote": "<tr><td>6901673112193397248</td><td>(309.967, -10.203)</td><td>(35.99, -28.68)</td><td>0.118 ± 0.017</td>"
+              "location": "I:p2-b0"
             }
           ],
-          "source": "2012.02123v2"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_ra",
-      "values": [
-        {
-          "value": "6.933",
-          "error": "0.018",
-          "unit": "mas/yr",
-          "condition": "Gaia EDR3 proper motion in right ascension μα*, as listed in Table 5 for the zero-point-corrected clean sample.",
-          "evidence": [
-            {
-              "location": "I:p12-b0"
-            },
-            {
-              "location": "T:p12-b0",
-              "quote": "<td>6.933 ± 0.018</td>"
-            }
-          ],
-          "source": "2012.02123v2"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_dec",
-      "values": [
-        {
-          "value": "-10.591",
-          "error": "0.013",
-          "unit": "mas/yr",
-          "condition": "Gaia EDR3 proper motion in declination μδ, as listed in Table 5 for the zero-point-corrected clean sample.",
-          "evidence": [
-            {
-              "location": "I:p12-b0"
-            },
-            {
-              "location": "T:p12-b0",
-              "quote": "<td>-10.591 ± 0.013</td>"
-            }
-          ],
-          "source": "2012.02123v2"
+          "source": "2401.10635v1",
+          "attribution": "cited",
+          "attribution_reason": "Distance catalog results already calculated and published by Bailer-Jones, Anders et al. are adopted directly; cited per the user's added clarification. Quantities recalculated here are own.",
+          "standard": {
+            "unit": "kpc",
+            "value": "7.836",
+            "approximate": false
+          }
         }
       ]
     },
@@ -173,84 +95,33 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "-455.382",
-          "error": "2.084",
+          "value": "-712",
           "unit": "km/s",
-          "condition": "Gaia DR2 radial velocity used in Table 5; line-of-sight velocity as tabulated, without LSR correction.",
+          "condition": "Gaia DR3 radial velocity for this long-period variable; typical errors for the ten LPVs are of the order of 10 km/s.",
           "evidence": [
             {
-              "location": "I:p12-b0"
+              "location": "T:p2-b0",
+              "quote": "J18213211-1740598</td><td>13.8</td><td>-1.6</td><td>8.99</td><td>15.98</td><td>-712</td><td>7836"
             },
             {
-              "location": "T:p12-b0",
-              "quote": "<td>-455.382 ± 2.084</td>"
-            }
-          ],
-          "source": "2012.02123v2"
-        }
-      ]
-    },
-    {
-      "quantity": "galactocentric_radius",
-      "values": [
-        {
-          "value": "7572",
-          "lower_error": "993",
-          "upper_error": "1805",
-          "unit": "pc",
-          "condition": "Spherical Galactocentric radius r_GC from Table 5 for the zero-point-corrected sample; median with 16th/84th percentile uncertainties.",
-          "evidence": [
-            {
-              "location": "I:p12-b0"
+              "location": "T:p2-b2",
+              "quote": "For 10 LPVs the radial velocities given in Table 1 are from Gaia DR3 ( Gaia Collaboration 2022a,b). The typical errors in Gaia DR3 velocities of these 10 LPVs are of the order of 10 km/sec."
             },
             {
-              "location": "T:p12-b0",
-              "quote": "<td>7572<eq>^{+1805}_{-993}</eq></td>"
-            }
-          ],
-          "source": "2012.02123v2"
-        }
-      ]
-    },
-    {
-      "quantity": "galactic_rest_frame_velocity",
-      "values": [
-        {
-          "value": "587",
-          "lower_error": "79",
-          "upper_error": "125",
-          "unit": "km/s",
-          "condition": "Total Galactocentric rest-frame speed v_GC from Table 5; median with 16th/84th percentile uncertainties, including the parallax zero-point correction.",
-          "evidence": [
-            {
-              "location": "I:p12-b0"
+              "location": "T:p3-b0",
+              "quote": "It is a 254.915131 days long period Mira variable"
             },
             {
-              "location": "T:p12-b0",
-              "quote": "<td>587<eq>^{+125}_{-79}</eq></td>"
+              "location": "I:p2-b0"
             }
           ],
-          "source": "2012.02123v2"
-        }
-      ]
-    },
-    {
-      "quantity": "unbound_probability",
-      "values": [
-        {
-          "value": "0.62",
-          "unit": "dimensionless",
-          "condition": "Probability P_ub of being unbound from the Milky Way, as listed in Table 5 for the zero-point-corrected clean sample.",
-          "evidence": [
-            {
-              "location": "I:p12-b0"
-            },
-            {
-              "location": "T:p12-b0",
-              "quote": "<td>1.0</td><td>0.62</td></tr>"
-            }
-          ],
-          "source": "2012.02123v2"
+          "source": "2401.10635v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-712",
+            "approximate": false
+          }
         }
       ]
     }
@@ -259,30 +130,31 @@
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "SMSS J203951.96-101210.9",
+      "main_id": "OGLE BLG-LPV-262377",
       "aliases": [
-        "Gaia DR2 6901673112193397248",
-        "Gaia DR3 6901673112193397248",
-        "SMSS J203951.96-101210.9"
+        "2MASS J18213211-1740598",
+        "Gaia DR3 4096520535498750976",
+        "OGLE BLG-LPV-262377",
+        "OGLE BLG570.16  43947"
       ],
-      "object_type": "Pe*",
+      "object_type": "Mi*",
       "coordinates": {
         "ra": {
-          "value": 309.9665025920616,
+          "value": 275.3838493807592,
           "unit": "deg"
         },
         "dec": {
-          "value": -10.203030643326665,
+          "value": -17.683306606668612,
           "unit": "deg"
         },
         "frame": "icrs",
         "error_ellipse": {
           "major": {
-            "value": 0.01489999983459711,
+            "value": 0.19300000369548798,
             "unit": "mas"
           },
           "minor": {
-            "value": 0.007000000216066837,
+            "value": 0.1687999963760376,
             "unit": "mas"
           },
           "angle": {
@@ -296,20 +168,20 @@
       },
       "proper_motion": {
         "ra_cosdec": {
-          "value": 6.933,
+          "value": -2.742,
           "unit": "mas / yr"
         },
         "dec": {
-          "value": -10.591,
+          "value": -8.557,
           "unit": "mas / yr"
         },
         "error_ellipse": {
           "major": {
-            "value": 0.017999999225139618,
+            "value": 0.23100000619888306,
             "unit": "mas / yr"
           },
           "minor": {
-            "value": 0.013000000268220901,
+            "value": 0.16599999368190765,
             "unit": "mas / yr"
           },
           "angle": {
@@ -320,92 +192,77 @@
         "quality": "A",
         "bibcode": "2020yCat.1350....0G"
       },
-      "parallax": {
-        "value": 0.0692,
-        "unit": "mas",
-        "error": 0.01730000041425228,
-        "quality": "A",
-        "bibcode": "2020yCat.1350....0G"
-      },
       "velocity": {
         "radial_velocity": {
-          "value": -455.7399902,
+          "value": -711.79,
           "unit": "km / s"
         },
         "redshift": {
-          "value": -0.0015190312481335733
+          "value": -0.0023714639604786036
         },
         "reported_as": "v",
         "error": {
-          "value": 2.0799999237060547,
+          "value": 14.859999656677246,
           "unit": "km / s"
         },
         "nature": "s",
-        "quality": "C",
-        "bibcode": "2020ApJ...894...34D",
+        "quality": "E",
+        "bibcode": "2022yCat.1355....0G",
         "wavelength": "O"
       },
       "photometry": [
         {
-          "band": "u",
-          "value": 15.494000434875488,
-          "error": 0.006000000052154064,
-          "system": "A",
-          "bibcode": "2018PASA...35...10W",
-          "quality": "B"
-        },
-        {
-          "band": "g",
-          "value": 13.399999618530273,
-          "error": 0.017000000923871994,
-          "system": "A",
-          "bibcode": "2018PASA...35...10W",
-          "quality": "C"
-        },
-        {
-          "band": "r",
-          "value": 12.888999938964844,
-          "error": 0.004999999888241291,
-          "system": "A",
-          "bibcode": "2018PASA...35...10W",
-          "quality": "B"
-        },
-        {
-          "band": "i",
-          "value": 12.53600025177002,
-          "error": 0.0020000000949949026,
-          "system": "A",
-          "bibcode": "2018PASA...35...10W",
-          "quality": "B"
-        },
-        {
-          "band": "z",
-          "value": 12.404999732971191,
-          "error": 0.0020000000949949026,
-          "system": "A",
-          "bibcode": "2018PASA...35...10W",
-          "quality": "B"
-        },
-        {
           "band": "G",
-          "value": 12.882305145263672,
-          "error": 0.0027600000612437725,
+          "value": 15.980932235717773,
+          "error": 0.040674999356269836,
           "system": "V",
           "bibcode": "2022yCat.1355....0G",
           "quality": "C"
+        },
+        {
+          "band": "J",
+          "value": 9.510000228881836,
+          "error": 0.023000000044703484,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 8.161999702453613,
+          "error": 0.054999999701976776,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "K",
+          "value": 7.40500020980835,
+          "error": 0.026000000536441803,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "I",
+          "value": 14.494999885559082,
+          "system": "V",
+          "bibcode": "2022ApJS..260...46I",
+          "quality": "D"
         }
       ]
     },
     "match": {
       "identifiers": [
-        "Gaia EDR3 6901673112193397248"
+        "2MASS J18213211-1740598",
+        "Gaia DR3 4096520535498750976"
       ]
     },
-    "last_queried_at": "2026-10-24T04:54:23.878904+00:00"
+    "last_queried_at": "2026-10-25T11:52:15.041516+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000552_provenance.json",
-    "sha256": "2e650ca6b78529f4b96c7a7ef05e78da9a7961a32a30ff5bb67e48ffa1ec7a76"
+    "sha256": "fa51d080767904fa1007c51a8e79a88651d474936a6f61e37b748dc57a4ced4d"
   },
   "warnings": []
 }

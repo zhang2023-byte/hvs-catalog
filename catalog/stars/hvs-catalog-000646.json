@@ -1,37 +1,47 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "aliases": [
+    "HVS-7 (2608.05814)"
+  ],
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000646",
-  "display_name": "ID 9 (2401.05630)",
+  "display_name": "Gaia DR3 1352334469635055488",
   "sources": {
-    "2401.05630v1": {
-      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+    "2608.05814v1": {
+      "title": "Photometric Distances for Metal-poor Giants and a Search for Hypervelocity Stars with LAMOST DR13 and Gaia DR3",
       "authors": [
-        "A. Luna",
-        "T. Marchetti",
-        "M. Rejkuba",
-        "N. W. C. Leigh",
-        "J. Alonso-García",
-        "A. Valenzuela Navarro",
-        "D. Minniti",
-        "L. C. Smith"
+        "Shuai Xu",
+        "Haibo Yuan",
+        "Bowen Huang",
+        "Xiao Kai",
+        "Wuming Yang"
       ],
-      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "pdf_url": "https://arxiv.org/pdf/2608.05814v1",
       "records": [
-        "/stars/12"
+        "/stars/6"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "ID 9",
+      "value": "HVS-7",
       "evidence": [
         {
-          "location": "T:p16-b0",
-          "quote": "<td>9</td><td>17h45m13.27s</td><td>-28d31m47.60s</td>"
+          "location": "T:p11-b0",
+          "quote": "<td>HVS-7</td><td>1352334469635055488</td>"
         }
       ],
-      "source": "2401.05630v1"
+      "source": "2608.05814v1"
+    },
+    {
+      "value": "Gaia DR3 1352334469635055488",
+      "evidence": [
+        {
+          "location": "T:p11-b0",
+          "quote": "<td>HVS-7</td><td>1352334469635055488</td>"
+        }
+      ],
+      "source": "2608.05814v1"
     }
   ],
   "contribution_types": [
@@ -39,19 +49,15 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b13",
-          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+          "location": "T:p11-b0",
+          "quote": "<td>HVS-7</td><td>1352334469635055488</td>"
         },
         {
-          "location": "T:p9-b10",
-          "quote": "65 were detected only in the VIRAC2 sample"
-        },
-        {
-          "location": "T:p17-b2",
-          "quote": "<td>9</td><td>21.35</td><td>10.17</td><td>2.05</td><td>1044.98</td>"
+          "location": "T:p12-b6",
+          "quote": "removing these leaves a final sample of nine metal-poor HVS candidates"
         }
       ],
-      "source": "2401.05630v1"
+      "source": "2608.05814v1"
     }
   ],
   "quantities": [
@@ -59,16 +65,22 @@
       "quantity": "ra",
       "values": [
         {
-          "value": "17h45m13.27s",
-          "unit": "hourangle",
-          "condition": "Target ID 9, VIRAC2-only candidate (no Gaia DR3 counterpart) in Table 4/B1.",
+          "value": "251.42104",
+          "unit": "deg",
+          "condition": "Gaia DR3 right ascension for HVS-7",
           "evidence": [
             {
-              "location": "T:p16-b0",
-              "quote": "9</td><td>17h45m13.27s</td><td>-28d31m47.60s</td><td>0.3011</td><td>0.2864</td><td>14.72</td><td>3.67</td>"
+              "location": "T:p11-b0",
+              "quote": "HVS-7</td><td>1352334469635055488</td><td>251.42104</td><td>38.27802</td><td>0.082</td><td>2.65</td><td>-0.89</td><td>-8.68</td><td>-154.89</td><td>-1.88</td><td>1.08</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "251.42104",
+            "approximate": false
+          }
         }
       ]
     },
@@ -76,16 +88,114 @@
       "quantity": "dec",
       "values": [
         {
-          "value": "-28d31m47.60s",
+          "value": "38.27802",
           "unit": "deg",
-          "condition": "Target ID 9, VIRAC2-only candidate (no Gaia DR3 counterpart) in Table 4/B1.",
+          "condition": "Gaia DR3 declination for HVS-7",
           "evidence": [
             {
-              "location": "T:p16-b0",
-              "quote": "9</td><td>17h45m13.27s</td><td>-28d31m47.60s</td><td>0.3011</td><td>0.2864</td><td>14.72</td><td>3.67</td>"
+              "location": "T:p11-b0",
+              "quote": "HVS-7</td><td>1352334469635055488</td><td>251.42104</td><td>38.27802</td><td>0.082</td><td>2.65</td><td>-0.89</td><td>-8.68</td><td>-154.89</td><td>-1.88</td><td>1.08</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "38.27802",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "parallax",
+      "values": [
+        {
+          "value": "0.082",
+          "unit": "mas",
+          "condition": "Gaia DR3 parallax for HVS-7",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "HVS-7</td><td>1352334469635055488</td><td>251.42104</td><td>38.27802</td><td>0.082</td><td>2.65</td><td>-0.89</td><td>-8.68</td><td>-154.89</td><td>-1.88</td><td>1.08</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
+            }
+          ],
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "0.082",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-0.89",
+          "unit": "mas/yr",
+          "condition": "Gaia DR3 proper motion in right ascension, μ_{α*}, for HVS-7",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "HVS-7</td><td>1352334469635055488</td><td>251.42104</td><td>38.27802</td><td>0.082</td><td>2.65</td><td>-0.89</td><td>-8.68</td><td>-154.89</td><td>-1.88</td><td>1.08</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
+            }
+          ],
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-0.89",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-8.68",
+          "unit": "mas/yr",
+          "condition": "Gaia DR3 proper motion in declination, μ_δ, for HVS-7",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "HVS-7</td><td>1352334469635055488</td><td>251.42104</td><td>38.27802</td><td>0.082</td><td>2.65</td><td>-0.89</td><td>-8.68</td><td>-154.89</td><td>-1.88</td><td>1.08</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
+            }
+          ],
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-8.68",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-154.89",
+          "unit": "km/s",
+          "condition": "LAMOST DR13 radial velocity for HVS-7",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "HVS-7</td><td>1352334469635055488</td><td>251.42104</td><td>38.27802</td><td>0.082</td><td>2.65</td><td>-0.89</td><td>-8.68</td><td>-154.89</td><td>-1.88</td><td>1.08</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
+            }
+          ],
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-154.89",
+            "approximate": false
+          }
         }
       ]
     },
@@ -93,33 +203,57 @@
       "quantity": "distance",
       "values": [
         {
-          "value": "10.17",
+          "value": "17.9",
+          "lower_error": "1.7",
+          "upper_error": "1.8",
           "unit": "kpc",
-          "condition": "Heliocentric distance derived from the red clump calibration for target ID 9 (Table 5/B2).",
+          "condition": "Photometric distance Dist_model from the metallicity-dependent color–absolute-magnitude relation for HVS-7",
           "evidence": [
             {
-              "location": "T:p17-b2",
-              "quote": "9</td><td>21.35</td><td>10.17</td><td>2.05</td><td>1044.98</td><td>32379</td><td>0.279</td><td>1.0</td>"
+              "location": "T:p11-b0",
+              "quote": "HVS-7</td><td><eq>17.9^{+1.8}_{-1.7}</eq></td><td>-1.7</td><td>12.0</td><td>11.6</td><td>606.1</td><td>-211.0</td><td>-89.5</td><td>12.1</td><td><eq>648.0^{+73.4}_{-66.8}</eq></td><td>536.5</td><td></td></tr>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "17.9",
+            "lower_error": "1.7",
+            "upper_error": "1.8",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "galactocentric_radius",
+      "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "2.05",
-          "unit": "kpc",
-          "condition": "Three-dimensional distance from the Galactic centre for target ID 9 (Table 5/B2).",
+          "value": "648.0",
+          "lower_error": "66.8",
+          "upper_error": "73.4",
+          "unit": "km/s",
+          "condition": "Total Galactocentric speed V_tot for HVS-7, evaluated using Gaia DR3 astrometry, LAMOST radial velocity, photometric distance, and the adopted Solar position/peculiar motion; used for bound/unbound classification under the McMillan (2017) potential",
           "evidence": [
             {
-              "location": "T:p17-b2",
-              "quote": "9</td><td>21.35</td><td>10.17</td><td>2.05</td><td>1044.98</td><td>32379</td><td>0.279</td><td>1.0</td>"
+              "location": "T:p11-b0",
+              "quote": "HVS-7</td><td><eq>17.9^{+1.8}_{-1.7}</eq></td><td>-1.7</td><td>12.0</td><td>11.6</td><td>606.1</td><td>-211.0</td><td>-89.5</td><td>12.1</td><td><eq>648.0^{+73.4}_{-66.8}</eq></td><td>536.5</td><td></td></tr>"
+            },
+            {
+              "location": "T:p8-b2",
+              "quote": "Under the McMillan (2017) potential, 13 sources have total velocities exceeding the local escape speed."
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "648.0",
+            "lower_error": "66.8",
+            "upper_error": "73.4",
+            "approximate": false
+          }
         }
       ]
     }
@@ -127,13 +261,11 @@
   "simbad": {
     "status": "not_found",
     "reason": "No candidate matched the requested identifiers or radius.",
-    "last_queried_at": "2026-10-24T06:02:39.168855+00:00"
+    "last_queried_at": "2026-10-25T12:04:10.938373+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000646_provenance.json",
-    "sha256": "cfd8acd46da8d6865caedfa4604d009b8fda7776f997274d4b05204af9aa1822"
+    "sha256": "747f2b785a3be3d2eb1bf6e36d187592f9208aacc5fc88e76eabe433508a76bd"
   },
-  "warnings": [
-    "Coordinate reference frame was not reported; ICRS was assumed for matching."
-  ]
+  "warnings": []
 }

@@ -1,47 +1,40 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000340",
-  "display_name": "Gaia DR3 5195254636665583232",
+  "display_name": "Gaia DR2 6601618897232424064",
   "sources": {
-    "1805.03194v3": {
-      "title": "Old, Metal-Poor Extreme Velocity Stars in the Solar Neighborhood",
+    "1907.06348v1": {
+      "title": "New nearby hypervelocity stars and their spatial distribution from Gaia DR2",
       "authors": [
-        "Kohei Hattori",
-        "Monica Valluri",
-        "Eric F. Bell",
-        "Ian U. Roederer"
+        "Cuihua Du",
+        "Hefan Li",
+        "Yepeng Yan",
+        "Heidi Jo Newberg",
+        "Jianrong Shi",
+        "Jun Ma",
+        "Yuqin Chen",
+        "Zhenyu Wu"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1805.03194v3",
+      "pdf_url": "https://arxiv.org/pdf/1907.06348v1",
       "records": [
-        "/stars/13"
+        "/stars/45"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "Gaia-T-ES14",
+      "value": "Gaia DR2 6601618897232424064",
       "evidence": [
         {
-          "location": "T:p4-b0",
-          "quote": "<tr><td>Gaia-T-ES14</td><td>5195254636665583232</td>"
-        }
-      ],
-      "source": "1805.03194v3"
-    },
-    {
-      "value": "Gaia DR2 5195254636665583232",
-      "evidence": [
-        {
-          "location": "T:p4-b0",
-          "quote": "<td>GaiaDR2 source_id</td>"
+          "location": "I:p9-b2"
         },
         {
-          "location": "T:p4-b0",
-          "quote": "<tr><td>Gaia-T-ES14</td><td>5195254636665583232</td>"
+          "location": "T:p9-b2",
+          "quote": "TABLE 3 HVS identified from total velocity selection of Gaia DR2 6D information"
         }
       ],
-      "source": "1805.03194v3"
+      "source": "1907.06348v1"
     }
   ],
   "contribution_types": [
@@ -49,19 +42,15 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p2-b9",
-          "quote": "6D coordinates of each star and select 30 stars that are\nunbound( E > 0 )or marginally bound"
+          "location": "T:p1-b5",
+          "quote": "we also identify 28 stars from the total velocity (V<sub>gc</sub> > 0 75V<sub>esc</sub>) that have probabilities greater than 50% of\nbeing unbound from the Galaxy."
         },
         {
-          "location": "T:p4-b0",
-          "quote": "<tr><td>Gaia-T-ES14</td><td>5195254636665583232</td>"
-        },
-        {
-          "location": "T:p9-b4",
-          "quote": "While these stars have space velocities implying that\nthey are unbound in the MWPotential2014 potential"
+          "location": "T:p9-b2",
+          "quote": "TABLE 3 HVS identified from total velocity selection of Gaia DR2 6D information"
         }
       ],
-      "source": "1805.03194v3"
+      "source": "1907.06348v1"
     }
   ],
   "quantities": [
@@ -69,68 +58,101 @@
       "quantity": "distance",
       "values": [
         {
-          "value": "5.70",
-          "error": "0.55",
+          "value": "6.47",
+          "lower_error": "0.73",
+          "upper_error": "1.02",
           "unit": "kpc",
-          "condition": "Heliocentric distance d_helio from Table 1.",
+          "condition": "Bayesian distance derived from Gaia DR2 parallax using the exponentially decreasing space density prior; Table 3 6D HVS sample.",
           "evidence": [
             {
-              "location": "I:p4-b0"
-            },
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES14</td><td>5195254636665583232</td><td>295.99</td><td>-23.96</td><td>5.70 ± 0.55</td><td>7.7</td><td>536.3</td><td>506.3</td><td>191.8</td><td>13363</td><td>1055</td><td>0.63</td><td>stream?</td></tr>"
+              "location": "T:p9-b2",
+              "quote": "6601618897232424064</td><td>(14.97, -58.22)</td><td>0.134 ± 0.025</td><td>18.82 ± 0.04</td><td>-11.0 ± 0.04</td><td>-137.5 ± 2.2</td><td>6.47<eq>^{+1.02}_{-0.73}</eq></td><td>7.41<eq>^{+0.37}_{-0.19}</eq></td><td>534<eq>^{+99}_{-70}</eq></td><td>0.56</td>"
             }
           ],
-          "source": "1805.03194v3"
+          "source": "1907.06348v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "6.47",
+            "lower_error": "0.73",
+            "upper_error": "1.02",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "galactocentric_radius",
+      "quantity": "parallax",
       "values": [
         {
-          "value": "7.7",
-          "unit": "kpc",
-          "condition": "Table 1 r, the Galactocentric radius; Section 2 and Figure 1 describe r as Galactocentric radius.",
+          "value": "0.134",
+          "error": "0.025",
+          "unit": "mas",
+          "condition": "Gaia DR2 parallax from Table 3.",
           "evidence": [
             {
-              "location": "I:p4-b0"
-            },
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES14</td><td>5195254636665583232</td><td>295.99</td><td>-23.96</td><td>5.70 ± 0.55</td><td>7.7</td><td>536.3</td><td>506.3</td><td>191.8</td><td>13363</td><td>1055</td><td>0.63</td><td>stream?</td></tr>"
-            },
-            {
-              "location": "T:p2-b10",
-              "quote": "The total velocityv _ { \\mathrm { t o t a l } }for these stars as a function of Galactocentric radius r is shown in Fig-\nure 1."
+              "location": "T:p9-b2",
+              "quote": "6601618897232424064</td><td>(14.97, -58.22)</td><td>0.134 ± 0.025</td><td>18.82 ± 0.04</td><td>-11.0 ± 0.04</td><td>-137.5 ± 2.2</td><td>6.47<eq>^{+1.02}_{-0.73}</eq></td><td>7.41<eq>^{+0.37}_{-0.19}</eq></td><td>534<eq>^{+99}_{-70}</eq></td><td>0.56</td>"
             }
           ],
-          "source": "1805.03194v3"
+          "source": "1907.06348v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "0.134",
+            "error": "0.025",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "galactic_rest_frame_velocity",
+      "quantity": "proper_motion_ra",
       "values": [
         {
-          "value": "536.3",
-          "unit": "km/s",
-          "condition": "Table 1 v_total, the total 3D speed in the Galactocentric rest frame.",
+          "value": "18.82",
+          "error": "0.04",
+          "unit": "mas/yr",
+          "condition": "Gaia DR2 proper-motion component μ_α* = μ_α cos δ from Table 3.",
           "evidence": [
             {
-              "location": "I:p4-b0"
-            },
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES14</td><td>5195254636665583232</td><td>295.99</td><td>-23.96</td><td>5.70 ± 0.55</td><td>7.7</td><td>536.3</td><td>506.3</td><td>191.8</td><td>13363</td><td>1055</td><td>0.63</td><td>stream?</td></tr>"
-            },
-            {
-              "location": "T:p2-b8",
-              "quote": "For these 1743 stars, we derive the 3D\nposition and velocity in the Galactocentric rest frame by\nadditionally taking into accountv _ { \\mathrm { l o s } }from Gaia."
+              "location": "T:p9-b2",
+              "quote": "6601618897232424064</td><td>(14.97, -58.22)</td><td>0.134 ± 0.025</td><td>18.82 ± 0.04</td><td>-11.0 ± 0.04</td><td>-137.5 ± 2.2</td><td>6.47<eq>^{+1.02}_{-0.73}</eq></td><td>7.41<eq>^{+0.37}_{-0.19}</eq></td><td>534<eq>^{+99}_{-70}</eq></td><td>0.56</td>"
             }
           ],
-          "source": "1805.03194v3"
+          "source": "1907.06348v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "18.82",
+            "error": "0.04",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-11.0",
+          "error": "0.04",
+          "unit": "mas/yr",
+          "condition": "Gaia DR2 proper-motion component μ_δ from Table 3.",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "6601618897232424064</td><td>(14.97, -58.22)</td><td>0.134 ± 0.025</td><td>18.82 ± 0.04</td><td>-11.0 ± 0.04</td><td>-137.5 ± 2.2</td><td>6.47<eq>^{+1.02}_{-0.73}</eq></td><td>7.41<eq>^{+0.37}_{-0.19}</eq></td><td>534<eq>^{+99}_{-70}</eq></td><td>0.56</td>"
+            }
+          ],
+          "source": "1907.06348v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-11.0",
+            "error": "0.04",
+            "approximate": false
+          }
         }
       ]
     },
@@ -138,19 +160,78 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "191.8",
+          "value": "-137.5",
+          "error": "2.2",
           "unit": "km/s",
-          "condition": "Table 1 v_los, the line-of-sight velocity from Gaia.",
+          "condition": "Gaia DR2 radial velocity rv from Table 3.",
           "evidence": [
             {
-              "location": "I:p4-b0"
-            },
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES14</td><td>5195254636665583232</td><td>295.99</td><td>-23.96</td><td>5.70 ± 0.55</td><td>7.7</td><td>536.3</td><td>506.3</td><td>191.8</td><td>13363</td><td>1055</td><td>0.63</td><td>stream?</td></tr>"
+              "location": "T:p9-b2",
+              "quote": "6601618897232424064</td><td>(14.97, -58.22)</td><td>0.134 ± 0.025</td><td>18.82 ± 0.04</td><td>-11.0 ± 0.04</td><td>-137.5 ± 2.2</td><td>6.47<eq>^{+1.02}_{-0.73}</eq></td><td>7.41<eq>^{+0.37}_{-0.19}</eq></td><td>534<eq>^{+99}_{-70}</eq></td><td>0.56</td>"
             }
           ],
-          "source": "1805.03194v3"
+          "source": "1907.06348v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-137.5",
+            "error": "2.2",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "7.41",
+          "lower_error": "0.19",
+          "upper_error": "0.37",
+          "unit": "kpc",
+          "condition": "Galactocentric distance r_gc from the coordinate transformation using R_⊙ = 8.2 kpc and z_⊙ = 25 pc; Table 3.",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "6601618897232424064</td><td>(14.97, -58.22)</td><td>0.134 ± 0.025</td><td>18.82 ± 0.04</td><td>-11.0 ± 0.04</td><td>-137.5 ± 2.2</td><td>6.47<eq>^{+1.02}_{-0.73}</eq></td><td>7.41<eq>^{+0.37}_{-0.19}</eq></td><td>534<eq>^{+99}_{-70}</eq></td><td>0.56</td>"
+            }
+          ],
+          "source": "1907.06348v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "7.41",
+            "lower_error": "0.19",
+            "upper_error": "0.37",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "534",
+          "lower_error": "70",
+          "upper_error": "99",
+          "unit": "km/s",
+          "condition": "Total velocity V_gc in the Galactic rest frame from Gaia DR2 6D phase-space information; Table 3.",
+          "evidence": [
+            {
+              "location": "T:p9-b2",
+              "quote": "6601618897232424064</td><td>(14.97, -58.22)</td><td>0.134 ± 0.025</td><td>18.82 ± 0.04</td><td>-11.0 ± 0.04</td><td>-137.5 ± 2.2</td><td>6.47<eq>^{+1.02}_{-0.73}</eq></td><td>7.41<eq>^{+0.37}_{-0.19}</eq></td><td>534<eq>^{+99}_{-70}</eq></td><td>0.56</td>"
+            }
+          ],
+          "source": "1907.06348v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "534",
+            "lower_error": "70",
+            "upper_error": "99",
+            "approximate": false
+          }
         }
       ]
     },
@@ -158,23 +239,22 @@
       "quantity": "unbound_probability",
       "values": [
         {
-          "value": "0.63",
+          "value": "0.56",
           "unit": "dimensionless",
-          "condition": "Table 1 P_unb, the probability of being unbound in MWPotential2014 from 1000 Monte Carlo realizations.",
+          "condition": "P_ub, probability of being unbound from the Galaxy, from 6D information; Table 3 lists this star under HRS candidates.",
           "evidence": [
             {
-              "location": "I:p4-b0"
-            },
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES14</td><td>5195254636665583232</td><td>295.99</td><td>-23.96</td><td>5.70 ± 0.55</td><td>7.7</td><td>536.3</td><td>506.3</td><td>191.8</td><td>13363</td><td>1055</td><td>0.63</td><td>stream?</td></tr>"
-            },
-            {
-              "location": "T:p2-b9",
-              "quote": "Next, we evalu-\nate the probability of each star being unbound,P _ { \\mathrm { u n b } }.\nin this potential."
+              "location": "T:p9-b2",
+              "quote": "6601618897232424064</td><td>(14.97, -58.22)</td><td>0.134 ± 0.025</td><td>18.82 ± 0.04</td><td>-11.0 ± 0.04</td><td>-137.5 ± 2.2</td><td>6.47<eq>^{+1.02}_{-0.73}</eq></td><td>7.41<eq>^{+0.37}_{-0.19}</eq></td><td>534<eq>^{+99}_{-70}</eq></td><td>0.56</td>"
             }
           ],
-          "source": "1805.03194v3"
+          "source": "1907.06348v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.56",
+            "approximate": false
+          }
         }
       ]
     }
@@ -183,29 +263,29 @@
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "Gaia DR3 5195254636665583232",
+      "main_id": "Gaia DR3 6601618897232424064",
       "aliases": [
-        "Gaia DR2 5195254636665583232",
-        "Gaia DR3 5195254636665583232"
+        "Gaia DR2 6601618897232424064",
+        "Gaia DR3 6601618897232424064"
       ],
-      "object_type": "RR*",
+      "object_type": "HV*",
       "coordinates": {
         "ra": {
-          "value": 128.18631462404,
+          "value": 336.58399958917,
           "unit": "deg"
         },
         "dec": {
-          "value": -82.98015039228,
+          "value": -32.1518970634,
           "unit": "deg"
         },
         "frame": "icrs",
         "error_ellipse": {
           "major": {
-            "value": 0.012600000016391277,
+            "value": 0.01269999984651804,
             "unit": "mas"
           },
           "minor": {
-            "value": 0.012600000016391277,
+            "value": 0.013899999670684338,
             "unit": "mas"
           },
           "angle": {
@@ -219,20 +299,20 @@
       },
       "proper_motion": {
         "ra_cosdec": {
-          "value": -10.662,
+          "value": 18.841,
           "unit": "mas / yr"
         },
         "dec": {
-          "value": 21.414,
+          "value": -11.042,
           "unit": "mas / yr"
         },
         "error_ellipse": {
           "major": {
-            "value": 0.017999999225139618,
+            "value": 0.019999999552965164,
             "unit": "mas / yr"
           },
           "minor": {
-            "value": 0.017999999225139618,
+            "value": 0.017000000923871994,
             "unit": "mas / yr"
           },
           "angle": {
@@ -244,23 +324,23 @@
         "bibcode": "2020yCat.1350....0G"
       },
       "parallax": {
-        "value": 0.1949,
+        "value": 0.1475,
         "unit": "mas",
-        "error": 0.012600000016391277,
+        "error": 0.01889999955892563,
         "quality": "A",
         "bibcode": "2020yCat.1350....0G"
       },
       "velocity": {
         "radial_velocity": {
-          "value": 188.06,
+          "value": -138.88,
           "unit": "km / s"
         },
         "redshift": {
-          "value": 0.0006274975139559658
+          "value": -0.00046314656305335156
         },
         "reported_as": "v",
         "error": {
-          "value": 4.269999980926514,
+          "value": 2.1600000858306885,
           "unit": "km / s"
         },
         "nature": "s",
@@ -271,26 +351,24 @@
       "photometry": [
         {
           "band": "G",
-          "value": 13.758500099182129,
-          "error": 0.00902900006622076,
+          "value": 12.963558197021484,
+          "error": 0.002764000091701746,
           "system": "V",
-          "bibcode": "2020yCat.1350....0G",
+          "bibcode": "2022yCat.1355....0G",
           "quality": "C"
         }
       ]
     },
     "match": {
       "identifiers": [
-        "Gaia DR2 5195254636665583232"
+        "Gaia DR2 6601618897232424064"
       ]
     },
-    "last_queried_at": "2026-10-24T04:43:27.203358+00:00"
+    "last_queried_at": "2026-10-25T11:48:01.178675+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000340_provenance.json",
-    "sha256": "2d4142d2e62c90eeeb486d95b23f217d4496d326edc0d9156508ef8bda2a90c2"
+    "sha256": "f141b0a6201483b11beb3cff543e634baed4798224b06003d1a343a6b6388feb"
   },
-  "warnings": [
-    "1805.03194v3#/stars/13/quantities/4/values/0/evidence/2: quote audit unknown at T:p2-b9; check the paper evidence."
-  ]
+  "warnings": []
 }

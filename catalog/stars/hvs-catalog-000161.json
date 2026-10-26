@@ -1,32 +1,35 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000161",
-  "display_name": "HVS18",
+  "display_name": "J160707.30+372350.97",
   "sources": {
-    "1401.7342v1": {
-      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+    "1506.03153v1": {
+      "title": "Red Runaways: Hypervelocity Stars, Hills Ejecta and Other Outliers in the F-M Star Regime",
       "authors": [
-        "Warren R. Brown",
-        "Margaret J. Geller",
-        "Scott J. Kenyon"
+        "John J. Vickers",
+        "Martin C. Smith",
+        "Eva K. Grebel"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "pdf_url": "https://arxiv.org/pdf/1506.03153v1",
       "records": [
-        "/stars/14"
+        "/stars/1"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS18",
+      "value": "J160707.30+372350.97",
       "evidence": [
         {
-          "location": "T:p11-b0",
-          "quote": "<tr><td>18</td><td>237.3 ± 6.4</td>"
+          "location": "T:p9-b0",
+          "quote": "J160707.30+372350.97"
+        },
+        {
+          "location": "I:p9-b0"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1506.03153v1"
     }
   ],
   "contribution_types": [
@@ -34,36 +37,69 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p6-b6",
-          "quote": "21 HVSs that are unbound on the basis of radial"
+          "location": "T:p8-b10",
+          "quote": "We identify hypervelocity stars as stars whose current\nkinetic energy is greater than the gravitational potential\n(described in Section 2.2) at their position."
         },
         {
-          "location": "T:p11-b0",
-          "quote": "<tr><td>18</td><td>237.3 ± 6.4</td>"
+          "location": "T:p8-b11",
+          "quote": "We construct a catalog of objects which satisfy this\ncriterion and present a subset of them in Table 2."
+        },
+        {
+          "location": "T:p9-b0",
+          "quote": "Objects whose kinetic energy is greater than the gravitational potential at their given position. This table is truncated to\nretain only the candidates that pass our strict proper motion quality cuts"
+        },
+        {
+          "location": "T:p13-b2",
+          "quote": "Of our\n7 strong candidates, two of four are found to intersect\nthe Galactic plane at positions coincident with spiral\narm structure"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1506.03153v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "radial_velocity",
+      "quantity": "ra",
       "values": [
         {
-          "value": "237.3",
-          "error": "6.4",
-          "unit": "km/s",
-          "condition": "Heliocentric radial velocity v_⊙ from MMT spectroscopy (Table 1).",
+          "value": "16:07:07.30",
+          "unit": "hourangle",
+          "condition": "Equatorial right ascension encoded in the IAU designation J160707.30+372350.97.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "<td>18</td><td>237.3 ± 6.4</td>"
-            },
-            {
-              "location": "I:p11-b0"
+              "location": "T:p9-b0",
+              "quote": "J160707.30+372350.97"
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1506.03153v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "241.7804166666666666666666668",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "+37:23:50.97",
+          "unit": "deg",
+          "condition": "Equatorial declination encoded in the IAU designation J160707.30+372350.97.",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "J160707.30+372350.97"
+            }
+          ],
+          "source": "1506.03153v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "37.39749166666666666666666666",
+            "approximate": false
+          }
         }
       ]
     },
@@ -71,110 +107,198 @@
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "446.2",
+          "value": "606.47",
+          "error": "121.33",
           "unit": "km/s",
-          "condition": "Line-of-sight Galactic rest-frame velocity v_rf obtained by transforming the heliocentric velocity via Eq. 1; this is not the total three-dimensional space motion, which can only be larger.",
+          "condition": "V_Total for the hypervelocity candidate; total space velocity in the paper's right-handed Galactocentric frame with Solar rotation speed -220 km/s.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "<td>18</td><td>237.3 ± 6.4</td><td>446.2</td>"
+              "location": "T:p9-b0",
+              "quote": "J160707.30+372350.97 9.13 19.8 15.83 4.36 -0.11 606.47 ± 121.33 548.79"
             },
             {
-              "location": "I:p11-b0"
-            },
-            {
-              "location": "T:p3-b4",
-              "quote": "Because we measure radial velocity, the full space motion of the stars can only be larger."
+              "location": "T:p3-b10",
+              "quote": "The direction of v_phi is chosen to be right handed (i.e. the Solar rotation speed is -220 km s−1)."
             }
           ],
-          "source": "1401.7342v1"
-        }
-      ]
-    },
-    {
-      "quantity": "galactocentric_radius",
-      "values": [
-        {
-          "value": "80",
-          "error": "11",
-          "unit": "kpc",
-          "condition": "Galactocentric radial distance R_GC calculated assuming the Sun is at R = 8 kpc (Table 1).",
-          "evidence": [
-            {
-              "location": "T:p11-b0",
-              "quote": "<td>80 ± 11</td>"
-            },
-            {
-              "location": "I:p11-b0"
-            },
-            {
-              "location": "T:p5-b11",
-              "quote": "We calculate HVS Galacto-centric radial distances, R, assuming the Sun is at R = 8 kpc. Table 1 summarizes the results."
-            }
-          ],
-          "source": "1401.7342v1"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_ra",
-      "values": [
-        {
-          "value": "+0.39",
-          "unit": "mas/yr",
-          "condition": "Predicted proper motion in right ascension for the best-fit Galactic center origin trajectory (μ_α)_GC in Table 1; not a measured proper motion.",
-          "evidence": [
-            {
-              "location": "T:p11-b0",
-              "quote": "<td>+0.39, -0.16</td>"
-            },
-            {
-              "location": "I:p11-b0"
-            },
-            {
-              "location": "T:p8-b13",
-              "quote": "We identify a Galactic center origin by the trajectory with the smallest Galactic pericenter passage. An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
-            }
-          ],
-          "source": "1401.7342v1"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_dec",
-      "values": [
-        {
-          "value": "-0.16",
-          "unit": "mas/yr",
-          "condition": "Predicted proper motion in declination for the best-fit Galactic center origin trajectory (μ_δ)_GC in Table 1; not a measured proper motion.",
-          "evidence": [
-            {
-              "location": "T:p11-b0",
-              "quote": "<td>+0.39, -0.16</td>"
-            },
-            {
-              "location": "I:p11-b0"
-            },
-            {
-              "location": "T:p8-b13",
-              "quote": "We identify a Galactic center origin by the trajectory with the smallest Galactic pericenter passage. An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
-            }
-          ],
-          "source": "1401.7342v1"
+          "source": "1506.03153v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "606.47",
+            "error": "121.33",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "coordinates",
+    "selected": {
+      "main_id": "SDSS J160707.29+372350.9",
+      "aliases": [
+        "Gaia DR2 1378530054992897280",
+        "Gaia DR3 1378530054992897280",
+        "SDSS J160707.29+372350.9"
+      ],
+      "object_type": "HV*",
+      "coordinates": {
+        "ra": {
+          "value": 241.78041982152,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 37.39747877232,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.12049999833106995,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.14659999310970306,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -0.801,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -2.885,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.16500000655651093,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.19499999284744263,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.3149,
+        "unit": "mas",
+        "error": 0.16670000553131104,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -113.94277905392472,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.00038
+        },
+        "reported_as": "z",
+        "error": {
+          "value": 9.999999747378752e-06,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "E",
+        "bibcode": "2012ApJS..203...21A",
+        "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "F9",
+        "quality": "E",
+        "bibcode": "2020ApJS..249....3A"
+      },
+      "photometry": [
+        {
+          "band": "u",
+          "value": 20.71299934387207,
+          "error": 0.07400000095367432,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "g",
+          "value": 19.17099952697754,
+          "error": 0.010999999940395355,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "r",
+          "value": 18.780000686645508,
+          "error": 0.009999999776482582,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
+        },
+        {
+          "band": "i",
+          "value": 18.677000045776367,
+          "error": 0.012000000104308128,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "z",
+          "value": 18.711999893188477,
+          "error": 0.032999999821186066,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "G",
+          "value": 18.811704635620117,
+          "error": 0.003360999980941415,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "coordinates": [
+        {
+          "source_record": "1506.03153v1#/stars/1",
+          "separation_arcsec": 0.04728842827799238,
+          "radius_arcsec": 5.0,
+          "assumed_frame": "icrs"
+        }
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:58:20.866313+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000161_provenance.json",
-    "sha256": "5b4b72b85a322fc313e3a291d13954697386a3b70139e81c88e893e4217dc1a9"
+    "sha256": "725f7adf1bebbf8571095a5a07bd88786a494d8d8400a3ad936dcd4ea515d9ed"
   },
   "warnings": [
-    "1401.7342v1#/stars/14/quantities/3/values/0/evidence/2: quote audit unknown at T:p8-b13; check the paper evidence.",
-    "1401.7342v1#/stars/14/quantities/4/values/0/evidence/2: quote audit unknown at T:p8-b13; check the paper evidence."
+    "Coordinate reference frame was not reported; ICRS was assumed for matching.",
+    "Association based on coordinates only; no epoch propagation.",
+    "1506.03153v1#/stars/1/quantities/2/values/0/evidence/0: quote audit unknown at T:p9-b0; check the paper evidence.",
+    "1506.03153v1#/stars/1/quantities/2/values/0/evidence/1: quote audit unknown at T:p3-b10; check the paper evidence."
   ]
 }

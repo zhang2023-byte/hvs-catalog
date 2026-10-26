@@ -1,8 +1,8 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000017",
-  "display_name": "CSO  408",
+  "display_name": "B576",
   "sources": {
     "0709.3748v1": {
       "title": "The nature of hypervelocity stars as inferred from their galactic trajectories",
@@ -27,6 +27,20 @@
       "pdf_url": "https://arxiv.org/pdf/2101.10878v1",
       "records": [
         "/stars/2"
+      ]
+    },
+    "2411.09278v2": {
+      "title": "A Recent Supermassive Black Hole Binary in the Galactic Center Unveiled by the Hypervelocity Stars",
+      "authors": [
+        "Chunyang Cao",
+        "Fukun Liu",
+        "Shuo Li",
+        "Xian Chen",
+        "Ke Wang"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/2411.09278v2",
+      "records": [
+        "/stars/23"
       ]
     }
   },
@@ -60,6 +74,16 @@
         }
       ],
       "source": "2101.10878v1"
+    },
+    {
+      "value": "B576",
+      "evidence": [
+        {
+          "location": "T:p14-b0",
+          "quote": "B576"
+        }
+      ],
+      "source": "2411.09278v2"
     }
   ],
   "contribution_types": [
@@ -94,6 +118,24 @@
         }
       ],
       "source": "2101.10878v1"
+    },
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b6",
+          "quote": "Dozens of B-type HVSs moving faster than the Galactic escape speed have been discovered in the Galactic halo"
+        },
+        {
+          "location": "T:p1-b10",
+          "quote": "About 20 late B-type HVSs have been identified in the Galactic halo"
+        },
+        {
+          "location": "T:p14-b0",
+          "quote": "The Observational Sample of HVSs."
+        }
+      ],
+      "source": "2411.09278v2"
     }
   ],
   "quantities": [
@@ -113,7 +155,13 @@
               "quote": "For each star the first line (labelled MS) represents the trajectory calculated assuming that the star is a main-sequence star, and the second line the trajectory calculated assuming that it is a blue horizontal branch star."
             }
           ],
-          "source": "0709.3748v1"
+          "source": "0709.3748v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-1.30",
+            "approximate": false
+          }
         },
         {
           "value": "-4.49",
@@ -128,7 +176,13 @@
               "quote": "For each star the first line (labelled MS) represents the trajectory calculated assuming that the star is a main-sequence star, and the second line the trajectory calculated assuming that it is a blue horizontal branch star."
             }
           ],
-          "source": "0709.3748v1"
+          "source": "0709.3748v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-4.49",
+            "approximate": false
+          }
         }
       ]
     },
@@ -148,7 +202,13 @@
               "quote": "For each star the first line (labelled MS) represents the trajectory calculated assuming that the star is a main-sequence star, and the second line the trajectory calculated assuming that it is a blue horizontal branch star."
             }
           ],
-          "source": "0709.3748v1"
+          "source": "0709.3748v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-0.54",
+            "approximate": false
+          }
         },
         {
           "value": "-1.08",
@@ -163,7 +223,13 @@
               "quote": "For each star the first line (labelled MS) represents the trajectory calculated assuming that the star is a main-sequence star, and the second line the trajectory calculated assuming that it is a blue horizontal branch star."
             }
           ],
-          "source": "0709.3748v1"
+          "source": "0709.3748v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-1.08",
+            "approximate": false
+          }
         }
       ]
     },
@@ -183,7 +249,13 @@
               "quote": "along with the present-day speed of the star in the rest frame of the Galaxy, v"
             }
           ],
-          "source": "0709.3748v1"
+          "source": "0709.3748v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "339",
+            "approximate": false
+          }
         },
         {
           "value": "371.",
@@ -198,7 +270,13 @@
               "quote": "along with the present-day speed of the star in the rest frame of the Galaxy, v"
             }
           ],
-          "source": "0709.3748v1"
+          "source": "0709.3748v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "371",
+            "approximate": false
+          }
         },
         {
           "value": "329",
@@ -211,7 +289,37 @@
               "location": "I:p9-b0"
             }
           ],
-          "source": "2101.10878v1"
+          "source": "2101.10878v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "329",
+            "lower_error": "7",
+            "upper_error": "9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "680",
+          "unit": "km/s",
+          "condition": "Velocity v^G after Gaia proper motion corrections, in the Galactic rest frame, for an HVS with mass ≥ 2.5 Msun and 50 kpc ≤ R ≤ 120 kpc",
+          "evidence": [
+            {
+              "location": "T:p14-b0",
+              "quote": "<tr><td>B576</td><td></td><td></td><td>680</td><td>51</td><td>(b)</td></tr>"
+            },
+            {
+              "location": "I:p14-b0"
+            }
+          ],
+          "source": "2411.09278v2",
+          "attribution": "cited",
+          "attribution_reason": "Fixed PDF Appendix D and Table A1: MMT values come from Brown 2018, MMT+Gaia values from Kreuzer 2020, S5-HVS1 from Koposov 2020. The approved definition mismatch takes precedence.",
+          "standard": {
+            "unit": "km/s",
+            "value": "680",
+            "approximate": false
+          }
         }
       ]
     },
@@ -229,7 +337,16 @@
               "location": "I:p8-b0"
             }
           ],
-          "source": "2101.10878v1"
+          "source": "2101.10878v1",
+          "attribution": "cited",
+          "attribution_reason": "Fixed PDF p.8 Table A.1 Ref=KR: input reused from an existing paper; §3 states only C is a new spectral analysis here (the original text prevails even where the extracted condition says current work).",
+          "standard": {
+            "unit": "kpc",
+            "value": "18.7",
+            "lower_error": "1.5",
+            "upper_error": "1.6",
+            "approximate": false
+          }
         }
       ]
     },
@@ -247,7 +364,16 @@
               "location": "I:p8-b0"
             }
           ],
-          "source": "2101.10878v1"
+          "source": "2101.10878v1",
+          "attribution": "cited",
+          "attribution_reason": "Fixed PDF p.8 Table A.1 Ref=KR: input reused from an existing paper; §3 states only C is a new spectral analysis here (the original text prevails even where the extracted condition says current work).",
+          "standard": {
+            "unit": "km/s",
+            "value": "216.1",
+            "lower_error": "1.8",
+            "upper_error": "2.0",
+            "approximate": false
+          }
         }
       ]
     },
@@ -265,7 +391,37 @@
               "location": "I:p9-b0"
             }
           ],
-          "source": "2101.10878v1"
+          "source": "2101.10878v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "19.3",
+            "lower_error": "1.3",
+            "upper_error": "1.6",
+            "approximate": false
+          }
+        },
+        {
+          "value": "51",
+          "unit": "kpc",
+          "condition": "Galactocentric distance R^G after Gaia proper motion corrections, for an HVS with mass ≥ 2.5 Msun and 50 kpc ≤ R ≤ 120 kpc",
+          "evidence": [
+            {
+              "location": "T:p14-b0",
+              "quote": "<tr><td>B576</td><td></td><td></td><td>680</td><td>51</td><td>(b)</td></tr>"
+            },
+            {
+              "location": "I:p14-b0"
+            }
+          ],
+          "source": "2411.09278v2",
+          "attribution": "cited",
+          "attribution_reason": "Fixed PDF Appendix D and Table A1: MMT values come from Brown 2018, MMT+Gaia values from Kreuzer 2020, S5-HVS1 from Koposov 2020. The approved definition mismatch takes precedence.",
+          "standard": {
+            "unit": "kpc",
+            "value": "51",
+            "approximate": false
+          }
         }
       ]
     },
@@ -281,7 +437,13 @@
               "location": "I:p9-b0"
             }
           ],
-          "source": "2101.10878v1"
+          "source": "2101.10878v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
         }
       ]
     }
@@ -447,11 +609,11 @@
         "SDSS J140432.38+352258.4"
       ]
     },
-    "last_queried_at": "2026-10-24T04:45:45.245177+00:00"
+    "last_queried_at": "2026-10-25T11:52:26.644379+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000017_provenance.json",
-    "sha256": "4292242aa35d4c49405dc4cc41857fa3fd802f33ce0345d8812e506fab6f9c85"
+    "sha256": "382da26759c67b02596dd4ff990e874945664dbf02faa5eaf7060e32f3c3efdb"
   },
   "warnings": []
 }

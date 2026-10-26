@@ -1,19 +1,30 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000258",
-  "display_name": "US 708",
+  "display_name": "Gaia DR2 1540013339194597376",
   "sources": {
-    "1510.05989v1": {
-      "title": "Hot subdwarfs in the Galactic halo - Tracers of prominent events in late stellar evolution",
+    "1808.02620v2": {
+      "title": "Nearby high-speed stars in Gaia DR2",
       "authors": [
-        "S. Geier",
-        "T. Kupfer",
-        "V. Schaffenroth",
-        "U. Heber",
-        "the MUCHFUSS collaboration"
+        "Benjamin C. Bromley",
+        "Scott J. Kenyon",
+        "Warren R. Brown",
+        "Margaret J. Geller"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1510.05989v1",
+      "pdf_url": "https://arxiv.org/pdf/1808.02620v2",
+      "records": [
+        "/stars/4"
+      ]
+    },
+    "1905.12653v1": {
+      "title": "High Velocity Runaway Binaries from Supernovae in Triple Systems",
+      "authors": [
+        "Yan Gao",
+        "Jiao Li",
+        "Shi Jia"
+      ],
+      "pdf_url": "https://arxiv.org/pdf/1905.12653v1",
       "records": [
         "/stars/0"
       ]
@@ -21,14 +32,24 @@
   },
   "identifiers": [
     {
-      "value": "US 708",
+      "value": "Gaia DR2 1540013339194597376",
       "evidence": [
         {
-          "location": "T:p2-b4",
-          "quote": "the hypervelocity star US 708"
+          "location": "T:p23-b1",
+          "quote": "1540013339194597376"
         }
       ],
-      "source": "1510.05989v1"
+      "source": "1808.02620v2"
+    },
+    {
+      "value": "Gaia DR2 1540013339194597376",
+      "evidence": [
+        {
+          "location": "T:p1-b13",
+          "quote": "Gaia DR2 1540013339194597376, which can be identified to be a HVS candidate via its proper motion of 900 km/s alone (Bromley et al. 2018)"
+        }
+      ],
+      "source": "1905.12653v1"
     }
   ],
   "contribution_types": [
@@ -36,43 +57,281 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b6",
-          "quote": "We discovered a hypervelocity star, which not only\nturned out to be the fastest unbound star known in our Galaxy"
-        },
-        {
-          "location": "T:p2-b4",
-          "quote": "This object is the\nfastest unbound star known in our Galaxy (Geier et al. 2015a)."
+          "location": "T:p22-b1",
+          "quote": "Of these, 19 are unbound with 95% confidence on the sole basis of tangential velocity and\nastrometric uncertainties. Table 3 summarizes the properties of these 19 fastest objects."
         }
       ],
-      "source": "1510.05989v1"
+      "source": "1808.02620v2"
+    },
+    {
+      "value": "follow_up",
+      "evidence": [
+        {
+          "location": "T:p1-b10",
+          "quote": "hypervelocity stars (HVSs), stars which have velocities in the Galactic reference frame that are high enough to achieve escape velocity"
+        },
+        {
+          "location": "T:p1-b13",
+          "quote": "Upon visual inspection of HVS candidates, it is found that several lie on this “binary main sequence”, including but not necessarily limited to Gaia DR2 1540013339194597376, which can be identified to be a HVS candidate via its proper motion of 900 km/s alone (Bromley et al. 2018), and Gaia DR2 1976597452042003072, with a proper motion of 500 km/s."
+        }
+      ],
+      "source": "1905.12653v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "galactic_rest_frame_velocity",
+      "quantity": "distance",
       "values": [
         {
-          "value": "~1200",
-          "unit": "km/s",
-          "condition": "He-sdO US 708, described as a hypervelocity star and the fastest unbound star known",
+          "value": "1.70",
+          "error": "0.16",
+          "unit": "kpc",
+          "condition": "5-D tangential-speed selection without radial velocity; heliocentric distance d_h listed in Table 3",
           "evidence": [
             {
-              "location": "T:p2-b4",
-              "quote": "the hypervelocity star US 708, a He-sdO moving with\\mathrm { { \\bar { \\sim } 1 2 0 0 k m s ^ { - 1 } } }."
+              "location": "T:p23-b1",
+              "quote": "<tr><td>1540013339194597376</td><td>15.96</td><td>1.01</td><td>(145.31, 68.25)</td><td>1.70±0.16</td><td>8.7±0.1</td><td>917.2±107.1</td><td>1.00</td></tr>"
             }
           ],
-          "source": "1510.05989v1"
+          "source": "1808.02620v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "1.70",
+            "error": "0.16",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "8.7",
+          "error": "0.1",
+          "unit": "kpc",
+          "condition": "5-D tangential-speed selection without radial velocity; Galactocentric distance r_g listed in Table 3",
+          "evidence": [
+            {
+              "location": "T:p23-b1",
+              "quote": "<tr><td>1540013339194597376</td><td>15.96</td><td>1.01</td><td>(145.31, 68.25)</td><td>1.70±0.16</td><td>8.7±0.1</td><td>917.2±107.1</td><td>1.00</td></tr>"
+            }
+          ],
+          "source": "1808.02620v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "8.7",
+            "error": "0.1",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "1.00",
+          "unit": "dimensionless",
+          "condition": "5-D tangential-speed sample without radial velocity; p_unb based on tangential velocity and astrometric uncertainties, listed among the p_unb >= 0.95 candidates",
+          "evidence": [
+            {
+              "location": "T:p23-b1",
+              "quote": "<tr><td>1540013339194597376</td><td>15.96</td><td>1.01</td><td>(145.31, 68.25)</td><td>1.70±0.16</td><td>8.7±0.1</td><td>917.2±107.1</td><td>1.00</td></tr>"
+            }
+          ],
+          "source": "1808.02620v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "UCAC4 684-052246",
+      "aliases": [
+        "2MASS J12035471+4645319",
+        "GSC2 N11100032621",
+        "GSC2.3 N45F002621",
+        "Gaia DR2 1540013339194597376",
+        "Gaia DR3 1540013339194597376",
+        "TIC 141203434",
+        "UCAC4 684-052246"
+      ],
+      "object_type": "PM*",
+      "coordinates": {
+        "ra": {
+          "value": 180.97793975306996,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 46.75882622886,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.019200000911951065,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.028300000354647636,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -81.669,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -118.432,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.026000000536441803,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.03799999877810478,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.9306,
+        "unit": "mas",
+        "error": 0.03999999910593033,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "value": 15.95035457611084,
+          "error": 0.0027729999274015427,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        },
+        {
+          "band": "J",
+          "value": 14.631999969482422,
+          "error": 0.03200000151991844,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 14.218000411987305,
+          "error": 0.03799999877810478,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "K",
+          "value": 14.076000213623047,
+          "error": 0.054999999701976776,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "B",
+          "value": 17.030000686645508,
+          "error": 0.05999999865889549,
+          "system": "V",
+          "bibcode": "2012yCat.1322....0Z",
+          "quality": "E"
+        },
+        {
+          "band": "V",
+          "value": 16.299999237060547,
+          "error": 0.009999999776482582,
+          "system": "V",
+          "bibcode": "2012yCat.1322....0Z",
+          "quality": "E"
+        },
+        {
+          "band": "g",
+          "value": 16.610000610351562,
+          "error": 0.009999999776482582,
+          "system": "V",
+          "bibcode": "2012yCat.1322....0Z",
+          "quality": "E"
+        },
+        {
+          "band": "r",
+          "value": 16.030000686645508,
+          "error": 0.009999999776482582,
+          "system": "V",
+          "bibcode": "2012yCat.1322....0Z",
+          "quality": "E"
+        },
+        {
+          "band": "i",
+          "value": 15.779999732971191,
+          "error": 0.009999999776482582,
+          "system": "V",
+          "bibcode": "2012yCat.1322....0Z",
+          "quality": "E"
+        },
+        {
+          "band": "R",
+          "value": 15.619999885559082,
+          "error": 0.41999998688697815,
+          "system": "V",
+          "bibcode": "2001yCat.1271....0S",
+          "quality": "E"
+        },
+        {
+          "band": "I",
+          "value": 15.109999656677246,
+          "error": 0.41999998688697815,
+          "system": "V",
+          "bibcode": "2008AJ....136..735L",
+          "quality": "E"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR2 1540013339194597376"
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:46:00.252267+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000258_provenance.json",
-    "sha256": "009bb648f3969e3a3c5f8f7b06d0bc8f0875bb12e3183e008a586bbc43f708eb"
+    "sha256": "4fcd3342e8ec767af8c7107648736e7f7b1f817eab1dbe4e921428062a77043e"
   },
-  "warnings": []
+  "warnings": [
+    "1905.12653v1#/stars/0/contribution_type/evidence/1: quote audit unknown at T:p1-b13; check the paper evidence."
+  ]
 }

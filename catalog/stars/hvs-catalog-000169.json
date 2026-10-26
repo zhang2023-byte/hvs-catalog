@@ -1,32 +1,46 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000169",
-  "display_name": "SDSS J115734.45+054645.58",
+  "display_name": "J1632",
   "sources": {
-    "1401.7342v1": {
-      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+    "1703.10455v1": {
+      "title": "Spectroscopic twin to the hypervelocity sdO star US 708 and three fast sdB stars from the Hyper-MUCHFUSS project",
       "authors": [
-        "Warren R. Brown",
-        "Margaret J. Geller",
-        "Scott J. Kenyon"
+        "E. Ziegerer",
+        "U. Heber",
+        "S. Geier",
+        "A. Irrgang",
+        "T. Kupfer",
+        "F. Fürst",
+        "J. Schaffenroth"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "pdf_url": "https://arxiv.org/pdf/1703.10455v1",
       "records": [
-        "/stars/22"
+        "/stars/1"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "SDSS J115734.45+054645.58",
+      "value": "SDSS J163213.05+205124.0",
       "evidence": [
         {
-          "location": "T:p3-b5",
-          "quote": "SDSS J115734.45+054645.58; it is logg"
+          "location": "T:p2-b10",
+          "quote": "SDSS J163213.05+205124.0 (J1632)"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1703.10455v1"
+    },
+    {
+      "value": "J1632",
+      "evidence": [
+        {
+          "location": "T:p2-b10",
+          "quote": "SDSS J163213.05+205124.0 (J1632)"
+        }
+      ],
+      "source": "1703.10455v1"
     }
   ],
   "contribution_types": [
@@ -34,50 +48,612 @@
       "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p3-b4",
-          "quote": "stars that are significantly unbound in radial"
+          "location": "T:p1-b10",
+          "quote": "three candidates among the sdB stars"
         },
         {
-          "location": "T:p3-b5",
-          "quote": "re-observed the star previously reported at −359 km"
+          "location": "T:p2-b8",
+          "quote": "The Hyper-MUCHFUSS project was started with the aim to find potentially unbound hot subdwarfs."
         },
         {
-          "location": "T:p3-b5",
-          "quote": "a 13.5 hr orbital period binary (Brown et al. 2013b)."
+          "location": "T:p2-b10",
+          "quote": "SDSS J163213.05+205124.0 (J1632) and SDSS J164419.44+452326.7 (J1644) have previously been investigated by Tillich et al. (2011) and are now revisited here."
+        },
+        {
+          "location": "T:p8-b185",
+          "quote": "two known hot subdwarfs from the first Hyper-MUCHFUSS campaign"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1703.10455v1"
     }
   ],
   "quantities": [
     {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "16:32:13.05",
+          "unit": "hourangle",
+          "condition": "Right ascension encoded in the SDSS J designation (J2000-style sexagesimal identifier).",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "SDSS J163213.05+205124.0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "248.0543750000000000000000000",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "+20:51:24.0",
+          "unit": "deg",
+          "condition": "Declination encoded in the SDSS J designation (J2000-style sexagesimal identifier).",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "SDSS J163213.05+205124.0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "20.85666666666666666666666667",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "4.3",
+          "lower_error": "0.3",
+          "upper_error": "0.3",
+          "unit": "kpc",
+          "condition": "Heliocentric spectroscopic distance from Table 1; adopted XSHOOTER atmospheric parameters for J1632.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "4.3^{+0.3}_{-0.3}"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "4.3",
+            "lower_error": "0.3",
+            "upper_error": "0.3",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-12.5",
+          "error": "3.0",
+          "unit": "mas/yr",
+          "condition": "mu_alpha cos(delta) from Tillich et al. (2011), listed as T11; used for J1632 in the kinematic analysis.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p5-b7",
+              "quote": "Tillich et al. (2011)"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "cited",
+          "attribution_reason": "Condition and quote reread under the new definition: this input value comes from another paper; later adoption does not change its cited nature.",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-12.5",
+            "error": "3.0",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-8",
+          "error": "2.7",
+          "unit": "mas/yr",
+          "condition": "mu_alpha cos(delta) from the APOP catalogue value in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-8",
+            "error": "2.7",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-16.6",
+          "error": "5.3",
+          "unit": "mas/yr",
+          "condition": "mu_alpha cos(delta) from the PPMXL catalogue value in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-16.6",
+            "error": "5.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-13",
+          "error": "3",
+          "unit": "mas/yr",
+          "condition": "mu_alpha cos(delta) from the SDSS catalogue value in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-13",
+            "error": "3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-10",
+          "error": "2",
+          "unit": "mas/yr",
+          "condition": "mu_alpha cos(delta) from the USNO-B1.0 catalogue value in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-10",
+            "error": "2",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-1.6",
+          "error": "3.6",
+          "unit": "mas/yr",
+          "condition": "mu_delta from Tillich et al. (2011), listed as T11; used for J1632 in the kinematic analysis.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            },
+            {
+              "location": "T:p5-b7",
+              "quote": "Tillich et al. (2011)"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "cited",
+          "attribution_reason": "Condition and quote reread under the new definition: this input value comes from another paper; later adoption does not change its cited nature.",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-1.6",
+            "error": "3.6",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-3.5",
+          "error": "3.4",
+          "unit": "mas/yr",
+          "condition": "mu_delta from the APOP catalogue value in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-3.5",
+            "error": "3.4",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-5.8",
+          "error": "5.3",
+          "unit": "mas/yr",
+          "condition": "mu_delta from the PPMXL catalogue value in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-5.8",
+            "error": "5.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-4",
+          "error": "3",
+          "unit": "mas/yr",
+          "condition": "mu_delta from the SDSS catalogue value in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-4",
+            "error": "3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0",
+          "error": "2",
+          "unit": "mas/yr",
+          "condition": "mu_delta from the USNO-B1.0 catalogue value in Table 2.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "0",
+            "error": "2",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "-359",
+          "value": "-239",
+          "error": "4",
           "unit": "km/s",
-          "condition": "Previously reported value for SDSS J115734.45+054645.58; cited in the discussion of velocity outliers moving toward the observer. Re-observation shows the object is a log g ≃ 5 white dwarf in a 13.5 hr orbital-period binary, not an HVS.",
+          "condition": "Adopted radial velocity in main Table 1.",
           "evidence": [
             {
-              "location": "T:p3-b5",
-              "quote": "We re-observed the star previously reported at −359 km s−1 SDSS J115734.45+054645.58; it is logg ≃ 5white dwarf in a 13.5 hr orbital period binary (Brown et al. 2013b)."
+              "location": "T:p4-b0",
+              "quote": "-239 ± 4"
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-239",
+            "error": "4",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-239",
+          "error": "10",
+          "unit": "km/s",
+          "condition": "SDSS spectrum radial velocity in Table A.1; footnote a indicates values taken from Tillich et al. (2011).",
+          "evidence": [
+            {
+              "location": "I:p12-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "cited",
+          "attribution_reason": "Condition and quote reread under the new definition: this input value comes from another paper; later adoption does not change its cited nature.",
+          "standard": {
+            "unit": "km/s",
+            "value": "-239",
+            "error": "10",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-261",
+          "error": "20",
+          "unit": "km/s",
+          "condition": "SDSS-BOSS spectrum radial velocity in Table A.1.",
+          "evidence": [
+            {
+              "location": "I:p12-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-261",
+            "error": "20",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-253",
+          "error": "10",
+          "unit": "km/s",
+          "condition": "ESI/Keck spectrum radial velocity in Table A.1.",
+          "evidence": [
+            {
+              "location": "I:p12-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-253",
+            "error": "10",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-239",
+          "error": "2",
+          "unit": "km/s",
+          "condition": "XSHOOTER/VLT spectrum radial velocity in Table A.1; footnote b marks it as adopted for the kinematic calculations.",
+          "evidence": [
+            {
+              "location": "I:p12-b0"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-239",
+            "error": "2",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "203",
+          "error": "54",
+          "unit": "km/s",
+          "condition": "Present-day Galactic rest-frame velocity v_GRF from the kinematic analysis.",
+          "evidence": [
+            {
+              "location": "T:p7-b10",
+              "quote": "2 0 3 \\pm 5 4 \\mathrm { k m s ^ { - 1 } }"
+            }
+          ],
+          "source": "1703.10455v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "203",
+            "error": "54",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_found",
-    "reason": "No candidate matched the requested identifiers or radius.",
-    "last_queried_at": "2026-10-24T04:52:25.521748+00:00"
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "GALEX J163213.0+205124",
+      "aliases": [
+        "GALEX J163213.0+205124",
+        "Gaia DR2 1297264978785132416",
+        "Gaia DR3 1297264978785132416",
+        "SDSS J163213.05+205124.0",
+        "USNO-B1.0 1108-00258521"
+      ],
+      "object_type": "HS*",
+      "coordinates": {
+        "ra": {
+          "value": 248.05439730230995,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 20.85669216964,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.06589999794960022,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.065700002014637,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -12.207,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -3.901,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.08500000089406967,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.09399999678134918,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.2629,
+        "unit": "mas",
+        "error": 0.09610000252723694,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -243.0,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.0008102325130767696
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 1.0,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "B",
+        "bibcode": "2024A&A...690A.368G",
+        "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "sdB",
+        "quality": "D",
+        "bibcode": "2011A&A...527A.137T"
+      },
+      "photometry": [
+        {
+          "band": "B",
+          "value": 17.5,
+          "system": "V",
+          "bibcode": "2003AJ....125..984M",
+          "quality": "E"
+        },
+        {
+          "band": "R",
+          "value": 17.600000381469727,
+          "system": "V",
+          "bibcode": "2003AJ....125..984M",
+          "quality": "E"
+        },
+        {
+          "band": "z",
+          "value": 18.448999404907227,
+          "error": 0.02800000086426735,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "G",
+          "value": 17.62043571472168,
+          "error": 0.002982999896630645,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        },
+        {
+          "band": "u",
+          "value": 17.277999877929688,
+          "error": 0.008999999612569809,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
+        },
+        {
+          "band": "g",
+          "value": 17.375999450683594,
+          "error": 0.004999999888241291,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
+        },
+        {
+          "band": "r",
+          "value": 17.81100082397461,
+          "error": 0.007000000216066837,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
+        },
+        {
+          "band": "i",
+          "value": 18.13599967956543,
+          "error": 0.008999999612569809,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "B"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "SDSS J163213.05+205124.0"
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:56:12.817934+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000169_provenance.json",
-    "sha256": "8f9ba89f448ce61760113e066db64b854d402f4f368c64946b47e21150c52929"
+    "sha256": "11a09fb6d4716741151d99e3bffb635ca2a5c46ff4c9eca543bcd23c2febad11"
   },
   "warnings": [
-    "1401.7342v1#/stars/22/quantities/0/values/0/evidence/0: quote audit unknown at T:p3-b5; check the paper evidence."
+    "1703.10455v1#/stars/1/contribution_type/evidence/2: quote audit unknown at T:p2-b10; check the paper evidence.",
+    "1703.10455v1#/stars/1/contribution_type/evidence/3: quote audit unknown at T:p8-b185; check the paper evidence."
   ]
 }

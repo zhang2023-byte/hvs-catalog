@@ -1,57 +1,150 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000466",
-  "associations": [],
+  "associations": [
+    {
+      "method": "review",
+      "left": "2207.04406v2#/stars/79",
+      "right": "2402.10714v1#/stars/7",
+      "details": {
+        "decision_id": "R21-merge-151",
+        "reason": "J1603 in Figure 3 on p.6 of 2502.04451 belongs to the LP 40-365 class, and the text says this group's data come from Raddi et al. (2019) and El-Badry et al. (2023); 2207.04406 Table A1 row 80 lists J1603-6613 with Gaia 5822236741381879040, Teff 10590 K and a Raddi (2019) citation, consistent with its position in the figure, and the existing 2402.10714 source is already in the full-name group. This supports one object; the Raddi 2019 discovery paper is not among the fixed 413 papers, so its catalog was not checked directly or fetched online."
+      }
+    },
+    {
+      "method": "review",
+      "left": "2402.10714v1#/stars/7",
+      "right": "2502.04451v1#/stars/9",
+      "details": {
+        "decision_id": "R21-merge-151",
+        "reason": "J1603 in Figure 3 on p.6 of 2502.04451 belongs to the LP 40-365 class, and the text says this group's data come from Raddi et al. (2019) and El-Badry et al. (2023); 2207.04406 Table A1 row 80 lists J1603-6613 with Gaia 5822236741381879040, Teff 10590 K and a Raddi (2019) citation, consistent with its position in the figure, and the existing 2402.10714 source is already in the full-name group. This supports one object; the Raddi 2019 discovery paper is not among the fixed 413 papers, so its catalog was not checked directly or fetched online."
+      }
+    }
+  ],
+  "review_decisions": [
+    {
+      "id": "R21-merge-151",
+      "type": "merge",
+      "groups": [
+        [
+          "2502.04451v1#/stars/9"
+        ],
+        [
+          "2207.04406v2#/stars/79",
+          "2402.10714v1#/stars/7"
+        ]
+      ],
+      "papers": {
+        "2207.04406v2": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+        "2402.10714v1": "16ff2dba33ace5be79b5e759f7cfe48d106c036a7f83c450b9c82823f925b10c",
+        "2502.04451v1": "37ae23cc0699bc243a37653b44a068b891b1156713e2f6b9b27c72e78b8ca631"
+      },
+      "responses": {},
+      "reason": "J1603 in Figure 3 on p.6 of 2502.04451 belongs to the LP 40-365 class, and the text says this group's data come from Raddi et al. (2019) and El-Badry et al. (2023); 2207.04406 Table A1 row 80 lists J1603-6613 with Gaia 5822236741381879040, Teff 10590 K and a Raddi (2019) citation, consistent with its position in the figure, and the existing 2402.10714 source is already in the full-name group. This supports one object; the Raddi 2019 discovery paper is not among the fixed 413 papers, so its catalog was not checked directly or fetched online.",
+      "evidence": [
+        {
+          "paper": "2502.04451v1",
+          "location": "Fixed PDF p.6; Figure 3 and the §2.2 data sources"
+        },
+        {
+          "paper": "2207.04406v2",
+          "location": "Fixed PDF p.19; Table A1 row 80, J1603-6613"
+        }
+      ],
+      "approved_by": "Project lead (stop 3 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
+    },
+    {
+      "id": "R21-name-157",
+      "type": "name",
+      "groups": [
+        [
+          "2207.04406v2#/stars/79",
+          "2402.10714v1#/stars/7",
+          "2502.04451v1#/stars/9"
+        ]
+      ],
+      "papers": {
+        "2207.04406v2": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+        "2402.10714v1": "16ff2dba33ace5be79b5e759f7cfe48d106c036a7f83c450b9c82823f925b10c",
+        "2502.04451v1": "37ae23cc0699bc243a37653b44a068b891b1156713e2f6b9b27c72e78b8ca631"
+      },
+      "responses": {},
+      "reason": "After the merge the confirmed complete identifier is the display name; short names and original local numbers are aliases. Paper identifiers are unchanged.",
+      "evidence": [
+        {
+          "paper": "2502.04451v1",
+          "location": "Fixed PDF p.6; Figure 3 and the §2.2 data sources"
+        },
+        {
+          "paper": "2207.04406v2",
+          "location": "Fixed PDF p.19; Table A1 row 80, J1603-6613"
+        }
+      ],
+      "approved_by": "Project lead (stop 3 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": "J1603-6613",
+      "aliases": [
+        "J1603"
+      ],
+      "main_id": null
+    }
+  ],
   "simbad": {
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "Gaia DR3 4057367235679280384",
+      "main_id": "Gaia DR2 5822236741381879040",
       "aliases": [
-        "Gaia DR2 4057367235624058240",
-        "Gaia DR3 4057367235679280384"
+        "Gaia DR2 5822236741381879040",
+        "Gaia DR3 5822236741381879040"
       ],
       "position": {
-        "ra_deg": 268.5023663515525,
-        "dec_deg": -28.706974707669442,
+        "ra_deg": 240.76648470031003,
+        "dec_deg": -66.22410328131,
         "frame": "icrs",
         "equinox": null,
         "evidence": []
       },
       "fields": {
         "main_id": {
-          "value": "Gaia DR3 4057367235679280384"
+          "value": "Gaia DR2 5822236741381879040"
         },
         "nbref": {
-          "value": 1
+          "value": 10
         },
         "otype": {
-          "value": "*"
+          "value": "HV*"
         },
         "ra": {
-          "value": 268.5023663515525,
+          "value": 240.76648470031003,
           "unit": "deg"
         },
         "ra_prec": {
           "value": 14
         },
         "dec": {
-          "value": -28.706974707669442,
+          "value": -66.22410328131,
           "unit": "deg"
         },
         "dec_prec": {
           "value": 14
         },
         "coo_err_maj": {
-          "value": 7.556399822235107,
+          "value": 0.04569999873638153,
           "unit": "mas"
         },
         "coo_err_maj_prec": {
           "value": 4
         },
         "coo_err_min": {
-          "value": 6.183800220489502,
+          "value": 0.059300001710653305,
           "unit": "mas"
         },
         "coo_err_min_prec": {
@@ -62,7 +155,7 @@
           "unit": "deg"
         },
         "coo_qual": {
-          "value": "C"
+          "value": "A"
         },
         "coo_wavelength": {
           "value": "O"
@@ -71,34 +164,97 @@
           "value": "2020yCat.1350....0G"
         },
         "hpx": {
-          "value": 7380308
+          "value": 10590586
+        },
+        "pmra": {
+          "value": 39.872,
+          "unit": "mas / yr"
+        },
+        "pmra_prec": {
+          "value": 3
+        },
+        "pmdec": {
+          "value": -7.176,
+          "unit": "mas / yr"
+        },
+        "pmdec_prec": {
+          "value": 3
+        },
+        "pm_err_maj": {
+          "value": 0.04800000041723251,
+          "unit": "mas / yr"
+        },
+        "pm_err_maj_prec": {
+          "value": 3
+        },
+        "pm_err_min": {
+          "value": 0.07599999755620956,
+          "unit": "mas / yr"
+        },
+        "pm_err_min_prec": {
+          "value": 3
+        },
+        "pm_err_angle": {
+          "value": 90,
+          "unit": "deg"
         },
         "pm_qual": {
-          "value": ""
+          "value": "A"
         },
         "pm_bibcode": {
-          "value": ""
+          "value": "2020yCat.1350....0G"
+        },
+        "plx_value": {
+          "value": 0.4982,
+          "unit": "mas"
         },
         "plx_prec": {
-          "value": 32767
+          "value": 4
+        },
+        "plx_err": {
+          "value": 0.08879999816417694,
+          "unit": "mas"
+        },
+        "plx_err_prec": {
+          "value": 4
         },
         "plx_qual": {
-          "value": ""
+          "value": "A"
         },
         "plx_bibcode": {
-          "value": ""
+          "value": "2020yCat.1350....0G"
         },
         "rvz_type": {
-          "value": ""
+          "value": "v"
+        },
+        "rvz_radvel": {
+          "value": -485.0,
+          "unit": "km / s"
+        },
+        "rvz_radvel_prec": {
+          "value": 0
+        },
+        "rvz_redshift": {
+          "value": -0.0016164793606590067
+        },
+        "rvz_redshift_prec": {
+          "value": 6
+        },
+        "rvz_err": {
+          "value": 4.0,
+          "unit": "km / s"
+        },
+        "rvz_err_prec": {
+          "value": 0
         },
         "rvz_nature": {
-          "value": ""
+          "value": "s"
         },
         "rvz_qual": {
-          "value": ""
+          "value": "C"
         },
         "rvz_bibcode": {
-          "value": ""
+          "value": "2019MNRAS.489.1489R"
         },
         "vlsr_wavelength": {
           "value": ""
@@ -134,13 +290,13 @@
           "value": ""
         },
         "update_date": {
-          "value": "2022-01-20"
+          "value": "2026-06-02"
         },
         "otype_txt": {
-          "value": "*"
+          "value": "HV*"
         },
         "rvz_wavelength": {
-          "value": ""
+          "value": "O"
         }
       },
       "photometry": [
@@ -154,19 +310,19 @@
               "value": 6
             },
             "oidref": {
-              "value": 16526147
+              "value": 14896469
             },
             "filter": {
               "value": "G"
             },
             "flux": {
-              "value": 18.402254104614258
+              "value": 17.803585052490234
             },
             "system": {
               "value": "V"
             },
             "flux_err": {
-              "value": 0.02972099930047989
+              "value": 0.0029619999695569277
             },
             "qual": {
               "value": "C"
@@ -182,22 +338,72 @@
       {
         "query": {
           "method": "identifier",
-          "identifier": "Gaia DR2 4057367235624058240",
+          "identifier": "Gaia DR2 5822236741381879040",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "9d94f27310a054cbc875118d172d99361a9617c7eb6b782ee715df749f1547a4",
-        "queried_at": "2026-10-24T04:47:47.917791+00:00",
+        "response_sha256": "7568a569b9ae6fef1f163893ae9df94ace2f28975dbc4d7efca91a993ad2f6ed",
+        "queried_at": "2026-10-25T11:43:44.903071+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2402.10714v1#/stars/7",
+            "original_identifier": {
+              "value": "Gaia DR2 5822236741381879040",
+              "evidence": [
+                {
+                  "location": "T:p6-b5",
+                  "quote": "Gaia DR2 5822236741381879040"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "Gaia EDR3 5822236741381879040",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "17e14b59d830f48afbcef6d82d6ef2c15e220548447b4ed7749e9971a76cc15b",
+        "queried_at": "2026-10-25T11:50:13.894334+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2207.04406v2#/stars/79",
+            "original_identifier": {
+              "value": "Gaia EDR3 5822236741381879040",
+              "evidence": [
+                {
+                  "location": "I:p19-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       }
     ],
     "matches": [
       {
-        "main_id": "Gaia DR3 4057367235679280384",
+        "main_id": "Gaia DR2 5822236741381879040",
         "method": "identifier",
-        "identifier": "Gaia DR2 4057367235624058240",
+        "identifier": "Gaia DR2 5822236741381879040",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      },
+      {
+        "main_id": "Gaia DR2 5822236741381879040",
+        "method": "identifier",
+        "identifier": "Gaia EDR3 5822236741381879040",
         "candidate": {
           "$ref": "#/simbad/selected"
         }

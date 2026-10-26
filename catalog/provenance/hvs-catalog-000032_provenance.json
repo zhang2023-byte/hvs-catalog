@@ -1,10 +1,608 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000032",
-  "associations": [],
+  "associations": [
+    {
+      "method": "review",
+      "left": "0808.2469v2#/stars/16",
+      "right": "0910.3260v1#/stars/3",
+      "details": {
+        "decision_id": "R21-merge-149",
+        "reason": "J0940+5309 of 0910.3260 corresponds to J094014.56+530901.7 in 0808.2469 Table 1 and .74 in its text through the same four-candidate list."
+      }
+    }
+  ],
+  "review_decisions": [
+    {
+      "id": "R21-merge-149",
+      "type": "merge",
+      "groups": [
+        [
+          "0910.3260v1#/stars/3"
+        ],
+        [
+          "0808.2469v2#/stars/16"
+        ]
+      ],
+      "papers": {
+        "0808.2469v2": "83ec2632b23d34fa1a436723bdf9b206bb72083415f782c7b184735e9c619e63",
+        "0910.3260v1": "6d18597a5ed6d8538a3e6d3fdf19b5787187944d4ea13fc5c1102dee4da43126"
+      },
+      "responses": {},
+      "reason": "J0940+5309 of 0910.3260 corresponds to J094014.56+530901.7 in 0808.2469 Table 1 and .74 in its text through the same four-candidate list.",
+      "evidence": [
+        {
+          "paper": "0910.3260v1",
+          "location": "Fixed PDF p.5; short-name list of the four Brown et al. (2009a) candidates"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "Fixed PDF p.6; Table 1, the four Possible HVSs rows"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "Fixed PDF p.7; the Possible HVSs text keeps two decimals of declination seconds"
+        }
+      ],
+      "approved_by": "Project lead (stop 3 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
+    },
+    {
+      "id": "R21-name-155",
+      "type": "name",
+      "groups": [
+        [
+          "0808.2469v2#/stars/16",
+          "0910.3260v1#/stars/3"
+        ]
+      ],
+      "papers": {
+        "0808.2469v2": "83ec2632b23d34fa1a436723bdf9b206bb72083415f782c7b184735e9c619e63",
+        "0910.3260v1": "6d18597a5ed6d8538a3e6d3fdf19b5787187944d4ea13fc5c1102dee4da43126"
+      },
+      "responses": {},
+      "reason": "After the merge the confirmed complete identifier is the display name; short names and original local numbers are aliases. Paper identifiers are unchanged.",
+      "evidence": [
+        {
+          "paper": "0910.3260v1",
+          "location": "Fixed PDF p.5; short-name list of the four Brown et al. (2009a) candidates"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "Fixed PDF p.6; Table 1, the four Possible HVSs rows"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "Fixed PDF p.7; the Possible HVSs text keeps two decimals of declination seconds"
+        }
+      ],
+      "approved_by": "Project lead (stop 3 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": "SDSS J094014.56+530901.74",
+      "aliases": [
+        "SDSS J0940+5309"
+      ],
+      "main_id": null
+    }
+  ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "SDSS J094014.56+530901.7",
+      "aliases": [
+        "Gaia DR2 1020465881430157184",
+        "Gaia DR3 1020465881430157184",
+        "SDSS J094014.54+530902.0",
+        "SDSS J094014.56+530901.7",
+        "SDSS J094014.57+530901.8",
+        "[BGK2006] J094014.56+530901.7"
+      ],
+      "position": {
+        "ra_deg": 145.06067467916,
+        "dec_deg": 53.15050026445,
+        "frame": "icrs",
+        "equinox": null,
+        "evidence": []
+      },
+      "fields": {
+        "main_id": {
+          "value": "SDSS J094014.56+530901.7"
+        },
+        "nbref": {
+          "value": 4
+        },
+        "otype": {
+          "value": "BS*"
+        },
+        "ra": {
+          "value": 145.06067467916,
+          "unit": "deg"
+        },
+        "ra_prec": {
+          "value": 14
+        },
+        "dec": {
+          "value": 53.15050026445,
+          "unit": "deg"
+        },
+        "dec_prec": {
+          "value": 14
+        },
+        "coo_err_maj": {
+          "value": 0.36149999499320984,
+          "unit": "mas"
+        },
+        "coo_err_maj_prec": {
+          "value": 4
+        },
+        "coo_err_min": {
+          "value": 0.35569998621940613,
+          "unit": "mas"
+        },
+        "coo_err_min_prec": {
+          "value": 4
+        },
+        "coo_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "coo_qual": {
+          "value": "A"
+        },
+        "coo_wavelength": {
+          "value": "O"
+        },
+        "coo_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "hpx": {
+          "value": 1856216
+        },
+        "pmra": {
+          "value": -1.306,
+          "unit": "mas / yr"
+        },
+        "pmra_prec": {
+          "value": 3
+        },
+        "pmdec": {
+          "value": -1.861,
+          "unit": "mas / yr"
+        },
+        "pmdec_prec": {
+          "value": 3
+        },
+        "pm_err_maj": {
+          "value": 0.44999998807907104,
+          "unit": "mas / yr"
+        },
+        "pm_err_maj_prec": {
+          "value": 3
+        },
+        "pm_err_min": {
+          "value": 0.4860000014305115,
+          "unit": "mas / yr"
+        },
+        "pm_err_min_prec": {
+          "value": 3
+        },
+        "pm_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "pm_qual": {
+          "value": "A"
+        },
+        "pm_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "plx_qual": {
+          "value": ""
+        },
+        "plx_bibcode": {
+          "value": ""
+        },
+        "rvz_type": {
+          "value": "v"
+        },
+        "rvz_radvel": {
+          "value": 235.1,
+          "unit": "km / s"
+        },
+        "rvz_radvel_prec": {
+          "value": 1
+        },
+        "rvz_redshift": {
+          "value": 0.0007845169211160297
+        },
+        "rvz_err": {
+          "value": 18.0,
+          "unit": "km / s"
+        },
+        "rvz_err_prec": {
+          "value": 1
+        },
+        "rvz_nature": {
+          "value": "s"
+        },
+        "rvz_qual": {
+          "value": "C"
+        },
+        "rvz_bibcode": {
+          "value": "2008ApJ...684.1143X"
+        },
+        "vlsr_wavelength": {
+          "value": ""
+        },
+        "vlsr_bibcode": {
+          "value": ""
+        },
+        "sp_type": {
+          "value": "A"
+        },
+        "sp_qual": {
+          "value": "E"
+        },
+        "sp_bibcode": {
+          "value": "2009ApJ...690.1639B"
+        },
+        "morph_type": {
+          "value": ""
+        },
+        "morph_qual": {
+          "value": ""
+        },
+        "morph_bibcode": {
+          "value": ""
+        },
+        "galdim_qual": {
+          "value": ""
+        },
+        "galdim_wavelength": {
+          "value": ""
+        },
+        "galdim_bibcode": {
+          "value": ""
+        },
+        "update_date": {
+          "value": "2022-01-30"
+        },
+        "otype_txt": {
+          "value": "BS*"
+        },
+        "rvz_wavelength": {
+          "value": ""
+        }
+      },
+      "photometry": [
+        {
+          "band": "V",
+          "fields": {
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 4903041
+            },
+            "filter": {
+              "value": "V"
+            },
+            "flux": {
+              "value": 20.18000030517578
+            },
+            "system": {
+              "value": "V"
+            },
+            "qual": {
+              "value": "D"
+            },
+            "bibcode": {
+              "value": "2009ApJ...690.1639B"
+            }
+          }
+        },
+        {
+          "band": "u",
+          "fields": {
+            "flux_err_prec": {
+              "value": 2
+            },
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 4903041
+            },
+            "filter": {
+              "value": "u"
+            },
+            "flux": {
+              "value": 21.170000076293945
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.09000000357627869
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2011yCat.2306....0A"
+            }
+          }
+        },
+        {
+          "band": "G",
+          "fields": {
+            "flux_err_prec": {
+              "value": 6
+            },
+            "flux_prec": {
+              "value": 6
+            },
+            "oidref": {
+              "value": 4903041
+            },
+            "filter": {
+              "value": "G"
+            },
+            "flux": {
+              "value": 20.195146560668945
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.005863000173121691
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2020yCat.1350....0G"
+            }
+          }
+        },
+        {
+          "band": "g",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 4903041
+            },
+            "filter": {
+              "value": "g"
+            },
+            "flux": {
+              "value": 20.138999938964844
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.01899999938905239
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2008ApJS..175..297A"
+            }
+          }
+        },
+        {
+          "band": "r",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 4903041
+            },
+            "filter": {
+              "value": "r"
+            },
+            "flux": {
+              "value": 20.304000854492188
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.028999999165534973
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2008ApJS..175..297A"
+            }
+          }
+        },
+        {
+          "band": "i",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 4903041
+            },
+            "filter": {
+              "value": "i"
+            },
+            "flux": {
+              "value": 20.39699935913086
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.039000000804662704
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        },
+        {
+          "band": "z",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 4903041
+            },
+            "filter": {
+              "value": "z"
+            },
+            "flux": {
+              "value": 20.33300018310547
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.16599999368190765
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        }
+      ]
+    },
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J0940+5309",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "da3240d3eee2e651617adf1703d5b816f5fd3e00900877ad1ba6a9ff1ff2791c",
+        "queried_at": "2026-10-25T12:02:09.900739+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0910.3260v1#/stars/3",
+            "original_identifier": {
+              "value": "SDSS J0940+5309",
+              "evidence": [
+                {
+                  "location": "T:p5-b1",
+                  "quote": "other two (SDSS J0940+5309 and SDSS J1014+5631)"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J094014.56+530901.7",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "48be9ad46a21b7036010ff5e9a66e825cafe612504496fcb03200f8b13277a66",
+        "queried_at": "2026-10-25T13:17:20.299131+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0808.2469v2#/stars/16",
+            "original_identifier": {
+              "value": "SDSS J094014.56+530901.74",
+              "evidence": [
+                {
+                  "location": "I:p6-b0"
+                },
+                {
+                  "location": "T:p7-b3",
+                  "quote": "J094014.56+530901.74"
+                }
+              ]
+            },
+            "derivation": "sdss_standard_truncation"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J094014.56+530901.74",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "1c60b3f788edcc6fcd3a3618ca1b42c4dae42761fae6482f7282b651558f042c",
+        "queried_at": "2026-10-25T12:07:05.137239+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0808.2469v2#/stars/16",
+            "original_identifier": {
+              "value": "SDSS J094014.56+530901.74",
+              "evidence": [
+                {
+                  "location": "I:p6-b0"
+                },
+                {
+                  "location": "T:p7-b3",
+                  "quote": "J094014.56+530901.74"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      }
+    ],
+    "matches": [
+      {
+        "main_id": "SDSS J094014.56+530901.7",
+        "method": "identifier",
+        "identifier": "SDSS J094014.56+530901.7",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      }
+    ]
   }
 }

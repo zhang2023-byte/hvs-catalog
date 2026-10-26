@@ -1,35 +1,31 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000293",
-  "display_name": "HVS16",
+  "display_name": "Gaia DR2 1409724578557941248",
   "sources": {
-    "1804.10179v3": {
-      "title": "Revisiting hypervelocity stars after Gaia DR2",
+    "1906.05227v3": {
+      "title": "Flying far and fast: the distribution of distant hypervelocity star candidates from Gaia DR2 data",
       "authors": [
-        "Douglas Boubert",
-        "James Guillochon",
-        "Keith Hawkins",
-        "Idan Ginsburg",
-        "N. Wyn Evans",
-        "Jay Strader"
+        "R. de la Fuente Marcos",
+        "C. de la Fuente Marcos"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1804.10179v3",
+      "pdf_url": "https://arxiv.org/pdf/1906.05227v3",
       "records": [
-        "/stars/12"
+        "/stars/25"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS16",
+      "value": "Gaia DR2 1409724578557941248",
       "evidence": [
         {
-          "location": "T:p4-b6",
-          "quote": "HVS1,4-10,12-24 and others"
+          "location": "T:p14-b0",
+          "quote": "1409724578557941248"
         }
       ],
-      "source": "1804.10179v3"
+      "source": "1906.05227v3"
     }
   ],
   "contribution_types": [
@@ -37,21 +33,329 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p4-b6",
-          "quote": "Table 1. The hypervelocity candidates withP _ { \\mathrm { b o u n d } } < 0 . 5subdi-\nvided by original discovery survey or paper."
+          "location": "T:p14-b0",
+          "quote": "Table 6. Best high Galactic latitude( | b | > 3 0 ^ { \\circ } )hypervelocity star candidates (I)."
+        },
+        {
+          "location": "T:p1-b10",
+          "quote": "we will consider that hypervelocity stars are those that are not gravitationally bound to the Milky Way galaxy or to any other galaxy for that matter"
         }
       ],
-      "source": "1804.10179v3"
+      "source": "1906.05227v3"
     }
   ],
-  "quantities": [],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "245.96492962581",
+          "unit": "deg",
+          "condition": "Gaia DR2 position for the high-Galactic-latitude candidate sample (|b| > 30°).",
+          "evidence": [
+            {
+              "location": "T:p14-b0",
+              "quote": "<td>1409724578557941248</td><td>245.96492962581</td><td>+45.85548579341</td><td>71.74122097135</td><td>+44.37334749643</td><td>0.0154±0.0137</td><td>-1.060±0.023</td><td>-4.180±0.031</td><td>-220.07±1.98</td>"
+            }
+          ],
+          "source": "1906.05227v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "245.96492962581",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "+45.85548579341",
+          "unit": "deg",
+          "condition": "Gaia DR2 position for the high-Galactic-latitude candidate sample (|b| > 30°).",
+          "evidence": [
+            {
+              "location": "T:p14-b0",
+              "quote": "<td>1409724578557941248</td><td>245.96492962581</td><td>+45.85548579341</td><td>71.74122097135</td><td>+44.37334749643</td><td>0.0154±0.0137</td><td>-1.060±0.023</td><td>-4.180±0.031</td><td>-220.07±1.98</td>"
+            }
+          ],
+          "source": "1906.05227v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "45.85548579341",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "parallax",
+      "values": [
+        {
+          "value": "0.0154",
+          "error": "0.0137",
+          "unit": "mas",
+          "condition": "Gaia DR2 parallax; no global parallax zero-point correction applied.",
+          "evidence": [
+            {
+              "location": "T:p14-b0",
+              "quote": "<td>1409724578557941248</td><td>245.96492962581</td><td>+45.85548579341</td><td>71.74122097135</td><td>+44.37334749643</td><td>0.0154±0.0137</td><td>-1.060±0.023</td><td>-4.180±0.031</td><td>-220.07±1.98</td>"
+            }
+          ],
+          "source": "1906.05227v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "0.0154",
+            "error": "0.0137",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-1.060",
+          "error": "0.023",
+          "unit": "mas/yr",
+          "condition": "Gaia DR2 proper motion in right ascension.",
+          "evidence": [
+            {
+              "location": "T:p14-b0",
+              "quote": "<td>1409724578557941248</td><td>245.96492962581</td><td>+45.85548579341</td><td>71.74122097135</td><td>+44.37334749643</td><td>0.0154±0.0137</td><td>-1.060±0.023</td><td>-4.180±0.031</td><td>-220.07±1.98</td>"
+            }
+          ],
+          "source": "1906.05227v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-1.060",
+            "error": "0.023",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-4.180",
+          "error": "0.031",
+          "unit": "mas/yr",
+          "condition": "Gaia DR2 proper motion in declination.",
+          "evidence": [
+            {
+              "location": "T:p14-b0",
+              "quote": "<td>1409724578557941248</td><td>245.96492962581</td><td>+45.85548579341</td><td>71.74122097135</td><td>+44.37334749643</td><td>0.0154±0.0137</td><td>-1.060±0.023</td><td>-4.180±0.031</td><td>-220.07±1.98</td>"
+            }
+          ],
+          "source": "1906.05227v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-4.180",
+            "error": "0.031",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-220.07",
+          "error": "1.98",
+          "unit": "km/s",
+          "condition": "Gaia DR2 radial velocity.",
+          "evidence": [
+            {
+              "location": "T:p14-b0",
+              "quote": "<td>1409724578557941248</td><td>245.96492962581</td><td>+45.85548579341</td><td>71.74122097135</td><td>+44.37334749643</td><td>0.0154±0.0137</td><td>-1.060±0.023</td><td>-4.180±0.031</td><td>-220.07±1.98</td>"
+            }
+          ],
+          "source": "1906.05227v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-220.07",
+            "error": "1.98",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "62.1",
+          "lower_error": "28.6",
+          "upper_error": "133.0",
+          "unit": "kpc",
+          "condition": "Galactocentric distance, Monte Carlo median with uncertainties from the 16th and 84th percentiles; high-Galactic-latitude candidate from the 174-source best-astrometry sample.",
+          "evidence": [
+            {
+              "location": "T:p14-b1",
+              "quote": "<tr><td>1409724578557941248</td><td><eq>62.1^{+133.0}_{-28.6}</eq></td><td><eq>1198^{+2767}_{-596}</eq></td><td><eq>98.5^{+8.6}_{-7.7}</eq></td><td>0.900</td></tr>"
+            }
+          ],
+          "source": "1906.05227v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "62.1",
+            "lower_error": "28.6",
+            "upper_error": "133.0",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "1198",
+          "lower_error": "596",
+          "upper_error": "2767",
+          "unit": "km/s",
+          "condition": "Galactocentric Galactic velocity, Monte Carlo median with uncertainties from the 16th and 84th percentiles; high-Galactic-latitude candidate from the 174-source best-astrometry sample.",
+          "evidence": [
+            {
+              "location": "T:p14-b1",
+              "quote": "<tr><td>1409724578557941248</td><td><eq>62.1^{+133.0}_{-28.6}</eq></td><td><eq>1198^{+2767}_{-596}</eq></td><td><eq>98.5^{+8.6}_{-7.7}</eq></td><td>0.900</td></tr>"
+            }
+          ],
+          "source": "1906.05227v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "1198",
+            "lower_error": "596",
+            "upper_error": "2767",
+            "approximate": false
+          }
+        }
+      ]
+    }
+  ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "Gaia DR2 1409724578557941248",
+      "aliases": [
+        "Gaia DR2 1409724578557941248",
+        "Gaia DR3 1409724578557941248"
+      ],
+      "object_type": "Pe*",
+      "coordinates": {
+        "ra": {
+          "value": 245.96493616307998,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 45.85550361931,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.008500000461935997,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.009399999864399433,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -1.058,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -4.145,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.009999999776482582,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.014000000432133675,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.0671,
+        "unit": "mas",
+        "error": 0.009800000116229057,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -221.83,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.0007396716753592658
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 1.7699999809265137,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "B",
+        "bibcode": "2022yCat.1355....0G",
+        "wavelength": "O"
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "value": 13.087005615234375,
+          "error": 0.0027650000993162394,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR2 1409724578557941248"
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:42:50.418544+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000293_provenance.json",
-    "sha256": "791820557212a948c98bcb72e6fe256b19f58e21c2fce7b12a77469acc780733"
+    "sha256": "29cf0bb8dd1b56231823181b2b433a3615c0d10900b2f9cdcb4bb5c2d0de79c7"
   },
   "warnings": []
 }

@@ -1,6 +1,6 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000010",
   "associations": [
     {
@@ -107,10 +107,98 @@
     },
     {
       "method": "coordinates",
-      "left": "1203.3543v1#/stars/9",
-      "right": "1804.10197v1#/stars/9",
+      "left": "1804.10197v1#/stars/9",
+      "right": "2207.04406v2#/stars/74",
       "details": {
-        "separation_arcsec": 0.044057250811009314,
+        "separation_arcsec": 0.030945438073868747,
+        "threshold_arcsec": 5.0,
+        "left_position": {
+          "ra_deg": 180.90770833333332,
+          "dec_deg": 18.047333333333334,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "12:03:37.85",
+              "unit": "hourangle",
+              "condition": "Right ascension for HVS10 from Table A1 (references 1,2).",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "<tr><td>HVS10</td><td>12:03:37.85</td><td>+18:02:50.4</td><td>-2.597 ± 1.288</td><td>-0.788 ± 0.494</td><td>0.0151</td><td>467.9 ± 5.6</td><td>52 ± 5.8</td><td>1,2</td></tr>"
+                }
+              ]
+            },
+            {
+              "value": "+18:02:50.4",
+              "unit": "deg",
+              "condition": "Declination for HVS10 from Table A1 (references 1,2).",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "<tr><td>HVS10</td><td>12:03:37.85</td><td>+18:02:50.4</td><td>-2.597 ± 1.288</td><td>-0.788 ± 0.494</td><td>0.0151</td><td>467.9 ± 5.6</td><td>52 ± 5.8</td><td>1,2</td></tr>"
+                }
+              ]
+            }
+          ]
+        },
+        "right_position": {
+          "ra_deg": 180.9077,
+          "dec_deg": 18.04733,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "180.907700",
+              "unit": "deg",
+              "condition": "Equatorial right ascension listed for HVS10 in Table A1.",
+              "evidence": [
+                {
+                  "location": "T:p18-b1",
+                  "quote": "HVS10</td><td>180.907700</td><td>-1.086</td><td>-0.991</td><td>467.90</td><td>51.76</td><td>11270</td><td>4.38</td><td>-</td><td>-</td><td>413.70</td><td>439.40"
+                }
+              ]
+            },
+            {
+              "value": "18.047330",
+              "unit": "deg",
+              "condition": "Equatorial declination listed for HVS10 in Table A1.",
+              "evidence": [
+                {
+                  "location": "T:p18-b1",
+                  "quote": "HVS10</td><td>180.907700</td><td>-1.086</td><td>-0.991</td><td>467.90</td><td>51.76</td><td>11270</td><td>4.38</td><td>-</td><td>-</td><td>413.70</td><td>439.40"
+                }
+              ]
+            }
+          ]
+        },
+        "coordinate_interpretations": {
+          "left": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          },
+          "right": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          }
+        },
+        "epoch_propagation": false
+      }
+    },
+    {
+      "method": "coordinates",
+      "left": "1203.3543v1#/stars/9",
+      "right": "2207.04406v2#/stars/74",
+      "details": {
+        "separation_arcsec": 0.03196169602935982,
         "threshold_arcsec": 5.0,
         "left_position": {
           "ra_deg": 180.90770833333332,
@@ -143,30 +231,30 @@
           ]
         },
         "right_position": {
-          "ra_deg": 180.90770833333332,
-          "dec_deg": 18.047333333333334,
+          "ra_deg": 180.9077,
+          "dec_deg": 18.04733,
           "frame": "icrs",
           "equinox": null,
           "evidence": [
             {
-              "value": "12:03:37.85",
-              "unit": "hourangle",
-              "condition": "Right ascension for HVS10 from Table A1 (references 1,2).",
+              "value": "180.907700",
+              "unit": "deg",
+              "condition": "Equatorial right ascension listed for HVS10 in Table A1.",
               "evidence": [
                 {
-                  "location": "T:p7-b0",
-                  "quote": "<tr><td>HVS10</td><td>12:03:37.85</td><td>+18:02:50.4</td><td>-2.597 ± 1.288</td><td>-0.788 ± 0.494</td><td>0.0151</td><td>467.9 ± 5.6</td><td>52 ± 5.8</td><td>1,2</td></tr>"
+                  "location": "T:p18-b1",
+                  "quote": "HVS10</td><td>180.907700</td><td>-1.086</td><td>-0.991</td><td>467.90</td><td>51.76</td><td>11270</td><td>4.38</td><td>-</td><td>-</td><td>413.70</td><td>439.40"
                 }
               ]
             },
             {
-              "value": "+18:02:50.4",
+              "value": "18.047330",
               "unit": "deg",
-              "condition": "Declination for HVS10 from Table A1 (references 1,2).",
+              "condition": "Equatorial declination listed for HVS10 in Table A1.",
               "evidence": [
                 {
-                  "location": "T:p7-b0",
-                  "quote": "<tr><td>HVS10</td><td>12:03:37.85</td><td>+18:02:50.4</td><td>-2.597 ± 1.288</td><td>-0.788 ± 0.494</td><td>0.0151</td><td>467.9 ± 5.6</td><td>52 ± 5.8</td><td>1,2</td></tr>"
+                  "location": "T:p18-b1",
+                  "quote": "HVS10</td><td>180.907700</td><td>-1.086</td><td>-0.991</td><td>467.90</td><td>51.76</td><td>11270</td><td>4.38</td><td>-</td><td>-</td><td>413.70</td><td>439.40"
                 }
               ]
             }
@@ -464,163 +552,723 @@
       }
     },
     {
-      "method": "simbad",
+      "method": "review",
       "left": "0709.1471v2#/stars/9",
       "right": "0808.2469v2#/stars/9",
       "details": {
-        "main_id": "[BGK2006] HV 10",
-        "basis": "Reliable identifier queries.",
-        "simbad_evidence": [
-          {
-            "node": "0709.1471v2#/stars/9",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/0"
-              },
-              {
-                "$ref": "#/simbad/queries/1"
-              }
-            ]
-          },
-          {
-            "node": "0808.2469v2#/stars/9",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/2"
-              },
-              {
-                "$ref": "#/simbad/queries/3"
-              },
-              {
-                "$ref": "#/simbad/queries/4"
-              }
-            ]
-          }
-        ]
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
       }
     },
     {
-      "method": "simbad",
+      "method": "review",
       "left": "0808.2469v2#/stars/9",
+      "right": "0811.0571v1#/stars/7",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "0811.0571v1#/stars/7",
+      "right": "0811.0612v2#/stars/7",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "0811.0612v2#/stars/7",
+      "right": "1203.3543v1#/stars/9",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1203.3543v1#/stars/9",
+      "right": "1302.1899v1#/stars/7",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1302.1899v1#/stars/7",
+      "right": "1401.7342v1#/stars/7",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1401.7342v1#/stars/7",
+      "right": "1502.05069v1#/stars/9",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1502.05069v1#/stars/9",
+      "right": "1711.11397v2#/stars/9",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1711.11397v2#/stars/9",
+      "right": "1804.10179v3#/stars/7",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1804.10179v3#/stars/7",
+      "right": "1804.10197v1#/stars/9",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1804.10197v1#/stars/9",
+      "right": "1805.04184v2#/stars/7",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1805.04184v2#/stars/7",
+      "right": "1806.08630v1#/stars/7",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1806.08630v1#/stars/7",
+      "right": "1807.05909v2#/stars/8",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1807.05909v2#/stars/8",
+      "right": "2003.12766v1#/stars/7",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "2003.12766v1#/stars/7",
       "right": "2207.04406v2#/stars/74",
       "details": {
-        "main_id": "[BGK2006] HV 10",
-        "basis": "Reliable identifier queries.",
-        "simbad_evidence": [
-          {
-            "node": "0709.1471v2#/stars/9",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/0"
-              },
-              {
-                "$ref": "#/simbad/queries/1"
-              }
-            ]
-          },
-          {
-            "node": "0808.2469v2#/stars/9",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/2"
-              },
-              {
-                "$ref": "#/simbad/queries/3"
-              },
-              {
-                "$ref": "#/simbad/queries/4"
-              }
-            ]
-          },
-          {
-            "node": "2207.04406v2#/stars/74",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/5"
-              }
-            ]
-          }
-        ]
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
       }
     },
     {
-      "method": "simbad",
+      "method": "review",
       "left": "2207.04406v2#/stars/74",
+      "right": "2411.09278v2#/stars/3",
+      "details": {
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "2411.09278v2#/stars/3",
       "right": "2502.00102v2#/stars/7",
       "details": {
-        "main_id": "[BGK2006] HV 10",
-        "basis": "Reliable identifier queries.",
-        "simbad_evidence": [
+        "decision_id": "R21-merge-018",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    }
+  ],
+  "review_decisions": [
+    {
+      "id": "R21-correct-114",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/74/quantities/1/values/0",
+      "original": {
+        "value": "-1.086",
+        "unit": "deg",
+        "condition": "Equatorial declination listed for HVS10 in Table A1.",
+        "evidence": [
           {
-            "node": "0709.1471v2#/stars/9",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/0"
-              },
-              {
-                "$ref": "#/simbad/queries/1"
-              }
-            ]
-          },
-          {
-            "node": "0808.2469v2#/stars/9",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/2"
-              },
-              {
-                "$ref": "#/simbad/queries/3"
-              },
-              {
-                "$ref": "#/simbad/queries/4"
-              }
-            ]
-          },
-          {
-            "node": "2207.04406v2#/stars/74",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/5"
-              }
-            ]
-          },
-          {
-            "node": "2502.00102v2#/stars/7",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/6"
-              }
-            ]
+            "location": "T:p18-b1",
+            "quote": "HVS10</td><td>180.907700</td><td>-1.086</td><td>-0.991</td><td>467.90</td><td>51.76</td><td>11270</td><td>4.38</td><td>-</td><td>-</td><td>413.70</td><td>439.40"
           }
         ]
-      }
+      },
+      "replacement": {
+        "value": "18.047330",
+        "unit": "deg",
+        "condition": "Equatorial declination listed for HVS10 in Table A1.",
+        "evidence": [
+          {
+            "location": "T:p18-b1",
+            "quote": "HVS10</td><td>180.907700</td><td>-1.086</td><td>-0.991</td><td>467.90</td><td>51.76</td><td>11270</td><td>4.38</td><td>-</td><td>-</td><td>413.70</td><td>439.40"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 18,
+          "location": "Table A1, HVS10, Gaia 3926757653770374272, dec",
+          "quote": "75 HVS10 180.907700 -1.086 -0.991 467.90 51.76 11270 4.38 – – 413.70 439.40 Brown et al. (2007)\n3926757653770374272 18.047330 0.451 0.207 5.60 5.72 533 0.23 – – 5.60 36.45"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-correct-115",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/74/quantities/3/values/0",
+      "original": {
+        "value": "-0.991",
+        "error": "0.451",
+        "unit": "mas/yr",
+        "condition": "Gaia EDR3 proper motion in right ascension for HVS10, with uncertainty from Table A1.",
+        "evidence": [
+          {
+            "location": "T:p18-b1",
+            "quote": "HVS10</td><td>180.907700</td><td>-1.086</td><td>-0.991</td><td>467.90</td><td>51.76</td><td>11270</td><td>4.38</td><td>-</td><td>-</td><td>413.70</td><td>439.40"
+          },
+          {
+            "location": "T:p18-b1",
+            "quote": "3926757653770374272</td><td>18.047330</td><td>0.451</td><td>0.207</td><td>5.60</td><td>5.72</td><td>533</td><td>0.23</td><td>-</td><td>-</td><td>5.60</td><td>36.45"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "-1.086",
+        "error": "0.451",
+        "unit": "mas/yr",
+        "condition": "Gaia EDR3 proper motion in right ascension for HVS10, with uncertainty from Table A1.",
+        "evidence": [
+          {
+            "location": "T:p18-b1",
+            "quote": "HVS10</td><td>180.907700</td><td>-1.086</td><td>-0.991</td><td>467.90</td><td>51.76</td><td>11270</td><td>4.38</td><td>-</td><td>-</td><td>413.70</td><td>439.40"
+          },
+          {
+            "location": "T:p18-b1",
+            "quote": "3926757653770374272</td><td>18.047330</td><td>0.451</td><td>0.207</td><td>5.60</td><td>5.72</td><td>533</td><td>0.23</td><td>-</td><td>-</td><td>5.60</td><td>36.45"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 18,
+          "location": "Table A1, HVS10, Gaia 3926757653770374272, proper_motion_ra",
+          "quote": "75 HVS10 180.907700 -1.086 -0.991 467.90 51.76 11270 4.38 – – 413.70 439.40 Brown et al. (2007)\n3926757653770374272 18.047330 0.451 0.207 5.60 5.72 533 0.23 – – 5.60 36.45"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-correct-116",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/74/quantities/4/values/0",
+      "original": {
+        "value": "0.467",
+        "error": "0.207",
+        "unit": "mas/yr",
+        "condition": "Gaia EDR3 proper motion in declination for HVS10, with uncertainty from Table A1.",
+        "evidence": [
+          {
+            "location": "I:p18-b1"
+          },
+          {
+            "location": "T:p18-b1",
+            "quote": "3926757653770374272</td><td>18.047330</td><td>0.451</td><td>0.207</td><td>5.60</td><td>5.72</td><td>533</td><td>0.23</td><td>-</td><td>-</td><td>5.60</td><td>36.45"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "-0.991",
+        "error": "0.207",
+        "unit": "mas/yr",
+        "condition": "Gaia EDR3 proper motion in declination for HVS10, with uncertainty from Table A1.",
+        "evidence": [
+          {
+            "location": "I:p18-b1"
+          },
+          {
+            "location": "T:p18-b1",
+            "quote": "3926757653770374272</td><td>18.047330</td><td>0.451</td><td>0.207</td><td>5.60</td><td>5.72</td><td>533</td><td>0.23</td><td>-</td><td>-</td><td>5.60</td><td>36.45"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 18,
+          "location": "Table A1, HVS10, Gaia 3926757653770374272, proper_motion_dec",
+          "quote": "75 HVS10 180.907700 -1.086 -0.991 467.90 51.76 11270 4.38 – – 413.70 439.40 Brown et al. (2007)\n3926757653770374272 18.047330 0.451 0.207 5.60 5.72 533 0.23 – – 5.60 36.45"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-merge-018",
+      "type": "merge",
+      "groups": [
+        [
+          "0709.1471v2#/stars/9",
+          "0808.2469v2#/stars/9",
+          "1203.3543v1#/stars/9",
+          "1502.05069v1#/stars/9",
+          "1804.10197v1#/stars/9",
+          "1805.04184v2#/stars/7",
+          "1806.08630v1#/stars/7",
+          "2003.12766v1#/stars/7",
+          "2207.04406v2#/stars/74",
+          "2502.00102v2#/stars/7"
+        ],
+        [
+          "0811.0571v1#/stars/7"
+        ],
+        [
+          "0811.0612v2#/stars/7"
+        ],
+        [
+          "1302.1899v1#/stars/7"
+        ],
+        [
+          "1401.7342v1#/stars/7"
+        ],
+        [
+          "1711.11397v2#/stars/9"
+        ],
+        [
+          "1804.10179v3#/stars/7"
+        ],
+        [
+          "1807.05909v2#/stars/8"
+        ],
+        [
+          "2411.09278v2#/stars/3"
+        ]
+      ],
+      "papers": {
+        "0709.1471v2": "335f40b49b2569d7c2627913607180dd53afea5cb600a2f5c8be3b1fc1ef0e45",
+        "0808.2469v2": "83ec2632b23d34fa1a436723bdf9b206bb72083415f782c7b184735e9c619e63",
+        "0811.0571v1": "2a247f63f0a340aa0f514fa7b9a3926e574c6607e187799931e77be954749e7d",
+        "0811.0612v2": "abb9d32954feb8b536c7ff71cbc37ce877e2b04eaf268490688f39d25683fbc1",
+        "1203.3543v1": "cca433462bfc5161d5f46cd55e42f124bdc526b76cb3858d59a469d53019dc0d",
+        "1302.1899v1": "eb911ec7299ff3c43aaabe2b7db1048100e613f4299a929d33094c687adc6fd0",
+        "1401.7342v1": "0e4bb1f538746c383d4659f01699ce9adbf910f90f566ece00dea214464b2a4b",
+        "1502.05069v1": "413d450d2d9f5cb5018229d80bb2df58560eac70e83d6ca65fc4f1b92641b013",
+        "1711.11397v2": "2a29b7efa102dd049eb423ec6ea1c4a0cdba476d7e9665020f388db77eae0149",
+        "1804.10179v3": "f247c72e67ff7194ed5c87df18cb37bd2f07cc5294c679e1112df7607bf9334e",
+        "1804.10197v1": "14edfb00e7bdc5c7c02f9c0033ae1f47f3c53532dfedc00bc452ca397ad153d9",
+        "1805.04184v2": "0d82c08e5c9be96b4af3153fffed37b9f43630ee66e68ede44b43b68dd302aa3",
+        "1806.08630v1": "344d9a70a65d02ac6dd2546d9fb38d568441ef9b34394a02bfc3159aee03a3dd",
+        "1807.05909v2": "518bc9a43fdf2151aa724fa1f1d670f8d2a64f2d9a6c5a1614548af18c94188c",
+        "2003.12766v1": "00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830",
+        "2207.04406v2": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+        "2411.09278v2": "f1ef7471a40bfaa4b51cdf146c1ec53ef8344301f0d42572d4cf90b706471069",
+        "2502.00102v2": "c9a8146fb8f66a27dcb4697c15442186ac56b783f99962d814b18e7f57dd28a6"
+      },
+      "responses": {},
+      "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone.",
+      "evidence": [
+        {
+          "paper": "0709.1471v2",
+          "location": "T:p4-b1",
+          "quote": "J120337.86+180250.35 (HVS10)"
+        },
+        {
+          "paper": "0709.1471v2",
+          "location": "T:p3-b12",
+          "quote": "and SDSS"
+        },
+        {
+          "paper": "0709.1471v2",
+          "location": "T:p4-b0",
+          "quote": "SDSS J120337.85+180250.4"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "I:p6-b0"
+        },
+        {
+          "paper": "0811.0571v1",
+          "location": "T:p5-b3",
+          "quote": "HVS1 and HVS4 - HVS10"
+        },
+        {
+          "paper": "0811.0571v1",
+          "location": "I:p7-b4"
+        },
+        {
+          "paper": "0811.0612v2",
+          "location": "T:p1-b18",
+          "quote": "The original survey includes HVS4-HVS10"
+        },
+        {
+          "paper": "1203.3543v1",
+          "location": "I:p5-b0"
+        },
+        {
+          "paper": "1302.1899v1",
+          "location": "T:p2-b8",
+          "quote": "<tr><td>HVS10</td><td>8</td><td>No</td><td>-</td></tr>"
+        },
+        {
+          "paper": "1401.7342v1",
+          "location": "T:p11-b0",
+          "quote": "<tr><td>10</td><td>467.9 ± 5.6</td>"
+        },
+        {
+          "paper": "1502.05069v1",
+          "location": "T:p5-b0",
+          "quote": "<tr><td>HVS 10</td><td>12:03:37.85, +18:02:50.3</td>"
+        },
+        {
+          "paper": "1711.11397v2",
+          "location": "I:p14-b0"
+        },
+        {
+          "paper": "1804.10179v3",
+          "location": "T:p4-b6",
+          "quote": "HVS1,4-10,12-24 and others"
+        },
+        {
+          "paper": "1804.10197v1",
+          "location": "I:p7-b0"
+        },
+        {
+          "paper": "1805.04184v2",
+          "location": "I:p3-b0"
+        },
+        {
+          "paper": "1805.04184v2",
+          "location": "I:p10-b0"
+        },
+        {
+          "paper": "1806.08630v1",
+          "location": "T:p5-b0",
+          "quote": "HVS 10 (SDSS J120337.85+180250.4)"
+        },
+        {
+          "paper": "1807.05909v2",
+          "location": "T:p7-b8",
+          "quote": "For 6 stars (HVS 1, HVS 4, HVS 6, HVS 9, HVS 10, and HVS 13)"
+        },
+        {
+          "paper": "2003.12766v1",
+          "location": "T:p7-b0",
+          "quote": "HVS10 (SDSSJ120337.85+180250.3)"
+        },
+        {
+          "paper": "2207.04406v2",
+          "location": "I:p18-b1"
+        },
+        {
+          "paper": "2411.09278v2",
+          "location": "T:p14-b0",
+          "quote": "HVS10"
+        },
+        {
+          "paper": "2502.00102v2",
+          "location": "T:p4-b0",
+          "quote": "<tr><td>10</td><td>3926757653770374272</td>"
+        },
+        {
+          "paper": "2502.00102v2",
+          "location": "I:p4-b0"
+        }
+      ],
+      "approved_by": "Project lead (stop 1 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
+    },
+    {
+      "id": "R21-separate-019",
+      "type": "separate",
+      "groups": [
+        [
+          "0709.1471v2#/stars/9",
+          "0808.2469v2#/stars/9",
+          "0811.0571v1#/stars/7",
+          "0811.0612v2#/stars/7",
+          "1203.3543v1#/stars/9",
+          "1302.1899v1#/stars/7",
+          "1401.7342v1#/stars/7",
+          "1502.05069v1#/stars/9",
+          "1711.11397v2#/stars/9",
+          "1804.10179v3#/stars/7",
+          "1804.10197v1#/stars/9",
+          "1805.04184v2#/stars/7",
+          "1806.08630v1#/stars/7",
+          "1807.05909v2#/stars/8",
+          "2003.12766v1#/stars/7",
+          "2207.04406v2#/stars/74",
+          "2411.09278v2#/stars/3",
+          "2502.00102v2#/stars/7"
+        ],
+        [
+          "1308.3495v2#/stars/9",
+          "1905.07879v1#/stars/2"
+        ],
+        [
+          "1506.01818v2#/stars/9",
+          "1804.10179v3#/stars/28"
+        ],
+        [
+          "1912.02129v1#/stars/0"
+        ],
+        [
+          "2401.05630v1#/stars/13"
+        ],
+        [
+          "2507.00150v1#/stars/9"
+        ]
+      ],
+      "papers": {
+        "0709.1471v2": "335f40b49b2569d7c2627913607180dd53afea5cb600a2f5c8be3b1fc1ef0e45",
+        "0808.2469v2": "83ec2632b23d34fa1a436723bdf9b206bb72083415f782c7b184735e9c619e63",
+        "0811.0571v1": "2a247f63f0a340aa0f514fa7b9a3926e574c6607e187799931e77be954749e7d",
+        "0811.0612v2": "abb9d32954feb8b536c7ff71cbc37ce877e2b04eaf268490688f39d25683fbc1",
+        "1203.3543v1": "cca433462bfc5161d5f46cd55e42f124bdc526b76cb3858d59a469d53019dc0d",
+        "1302.1899v1": "eb911ec7299ff3c43aaabe2b7db1048100e613f4299a929d33094c687adc6fd0",
+        "1308.3495v2": "8e99744e1acc51b2fe11d0afe7468d7d6354fe7299060defdf1c4bccbf783c0c",
+        "1401.7342v1": "0e4bb1f538746c383d4659f01699ce9adbf910f90f566ece00dea214464b2a4b",
+        "1502.05069v1": "413d450d2d9f5cb5018229d80bb2df58560eac70e83d6ca65fc4f1b92641b013",
+        "1506.01818v2": "df890e183d9ad722076d079027bbd3513b25ce452226b3498b4afed7365e7366",
+        "1711.11397v2": "2a29b7efa102dd049eb423ec6ea1c4a0cdba476d7e9665020f388db77eae0149",
+        "1804.10179v3": "f247c72e67ff7194ed5c87df18cb37bd2f07cc5294c679e1112df7607bf9334e",
+        "1804.10197v1": "14edfb00e7bdc5c7c02f9c0033ae1f47f3c53532dfedc00bc452ca397ad153d9",
+        "1805.04184v2": "0d82c08e5c9be96b4af3153fffed37b9f43630ee66e68ede44b43b68dd302aa3",
+        "1806.08630v1": "344d9a70a65d02ac6dd2546d9fb38d568441ef9b34394a02bfc3159aee03a3dd",
+        "1807.05909v2": "518bc9a43fdf2151aa724fa1f1d670f8d2a64f2d9a6c5a1614548af18c94188c",
+        "1905.07879v1": "b195fe8ce7a8a38a99fbda9e869389ce29ab067710ab23b9a0c03f107d5c03a6",
+        "1912.02129v1": "1eefeb23c23692719bc9e576fd8570a627a63c98560b5c6fda96030d1d9637f6",
+        "2003.12766v1": "00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830",
+        "2207.04406v2": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+        "2401.05630v1": "cdd66187169e6dfa8037ef23a3dfc0b495ee15ab5787330f337f3b33876ea954",
+        "2411.09278v2": "f1ef7471a40bfaa4b51cdf146c1ec53ef8344301f0d42572d4cf90b706471069",
+        "2502.00102v2": "c9a8146fb8f66a27dcb4697c15442186ac56b783f99962d814b18e7f57dd28a6",
+        "2507.00150v1": "f915ebe3082c0f4003756ffd757bd1d2aab9cc219679ba0e7e35087a18a2e9b0"
+      },
+      "responses": {},
+      "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. The groups stay separate from each other; merges within a group are separate merge decisions.",
+      "evidence": [
+        {
+          "paper": "0709.1471v2",
+          "location": "T:p4-b1",
+          "quote": "J120337.86+180250.35 (HVS10)"
+        },
+        {
+          "paper": "0709.1471v2",
+          "location": "T:p3-b12",
+          "quote": "and SDSS"
+        },
+        {
+          "paper": "0709.1471v2",
+          "location": "T:p4-b0",
+          "quote": "SDSS J120337.85+180250.4"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "I:p6-b0"
+        },
+        {
+          "paper": "0811.0571v1",
+          "location": "T:p5-b3",
+          "quote": "HVS1 and HVS4 - HVS10"
+        },
+        {
+          "paper": "0811.0571v1",
+          "location": "I:p7-b4"
+        },
+        {
+          "paper": "0811.0612v2",
+          "location": "T:p1-b18",
+          "quote": "The original survey includes HVS4-HVS10"
+        },
+        {
+          "paper": "1203.3543v1",
+          "location": "I:p5-b0"
+        },
+        {
+          "paper": "1302.1899v1",
+          "location": "T:p2-b8",
+          "quote": "<tr><td>HVS10</td><td>8</td><td>No</td><td>-</td></tr>"
+        },
+        {
+          "paper": "1308.3495v2",
+          "location": "T:p7-b0",
+          "quote": "<tr><td>10</td><td>J172630.60 + 075544.0</td>"
+        },
+        {
+          "paper": "1401.7342v1",
+          "location": "T:p11-b0",
+          "quote": "<tr><td>10</td><td>467.9 ± 5.6</td>"
+        },
+        {
+          "paper": "1502.05069v1",
+          "location": "T:p5-b0",
+          "quote": "<tr><td>HVS 10</td><td>12:03:37.85, +18:02:50.3</td>"
+        },
+        {
+          "paper": "1506.01818v2",
+          "location": "I:p9-b0"
+        },
+        {
+          "paper": "1506.01818v2",
+          "location": "T:p9-b0",
+          "quote": "J115209.12+120258.0"
+        },
+        {
+          "paper": "1711.11397v2",
+          "location": "I:p14-b0"
+        },
+        {
+          "paper": "1804.10179v3",
+          "location": "T:p4-b6",
+          "quote": "Li10 (F9 dwarf)"
+        },
+        {
+          "paper": "1804.10179v3",
+          "location": "T:p1-b9",
+          "quote": "Only one late-type object (LAMOST J115209.12+120258.0) is unbound from the\nGalaxy."
+        },
+        {
+          "paper": "1804.10179v3",
+          "location": "T:p4-b6",
+          "quote": "HVS1,4-10,12-24 and others"
+        },
+        {
+          "paper": "1804.10197v1",
+          "location": "I:p7-b0"
+        },
+        {
+          "paper": "1805.04184v2",
+          "location": "I:p3-b0"
+        },
+        {
+          "paper": "1805.04184v2",
+          "location": "I:p10-b0"
+        },
+        {
+          "paper": "1806.08630v1",
+          "location": "T:p5-b0",
+          "quote": "HVS 10 (SDSS J120337.85+180250.4)"
+        },
+        {
+          "paper": "1807.05909v2",
+          "location": "T:p7-b8",
+          "quote": "For 6 stars (HVS 1, HVS 4, HVS 6, HVS 9, HVS 10, and HVS 13)"
+        },
+        {
+          "paper": "1905.07879v1",
+          "location": "T:p10-b5",
+          "quote": "5.3. SDSS J172630.60+075544.0 (Pal14 ID 10)"
+        },
+        {
+          "paper": "1912.02129v1",
+          "location": "T:p8-b3",
+          "quote": "HVS 10, 15, 17 and 19"
+        },
+        {
+          "paper": "1912.02129v1",
+          "location": "T:p8-b6",
+          "quote": "we propose these seven stars as HVS candidates"
+        },
+        {
+          "paper": "1912.02129v1",
+          "location": "T:p5-b1",
+          "quote": "we found 7 stars that radiate from the Galactic centre, whose IDs are: 10,\n15, 17, 19, 20, 22 and 23"
+        },
+        {
+          "paper": "1912.02129v1",
+          "location": "I:p8-b0"
+        },
+        {
+          "paper": "1912.02129v1",
+          "location": "T:p8-b0",
+          "quote": "Gaia DR2 ID"
+        },
+        {
+          "paper": "2003.12766v1",
+          "location": "T:p7-b0",
+          "quote": "HVS10 (SDSSJ120337.85+180250.3)"
+        },
+        {
+          "paper": "2207.04406v2",
+          "location": "I:p18-b1"
+        },
+        {
+          "paper": "2401.05630v1",
+          "location": "T:p16-b0",
+          "quote": "<td>10</td><td>17h42m02.43s</td><td>-27d46m11.88s</td>"
+        },
+        {
+          "paper": "2411.09278v2",
+          "location": "T:p14-b0",
+          "quote": "HVS10"
+        },
+        {
+          "paper": "2502.00102v2",
+          "location": "T:p4-b0",
+          "quote": "<tr><td>10</td><td>3926757653770374272</td>"
+        },
+        {
+          "paper": "2502.00102v2",
+          "location": "I:p4-b0"
+        },
+        {
+          "paper": "2507.00150v1",
+          "location": "T:p4-b0",
+          "quote": "HVS10</td><td>G</td><td>3555961002414624640</td><td>10:49:01.94</td><td>-18:05:19.7</td><td>64.5"
+        }
+      ],
+      "approved_by": "Project lead (stop 1 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
     }
   ],
   "simbad": {
@@ -1043,67 +1691,33 @@
       {
         "query": {
           "method": "identifier",
-          "identifier": "SDSS J120337.85+180250.4",
+          "identifier": "Gaia DR3 3926757653770374272",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "276e2b3dc9f4cc108e90f1b1ee1e229bed49932cea011b0a01c830fa0ab4744e",
-        "queried_at": "2026-10-24T04:41:53.781626+00:00",
+        "response_sha256": "4ab13b593b92d688c3b90ada2c1bb8d23a33fc4280214a0474bad321fe710e87",
+        "queried_at": "2026-10-25T11:49:51.817680+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
-      },
-      {
-        "query": {
-          "method": "identifier",
-          "identifier": "SDSS J120337.86+180250.35",
-          "position": null,
-          "radius_arcsec": 5.0
-        },
-        "response_sha256": "c0f6b9292c65a4bda72b4b8f7340674a45fc540b59dc33855abdf7547273b972",
-        "queried_at": "2026-10-24T04:45:12.424077+00:00",
-        "client_version": "0.4.11",
-        "service_version": null,
-        "error": null
-      },
-      {
-        "query": {
-          "method": "identifier",
-          "identifier": "SDSS J120337.85+180250.3",
-          "position": null,
-          "radius_arcsec": 5.0
-        },
-        "response_sha256": "c9a4091381dad46a37903467114247f0f8c39bec88664e58d13363dd855cf4e6",
-        "queried_at": "2026-10-24T04:45:02.698437+00:00",
-        "client_version": "0.4.11",
-        "service_version": null,
-        "error": null
-      },
-      {
-        "query": {
-          "method": "identifier",
-          "identifier": "SDSS J120337.85+180250.35",
-          "position": null,
-          "radius_arcsec": 5.0
-        },
-        "response_sha256": "5aae122bc87cb22d54cdec0aa2faac671f51bfb67400e96de195e82a56fe19f9",
-        "queried_at": "2026-10-24T04:43:21.286803+00:00",
-        "client_version": "0.4.11",
-        "service_version": null,
-        "error": null
-      },
-      {
-        "query": {
-          "method": "identifier",
-          "identifier": "SDSS J120337.85+180250.46",
-          "position": null,
-          "radius_arcsec": 5.0
-        },
-        "response_sha256": "fd4a151ee26af08063addcd9800bc3501847dffa2891c7c46ff2268ad0f77046",
-        "queried_at": "2026-10-24T04:46:32.913593+00:00",
-        "client_version": "0.4.11",
-        "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2502.00102v2#/stars/7",
+            "original_identifier": {
+              "value": "Gaia DR3 3926757653770374272",
+              "evidence": [
+                {
+                  "location": "T:p4-b0",
+                  "quote": "<tr><td>10</td><td>3926757653770374272</td>"
+                },
+                {
+                  "location": "I:p4-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       },
       {
         "query": {
@@ -1112,39 +1726,243 @@
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "8271990e7602bcbd3cb6aa8e603513b991c54f9b3d3c33227ebeac4601163a50",
-        "queried_at": "2026-10-24T04:43:56.775846+00:00",
+        "response_sha256": "58681a3395007a6c818a72abcff2cec651c269e2288211579352cbf4f268ef96",
+        "queried_at": "2026-10-25T11:49:22.476496+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2207.04406v2#/stars/74",
+            "original_identifier": {
+              "value": "Gaia EDR3 3926757653770374272",
+              "evidence": [
+                {
+                  "location": "I:p18-b1"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       },
       {
         "query": {
           "method": "identifier",
-          "identifier": "Gaia DR3 3926757653770374272",
+          "identifier": "SDSS J120337.85+180250.3",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "2ead18a506ad1ff021a9d0dba6771a4315dfb7fbacd8cd1def8519862998829e",
-        "queried_at": "2026-10-24T04:44:10.970298+00:00",
+        "response_sha256": "91ecbee97ff1b64aad8b409cd0133d54c57f1942d312afc23898ecd610cf4c7c",
+        "queried_at": "2026-10-25T11:51:18.719413+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "1203.3543v1#/stars/9",
+            "original_identifier": {
+              "value": "SDSS J120337.85+180250.35",
+              "evidence": [
+                {
+                  "location": "I:p5-b0"
+                }
+              ]
+            },
+            "derivation": "sdss_standard_truncation"
+          },
+          {
+            "source_record": "2003.12766v1#/stars/7",
+            "original_identifier": {
+              "value": "SDSSJ120337.85+180250.3",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "HVS10 (SDSSJ120337.85+180250.3)"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J120337.85+180250.35",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "0cd06d59d4b0495d21995b90b80dddbde27334ab0b75825dc457cb27690576c7",
+        "queried_at": "2026-10-25T11:48:03.759911+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "1203.3543v1#/stars/9",
+            "original_identifier": {
+              "value": "SDSS J120337.85+180250.35",
+              "evidence": [
+                {
+                  "location": "I:p5-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J120337.85+180250.4",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "8353315429ffc91d795c65c925e7ec7c7a628a3a0e839dfcc64b25bfcab22f98",
+        "queried_at": "2026-10-25T11:45:46.380370+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0709.1471v2#/stars/9",
+            "original_identifier": {
+              "value": "SDSS J120337.85+180250.4",
+              "evidence": [
+                {
+                  "location": "T:p4-b0",
+                  "quote": "SDSS J120337.85+180250.4"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          },
+          {
+            "source_record": "0808.2469v2#/stars/9",
+            "original_identifier": {
+              "value": "SDSS J120337.85+180250.46",
+              "evidence": [
+                {
+                  "location": "I:p6-b0"
+                }
+              ]
+            },
+            "derivation": "sdss_standard_truncation"
+          },
+          {
+            "source_record": "1806.08630v1#/stars/7",
+            "original_identifier": {
+              "value": "SDSS J120337.85+180250.4",
+              "evidence": [
+                {
+                  "location": "T:p5-b0",
+                  "quote": "HVS 10 (SDSS J120337.85+180250.4)"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J120337.85+180250.46",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "e0e5971fef6ba93edd0121c0b10d1ca23b3216b9737751818e11b9a428c58ace",
+        "queried_at": "2026-10-25T11:53:56.201734+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0808.2469v2#/stars/9",
+            "original_identifier": {
+              "value": "SDSS J120337.85+180250.46",
+              "evidence": [
+                {
+                  "location": "I:p6-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J120337.86+180250.3",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "84918d55f36da29b8f62fc34d2c1d21f4e30ab94252c57af19b9fc4c7c62b22f",
+        "queried_at": "2026-10-25T13:17:20.924064+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0709.1471v2#/stars/9",
+            "original_identifier": {
+              "value": "SDSS J120337.86+180250.35",
+              "evidence": [
+                {
+                  "location": "T:p3-b12",
+                  "quote": "and SDSS"
+                },
+                {
+                  "location": "T:p4-b1",
+                  "quote": "J120337.86+180250.35 (HVS10)"
+                }
+              ]
+            },
+            "derivation": "sdss_standard_truncation"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J120337.86+180250.35",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "a2f0a572675d5af3e853c8ba53f74219fc29758acd2f2fbb72f815283e347edc",
+        "queried_at": "2026-10-25T11:51:35.666792+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0709.1471v2#/stars/9",
+            "original_identifier": {
+              "value": "SDSS J120337.86+180250.35",
+              "evidence": [
+                {
+                  "location": "T:p3-b12",
+                  "quote": "and SDSS"
+                },
+                {
+                  "location": "T:p4-b1",
+                  "quote": "J120337.86+180250.35 (HVS10)"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       }
     ],
     "matches": [
       {
         "main_id": "[BGK2006] HV 10",
         "method": "identifier",
-        "identifier": "SDSS J120337.85+180250.4",
-        "candidate": {
-          "$ref": "#/simbad/selected"
-        }
-      },
-      {
-        "main_id": "[BGK2006] HV 10",
-        "method": "identifier",
-        "identifier": "SDSS J120337.85+180250.3",
+        "identifier": "Gaia DR3 3926757653770374272",
         "candidate": {
           "$ref": "#/simbad/selected"
         }
@@ -1160,7 +1978,15 @@
       {
         "main_id": "[BGK2006] HV 10",
         "method": "identifier",
-        "identifier": "Gaia DR3 3926757653770374272",
+        "identifier": "SDSS J120337.85+180250.3",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      },
+      {
+        "main_id": "[BGK2006] HV 10",
+        "method": "identifier",
+        "identifier": "SDSS J120337.85+180250.4",
         "candidate": {
           "$ref": "#/simbad/selected"
         }

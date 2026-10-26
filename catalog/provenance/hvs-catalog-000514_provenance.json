@@ -1,6 +1,6 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000514",
   "associations": [],
   "simbad": {
@@ -9,71 +9,60 @@
     "queries": [
       {
         "query": {
-          "method": "identifier",
-          "identifier": "SDSS J111336.44+005856.4",
-          "position": null,
-          "radius_arcsec": 5.0
-        },
-        "response_sha256": "ba3f246973361717117b67261b4895ebe22f93e6512d2ef5d6cb433e7a407791",
-        "queried_at": "2026-10-24T04:43:52.823192+00:00",
-        "client_version": "0.4.11",
-        "service_version": null,
-        "error": null
-      },
-      {
-        "query": {
           "method": "coordinates",
           "identifier": null,
           "position": {
-            "ra_deg": 168.40183333333331,
-            "dec_deg": 0.9823333333333334,
-            "frame": "fk5",
-            "equinox": "J2000",
+            "ra_deg": 265.87112499999995,
+            "dec_deg": -29.220852777777775,
+            "frame": "icrs",
+            "equinox": null,
             "evidence": []
           },
           "radius_arcsec": 5.0
         },
-        "response_sha256": "b25c05efc49f9262ee5277c0e1931d802c1237936356c9393b9fe30b71c7306f",
-        "queried_at": "2026-10-24T04:55:35.061704+00:00",
+        "response_sha256": "89e1b33d906ec7f2f1116467516be62f97a8e66e239ad157023cc7bc57d97a24",
+        "queried_at": "2026-10-25T11:54:26.903253+00:00",
         "client_version": "0.4.11",
         "service_version": null,
         "error": null,
         "coordinate_inputs": [
           {
-            "node": "2003.12766v1#/stars/21",
+            "node": "2401.05630v1#/stars/38",
             "position": {
-              "ra_deg": 168.40183333333331,
-              "dec_deg": 0.9823333333333334,
-              "frame": "fk5",
-              "equinox": "J2000",
+              "ra_deg": 265.87112499999995,
+              "dec_deg": -29.220852777777775,
+              "frame": "icrs",
+              "equinox": null,
               "evidence": [
                 {
-                  "value": "11h13m36.44s",
-                  "unit": "hourangle",
-                  "condition": "J2000 coordinates implied by the SDSS designation HVS24 (SDSSJ111336.44+005856.4); not an independent astrometric measurement",
+                  "value": "17h43m29.07s",
+                  "unit": "hms",
+                  "condition": "Equatorial right ascension from Table B1 for VIRAC2-only candidate HVS ID 35.",
                   "evidence": [
                     {
-                      "location": "I:p7-b0"
+                      "location": "T:p17-b0",
+                      "quote": "35</td><td>17h43m29.07s</td><td>-29d13m15.07s</td><td>-0.4866</td><td>0.2488</td><td>15.01</td><td>3.97</td>"
                     }
                   ]
                 },
                 {
-                  "value": "+00d58m56.4s",
-                  "unit": "deg",
-                  "condition": "J2000 coordinates implied by the SDSS designation HVS24 (SDSSJ111336.44+005856.4); not an independent astrometric measurement",
+                  "value": "-29d13m15.07s",
+                  "unit": "dms",
+                  "condition": "Equatorial declination from Table B1 for VIRAC2-only candidate HVS ID 35.",
                   "evidence": [
                     {
-                      "location": "I:p7-b0"
+                      "location": "T:p17-b0",
+                      "quote": "35</td><td>17h43m29.07s</td><td>-29d13m15.07s</td><td>-0.4866</td><td>0.2488</td><td>15.01</td><td>3.97</td>"
                     }
                   ]
                 }
               ]
             },
             "interpretation": {
-              "frame": "fk5",
-              "equinox": "J2000",
-              "frame_basis": "coordinate_conditions",
-              "frame_assumed": false,
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
               "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
               "epoch_propagation": false
             }

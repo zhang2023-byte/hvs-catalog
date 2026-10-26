@@ -1,33 +1,30 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000395",
-  "display_name": "Gaia DR3 4783869234396531968",
+  "display_name": "Gaia EDR3 2038763839481341056",
   "sources": {
-    "1808.02620v2": {
-      "title": "Nearby high-speed stars in Gaia DR2",
+    "2012.02123v2": {
+      "title": "Gaia EDR3 in 6D: Searching for unbound stars in the Galaxy",
       "authors": [
-        "Benjamin C. Bromley",
-        "Scott J. Kenyon",
-        "Warren R. Brown",
-        "Margaret J. Geller"
+        "Tommaso Marchetti"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1808.02620v2",
+      "pdf_url": "https://arxiv.org/pdf/2012.02123v2",
       "records": [
-        "/stars/17"
+        "/stars/15"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "Gaia DR2 4783869234396531968",
+      "value": "Gaia EDR3 2038763839481341056",
       "evidence": [
         {
-          "location": "T:p23-b1",
-          "quote": "4783869234396531968"
+          "location": "T:p8-b0",
+          "quote": "2038763839481341056"
         }
       ],
-      "source": "1808.02620v2"
+      "source": "2012.02123v2"
     }
   ],
   "contribution_types": [
@@ -35,32 +32,184 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p22-b1",
-          "quote": "Of these, 19 are unbound with 95% confidence on the sole basis of tangential velocity and\nastrometric uncertainties. Table 3 summarizes the properties of these 19 fastest objects."
+          "location": "T:p11-b9",
+          "quote": "17 of these stars haveP _ { \\mathrm { u b } } ~ > ~ 8 0 \\%<sub>, an</sub>d <sub>represen</sub>t <sub>our</sub> b<sub>es</sub>t\n<sub>un</sub>b<sub>oun</sub>d <sub>s</sub>t<sub>ar can</sub>did<sub>a</sub>t<sub>es.</sub>"
         }
       ],
-      "source": "1808.02620v2"
+      "source": "2012.02123v2"
     }
   ],
   "quantities": [
     {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "290.711",
+          "unit": "deg",
+          "condition": "Observed Gaia EDR3 position; clean sample of 17 high-velocity stars with P_ub>0.8 (Table 3), no parallax zero point correction",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "2038763839481341056</td><td>(290.711, 29.843)</td>"
+            }
+          ],
+          "source": "2012.02123v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "290.711",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "29.843",
+          "unit": "deg",
+          "condition": "Observed Gaia EDR3 position; clean sample of 17 high-velocity stars with P_ub>0.8 (Table 3), no parallax zero point correction",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "2038763839481341056</td><td>(290.711, 29.843)</td>"
+            }
+          ],
+          "source": "2012.02123v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "29.843",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "parallax",
+      "values": [
+        {
+          "value": "0.064",
+          "error": "0.011",
+          "unit": "mas",
+          "condition": "Gaia EDR3 parallax without zero point correction (Table 3)",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "0.064 ± 0.011"
+            }
+          ],
+          "source": "2012.02123v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "0.064",
+            "error": "0.011",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-4.285",
+          "error": "0.01",
+          "unit": "mas/yr",
+          "condition": "Gaia EDR3 mu_alpha* (Table 3)",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "-4.285 ± 0.01"
+            }
+          ],
+          "source": "2012.02123v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-4.285",
+            "error": "0.01",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-8.479",
+          "error": "0.012",
+          "unit": "mas/yr",
+          "condition": "Gaia EDR3 mu_delta (Table 3)",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "-8.479 ± 0.012"
+            }
+          ],
+          "source": "2012.02123v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-8.479",
+            "error": "0.012",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-9.172",
+          "error": "3.509",
+          "unit": "km/s",
+          "condition": "Gaia DR2 radial velocity (Table 3)",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "-9.172 ± 3.509"
+            }
+          ],
+          "source": "2012.02123v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-9.172",
+            "error": "3.509",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
       "quantity": "distance",
       "values": [
         {
-          "value": "5.71",
-          "error": "1.15",
-          "unit": "kpc",
-          "condition": "Heliocentric distance d_h for the 5-D tangential-speed-selected sample in Table 3; no radial velocity measurement.",
+          "value": "15663",
+          "lower_error": "2285",
+          "upper_error": "3231",
+          "unit": "pc",
+          "condition": "Median distance from MC parallax inversion; 16th/84th percentile uncertainties; no parallax zero point correction (Table 3)",
           "evidence": [
             {
-              "location": "T:p23-b1",
-              "quote": "4783869234396531968</td><td>15.44</td><td>0.84</td><td>(257.18,-38.70)</td><td>5.71±1.15</td><td>10.6±0.9</td><td>792.1±200.6</td><td>0.97"
-            },
-            {
-              "location": "I:p23-b1"
+              "location": "T:p8-b0",
+              "quote": "15663<eq>^{+3231}_{-2285}</eq>"
             }
           ],
-          "source": "1808.02620v2"
+          "source": "2012.02123v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "15.663",
+            "lower_error": "2.285",
+            "upper_error": "3.231",
+            "approximate": false
+          }
         }
       ]
     },
@@ -68,20 +217,79 @@
       "quantity": "galactocentric_radius",
       "values": [
         {
-          "value": "10.6",
-          "error": "0.9",
-          "unit": "kpc",
-          "condition": "Galactocentric distance r_g for the 5-D tangential-speed-selected sample in Table 3.",
+          "value": "14019",
+          "lower_error": "1898",
+          "upper_error": "2849",
+          "unit": "pc",
+          "condition": "Spherical Galactocentric radius r_GC, median with 16th/84th percentile uncertainties (Table 3)",
           "evidence": [
             {
-              "location": "T:p23-b1",
-              "quote": "4783869234396531968</td><td>15.44</td><td>0.84</td><td>(257.18,-38.70)</td><td>5.71±1.15</td><td>10.6±0.9</td><td>792.1±200.6</td><td>0.97"
-            },
-            {
-              "location": "I:p23-b1"
+              "location": "T:p8-b0",
+              "quote": "14019<eq>^{+2849}_{-1898}</eq>"
             }
           ],
-          "source": "1808.02620v2"
+          "source": "2012.02123v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "14.019",
+            "lower_error": "1.898",
+            "upper_error": "2.849",
+            "approximate": false
+          }
+        },
+        {
+          "value": "13889",
+          "lower_error": "1878",
+          "upper_error": "2822",
+          "unit": "pc",
+          "condition": "Cylindrical Galactocentric radius R_GC (Table 4); this is a cylindrical, not three-dimensional, radius",
+          "evidence": [
+            {
+              "location": "T:p10-b0",
+              "quote": "2038763839481341056</td><td><eq>13889^{+2822}_{-1878}</eq></td><td><eq>1906^{+388}_{-274}</eq></td>"
+            }
+          ],
+          "source": "2012.02123v2",
+          "attribution": "mismatch",
+          "attribution_reason": "Cylindrical radius R_GC, not the 3D spherical radius r_GC; the condition states the difference.",
+          "standard": {
+            "unit": "kpc",
+            "value": "13.889",
+            "lower_error": "1.878",
+            "upper_error": "2.822",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "641",
+          "lower_error": "96",
+          "upper_error": "138",
+          "unit": "km/s",
+          "condition": "Median total velocity in the Galactocentric rest frame v_GC, 16th/84th percentile uncertainties (Table 3)",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "641<eq>^{+138}_{-96}</eq>"
+            },
+            {
+              "location": "I:p8-b0"
+            }
+          ],
+          "source": "2012.02123v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "641",
+            "lower_error": "96",
+            "upper_error": "138",
+            "approximate": false
+          }
         }
       ]
     },
@@ -89,115 +297,36 @@
       "quantity": "unbound_probability",
       "values": [
         {
-          "value": "0.97",
+          "value": "0.90",
           "unit": "dimensionless",
-          "condition": "Probability p_unb that the star is unbound from the Milky Way, from the 5-D tangential-speed-selected sample with no radial velocity, using the Kenyon et al. (2018) Galactic potential.",
+          "condition": "Probability of being unbound from the Milky Way, from fraction of MC realizations exceeding escape speed (Table 3), no parallax zero point correction",
           "evidence": [
             {
-              "location": "T:p23-b1",
-              "quote": "4783869234396531968</td><td>15.44</td><td>0.84</td><td>(257.18,-38.70)</td><td>5.71±1.15</td><td>10.6±0.9</td><td>792.1±200.6</td><td>0.97"
-            },
-            {
-              "location": "I:p23-b1"
+              "location": "T:p8-b0",
+              "quote": "641<eq>^{+138}_{-96}</eq></td><td>0.0</td><td>0.90</td>"
             }
           ],
-          "source": "1808.02620v2"
+          "source": "2012.02123v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.90",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "matched",
-    "method": "identifier",
-    "selected": {
-      "main_id": "Gaia DR3 4783869234396531968",
-      "aliases": [
-        "Gaia DR2 4783869234396531968",
-        "Gaia DR3 4783869234396531968"
-      ],
-      "object_type": "*",
-      "coordinates": {
-        "ra": {
-          "value": 74.00294843777,
-          "unit": "deg"
-        },
-        "dec": {
-          "value": -50.32892306636,
-          "unit": "deg"
-        },
-        "frame": "icrs",
-        "error_ellipse": {
-          "major": {
-            "value": 0.02280000038444996,
-            "unit": "mas"
-          },
-          "minor": {
-            "value": 0.022700000554323196,
-            "unit": "mas"
-          },
-          "angle": {
-            "value": 90,
-            "unit": "deg"
-          }
-        },
-        "quality": "A",
-        "bibcode": "2020yCat.1350....0G",
-        "wavelength": "O"
-      },
-      "proper_motion": {
-        "ra_cosdec": {
-          "value": 24.809,
-          "unit": "mas / yr"
-        },
-        "dec": {
-          "value": -23.891,
-          "unit": "mas / yr"
-        },
-        "error_ellipse": {
-          "major": {
-            "value": 0.028999999165534973,
-            "unit": "mas / yr"
-          },
-          "minor": {
-            "value": 0.03099999949336052,
-            "unit": "mas / yr"
-          },
-          "angle": {
-            "value": 90,
-            "unit": "deg"
-          }
-        },
-        "quality": "A",
-        "bibcode": "2020yCat.1350....0G"
-      },
-      "parallax": {
-        "value": 0.2845,
-        "unit": "mas",
-        "error": 0.02370000071823597,
-        "quality": "A",
-        "bibcode": "2020yCat.1350....0G"
-      },
-      "photometry": [
-        {
-          "band": "G",
-          "value": 15.425042152404785,
-          "error": 0.0027759999502450228,
-          "system": "V",
-          "bibcode": "2020yCat.1350....0G",
-          "quality": "C"
-        }
-      ]
-    },
-    "match": {
-      "identifiers": [
-        "Gaia DR2 4783869234396531968"
-      ]
-    },
-    "last_queried_at": "2026-10-24T04:54:07.107091+00:00"
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-25T12:01:11.953924+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000395_provenance.json",
-    "sha256": "2efeb0b3fe1d2d7c9ad04b77fd0f4718f1dce194864baa427c64c25624ef443c"
+    "sha256": "02e547f27a2b08f26556c0aee92311e856b137f4f5d2eefe859fed6d6a8f8828"
   },
-  "warnings": []
+  "warnings": [
+    "Coordinate reference frame was not reported; ICRS was assumed for matching."
+  ]
 }

@@ -1,32 +1,34 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000127",
-  "display_name": "HVS9",
+  "display_name": "P14 No. 15",
   "sources": {
-    "1302.1899v1": {
-      "title": "Variability of Hypervelocity Stars",
+    "1503.04164v1": {
+      "title": "Candidate hypervelocity stars of spectral type G and K revisited",
       "authors": [
-        "Idan Ginsburg",
-        "Warren R. Brown",
-        "Gary A. Wegner"
+        "E. Ziegerer",
+        "M. Volkert",
+        "U. Heber",
+        "A. Irrgang",
+        "B. T. Gaensicke",
+        "S. Geier"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1302.1899v1",
+      "pdf_url": "https://arxiv.org/pdf/1503.04164v1",
       "records": [
-        "/stars/6"
+        "/stars/14"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS9",
+      "value": "P14 No. 15",
       "evidence": [
         {
-          "location": "T:p2-b8",
-          "quote": "<tr><td>HVS9</td><td>8</td><td>No</td><td>-</td></tr>"
+          "location": "I:p3-b0"
         }
       ],
-      "source": "1302.1899v1"
+      "source": "1503.04164v1"
     }
   ],
   "contribution_types": [
@@ -34,29 +36,376 @@
       "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p1-b4",
-          "quote": "We present time-series photometry of 11 hypervelocity stars (HVSs) to constrain their nature."
+          "location": "T:p1-b13",
+          "quote": "20 candidates\nwere found likely to be unbound, four of which at 3 and six at\n2σ significance levels."
         },
         {
-          "location": "T:p1-b7",
-          "quote": "over 20 HVSs have been identified in the\nMilky Way"
+          "location": "T:p4-b5",
+          "quote": "We present a revised analysis of the 20 candidate HVSs"
         },
         {
-          "location": "T:p2-b8",
-          "quote": "<tr><td>HVS9</td><td>8</td><td>No</td><td>-</td></tr>"
+          "location": "I:p3-b0"
         }
       ],
-      "source": "1302.1899v1"
+      "source": "1503.04164v1"
     }
   ],
-  "quantities": [],
+  "quantities": [
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "1.1",
+          "error": "2.2",
+          "unit": "mas/yr",
+          "condition": "This work; revised proper motion component μ_α cos δ (P14 No. 15, Table 1)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>15</td><td>1.1 ± 2.2</td><td>-2.2 ± 2.3</td><td>-58.6 ± 5.4</td><td>8.1 ± 5.4</td><td>239.5 ± 18.1</td><td>656.7 ± 117.5</td><td>1.5 ± 0.3</td><td>11.2</td><td>7.1</td><td>15.98</td><td>21.7</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "1.1",
+            "error": "2.2",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-58.6",
+          "error": "5.4",
+          "unit": "mas/yr",
+          "condition": "SDSS proper motion component μ_α cos δ, as used by P14 (P14 No. 15, Table 1)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>15</td><td>1.1 ± 2.2</td><td>-2.2 ± 2.3</td><td>-58.6 ± 5.4</td><td>8.1 ± 5.4</td><td>239.5 ± 18.1</td><td>656.7 ± 117.5</td><td>1.5 ± 0.3</td><td>11.2</td><td>7.1</td><td>15.98</td><td>21.7</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-58.6",
+            "error": "5.4",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-2.2",
+          "error": "2.3",
+          "unit": "mas/yr",
+          "condition": "This work; revised proper motion component μ_δ (P14 No. 15, Table 1)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>15</td><td>1.1 ± 2.2</td><td>-2.2 ± 2.3</td><td>-58.6 ± 5.4</td><td>8.1 ± 5.4</td><td>239.5 ± 18.1</td><td>656.7 ± 117.5</td><td>1.5 ± 0.3</td><td>11.2</td><td>7.1</td><td>15.98</td><td>21.7</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-2.2",
+            "error": "2.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "8.1",
+          "error": "5.4",
+          "unit": "mas/yr",
+          "condition": "SDSS proper motion component μ_δ, as used by P14 (P14 No. 15, Table 1)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>15</td><td>1.1 ± 2.2</td><td>-2.2 ± 2.3</td><td>-58.6 ± 5.4</td><td>8.1 ± 5.4</td><td>239.5 ± 18.1</td><td>656.7 ± 117.5</td><td>1.5 ± 0.3</td><td>11.2</td><td>7.1</td><td>15.98</td><td>21.7</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "8.1",
+            "error": "5.4",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "241.1",
+          "error": "18.1",
+          "unit": "km/s",
+          "condition": "Model I; v_GRF,1 based on revised proper motions from this work (P14 No. 15, Table 2)",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>15</td><td>11.1</td><td>7.1</td><td><eq>241.1 \\pm 18.1</eq></td><td><eq>657.0 \\pm 117.3</eq></td><td>15.98</td><td>33.8</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "241.1",
+            "error": "18.1",
+            "approximate": false
+          }
+        },
+        {
+          "value": "657.0",
+          "error": "117.3",
+          "unit": "km/s",
+          "condition": "Model I; v_GRF,2 based on SDSS proper motions used by P14 (P14 No. 15, Table 2)",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>15</td><td>11.1</td><td>7.1</td><td><eq>241.1 \\pm 18.1</eq></td><td><eq>657.0 \\pm 117.3</eq></td><td>15.98</td><td>33.8</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "657.0",
+            "error": "117.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "239.5",
+          "error": "18.1",
+          "unit": "km/s",
+          "condition": "Model II; v_GRF,1 based on revised proper motions from this work (P14 No. 15, Table 1)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>15</td><td>1.1 ± 2.2</td><td>-2.2 ± 2.3</td><td>-58.6 ± 5.4</td><td>8.1 ± 5.4</td><td>239.5 ± 18.1</td><td>656.7 ± 117.5</td><td>1.5 ± 0.3</td><td>11.2</td><td>7.1</td><td>15.98</td><td>21.7</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "239.5",
+            "error": "18.1",
+            "approximate": false
+          }
+        },
+        {
+          "value": "656.7",
+          "error": "117.5",
+          "unit": "km/s",
+          "condition": "Model II; v_GRF,2 based on SDSS proper motions used by P14 (P14 No. 15, Table 1)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>15</td><td>1.1 ± 2.2</td><td>-2.2 ± 2.3</td><td>-58.6 ± 5.4</td><td>8.1 ± 5.4</td><td>239.5 ± 18.1</td><td>656.7 ± 117.5</td><td>1.5 ± 0.3</td><td>11.2</td><td>7.1</td><td>15.98</td><td>21.7</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "656.7",
+            "error": "117.5",
+            "approximate": false
+          }
+        },
+        {
+          "value": "239.5",
+          "error": "18.1",
+          "unit": "km/s",
+          "condition": "Model III; v_GRF,1 based on revised proper motions from this work (P14 No. 15, Table 3)",
+          "evidence": [
+            {
+              "location": "T:p6-b1",
+              "quote": "<tr><td>15</td><td>11.2</td><td>7.2</td><td><eq>239.5 \\pm 18.1</eq></td><td><eq>656.5 \\pm 117.5</eq></td><td>15.98</td><td>88.3</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "239.5",
+            "error": "18.1",
+            "approximate": false
+          }
+        },
+        {
+          "value": "656.5",
+          "error": "117.5",
+          "unit": "km/s",
+          "condition": "Model III; v_GRF,2 based on SDSS proper motions used by P14 (P14 No. 15, Table 3)",
+          "evidence": [
+            {
+              "location": "T:p6-b1",
+              "quote": "<tr><td>15</td><td>11.2</td><td>7.2</td><td><eq>239.5 \\pm 18.1</eq></td><td><eq>656.5 \\pm 117.5</eq></td><td>15.98</td><td>88.3</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "656.5",
+            "error": "117.5",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "bound_probability",
+      "values": [
+        {
+          "value": "15.98",
+          "unit": "%",
+          "condition": "Bound probability listed by P14 using SDSS proper motions (P14 No. 15)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>15</td><td>1.1 ± 2.2</td><td>-2.2 ± 2.3</td><td>-58.6 ± 5.4</td><td>8.1 ± 5.4</td><td>239.5 ± 18.1</td><td>656.7 ± 117.5</td><td>1.5 ± 0.3</td><td>11.2</td><td>7.1</td><td>15.98</td><td>21.7</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "cited",
+          "attribution_reason": "Probability column of the original P14 paper in Tables 1–3, only compared with this paper's probabilities recalculated from old and new proper motions.",
+          "standard": {
+            "unit": "1",
+            "value": "0.1598",
+            "approximate": false
+          }
+        },
+        {
+          "value": "33.8",
+          "unit": "%",
+          "condition": "Model I potential, using SDSS proper motions used by P14 (P14 No. 15, Table 2)",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>15</td><td>11.1</td><td>7.1</td><td><eq>241.1 \\pm 18.1</eq></td><td><eq>657.0 \\pm 117.3</eq></td><td>15.98</td><td>33.8</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.338",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "Model I potential, using revised proper motions from this work (P14 No. 15, Table 2)",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>15</td><td>11.1</td><td>7.1</td><td><eq>241.1 \\pm 18.1</eq></td><td><eq>657.0 \\pm 117.3</eq></td><td>15.98</td><td>33.8</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        },
+        {
+          "value": "21.7",
+          "unit": "%",
+          "condition": "Model II potential, using SDSS proper motions used by P14 (P14 No. 15, Table 1)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>15</td><td>1.1 ± 2.2</td><td>-2.2 ± 2.3</td><td>-58.6 ± 5.4</td><td>8.1 ± 5.4</td><td>239.5 ± 18.1</td><td>656.7 ± 117.5</td><td>1.5 ± 0.3</td><td>11.2</td><td>7.1</td><td>15.98</td><td>21.7</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.217",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "Model II potential, using revised proper motions from this work (P14 No. 15, Table 1)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>15</td><td>1.1 ± 2.2</td><td>-2.2 ± 2.3</td><td>-58.6 ± 5.4</td><td>8.1 ± 5.4</td><td>239.5 ± 18.1</td><td>656.7 ± 117.5</td><td>1.5 ± 0.3</td><td>11.2</td><td>7.1</td><td>15.98</td><td>21.7</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        },
+        {
+          "value": "88.3",
+          "unit": "%",
+          "condition": "Model III potential, using SDSS proper motions used by P14 (P14 No. 15, Table 3)",
+          "evidence": [
+            {
+              "location": "T:p6-b1",
+              "quote": "<tr><td>15</td><td>11.2</td><td>7.2</td><td><eq>239.5 \\pm 18.1</eq></td><td><eq>656.5 \\pm 117.5</eq></td><td>15.98</td><td>88.3</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.883",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "Model III potential, using revised proper motions from this work (P14 No. 15, Table 3)",
+          "evidence": [
+            {
+              "location": "T:p6-b1",
+              "quote": "<tr><td>15</td><td>11.2</td><td>7.2</td><td><eq>239.5 \\pm 18.1</eq></td><td><eq>656.5 \\pm 117.5</eq></td><td>15.98</td><td>88.3</td><td>100</td></tr>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        }
+      ]
+    }
+  ],
   "simbad": {
     "status": "not_queried",
     "reason": "No usable query or a required frozen response is missing."
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000127_provenance.json",
-    "sha256": "0f29337a1772f3ea09f7d226be1e0ac2d68b6fd7918d472a44b904bf33abf5f0"
+    "sha256": "ce91574018b9958d6210846c25e4a6b0f1996157ca5d68205c94c3ce062c4095"
   },
   "warnings": []
 }

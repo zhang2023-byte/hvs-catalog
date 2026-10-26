@@ -1,278 +1,252 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000521",
-  "associations": [
+  "associations": [],
+  "review_decisions": [
     {
-      "method": "identifier",
-      "identifier": "Gaia DR2 5850309098637075328",
-      "nodes": [
-        "2004.14587v1#/stars/1",
-        "2108.02796v1#/stars/2"
-      ]
+      "id": "R21-simbad-166",
+      "type": "simbad",
+      "groups": [
+        [
+          "2401.05630v1#/stars/44"
+        ]
+      ],
+      "papers": {
+        "2401.05630v1": "cdd66187169e6dfa8037ef23a3dfc0b495ee15ab5787330f337f3b33876ea954"
+      },
+      "responses": {
+        "302e6ca1997ece2e91108d3bfef8ed88525ed5f53251773b4e926fbe06fa6c46": "778f040a57947871a12ab71aa3f8ed36c5dc9eacdf8065c44d7063c99fb7b3bc"
+      },
+      "reason": "Fixed PDF Table B1 ID 41 has Ks=14.58 mag; the frozen SIMBAD candidate CXOU J174547.7-285744 is an X-ray source (X) without corresponding near-infrared photometry, and coordinate proximity alone does not confirm the paper's star. External correspondence revoked under the conditional stop 3 approval; all paper science and the frozen candidate trace are kept.",
+      "evidence": [
+        {
+          "paper": "2401.05630v1",
+          "location": "Fixed PDF p.16, Table B1 row ID 41",
+          "quote": "ID 41; Ks=14.58 mag"
+        }
+      ],
+      "approved_by": "Project lead (stop 3 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
     }
   ],
   "simbad": {
-    "status": "matched",
-    "method": "identifier",
-    "selected": {
-      "main_id": "Gaia DR3 5850309098637075328",
-      "aliases": [
-        "Gaia DR2 5850309098637075328",
-        "Gaia DR3 5850309098637075328"
-      ],
-      "position": {
-        "ra_deg": 206.70941359057457,
-        "dec_deg": -68.2339205301736,
-        "frame": "icrs",
-        "equinox": null,
-        "evidence": []
-      },
-      "fields": {
-        "main_id": {
-          "value": "Gaia DR3 5850309098637075328"
-        },
-        "nbref": {
-          "value": 1
-        },
-        "otype": {
-          "value": "*"
-        },
-        "ra": {
-          "value": 206.70941359057457,
-          "unit": "deg"
-        },
-        "ra_prec": {
-          "value": 14
-        },
-        "dec": {
-          "value": -68.2339205301736,
-          "unit": "deg"
-        },
-        "dec_prec": {
-          "value": 14
-        },
-        "coo_err_maj": {
-          "value": 0.01940000057220459,
-          "unit": "mas"
-        },
-        "coo_err_maj_prec": {
-          "value": 4
-        },
-        "coo_err_min": {
-          "value": 0.02239999920129776,
-          "unit": "mas"
-        },
-        "coo_err_min_prec": {
-          "value": 4
-        },
-        "coo_err_angle": {
-          "value": 90,
-          "unit": "deg"
-        },
-        "coo_qual": {
-          "value": "A"
-        },
-        "coo_wavelength": {
-          "value": "O"
-        },
-        "coo_bibcode": {
-          "value": "2020yCat.1350....0G"
-        },
-        "hpx": {
-          "value": 10641650
-        },
-        "pmra": {
-          "value": -6.722,
-          "unit": "mas / yr"
-        },
-        "pmra_prec": {
-          "value": 3
-        },
-        "pmdec": {
-          "value": -3.563,
-          "unit": "mas / yr"
-        },
-        "pmdec_prec": {
-          "value": 3
-        },
-        "pm_err_maj": {
-          "value": 0.024000000208616257,
-          "unit": "mas / yr"
-        },
-        "pm_err_maj_prec": {
-          "value": 3
-        },
-        "pm_err_min": {
-          "value": 0.03099999949336052,
-          "unit": "mas / yr"
-        },
-        "pm_err_min_prec": {
-          "value": 3
-        },
-        "pm_err_angle": {
-          "value": 90,
-          "unit": "deg"
-        },
-        "pm_qual": {
-          "value": "A"
-        },
-        "pm_bibcode": {
-          "value": "2020yCat.1350....0G"
-        },
-        "plx_value": {
-          "value": 0.3061,
-          "unit": "mas"
-        },
-        "plx_prec": {
-          "value": 4
-        },
-        "plx_err": {
-          "value": 0.027699999511241913,
-          "unit": "mas"
-        },
-        "plx_err_prec": {
-          "value": 4
-        },
-        "plx_qual": {
-          "value": "A"
-        },
-        "plx_bibcode": {
-          "value": "2020yCat.1350....0G"
-        },
-        "rvz_type": {
-          "value": "v"
-        },
-        "rvz_radvel": {
-          "value": -486.92,
-          "unit": "km / s"
-        },
-        "rvz_radvel_prec": {
-          "value": 2
-        },
-        "rvz_redshift": {
-          "value": -0.0016228734349827967
-        },
-        "rvz_redshift_prec": {
-          "value": 6
-        },
-        "rvz_err": {
-          "value": 4.960000038146973,
-          "unit": "km / s"
-        },
-        "rvz_err_prec": {
-          "value": 2
-        },
-        "rvz_nature": {
-          "value": "s"
-        },
-        "rvz_qual": {
-          "value": "C"
-        },
-        "rvz_bibcode": {
-          "value": "2018yCat.1345....0G"
-        },
-        "vlsr_wavelength": {
-          "value": ""
-        },
-        "vlsr_bibcode": {
-          "value": ""
-        },
-        "sp_type": {
-          "value": ""
-        },
-        "sp_qual": {
-          "value": ""
-        },
-        "sp_bibcode": {
-          "value": ""
-        },
-        "morph_type": {
-          "value": ""
-        },
-        "morph_qual": {
-          "value": ""
-        },
-        "morph_bibcode": {
-          "value": ""
-        },
-        "galdim_qual": {
-          "value": ""
-        },
-        "galdim_wavelength": {
-          "value": ""
-        },
-        "galdim_bibcode": {
-          "value": ""
-        },
-        "update_date": {
-          "value": "2026-04-15"
-        },
-        "otype_txt": {
-          "value": "*"
-        },
-        "rvz_wavelength": {
-          "value": "O"
-        }
-      },
-      "photometry": [
-        {
-          "band": "G",
-          "fields": {
-            "flux_err_prec": {
-              "value": 6
-            },
-            "flux_prec": {
-              "value": 6
-            },
-            "oidref": {
-              "value": 17329483
-            },
-            "filter": {
-              "value": "G"
-            },
-            "flux": {
-              "value": 15.55565357208252
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.0027719999197870493
-            },
-            "qual": {
-              "value": "C"
-            },
-            "bibcode": {
-              "value": "2022yCat.1355....0G"
-            }
-          }
-        }
-      ]
-    },
+    "status": "not_found",
+    "reason": "Correspondence left unselected by review R21-simbad-166: Fixed PDF Table B1 ID 41 has Ks=14.58 mag; the frozen SIMBAD candidate CXOU J174547.7-285744 is an X-ray source (X) without corresponding near-infrared photometry, and coordinate proximity alone does not confirm the paper's star. External correspondence revoked under the conditional stop 3 approval; all paper science and the frozen candidate trace are kept.",
     "queries": [
       {
         "query": {
-          "method": "identifier",
-          "identifier": "Gaia DR2 5850309098637075328",
-          "position": null,
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 266.449375,
+            "dec_deg": -28.962044444444444,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
           "radius_arcsec": 5.0
         },
-        "response_sha256": "6c31b70363ac1aabe6eea92df174ed6dbce2044f4048ce063bb8ea724a47df24",
-        "queried_at": "2026-10-24T04:49:11.541042+00:00",
+        "response_sha256": "778f040a57947871a12ab71aa3f8ed36c5dc9eacdf8065c44d7063c99fb7b3bc",
+        "queried_at": "2026-10-25T11:46:01.684344+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2401.05630v1#/stars/44",
+            "position": {
+              "ra_deg": 266.449375,
+              "dec_deg": -28.962044444444444,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "17h45m47.85s",
+                  "unit": "hourangle",
+                  "condition": "VIRAC2 star (no Gaia DR3 counterpart), proper motion pointing away from 0.5 deg around the GC",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "41</td><td>17h45m47.85s</td><td>-28d57m43.36s</td><td>-0.0019</td><td>-0.0466</td><td>14.58</td><td>4.74"
+                    }
+                  ]
+                },
+                {
+                  "value": "-28d57m43.36s",
+                  "unit": "deg",
+                  "condition": "VIRAC2 star (no Gaia DR3 counterpart), proper motion pointing away from 0.5 deg around the GC",
+                  "evidence": [
+                    {
+                      "location": "T:p16-b0",
+                      "quote": "41</td><td>17h45m47.85s</td><td>-28d57m43.36s</td><td>-0.0019</td><td>-0.0466</td><td>14.58</td><td>4.74"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "assumed_icrs",
+              "frame_assumed": true,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
       }
     ],
     "matches": [
       {
-        "main_id": "Gaia DR3 5850309098637075328",
-        "method": "identifier",
-        "identifier": "Gaia DR2 5850309098637075328",
+        "main_id": "CXOU J174547.7-285744",
+        "method": "coordinates",
+        "separation_arcsec": 2.1112884737619866,
         "candidate": {
-          "$ref": "#/simbad/selected"
+          "$ref": "#/simbad/alternatives/0"
+        },
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 266.449375,
+            "dec_deg": -28.962044444444444,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
         }
+      }
+    ],
+    "alternatives": [
+      {
+        "main_id": "CXOU J174547.7-285744",
+        "aliases": [
+          "CXOGC J174547.7-285744",
+          "CXOU J174547.7-285744"
+        ],
+        "position": {
+          "ra_deg": 266.4487916666667,
+          "dec_deg": -28.962333333333326,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": []
+        },
+        "fields": {
+          "main_id": {
+            "value": "CXOU J174547.7-285744"
+          },
+          "nbref": {
+            "value": 2
+          },
+          "otype": {
+            "value": "X"
+          },
+          "ra": {
+            "value": 266.4487916666667,
+            "unit": "deg"
+          },
+          "ra_prec": {
+            "value": 6
+          },
+          "dec": {
+            "value": -28.962333333333326,
+            "unit": "deg"
+          },
+          "dec_prec": {
+            "value": 6
+          },
+          "coo_err_maj_prec": {
+            "value": -1
+          },
+          "coo_err_min_prec": {
+            "value": -1
+          },
+          "coo_qual": {
+            "value": "D"
+          },
+          "coo_wavelength": {
+            "value": "X"
+          },
+          "coo_bibcode": {
+            "value": "2003ApJ...589..225M"
+          },
+          "hpx": {
+            "value": 7380517
+          },
+          "pm_qual": {
+            "value": ""
+          },
+          "pm_bibcode": {
+            "value": ""
+          },
+          "plx_qual": {
+            "value": ""
+          },
+          "plx_bibcode": {
+            "value": ""
+          },
+          "rvz_type": {
+            "value": ""
+          },
+          "rvz_nature": {
+            "value": ""
+          },
+          "rvz_qual": {
+            "value": ""
+          },
+          "rvz_bibcode": {
+            "value": ""
+          },
+          "vlsr_wavelength": {
+            "value": ""
+          },
+          "vlsr_bibcode": {
+            "value": ""
+          },
+          "sp_type": {
+            "value": ""
+          },
+          "sp_qual": {
+            "value": ""
+          },
+          "sp_bibcode": {
+            "value": ""
+          },
+          "morph_type": {
+            "value": ""
+          },
+          "morph_qual": {
+            "value": ""
+          },
+          "morph_bibcode": {
+            "value": ""
+          },
+          "galdim_qual": {
+            "value": ""
+          },
+          "galdim_wavelength": {
+            "value": ""
+          },
+          "galdim_bibcode": {
+            "value": ""
+          },
+          "update_date": {
+            "value": "2008-10-20"
+          },
+          "otype_txt": {
+            "value": "X"
+          },
+          "rvz_wavelength": {
+            "value": ""
+          }
+        },
+        "photometry": []
       }
     ]
   }

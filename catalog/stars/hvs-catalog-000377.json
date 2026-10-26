@@ -1,47 +1,46 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000377",
-  "display_name": "TYC 3562-1126-1",
+  "display_name": "Hivel12",
   "sources": {
-    "1807.00427v1": {
-      "title": "The high velocity stars in the Local Stellar Halo from Gaia and LAMOST",
+    "2011.10206v1": {
+      "title": "591 high velocity stars in the Galactic halo selected from LAMOST DR7 and Gaia DR2",
       "authors": [
-        "Cuihua Du",
-        "Hefan Li",
-        "Shuai Liu",
-        "Thomas Donlon",
-        "Heidi Jo Newberg"
+        "Yin-Bi Li",
+        "A-Li Luo",
+        "You-Jun Lu",
+        "Xue-Sen Zhang",
+        "Jiao Li",
+        "Rui Wang",
+        "Fang Zuo",
+        "Maosheng Xiang",
+        "Yuan-Sen Ting",
+        "T. Marchetti",
+        "Shuo Li",
+        "You-Fen Wang",
+        "Shuo Zhang",
+        "Kohei Hattori",
+        "Yong-Heng Zhao",
+        "Hua-Wei Zhang",
+        "Gang Zhao"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1807.00427v1",
+      "pdf_url": "https://arxiv.org/pdf/2011.10206v1",
       "records": [
-        "/stars/2"
+        "/stars/11"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HiVel16",
+      "value": "Hivel12",
       "evidence": [
         {
-          "location": "T:p6-b0",
-          "quote": "<tr><td>HiVel16</td><td>2086860081541233408</td>"
+          "location": "T:p7-b0",
+          "quote": "<tr><td>Hivel12</td><td>187.4196460</td><td>24.50598100</td>"
         }
       ],
-      "source": "1807.00427v1"
-    },
-    {
-      "value": "Gaia DR1 2086860081541233408",
-      "evidence": [
-        {
-          "location": "T:p6-b0",
-          "quote": "<tr><td>HiVel16</td><td>2086860081541233408</td>"
-        },
-        {
-          "location": "I:p6-b0"
-        }
-      ],
-      "source": "1807.00427v1"
+      "source": "2011.10206v1"
     }
   ],
   "contribution_types": [
@@ -49,29 +48,103 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p7-b1",
-          "quote": "3 HiVel stars (Hivel14, HiVel15 and HiVel16)\nare unbound due to their very high velocity"
+          "location": "T:p22-b0",
+          "quote": "<tr><td>Hivel12</td><td>0.000</td><td>0.415</td><td>0.843</td><td>0.854</td><td>0.886</td><td>0.929</td><td>0.965</td><td>0.980</td><td>0.988</td><td>OUT</td></tr>"
         }
       ],
-      "source": "1807.00427v1"
+      "source": "2011.10206v1"
     }
   ],
   "quantities": [
     {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "187.4196460",
+          "unit": "deg",
+          "condition": "Gaia DR2 right ascension for Hivel12 (Table 1).",
+          "evidence": [
+            {
+              "location": "I:p7-b0"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "187.4196460",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "24.50598100",
+          "unit": "deg",
+          "condition": "Gaia DR2 declination for Hivel12 (Table 1).",
+          "evidence": [
+            {
+              "location": "I:p7-b0"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "24.50598100",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "parallax",
+      "values": [
+        {
+          "value": "0.111",
+          "error": "0.022",
+          "unit": "mas",
+          "condition": "Gaia DR2 parallax for Hivel12, without correction for the global parallax zero point (Table 1).",
+          "evidence": [
+            {
+              "location": "I:p7-b0"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "0.111",
+            "error": "0.022",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
       "quantity": "proper_motion_ra",
       "values": [
         {
-          "value": "-7.17",
-          "error": "1.98",
+          "value": "-15.178",
+          "error": "0.035",
           "unit": "mas/yr",
-          "condition": "Equatorial proper-motion component μ_α cos(δ) reported in Table 2 for HiVel16.",
+          "condition": "Gaia DR2 proper motion in right ascension for Hivel12 (Table 1).",
           "evidence": [
             {
-              "location": "T:p6-b0",
-              "quote": "HiVel16</td><td>2086860081541233408</td><td>82.37</td><td>10.25</td><td>-7.17 ± 1.98</td>"
+              "location": "I:p7-b0"
             }
           ],
-          "source": "1807.00427v1"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-15.178",
+            "error": "0.035",
+            "approximate": false
+          }
         }
       ]
     },
@@ -79,17 +152,23 @@
       "quantity": "proper_motion_dec",
       "values": [
         {
-          "value": "-13.75",
-          "error": "0.98",
+          "value": "-15.656",
+          "error": "0.026",
           "unit": "mas/yr",
-          "condition": "Equatorial proper-motion component μ_δ reported in Table 2 for HiVel16.",
+          "condition": "Gaia DR2 proper motion in declination for Hivel12 (Table 1).",
           "evidence": [
             {
-              "location": "T:p6-b0",
-              "quote": "HiVel16</td><td>2086860081541233408</td><td>82.37</td><td>10.25</td><td>-7.17 ± 1.98</td><td>-13.75 ± 0.98</td>"
+              "location": "I:p7-b0"
             }
           ],
-          "source": "1807.00427v1"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-15.656",
+            "error": "0.026",
+            "approximate": false
+          }
         }
       ]
     },
@@ -97,35 +176,49 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "-962",
-          "error": "10",
+          "value": "241",
+          "error": "6",
           "unit": "km/s",
-          "condition": "Line-of-sight radial velocity RV⊙ reported in Table 2 for HiVel16.",
+          "condition": "LAMOST LASP radial velocity RV_LASP for Hivel12; tabulated value before the separately discussed -5.4 km/s zero-point correction.",
           "evidence": [
             {
-              "location": "T:p6-b0",
-              "quote": "HiVel16</td><td>2086860081541233408</td><td>82.37</td><td>10.25</td><td>-7.17 ± 1.98</td><td>-13.75 ± 0.98</td><td>-962 ± 10</td>"
+              "location": "I:p7-b0"
             }
           ],
-          "source": "1807.00427v1"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "241",
+            "error": "6",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "distance",
+      "quantity": "galactocentric_radius",
       "values": [
         {
-          "value": "513.1",
-          "error": "151.3",
-          "unit": "pc",
-          "condition": "Heliocentric distance D⊙ reported in Table 3 for HiVel16.",
+          "value": "12.5",
+          "lower_error": "1.0",
+          "upper_error": "1.8",
+          "unit": "kpc",
+          "condition": "Galactocentric distance r_GC for Hivel12, median of 1000 MC realizations with 16th/84th percentile uncertainties.",
           "evidence": [
             {
-              "location": "T:p6-b1",
-              "quote": "HiVel16</td><td>8.1</td><td>-0.5</td><td>0.1</td><td>-78 ± 12</td><td>-712 ± 10</td><td>-166 ± 5</td><td>734</td><td>513.1 ± 151.3</td>"
+              "location": "I:p8-b0"
             }
           ],
-          "source": "1807.00427v1"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "12.5",
+            "lower_error": "1.0",
+            "upper_error": "1.8",
+            "approximate": false
+          }
         }
       ]
     },
@@ -133,51 +226,180 @@
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "734",
+          "value": "726",
+          "lower_error": "138",
+          "upper_error": "230",
           "unit": "km/s",
-          "condition": "Galactic rest-frame speed Vgsr reported in Table 3 for HiVel16, one of the 16 HiVel stars selected with Vgsr > 300 km/s.",
+          "condition": "Total Galactocentric rest-frame velocity V_GC for Hivel12, median of 1000 MC realizations with 16th/84th percentile uncertainties.",
           "evidence": [
             {
-              "location": "T:p6-b1",
-              "quote": "HiVel16</td><td>8.1</td><td>-0.5</td><td>0.1</td><td>-78 ± 12</td><td>-712 ± 10</td><td>-166 ± 5</td><td>734</td><td>513.1 ± 151.3</td>"
+              "location": "I:p8-b0"
             }
           ],
-          "source": "1807.00427v1"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "726",
+            "lower_error": "138",
+            "upper_error": "230",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.843",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub for Hivel12 in the Watkins+2019 potential model; fraction of 1000 MC realizations with V_GC greater than the escape velocity.",
+          "evidence": [
+            {
+              "location": "I:p22-b0"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.843",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.854",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub for Hivel12 in the Gnedin+2005 potential model.",
+          "evidence": [
+            {
+              "location": "I:p22-b0"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.854",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.886",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub for Hivel12 in the Kenyon+2014 potential model.",
+          "evidence": [
+            {
+              "location": "I:p22-b0"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.886",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.929",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub for Hivel12 in the Koposov+2010 potential model.",
+          "evidence": [
+            {
+              "location": "I:p22-b0"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.929",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.965",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub for Hivel12 in the Paczynski+1990 potential model.",
+          "evidence": [
+            {
+              "location": "I:p22-b0"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.965",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.980",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub for Hivel12 in the MWPotential2014 (Bovy 2015) potential model.",
+          "evidence": [
+            {
+              "location": "I:p22-b0"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.980",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.988",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub for Hivel12 in the Xue+2008 potential model.",
+          "evidence": [
+            {
+              "location": "I:p22-b0"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.988",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
     "status": "matched",
-    "method": "identifier",
+    "method": "coordinates",
     "selected": {
-      "main_id": "TYC 3562-1126-1",
+      "main_id": "Gaia DR3 3960007851762445696",
       "aliases": [
-        "2MASS J19550576+4817164",
-        "Gaia DR1 2086860081541233408",
-        "Gaia DR3 2086860081541233408",
-        "KIC 10880895",
-        "TIC 416527634",
-        "TYC 3562-1126-1"
+        "Gaia DR2 3960007851762445696",
+        "Gaia DR3 3960007851762445696"
       ],
-      "object_type": "*",
+      "object_type": "HV*",
       "coordinates": {
         "ra": {
-          "value": 298.77404526825916,
+          "value": 187.41963701971537,
           "unit": "deg"
         },
         "dec": {
-          "value": 48.28783564059944,
+          "value": 24.50596813077361,
           "unit": "deg"
         },
         "frame": "icrs",
         "error_ellipse": {
           "major": {
-            "value": 0.020400000736117363,
+            "value": 0.012900000438094139,
             "unit": "mas"
           },
           "minor": {
-            "value": 0.022199999541044235,
+            "value": 0.01360000018030405,
             "unit": "mas"
           },
           "angle": {
@@ -191,20 +413,20 @@
       },
       "proper_motion": {
         "ra_cosdec": {
-          "value": -5.866,
+          "value": -15.162,
           "unit": "mas / yr"
         },
         "dec": {
-          "value": -13.642,
+          "value": -15.624,
           "unit": "mas / yr"
         },
         "error_ellipse": {
           "major": {
-            "value": 0.027000000700354576,
+            "value": 0.014999999664723873,
             "unit": "mas / yr"
           },
           "minor": {
-            "value": 0.02800000086426735,
+            "value": 0.01899999938905239,
             "unit": "mas / yr"
           },
           "angle": {
@@ -216,75 +438,40 @@
         "bibcode": "2020yCat.1350....0G"
       },
       "parallax": {
-        "value": 1.4897,
+        "value": 0.1095,
         "unit": "mas",
-        "error": 0.023000000044703484,
+        "error": 0.017400000244379044,
         "quality": "A",
         "bibcode": "2020yCat.1350....0G"
       },
       "velocity": {
         "radial_velocity": {
-          "value": 2.07,
+          "value": 237.0,
           "unit": "km / s"
         },
         "redshift": {
-          "value": 6.904800608831252e-06
+          "value": 0.0007908596350030273
         },
         "reported_as": "v",
         "error": {
-          "value": 1.309999942779541,
+          "value": 6.0,
           "unit": "km / s"
         },
         "nature": "s",
-        "quality": "B",
-        "bibcode": "2022yCat.1355....0G",
+        "quality": "D",
+        "bibcode": "2021ApJS..252....3L",
         "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "G3",
+        "quality": "D",
+        "bibcode": "2021ApJS..252....3L"
       },
       "photometry": [
         {
-          "band": "J",
-          "value": 11.138999938964844,
-          "error": 0.01899999938905239,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
-          "band": "H",
-          "value": 10.968999862670898,
-          "error": 0.03099999949336052,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
-          "band": "K",
-          "value": 10.902999877929688,
-          "error": 0.026000000536441803,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
-          "band": "V",
-          "value": 11.899999618530273,
-          "error": 0.15000000596046448,
-          "system": "V",
-          "bibcode": "2000A&A...355L..27H",
-          "quality": "D"
-        },
-        {
-          "band": "B",
-          "value": 12.15999984741211,
-          "error": 0.14000000059604645,
-          "system": "V",
-          "bibcode": "2000A&A...355L..27H",
-          "quality": "D"
-        },
-        {
           "band": "G",
-          "value": 12.114729881286621,
-          "error": 0.002759000053629279,
+          "value": 13.361433982849121,
+          "error": 0.0027600000612437725,
           "system": "V",
           "bibcode": "2022yCat.1355....0G",
           "quality": "C"
@@ -292,15 +479,21 @@
       ]
     },
     "match": {
-      "identifiers": [
-        "Gaia DR1 2086860081541233408"
+      "coordinates": [
+        {
+          "source_record": "2011.10206v1#/stars/11",
+          "separation_arcsec": 0.054879340937941425,
+          "radius_arcsec": 5.0
+        }
       ]
     },
-    "last_queried_at": "2026-10-24T04:52:16.840785+00:00"
+    "last_queried_at": "2026-10-25T11:42:37.399578+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000377_provenance.json",
-    "sha256": "6a0a9650282fd22ba33b7d0db453c88555de7d644d34504720532cad4f332a9b"
+    "sha256": "375fe2c378dde2dfdb25b88835fdd0f6d4d1d21bf58a87b854b128c132763d1a"
   },
-  "warnings": []
+  "warnings": [
+    "Association based on coordinates only; no epoch propagation."
+  ]
 }

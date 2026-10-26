@@ -1,37 +1,47 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "aliases": [
+    "HVS-8 (2608.05814)"
+  ],
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000647",
-  "display_name": "ID 10 (2401.05630)",
+  "display_name": "Gaia DR3 1184128157160434560",
   "sources": {
-    "2401.05630v1": {
-      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+    "2608.05814v1": {
+      "title": "Photometric Distances for Metal-poor Giants and a Search for Hypervelocity Stars with LAMOST DR13 and Gaia DR3",
       "authors": [
-        "A. Luna",
-        "T. Marchetti",
-        "M. Rejkuba",
-        "N. W. C. Leigh",
-        "J. Alonso-García",
-        "A. Valenzuela Navarro",
-        "D. Minniti",
-        "L. C. Smith"
+        "Shuai Xu",
+        "Haibo Yuan",
+        "Bowen Huang",
+        "Xiao Kai",
+        "Wuming Yang"
       ],
-      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "pdf_url": "https://arxiv.org/pdf/2608.05814v1",
       "records": [
-        "/stars/13"
+        "/stars/7"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "ID 10",
+      "value": "HVS-8",
       "evidence": [
         {
-          "location": "T:p16-b0",
-          "quote": "<td>10</td><td>17h42m02.43s</td><td>-27d46m11.88s</td>"
+          "location": "T:p11-b0",
+          "quote": "<td>HVS-8</td><td>1184128157160434560</td>"
         }
       ],
-      "source": "2401.05630v1"
+      "source": "2608.05814v1"
+    },
+    {
+      "value": "Gaia DR3 1184128157160434560",
+      "evidence": [
+        {
+          "location": "T:p11-b0",
+          "quote": "<td>HVS-8</td><td>1184128157160434560</td>"
+        }
+      ],
+      "source": "2608.05814v1"
     }
   ],
   "contribution_types": [
@@ -39,19 +49,15 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b13",
-          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+          "location": "T:p11-b0",
+          "quote": "<td>HVS-8</td><td>1184128157160434560</td>"
         },
         {
-          "location": "T:p9-b10",
-          "quote": "65 were detected only in the VIRAC2 sample"
-        },
-        {
-          "location": "T:p17-b2",
-          "quote": "<td>10</td><td>16.58</td><td>11.0</td><td>2.89</td><td>871.98</td>"
+          "location": "T:p12-b6",
+          "quote": "removing these leaves a final sample of nine metal-poor HVS candidates"
         }
       ],
-      "source": "2401.05630v1"
+      "source": "2608.05814v1"
     }
   ],
   "quantities": [
@@ -59,16 +65,22 @@
       "quantity": "ra",
       "values": [
         {
-          "value": "17h42m02.43s",
-          "unit": "hourangle",
-          "condition": "VIRAC2-only HVS candidate (no Gaia DR3 counterpart); ICRS equatorial position",
+          "value": "228.15515",
+          "unit": "deg",
+          "condition": "Gaia DR3 equatorial right ascension listed for HVS-8",
           "evidence": [
             {
-              "location": "T:p16-b0",
-              "quote": "10 17h42m02.43s -27d46m11.88s 0.5804 1.2819 14.0 1.73"
+              "location": "T:p11-b0",
+              "quote": "<tr><td>HVS-8</td><td>1184128157160434560</td><td>228.15515</td><td>15.90453</td><td>0.080</td><td>1.97</td><td>0.66</td><td>-11.29</td><td>-88.84</td><td>-2.09</td><td>1.01</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "228.15515",
+            "approximate": false
+          }
         }
       ]
     },
@@ -76,16 +88,22 @@
       "quantity": "dec",
       "values": [
         {
-          "value": "-27d46m11.88s",
+          "value": "15.90453",
           "unit": "deg",
-          "condition": "VIRAC2-only HVS candidate (no Gaia DR3 counterpart); ICRS equatorial position",
+          "condition": "Gaia DR3 equatorial declination listed for HVS-8",
           "evidence": [
             {
-              "location": "T:p16-b0",
-              "quote": "10 17h42m02.43s -27d46m11.88s 0.5804 1.2819 14.0 1.73"
+              "location": "T:p11-b0",
+              "quote": "<tr><td>HVS-8</td><td>1184128157160434560</td><td>228.15515</td><td>15.90453</td><td>0.080</td><td>1.97</td><td>0.66</td><td>-11.29</td><td>-88.84</td><td>-2.09</td><td>1.01</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "15.90453",
+            "approximate": false
+          }
         }
       ]
     },
@@ -93,50 +111,145 @@
       "quantity": "distance",
       "values": [
         {
-          "value": "11.0",
+          "value": "14.7",
+          "lower_error": "1.4",
+          "upper_error": "1.5",
           "unit": "kpc",
-          "condition": "Heliocentric distance derived from RC photometric calibration",
+          "condition": "Dist_model photometric distance from the metallicity-dependent color-absolute-magnitude relation",
           "evidence": [
             {
-              "location": "T:p17-b2",
-              "quote": "10 16.58 11.0 2.89 871.98 124411 0.041 1.0"
+              "location": "T:p11-b0",
+              "quote": "<tr><td>HVS-8</td><td><eq>14.7^{+1.5}_{-1.4}</eq></td><td>-0.4</td><td>3.0</td><td>12.1</td><td>505.5</td><td>-302.5</td><td>-279.5</td><td>3.1</td><td><eq>652.1^{+77.0}_{-69.2}</eq></td><td>560.3</td><td>Sagittarius</td></tr>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "14.7",
+            "lower_error": "1.4",
+            "upper_error": "1.5",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "galactocentric_radius",
+      "quantity": "parallax",
       "values": [
         {
-          "value": "2.89",
-          "unit": "kpc",
-          "condition": "Three-dimensional galactocentric distance (r_GC)",
+          "value": "0.080",
+          "unit": "mas",
+          "condition": "Gaia DR3 parallax; ϖ/σϖ = 1.97",
           "evidence": [
             {
-              "location": "T:p17-b2",
-              "quote": "10 16.58 11.0 2.89 871.98 124411 0.041 1.0"
+              "location": "T:p11-b0",
+              "quote": "<tr><td>HVS-8</td><td>1184128157160434560</td><td>228.15515</td><td>15.90453</td><td>0.080</td><td>1.97</td><td>0.66</td><td>-11.29</td><td>-88.84</td><td>-2.09</td><td>1.01</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "0.080",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "unbound_probability",
+      "quantity": "proper_motion_ra",
       "values": [
         {
-          "value": "1.0",
-          "unit": "dimensionless",
-          "condition": "Probability P of exceeding the escape velocity, computed as V_tan,16th(r_GC)/V_esc(r_GC) using the galpy Irrgang13III potential",
+          "value": "0.66",
+          "unit": "mas/yr",
+          "condition": "Gaia DR3 proper motion in right ascension, μ_α* = μ_α cos δ",
           "evidence": [
             {
-              "location": "T:p17-b2",
-              "quote": "10 16.58 11.0 2.89 871.98 124411 0.041 1.0"
+              "location": "T:p11-b0",
+              "quote": "<tr><td>HVS-8</td><td>1184128157160434560</td><td>228.15515</td><td>15.90453</td><td>0.080</td><td>1.97</td><td>0.66</td><td>-11.29</td><td>-88.84</td><td>-2.09</td><td>1.01</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "0.66",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-11.29",
+          "unit": "mas/yr",
+          "condition": "Gaia DR3 proper motion in declination, μ_δ",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<tr><td>HVS-8</td><td>1184128157160434560</td><td>228.15515</td><td>15.90453</td><td>0.080</td><td>1.97</td><td>0.66</td><td>-11.29</td><td>-88.84</td><td>-2.09</td><td>1.01</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
+            }
+          ],
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-11.29",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-88.84",
+          "unit": "km/s",
+          "condition": "LAMOST radial velocity v_rad listed for HVS-8",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<tr><td>HVS-8</td><td>1184128157160434560</td><td>228.15515</td><td>15.90453</td><td>0.080</td><td>1.97</td><td>0.66</td><td>-11.29</td><td>-88.84</td><td>-2.09</td><td>1.01</td><td><eq>H_\\alpha</eq> filled-in</td></tr>"
+            }
+          ],
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-88.84",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "652.1",
+          "lower_error": "69.2",
+          "upper_error": "77.0",
+          "unit": "km/s",
+          "condition": "Total Galactocentric velocity V_tot, computed with the adopted Solar position and peculiar motion; uncertainties from Monte Carlo propagation",
+          "evidence": [
+            {
+              "location": "T:p11-b0",
+              "quote": "<tr><td>HVS-8</td><td><eq>14.7^{+1.5}_{-1.4}</eq></td><td>-0.4</td><td>3.0</td><td>12.1</td><td>505.5</td><td>-302.5</td><td>-279.5</td><td>3.1</td><td><eq>652.1^{+77.0}_{-69.2}</eq></td><td>560.3</td><td>Sagittarius</td></tr>"
+            }
+          ],
+          "source": "2608.05814v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "652.1",
+            "lower_error": "69.2",
+            "upper_error": "77.0",
+            "approximate": false
+          }
         }
       ]
     }
@@ -144,17 +257,11 @@
   "simbad": {
     "status": "not_found",
     "reason": "No candidate matched the requested identifiers or radius.",
-    "last_queried_at": "2026-10-24T04:55:14.004555+00:00"
+    "last_queried_at": "2026-10-25T12:00:29.409937+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000647_provenance.json",
-    "sha256": "1eb9ba6c177c85ace459b3089781ec7a2e769a6d18cb28a421dc27439f987cd2"
+    "sha256": "87fa3f9f8d11a806c5d9202e80eb94512440099eaf40f46794a25befdc054839"
   },
-  "warnings": [
-    "2401.05630v1#/stars/13/quantities/0/values/0/evidence/0: quote audit unknown at T:p16-b0; check the paper evidence.",
-    "2401.05630v1#/stars/13/quantities/1/values/0/evidence/0: quote audit unknown at T:p16-b0; check the paper evidence.",
-    "2401.05630v1#/stars/13/quantities/2/values/0/evidence/0: quote audit unknown at T:p17-b2; check the paper evidence.",
-    "2401.05630v1#/stars/13/quantities/3/values/0/evidence/0: quote audit unknown at T:p17-b2; check the paper evidence.",
-    "2401.05630v1#/stars/13/quantities/4/values/0/evidence/0: quote audit unknown at T:p17-b2; check the paper evidence."
-  ]
+  "warnings": []
 }

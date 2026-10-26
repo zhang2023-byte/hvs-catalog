@@ -1,56 +1,58 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000665",
   "associations": [],
   "simbad": {
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "Gaia DR3 4054179029853634816",
+      "main_id": "PB  7317",
       "aliases": [
-        "Gaia DR3 4054179029853634816"
+        "Gaia DR2 2648181555159543552",
+        "Gaia DR3 2648181555159543552",
+        "PB  7317"
       ],
       "position": {
-        "ra_deg": 264.53350712632124,
-        "dec_deg": -32.73577167735723,
+        "ra_deg": 343.52076465965,
+        "dec_deg": -4.04487848562,
         "frame": "icrs",
         "equinox": null,
         "evidence": []
       },
       "fields": {
         "main_id": {
-          "value": "Gaia DR3 4054179029853634816"
+          "value": "PB  7317"
         },
         "nbref": {
-          "value": 1
+          "value": 3
         },
         "otype": {
-          "value": "*"
+          "value": "HS?"
         },
         "ra": {
-          "value": 264.53350712632124,
+          "value": 343.52076465965,
           "unit": "deg"
         },
         "ra_prec": {
           "value": 14
         },
         "dec": {
-          "value": -32.73577167735723,
+          "value": -4.04487848562,
           "unit": "deg"
         },
         "dec_prec": {
           "value": 14
         },
         "coo_err_maj": {
-          "value": 0.5178999900817871,
+          "value": 0.10830000042915344,
           "unit": "mas"
         },
         "coo_err_maj_prec": {
           "value": 4
         },
         "coo_err_min": {
-          "value": 0.3686999976634979,
+          "value": 0.09939999878406525,
           "unit": "mas"
         },
         "coo_err_min_prec": {
@@ -70,31 +72,31 @@
           "value": "2020yCat.1350....0G"
         },
         "hpx": {
-          "value": 7374508
+          "value": 4817014
         },
         "pmra": {
-          "value": -2.882,
+          "value": 0.398,
           "unit": "mas / yr"
         },
         "pmra_prec": {
           "value": 3
         },
         "pmdec": {
-          "value": -2.382,
+          "value": -3.199,
           "unit": "mas / yr"
         },
         "pmdec_prec": {
           "value": 3
         },
         "pm_err_maj": {
-          "value": 0.6129999756813049,
+          "value": 0.12999999523162842,
           "unit": "mas / yr"
         },
         "pm_err_maj_prec": {
           "value": 3
         },
         "pm_err_min": {
-          "value": 0.39800000190734863,
+          "value": 0.1340000033378601,
           "unit": "mas / yr"
         },
         "pm_err_min_prec": {
@@ -110,11 +112,25 @@
         "pm_bibcode": {
           "value": "2020yCat.1350....0G"
         },
+        "plx_value": {
+          "value": 0.0689,
+          "unit": "mas"
+        },
+        "plx_prec": {
+          "value": 4
+        },
+        "plx_err": {
+          "value": 0.14190000295639038,
+          "unit": "mas"
+        },
+        "plx_err_prec": {
+          "value": 4
+        },
         "plx_qual": {
-          "value": ""
+          "value": "A"
         },
         "plx_bibcode": {
-          "value": ""
+          "value": "2020yCat.1350....0G"
         },
         "rvz_type": {
           "value": ""
@@ -162,16 +178,42 @@
           "value": ""
         },
         "update_date": {
-          "value": "2024-06-12"
+          "value": "2023-07-25"
         },
         "otype_txt": {
-          "value": "*"
+          "value": "HS?"
         },
         "rvz_wavelength": {
           "value": ""
         }
       },
       "photometry": [
+        {
+          "band": "B",
+          "fields": {
+            "flux_prec": {
+              "value": 1
+            },
+            "oidref": {
+              "value": 1353061
+            },
+            "filter": {
+              "value": "B"
+            },
+            "flux": {
+              "value": 17.5
+            },
+            "system": {
+              "value": ""
+            },
+            "qual": {
+              "value": "E"
+            },
+            "bibcode": {
+              "value": ""
+            }
+          }
+        },
         {
           "band": "G",
           "fields": {
@@ -182,25 +224,25 @@
               "value": 6
             },
             "oidref": {
-              "value": 25245061
+              "value": 1353061
             },
             "filter": {
               "value": "G"
             },
             "flux": {
-              "value": 19.485639572143555
+              "value": 17.728055953979492
             },
             "system": {
               "value": "V"
             },
             "flux_err": {
-              "value": 0.0051750000566244125
+              "value": 0.003235999960452318
             },
             "qual": {
               "value": "C"
             },
             "bibcode": {
-              "value": "2022yCat.1355....0G"
+              "value": "2020yCat.1350....0G"
             }
           }
         }
@@ -210,22 +252,37 @@
       {
         "query": {
           "method": "identifier",
-          "identifier": "Gaia DR3 4054179029853634816",
+          "identifier": "Gaia DR3 2648181555159543552",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "4362aa851285e490e648045654ce4d4edb10893b6c05601e8718645a18075423",
-        "queried_at": "2026-10-24T04:51:25.023779+00:00",
+        "response_sha256": "062139bb9021199eede0719aa0c51dc59a27deffffe71546ce13dbe62dfe3197",
+        "queried_at": "2026-10-25T12:00:25.146370+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2608.30063v1#/stars/8",
+            "original_identifier": {
+              "value": "Gaia DR3 2648181555159543552",
+              "evidence": [
+                {
+                  "location": "T:p16-b0",
+                  "quote": "2648181555159543552"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       }
     ],
     "matches": [
       {
-        "main_id": "Gaia DR3 4054179029853634816",
+        "main_id": "PB  7317",
         "method": "identifier",
-        "identifier": "Gaia DR3 4054179029853634816",
+        "identifier": "Gaia DR3 2648181555159543552",
         "candidate": {
           "$ref": "#/simbad/selected"
         }

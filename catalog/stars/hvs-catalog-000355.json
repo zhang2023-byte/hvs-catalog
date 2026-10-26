@@ -1,88 +1,224 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000355",
-  "display_name": "TYC 1732-2222-1",
+  "display_name": "Gaia DR2 6277913053288720512",
   "sources": {
-    "1805.03194v3": {
-      "title": "Old, Metal-Poor Extreme Velocity Stars in the Solar Neighborhood",
+    "1907.09298v2": {
+      "title": "Searching for correlations in GAIA DR2 unbound star trajectories",
       "authors": [
-        "Kohei Hattori",
-        "Monica Valluri",
-        "Eric F. Bell",
-        "Ian U. Roederer"
+        "Francesco Montanari",
+        "David Barrado",
+        "Juan García-Bellido"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1805.03194v3",
+      "pdf_url": "https://arxiv.org/pdf/1907.09298v2",
       "records": [
-        "/stars/27"
+        "/stars/4"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "Gaia-T-ES28",
+      "value": "Gaia DR2 6277913053288720512",
       "evidence": [
         {
-          "location": "T:p4-b0",
-          "quote": "<tr><td>Gaia-T-ES28</td><td>2853089398265954432</td>"
+          "location": "T:p13-b0",
+          "quote": "6277913053288720512"
         }
       ],
-      "source": "1805.03194v3"
-    },
-    {
-      "value": "Gaia DR2 2853089398265954432",
-      "evidence": [
-        {
-          "location": "T:p4-b0",
-          "quote": "<td>GaiaDR2 source_id</td>"
-        },
-        {
-          "location": "T:p4-b0",
-          "quote": "<tr><td>Gaia-T-ES28</td><td>2853089398265954432</td>"
-        }
-      ],
-      "source": "1805.03194v3"
+      "source": "1907.09298v2"
     }
   ],
   "contribution_types": [
     {
-      "value": "candidates_found",
+      "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p2-b9",
-          "quote": "6D coordinates of each star and select 30 stars that are\nunbound( E > 0 )or marginally bound"
+          "location": "T:p9-b68",
+          "quote": "As an alternative to the stellar selection mentioned in sec-\ntion 2.1, here we consider 1747 stars that still satisfy cuts\ngiven in Marchetti et al. (2019), total heliocentric velocities\nv − σ & 500 km/s and exclude possibly contaminated radial\nvelocities (Boubert et al. 2019), but have an higher unbound\nprobability thresholdP _ { \\mathrm { u b } } > 0 . 9."
         },
         {
-          "location": "T:p4-b0",
-          "quote": "<tr><td>Gaia-T-ES28</td><td>2853089398265954432</td>"
+          "location": "T:p10-b3",
+          "quote": "(62779130) has positive scattering evidence"
         },
         {
-          "location": "T:p9-b4",
-          "quote": "While these stars have space velocities implying that\nthey are unbound in the MWPotential2014 potential"
+          "location": "T:p13-b0",
+          "quote": "probability of being unbound from the Milky Way potential"
         }
       ],
-      "source": "1805.03194v3"
+      "source": "1907.09298v2"
     }
   ],
   "quantities": [
     {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "214.1732",
+          "unit": "deg",
+          "condition": "Gaia DR2 astrometric position; reference epoch J2015.5",
+          "evidence": [
+            {
+              "location": "T:p13-b0",
+              "quote": "<tr><td>6277913053288720512</td><td>(214.1732, -20.3474)</td><td>-2.02 ± 0.43</td><td>-40.19 ± 0.69</td><td>11.60 ± 0.54</td><td>-0.22</td><td>-39.7 ± 2.9</td><td><eq>10.1^{+3.5}_{-3.3}</eq></td><td><eq>4.3^{+2.5}_{-1.4}</eq></td><td>1.00</td></tr>"
+            }
+          ],
+          "source": "1907.09298v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "214.1732",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-20.3474",
+          "unit": "deg",
+          "condition": "Gaia DR2 astrometric position; reference epoch J2015.5",
+          "evidence": [
+            {
+              "location": "T:p13-b0",
+              "quote": "<tr><td>6277913053288720512</td><td>(214.1732, -20.3474)</td><td>-2.02 ± 0.43</td><td>-40.19 ± 0.69</td><td>11.60 ± 0.54</td><td>-0.22</td><td>-39.7 ± 2.9</td><td><eq>10.1^{+3.5}_{-3.3}</eq></td><td><eq>4.3^{+2.5}_{-1.4}</eq></td><td>1.00</td></tr>"
+            }
+          ],
+          "source": "1907.09298v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "-20.3474",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
       "quantity": "distance",
       "values": [
         {
-          "value": "1.45",
-          "error": "0.13",
+          "value": "10.1",
+          "lower_error": "3.3",
+          "upper_error": "3.5",
           "unit": "kpc",
-          "condition": "Heliocentric distance d_helio reported in Table 1.",
+          "condition": "Heliocentric distance derived in Marchetti et al. (2019)",
           "evidence": [
             {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES28</td><td>2853089398265954432</td><td>108.61</td><td>-36.13</td><td>1.45 ± 0.13</td><td>8.5</td><td>500.9</td><td>291.8</td><td>-303.5</td><td>-2531</td><td>-3391</td><td>0.50</td><td>-</td></tr>"
-            },
-            {
-              "location": "I:p4-b0"
+              "location": "T:p13-b0",
+              "quote": "<tr><td>6277913053288720512</td><td>(214.1732, -20.3474)</td><td>-2.02 ± 0.43</td><td>-40.19 ± 0.69</td><td>11.60 ± 0.54</td><td>-0.22</td><td>-39.7 ± 2.9</td><td><eq>10.1^{+3.5}_{-3.3}</eq></td><td><eq>4.3^{+2.5}_{-1.4}</eq></td><td>1.00</td></tr>"
             }
           ],
-          "source": "1805.03194v3"
+          "source": "1907.09298v2",
+          "attribution": "cited",
+          "attribution_reason": "Fixed PDF §2: distances come from Marchetti 2019 or Anders 2019, and Pub is provided by Marchetti 2019; this paper does not recalculate Pub.",
+          "standard": {
+            "unit": "kpc",
+            "value": "10.1",
+            "lower_error": "3.3",
+            "upper_error": "3.5",
+            "approximate": false
+          }
+        },
+        {
+          "value": "4.3",
+          "lower_error": "1.4",
+          "upper_error": "2.5",
+          "unit": "kpc",
+          "condition": "Heliocentric distance derived in Anders et al. (2019)",
+          "evidence": [
+            {
+              "location": "T:p13-b0",
+              "quote": "<tr><td>6277913053288720512</td><td>(214.1732, -20.3474)</td><td>-2.02 ± 0.43</td><td>-40.19 ± 0.69</td><td>11.60 ± 0.54</td><td>-0.22</td><td>-39.7 ± 2.9</td><td><eq>10.1^{+3.5}_{-3.3}</eq></td><td><eq>4.3^{+2.5}_{-1.4}</eq></td><td>1.00</td></tr>"
+            }
+          ],
+          "source": "1907.09298v2",
+          "attribution": "cited",
+          "attribution_reason": "Distance catalog results already calculated and published by Bailer-Jones, Anders et al. are adopted directly; cited per the user's added clarification. Quantities recalculated here are own.",
+          "standard": {
+            "unit": "kpc",
+            "value": "4.3",
+            "lower_error": "1.4",
+            "upper_error": "2.5",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "parallax",
+      "values": [
+        {
+          "value": "-2.02",
+          "error": "0.43",
+          "unit": "mas",
+          "condition": "Gaia DR2 parallax; reference epoch J2015.5; negative value as reported",
+          "evidence": [
+            {
+              "location": "T:p13-b0",
+              "quote": "<tr><td>6277913053288720512</td><td>(214.1732, -20.3474)</td><td>-2.02 ± 0.43</td><td>-40.19 ± 0.69</td><td>11.60 ± 0.54</td><td>-0.22</td><td>-39.7 ± 2.9</td><td><eq>10.1^{+3.5}_{-3.3}</eq></td><td><eq>4.3^{+2.5}_{-1.4}</eq></td><td>1.00</td></tr>"
+            }
+          ],
+          "source": "1907.09298v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "-2.02",
+            "error": "0.43",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-40.19",
+          "error": "0.69",
+          "unit": "mas/yr",
+          "condition": "Proper motion in right-ascension direction μ_α* = μ_α cos δ, Gaia DR2; reference epoch J2015.5",
+          "evidence": [
+            {
+              "location": "T:p13-b0",
+              "quote": "<tr><td>6277913053288720512</td><td>(214.1732, -20.3474)</td><td>-2.02 ± 0.43</td><td>-40.19 ± 0.69</td><td>11.60 ± 0.54</td><td>-0.22</td><td>-39.7 ± 2.9</td><td><eq>10.1^{+3.5}_{-3.3}</eq></td><td><eq>4.3^{+2.5}_{-1.4}</eq></td><td>1.00</td></tr>"
+            }
+          ],
+          "source": "1907.09298v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-40.19",
+            "error": "0.69",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "11.60",
+          "error": "0.54",
+          "unit": "mas/yr",
+          "condition": "Proper motion in declination direction, Gaia DR2; reference epoch J2015.5",
+          "evidence": [
+            {
+              "location": "T:p13-b0",
+              "quote": "<tr><td>6277913053288720512</td><td>(214.1732, -20.3474)</td><td>-2.02 ± 0.43</td><td>-40.19 ± 0.69</td><td>11.60 ± 0.54</td><td>-0.22</td><td>-39.7 ± 2.9</td><td><eq>10.1^{+3.5}_{-3.3}</eq></td><td><eq>4.3^{+2.5}_{-1.4}</eq></td><td>1.00</td></tr>"
+            }
+          ],
+          "source": "1907.09298v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "11.60",
+            "error": "0.54",
+            "approximate": false
+          }
         }
       ]
     },
@@ -90,59 +226,24 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "-303.5",
+          "value": "-39.7",
+          "error": "2.9",
           "unit": "km/s",
-          "condition": "Line-of-sight velocity v_los from Gaia, as listed in Table 1.",
+          "condition": "Line-of-sight radial velocity V_r",
           "evidence": [
             {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES28</td><td>2853089398265954432</td><td>108.61</td><td>-36.13</td><td>1.45 ± 0.13</td><td>8.5</td><td>500.9</td><td>291.8</td><td>-303.5</td><td>-2531</td><td>-3391</td><td>0.50</td><td>-</td></tr>"
-            },
-            {
-              "location": "I:p4-b0"
+              "location": "T:p13-b0",
+              "quote": "<tr><td>6277913053288720512</td><td>(214.1732, -20.3474)</td><td>-2.02 ± 0.43</td><td>-40.19 ± 0.69</td><td>11.60 ± 0.54</td><td>-0.22</td><td>-39.7 ± 2.9</td><td><eq>10.1^{+3.5}_{-3.3}</eq></td><td><eq>4.3^{+2.5}_{-1.4}</eq></td><td>1.00</td></tr>"
             }
           ],
-          "source": "1805.03194v3"
-        }
-      ]
-    },
-    {
-      "quantity": "galactocentric_radius",
-      "values": [
-        {
-          "value": "8.5",
-          "unit": "kpc",
-          "condition": "Galactocentric radius r reported in Table 1, using the paper's Galactocentric frame with R0 = 8 kpc.",
-          "evidence": [
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES28</td><td>2853089398265954432</td><td>108.61</td><td>-36.13</td><td>1.45 ± 0.13</td><td>8.5</td><td>500.9</td><td>291.8</td><td>-303.5</td><td>-2531</td><td>-3391</td><td>0.50</td><td>-</td></tr>"
-            },
-            {
-              "location": "I:p4-b0"
-            }
-          ],
-          "source": "1805.03194v3"
-        }
-      ]
-    },
-    {
-      "quantity": "galactic_rest_frame_velocity",
-      "values": [
-        {
-          "value": "500.9",
-          "unit": "km/s",
-          "condition": "Total Galactocentric rest-frame speed v_total, corrected for solar reflex motion, as listed in Table 1.",
-          "evidence": [
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES28</td><td>2853089398265954432</td><td>108.61</td><td>-36.13</td><td>1.45 ± 0.13</td><td>8.5</td><td>500.9</td><td>291.8</td><td>-303.5</td><td>-2531</td><td>-3391</td><td>0.50</td><td>-</td></tr>"
-            },
-            {
-              "location": "I:p4-b0"
-            }
-          ],
-          "source": "1805.03194v3"
+          "source": "1907.09298v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-39.7",
+            "error": "2.9",
+            "approximate": false
+          }
         }
       ]
     },
@@ -150,23 +251,23 @@
       "quantity": "unbound_probability",
       "values": [
         {
-          "value": "0.50",
+          "value": "1.00",
           "unit": "dimensionless",
-          "condition": "Probability of being unbound in MWPotential2014, from 1000 Monte Carlo realizations of the observed 6D phase-space errors.",
+          "condition": "Probability P_ub of being unbound from the Milky Way potential; relies on Marchetti et al. (2019) distances",
           "evidence": [
             {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES28</td><td>2853089398265954432</td><td>108.61</td><td>-36.13</td><td>1.45 ± 0.13</td><td>8.5</td><td>500.9</td><td>291.8</td><td>-303.5</td><td>-2531</td><td>-3391</td><td>0.50</td><td>-</td></tr>"
-            },
-            {
-              "location": "I:p4-b0"
-            },
-            {
-              "location": "T:p2-b9",
-              "quote": "the probability of each star being unbound,P _ { \\mathrm { U n b } } ."
+              "location": "T:p13-b0",
+              "quote": "<tr><td>6277913053288720512</td><td>(214.1732, -20.3474)</td><td>-2.02 ± 0.43</td><td>-40.19 ± 0.69</td><td>11.60 ± 0.54</td><td>-0.22</td><td>-39.7 ± 2.9</td><td><eq>10.1^{+3.5}_{-3.3}</eq></td><td><eq>4.3^{+2.5}_{-1.4}</eq></td><td>1.00</td></tr>"
             }
           ],
-          "source": "1805.03194v3"
+          "source": "1907.09298v2",
+          "attribution": "cited",
+          "attribution_reason": "Fixed PDF §2: distances come from Marchetti 2019 or Anders 2019, and Pub is provided by Marchetti 2019; this paper does not recalculate Pub.",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
         }
       ]
     }
@@ -175,31 +276,32 @@
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "TYC 1732-2222-1",
+      "main_id": "TYC 6147-4-1",
       "aliases": [
-        "2MASS J00002186+2519219",
-        "Gaia DR2 2853089398265954432",
-        "Gaia DR3 2853089398265954432",
-        "TYC 1732-2222-1"
+        "2MASS J14164160-2020508",
+        "Gaia DR2 6277913053288720512",
+        "Gaia DR3 6277913053288720512",
+        "TIC 46022350",
+        "TYC 6147-4-1"
       ],
-      "object_type": "PM*",
+      "object_type": "*",
       "coordinates": {
         "ra": {
-          "value": 0.09115450965000002,
+          "value": 214.17336525458,
           "unit": "deg"
         },
         "dec": {
-          "value": 25.32272592143,
+          "value": -20.34748080451,
           "unit": "deg"
         },
         "frame": "icrs",
         "error_ellipse": {
           "major": {
-            "value": 0.03440000116825104,
+            "value": 0.08649999648332596,
             "unit": "mas"
           },
           "minor": {
-            "value": 0.024800000712275505,
+            "value": 0.09000000357627869,
             "unit": "mas"
           },
           "angle": {
@@ -213,20 +315,20 @@
       },
       "proper_motion": {
         "ra_cosdec": {
-          "value": 85.475,
+          "value": -37.899,
           "unit": "mas / yr"
         },
         "dec": {
-          "value": -31.505,
+          "value": 8.936,
           "unit": "mas / yr"
         },
         "error_ellipse": {
           "major": {
-            "value": 0.054999999701976776,
+            "value": 0.11699999868869781,
             "unit": "mas / yr"
           },
           "minor": {
-            "value": 0.03099999949336052,
+            "value": 0.10000000149011612,
             "unit": "mas / yr"
           },
           "angle": {
@@ -238,75 +340,75 @@
         "bibcode": "2020yCat.1350....0G"
       },
       "parallax": {
-        "value": 0.8301,
+        "value": 0.3476,
         "unit": "mas",
-        "error": 0.05260000005364418,
+        "error": 0.11159999668598175,
         "quality": "A",
         "bibcode": "2020yCat.1350....0G"
       },
       "velocity": {
         "radial_velocity": {
-          "value": -303.49,
+          "value": -39.67,
           "unit": "km / s"
         },
         "redshift": {
-          "value": -0.001011821781120803
+          "value": -0.00013231612278696847
         },
         "reported_as": "v",
         "error": {
-          "value": 0.8199999928474426,
+          "value": 2.869999885559082,
           "unit": "km / s"
         },
         "nature": "s",
-        "quality": "A",
+        "quality": "C",
         "bibcode": "2018yCat.1345....0G",
         "wavelength": "O"
       },
       "photometry": [
         {
           "band": "J",
-          "value": 9.49899959564209,
-          "error": 0.02199999988079071,
+          "value": 10.4399995803833,
+          "error": 0.020999999716877937,
           "system": "V",
           "bibcode": "2003yCat.2246....0C",
           "quality": "C"
         },
         {
           "band": "H",
-          "value": 9.069000244140625,
-          "error": 0.02199999988079071,
+          "value": 10.196999549865723,
+          "error": 0.024000000208616257,
           "system": "V",
           "bibcode": "2003yCat.2246....0C",
           "quality": "C"
         },
         {
           "band": "K",
-          "value": 8.92300033569336,
-          "error": 0.02199999988079071,
+          "value": 10.093999862670898,
+          "error": 0.020999999716877937,
           "system": "V",
           "bibcode": "2003yCat.2246....0C",
           "quality": "C"
         },
         {
           "band": "V",
-          "value": 11.279999732971191,
-          "error": 0.10000000149011612,
+          "value": 11.979999542236328,
+          "error": 0.20999999344348907,
           "system": "V",
           "bibcode": "2000A&A...355L..27H",
           "quality": "D"
         },
         {
           "band": "B",
-          "value": 12.819999694824219,
-          "error": 0.3100000023841858,
+          "value": 12.170000076293945,
+          "error": 0.17000000178813934,
           "system": "V",
           "bibcode": "2000A&A...355L..27H",
           "quality": "D"
         },
         {
           "band": "G",
-          "value": 11.0138578414917,
-          "error": 0.002761000068858266,
+          "value": 11.486259460449219,
+          "error": 0.003073000116273761,
           "system": "V",
           "bibcode": "2020yCat.1350....0G",
           "quality": "C"
@@ -315,16 +417,14 @@
     },
     "match": {
       "identifiers": [
-        "Gaia DR2 2853089398265954432"
+        "Gaia DR2 6277913053288720512"
       ]
     },
-    "last_queried_at": "2026-10-24T04:46:12.721962+00:00"
+    "last_queried_at": "2026-10-25T11:43:46.791907+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000355_provenance.json",
-    "sha256": "83e26820099b64de1cb9ab936476ff5257be151871cadccfa6bb5b0bee52b160"
+    "sha256": "e21499371e9888496b1324cedff8666ef41a06ac8c7cce8d1544cfc3c2b3c3ae"
   },
-  "warnings": [
-    "1805.03194v3#/stars/27/quantities/4/values/0/evidence/2: quote audit unknown at T:p2-b9; check the paper evidence."
-  ]
+  "warnings": []
 }

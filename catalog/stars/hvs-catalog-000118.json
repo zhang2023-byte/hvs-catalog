@@ -1,89 +1,139 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000118",
-  "display_name": "HVS8",
+  "display_name": "NHCb",
   "sources": {
-    "1203.3543v1": {
-      "title": "MMT Hypervelocity Star Survey. II. Five New Unbound Stars",
+    "1501.07824v1": {
+      "title": "Nearby Low-Mass Hypervelocity Stars",
       "authors": [
-        "Warren R. Brown",
-        "Margaret J. Geller",
-        "Scott J. Kenyon"
+        "Yanqiong Zhang",
+        "Martin C. Smith",
+        "Jeffrey L. Carlin"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1203.3543v1",
+      "pdf_url": "https://arxiv.org/pdf/1501.07824v1",
       "records": [
-        "/stars/7"
+        "/stars/1"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS8",
+      "value": "NHCb",
       "evidence": [
         {
-          "location": "I:p5-b0"
-        }
-      ],
-      "source": "1203.3543v1"
-    },
-    {
-      "value": "SDSS J094214.03+200322.07",
-      "evidence": [
+          "location": "T:p3-b4",
+          "quote": "NHCb"
+        },
         {
-          "location": "I:p5-b0"
+          "location": "I:p3-b4"
         }
       ],
-      "source": "1203.3543v1"
+      "source": "1501.07824v1"
     }
   ],
   "contribution_types": [
     {
-      "value": "follow_up",
+      "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b10",
-          "quote": "we reported the discovery of 14 unbound HVSs"
+          "location": "T:p2-b5",
+          "quote": "all four candidates have significant probabilities that they are not bound to the Milky Way."
         },
         {
-          "location": "I:p5-b0"
+          "location": "I:p4-b1"
+        },
+        {
+          "location": "T:p4-b3",
+          "quote": "we have presented a sample of candidate hypervelocity stars that may be unbound from the Milky Way."
         }
       ],
-      "source": "1203.3543v1"
+      "source": "1501.07824v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "ra",
+      "quantity": "proper_motion_ra",
       "values": [
         {
-          "value": "094214.03",
-          "unit": "hourangle",
-          "condition": "J2000 equatorial right ascension encoded in the SDSS catalog identifier listed for HVS8 in Table 1",
+          "value": "27.52",
+          "error": "0.57",
+          "unit": "mas/yr",
+          "condition": "Equatorial proper-motion component μ_α cos δ from Table 1.",
           "evidence": [
             {
-              "location": "T:p5-b0",
-              "quote": "<tr><td>HVS8</td><td>489</td><td>393</td><td>17.94</td><td>+0.01</td><td>46</td><td>211.70</td><td>+46.33</td><td>SDSS J094214.03+200322.07</td><td>6</td></tr>"
+              "location": "T:p3-b4",
+              "quote": "<td><eq>\\mu_{\\alpha}cos\\delta</eq><eq>(\\mu mas/yr)</eq></td><td><eq>\\mu_{\\delta}</eq><eq>(\\mu mas/yr)</eq></td>"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCb</td><td>27.52 ± 0.57</td><td>-108.89 ± 0.57</td><td>1.1</td><td>-235.4 ± 10</td><td>436 ± 55</td></tr>"
             }
           ],
-          "source": "1203.3543v1"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "27.52",
+            "error": "0.57",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "dec",
+      "quantity": "proper_motion_dec",
       "values": [
         {
-          "value": "+200322.07",
-          "unit": "deg",
-          "condition": "J2000 equatorial declination encoded in the SDSS catalog identifier listed for HVS8 in Table 1",
+          "value": "-108.89",
+          "error": "0.57",
+          "unit": "mas/yr",
+          "condition": "Equatorial proper-motion component μ_δ from Table 1.",
           "evidence": [
             {
-              "location": "T:p5-b0",
-              "quote": "<tr><td>HVS8</td><td>489</td><td>393</td><td>17.94</td><td>+0.01</td><td>46</td><td>211.70</td><td>+46.33</td><td>SDSS J094214.03+200322.07</td><td>6</td></tr>"
+              "location": "T:p3-b4",
+              "quote": "<td><eq>\\mu_{\\alpha}cos\\delta</eq><eq>(\\mu mas/yr)</eq></td><td><eq>\\mu_{\\delta}</eq><eq>(\\mu mas/yr)</eq></td>"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCb</td><td>27.52 ± 0.57</td><td>-108.89 ± 0.57</td><td>1.1</td><td>-235.4 ± 10</td><td>436 ± 55</td></tr>"
             }
           ],
-          "source": "1203.3543v1"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-108.89",
+            "error": "0.57",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "1.1",
+          "unit": "kpc",
+          "condition": "Photometric distance D* calculated assuming [Fe/H] = -1.5 dex.",
+          "evidence": [
+            {
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCb</td><td>27.52 ± 0.57</td><td>-108.89 ± 0.57</td><td>1.1</td><td>-235.4 ± 10</td><td>436 ± 55</td></tr>"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "∗Distance calculated assuming\\mathrm { [ F e / H ] = - 1 . 5 ~ d e x }. <sup>†</sup> In the Galactic rest frame."
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "1.1",
+            "approximate": false
+          }
         }
       ]
     },
@@ -91,59 +141,141 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "489",
+          "value": "-235.4",
+          "error": "10",
           "unit": "km/s",
-          "condition": "Heliocentric radial velocity v_odot for HVS8 from Table 1",
+          "condition": "Radial velocity v_r from Table 1.",
           "evidence": [
             {
-              "location": "T:p5-b0",
-              "quote": "<tr><td>HVS8</td><td>489</td><td>393</td><td>17.94</td><td>+0.01</td><td>46</td><td>211.70</td><td>+46.33</td><td>SDSS J094214.03+200322.07</td><td>6</td></tr>"
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCb</td><td>27.52 ± 0.57</td><td>-108.89 ± 0.57</td><td>1.1</td><td>-235.4 ± 10</td><td>436 ± 55</td></tr>"
             }
           ],
-          "source": "1203.3543v1"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-235.4",
+            "error": "10",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "galactocentric_radius",
+      "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "46",
-          "unit": "kpc",
-          "condition": "Galactocentric distance R_GC for HVS8 from Table 1, based on Girardi et al. main-sequence tracks and assuming the Sun is 8 kpc from the Galactic center",
+          "value": "436",
+          "error": "55",
+          "unit": "km/s",
+          "condition": "Total velocity v_tot in the Galactic rest frame, using the distance calculated assuming [Fe/H] = -1.5 dex.",
           "evidence": [
             {
-              "location": "T:p5-b0",
-              "quote": "<tr><td>HVS8</td><td>489</td><td>393</td><td>17.94</td><td>+0.01</td><td>46</td><td>211.70</td><td>+46.33</td><td>SDSS J094214.03+200322.07</td><td>6</td></tr>"
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCb</td><td>27.52 ± 0.57</td><td>-108.89 ± 0.57</td><td>1.1</td><td>-235.4 ± 10</td><td>436 ± 55</td></tr>"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "∗Distance calculated assuming\\mathrm { [ F e / H ] = - 1 . 5 ~ d e x }. <sup>†</sup> In the Galactic rest frame."
             }
           ],
-          "source": "1203.3543v1"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "436",
+            "error": "55",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.2",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -2.0.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "<table><tr><td></td><td><eq>[Fe/H] = -2.0</eq></td><td><eq>[Fe/H] = -1.5</eq></td><td><eq>[Fe/H] = -1.0</eq></td><td><eq>[Fe/H] = -0.5</eq></td></tr><tr><td>NHCa</td><td>4.3 %</td><td>27.5 %</td><td>77.8 %</td><td>98.7 %</td></tr><tr><td>NHCb</td><td>0.2 %</td><td>4.5 %</td><td>42.7 %</td><td>92.5 %</td></tr>"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.002",
+            "approximate": false
+          }
         },
         {
-          "value": "≃50",
-          "unit": "kpc",
-          "condition": "Approximate Galactocentric distance R quoted for HVS7 and HVS8 from prior echelle/spectroscopic studies",
+          "value": "4.5",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -1.5.",
           "evidence": [
             {
-              "location": "T:p5-b2",
-              "quote": "HVS7 and HVS8, on the other hand, are demon-\nstrated ≃4M _ { \\odot } main sequence B stars at R ≃50 kpc"
+              "location": "T:p4-b1",
+              "quote": "<table><tr><td></td><td><eq>[Fe/H] = -2.0</eq></td><td><eq>[Fe/H] = -1.5</eq></td><td><eq>[Fe/H] = -1.0</eq></td><td><eq>[Fe/H] = -0.5</eq></td></tr><tr><td>NHCa</td><td>4.3 %</td><td>27.5 %</td><td>77.8 %</td><td>98.7 %</td></tr><tr><td>NHCb</td><td>0.2 %</td><td>4.5 %</td><td>42.7 %</td><td>92.5 %</td></tr>"
             }
           ],
-          "source": "1203.3543v1"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.045",
+            "approximate": false
+          }
+        },
+        {
+          "value": "42.7",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -1.0.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "<table><tr><td></td><td><eq>[Fe/H] = -2.0</eq></td><td><eq>[Fe/H] = -1.5</eq></td><td><eq>[Fe/H] = -1.0</eq></td><td><eq>[Fe/H] = -0.5</eq></td></tr><tr><td>NHCa</td><td>4.3 %</td><td>27.5 %</td><td>77.8 %</td><td>98.7 %</td></tr><tr><td>NHCb</td><td>0.2 %</td><td>4.5 %</td><td>42.7 %</td><td>92.5 %</td></tr>"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.427",
+            "approximate": false
+          }
+        },
+        {
+          "value": "92.5",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -0.5.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "<table><tr><td></td><td><eq>[Fe/H] = -2.0</eq></td><td><eq>[Fe/H] = -1.5</eq></td><td><eq>[Fe/H] = -1.0</eq></td><td><eq>[Fe/H] = -0.5</eq></td></tr><tr><td>NHCa</td><td>4.3 %</td><td>27.5 %</td><td>77.8 %</td><td>98.7 %</td></tr><tr><td>NHCb</td><td>0.2 %</td><td>4.5 %</td><td>42.7 %</td><td>92.5 %</td></tr>"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.925",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_found",
-    "reason": "No candidate matched the requested identifiers or radius.",
-    "last_queried_at": "2026-10-24T04:41:46.543365+00:00"
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000118_provenance.json",
-    "sha256": "9ce3b709da1b2c4c485c77033d3f443454609ce2810b8e2aa87f094824bf1541"
+    "sha256": "9e7e799dd4ec3c95f61161f799fd835833b7c91fbff1aeffa0f1a10956bfdc77"
   },
-  "warnings": [
-    "1203.3543v1#/stars/7/quantities/3/values/1/evidence/0: quote audit unknown at T:p5-b2; check the paper evidence."
-  ]
+  "warnings": []
 }

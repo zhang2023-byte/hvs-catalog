@@ -1,31 +1,32 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000087",
-  "display_name": "US 708",
+  "display_name": "SDSS J115734.45+054645.58",
   "sources": {
-    "0911.4998v1": {
-      "title": "WD + He star systems as the progenitors of Type Ia supernovae and their surviving companion stars",
+    "1401.7342v1": {
+      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
       "authors": [
-        "Bo Wang",
-        "Zhanwen Han"
+        "Warren R. Brown",
+        "Margaret J. Geller",
+        "Scott J. Kenyon"
       ],
-      "pdf_url": "https://arxiv.org/pdf/0911.4998v1",
+      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
       "records": [
-        "/stars/0"
+        "/stars/22"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "US 708",
+      "value": "SDSS J115734.45+054645.58",
       "evidence": [
         {
-          "location": "T:p3-b8",
-          "quote": "US 708 is an extremely He-rich sdO star in the\nGalaxy halo, with a heliocentric radial velocity of\n+708 ± 15 km/s (Hirsch et al. 2005)."
+          "location": "T:p3-b5",
+          "quote": "SDSS J115734.45+054645.58; it is logg"
         }
       ],
-      "source": "0911.4998v1"
+      "source": "1401.7342v1"
     }
   ],
   "contribution_types": [
@@ -33,19 +34,19 @@
       "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p1-b3",
-          "quote": "which could\nbe an alternative origin for hypervelocity stars (HVSs),\nespecially for HVSs such as US 708."
+          "location": "T:p3-b4",
+          "quote": "stars that are significantly unbound in radial"
         },
         {
-          "location": "T:p3-b2",
-          "quote": "which are stars with a velocity so great\nthat they are able to escape the gravitational pull of\nthe Galaxy."
+          "location": "T:p3-b5",
+          "quote": "re-observed the star previously reported at −359 km"
         },
         {
-          "location": "T:p3-b8",
-          "quote": "Thus, a surviving companion star in the\nWD + He star channel may have a high velocity like\nUS 708 (see also Justham et al. 2008)."
+          "location": "T:p3-b5",
+          "quote": "a 13.5 hr orbital period binary (Brown et al. 2013b)."
         }
       ],
-      "source": "0911.4998v1"
+      "source": "1401.7342v1"
     }
   ],
   "quantities": [
@@ -53,28 +54,37 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "+708",
-          "error": "15",
+          "value": "-359",
           "unit": "km/s",
-          "condition": "Heliocentric radial velocity reported for US 708 (taken from Hirsch et al. 2005)",
+          "condition": "Previously reported value for SDSS J115734.45+054645.58; cited in the discussion of velocity outliers moving toward the observer. Re-observation shows the object is a log g ≃ 5 white dwarf in a 13.5 hr orbital-period binary, not an HVS.",
           "evidence": [
             {
-              "location": "T:p3-b8",
-              "quote": "US 708 is an extremely He-rich sdO star in the Galaxy halo, with a heliocentric radial velocity of +708 ± 15 km/s (Hirsch et al. 2005)."
+              "location": "T:p3-b5",
+              "quote": "We re-observed the star previously reported at −359 km s−1 SDSS J115734.45+054645.58; it is logg ≃ 5white dwarf in a 13.5 hr orbital period binary (Brown et al. 2013b)."
             }
           ],
-          "source": "0911.4998v1"
+          "source": "1401.7342v1",
+          "attribution": "cited",
+          "attribution_reason": "The condition and quote explicitly restate or compare earlier results, not a new measurement in this paper; see the original condition for the source and use.",
+          "standard": {
+            "unit": "km/s",
+            "value": "-359",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-25T13:17:26.153305+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000087_provenance.json",
-    "sha256": "406134f500bb584b9f01e4a3c120eb85f15db520bb296d57e10010c7c28c81b2"
+    "sha256": "3e980c3d644f02b21c59092025ca29ba144670d55e83d76230dd0536b32509f4"
   },
-  "warnings": []
+  "warnings": [
+    "1401.7342v1#/stars/22/quantities/0/values/0/evidence/0: quote audit unknown at T:p3-b5; check the paper evidence."
+  ]
 }

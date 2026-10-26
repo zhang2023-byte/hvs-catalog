@@ -1,59 +1,385 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "aliases": [
+    "HVS 14 (1308.3495)"
+  ],
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000069",
-  "display_name": "HVS13",
+  "display_name": "J225912.13+074356.5",
   "sources": {
-    "0811.0612v2": {
-      "title": "The Anisotropic Spatial Distribution of Hypervelocity Stars",
+    "1308.3495v2": {
+      "title": "Hypervelocity Star Candidates in the SEGUE G & K Dwarf Sample",
       "authors": [
-        "Warren R. Brown",
-        "Margaret J. Geller",
-        "Scott J. Kenyon",
-        "Benjamin C. Bromley"
+        "Lauren E. Palladino",
+        "Katharine J. Schlesinger",
+        "Kelly Holley-Bockelmann",
+        "Carlos Allende Prieto",
+        "Timothy C. Beers",
+        "Young Sun Lee",
+        "Donald P. Schneider"
       ],
-      "pdf_url": "https://arxiv.org/pdf/0811.0612v2",
+      "pdf_url": "https://arxiv.org/pdf/1308.3495v2",
       "records": [
-        "/stars/10"
+        "/stars/13"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS13",
+      "value": "HVS 14",
       "evidence": [
         {
-          "location": "T:p1-b18",
-          "quote": "The new survey includes HVS1 and HVS11-HVS16"
+          "location": "T:p7-b0",
+          "quote": "<tr><td>14</td><td>J225912.13 + 074356.5</td>"
         }
       ],
-      "source": "0811.0612v2"
+      "source": "1308.3495v2"
+    },
+    {
+      "value": "J225912.13+074356.5",
+      "evidence": [
+        {
+          "location": "T:p7-b0",
+          "quote": "<tr><td>14</td><td>J225912.13 + 074356.5</td>"
+        }
+      ],
+      "source": "1308.3495v2"
     }
   ],
   "contribution_types": [
     {
-      "value": "follow_up",
+      "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p2-b0",
-          "quote": "the 14 unbound HVSs (stars)"
+          "location": "T:p7-b2",
+          "quote": "We report a set of 20 hypervelocity candidates from\nthe SEGUE G and K dwarf sample. These candidates\nhave velocities greatly exceeding the escape velocity at\ntheir respective positions in the Galaxy, albeit with large\nproper-motion errors."
         },
         {
-          "location": "T:p1-b13",
-          "quote": "We consider the 14 HVSs from the combined surveys of\nBrown et al. (2007b, 2008)."
+          "location": "T:p7-b0",
+          "quote": "TABLE 1\nStellar and kinematic parameters for the 20 HVS candidates."
+        },
+        {
+          "location": "T:p7-b0",
+          "quote": "<tr><td>14</td><td>J225912.13 + 074356.5</td>"
         }
       ],
-      "source": "0811.0612v2"
+      "source": "1308.3495v2"
     }
   ],
-  "quantities": [],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "22:59:12.13",
+          "unit": "hourangle",
+          "condition": "Equatorial right ascension from the IAU name in Table 1 (J2000).",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "J225912.13 + 074356.5"
+            }
+          ],
+          "source": "1308.3495v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "344.8005416666666666666666666",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "+07:43:56.5",
+          "unit": "deg",
+          "condition": "Equatorial declination from the IAU name in Table 1 (J2000).",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "J225912.13 + 074356.5"
+            }
+          ],
+          "source": "1308.3495v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "7.732361111111111111111111111",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "4.60",
+          "unit": "kpc",
+          "condition": "Isochrone-matching distance listed for HVS 14 in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "<tr><td>14</td><td>J225912.13 + 074356.5</td><td>18.76</td><td>-0.56</td><td>0.37</td><td>4.60</td><td>-97.8</td><td>44.9</td><td>840.7</td><td>121.8</td><td>550.0</td><td>5.86</td><td>0.01</td><td>Reliable</td></tr>"
+            }
+          ],
+          "source": "1308.3495v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "4.60",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-97.8",
+          "unit": "km/s",
+          "condition": "Radial velocity taken directly from the SSPP without corrections, as listed in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "<tr><td>14</td><td>J225912.13 + 074356.5</td><td>18.76</td><td>-0.56</td><td>0.37</td><td>4.60</td><td>-97.8</td><td>44.9</td><td>840.7</td><td>121.8</td><td>550.0</td><td>5.86</td><td>0.01</td><td>Reliable</td></tr>"
+            }
+          ],
+          "source": "1308.3495v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-97.8",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "840.7",
+          "unit": "km/s",
+          "condition": "Total velocity after conversion to the Galactic Cartesian coordinate system described in Section 4.1, before error consideration (Table 1 v).",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "<tr><td>14</td><td>J225912.13 + 074356.5</td><td>18.76</td><td>-0.56</td><td>0.37</td><td>4.60</td><td>-97.8</td><td>44.9</td><td>840.7</td><td>121.8</td><td>550.0</td><td>5.86</td><td>0.01</td><td>Reliable</td></tr>"
+            }
+          ],
+          "source": "1308.3495v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "840.7",
+            "approximate": false
+          }
+        },
+        {
+          "value": "121.8",
+          "unit": "km/s",
+          "condition": "Minimum total velocity from one million Monte Carlo realizations of proper-motion, radial-velocity, and distance errors (Table 1 v_min).",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "<tr><td>14</td><td>J225912.13 + 074356.5</td><td>18.76</td><td>-0.56</td><td>0.37</td><td>4.60</td><td>-97.8</td><td>44.9</td><td>840.7</td><td>121.8</td><td>550.0</td><td>5.86</td><td>0.01</td><td>Reliable</td></tr>"
+            }
+          ],
+          "source": "1308.3495v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "121.8",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "bound_probability",
+      "values": [
+        {
+          "value": "5.86",
+          "unit": "%",
+          "condition": "Probability that the candidate is bound given the escape velocity at its position (Table 1 \"% Bound\").",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "<tr><td>14</td><td>J225912.13 + 074356.5</td><td>18.76</td><td>-0.56</td><td>0.37</td><td>4.60</td><td>-97.8</td><td>44.9</td><td>840.7</td><td>121.8</td><td>550.0</td><td>5.86</td><td>0.01</td><td>Reliable</td></tr>"
+            }
+          ],
+          "source": "1308.3495v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.0586",
+            "approximate": false
+          }
+        }
+      ]
+    }
+  ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "coordinates",
+    "selected": {
+      "main_id": "SDSS J225912.13+074356.5",
+      "aliases": [
+        "Gaia DR2 2712207221051898880",
+        "Gaia DR3 2712207221051898880",
+        "SDSS J225912.13+074356.5",
+        "[PSH2014] HVS 14"
+      ],
+      "object_type": "HV*",
+      "coordinates": {
+        "ra": {
+          "value": 344.80054475153,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 7.73237839854,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.2648000121116638,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.24279999732971191,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -3.79,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -2.31,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.296999990940094,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.2809999883174896,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -113.94277905392472,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.00038
+        },
+        "reported_as": "z",
+        "error": {
+          "value": 9.999999747378752e-06,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "E",
+        "bibcode": "2012ApJS..203...21A",
+        "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "F9",
+        "quality": "E",
+        "bibcode": "2020ApJS..249....3A"
+      },
+      "photometry": [
+        {
+          "band": "u",
+          "value": 20.889999389648438,
+          "error": 0.07000000029802322,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "g",
+          "value": 19.486000061035156,
+          "error": 0.012000000104308128,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "r",
+          "value": 18.945999145507812,
+          "error": 0.010999999940395355,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "i",
+          "value": 18.73699951171875,
+          "error": 0.012000000104308128,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "z",
+          "value": 18.6299991607666,
+          "error": 0.029999999329447746,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "G",
+          "value": 18.976045608520508,
+          "error": 0.0041600000113248825,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "coordinates": [
+        {
+          "source_record": "1308.3495v2#/stars/13",
+          "separation_arcsec": 0.08428908297028058,
+          "radius_arcsec": 5.0
+        }
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:51:56.896564+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000069_provenance.json",
-    "sha256": "cbbc9fd9e1a01d754912b681add616bebf9b132ad02ba739dab9da9201334c57"
+    "sha256": "cabb7719c8ad5dc42b79a470158a093d53b8a13139a3963a563930944b9cafa8"
   },
-  "warnings": []
+  "warnings": [
+    "Association based on coordinates only; no epoch propagation."
+  ]
 }

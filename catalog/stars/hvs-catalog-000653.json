@@ -1,37 +1,34 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000653",
-  "display_name": "ID 16 (2401.05630)",
+  "display_name": "Gaia DR3 2685101029611915136",
   "sources": {
-    "2401.05630v1": {
-      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+    "2608.30063v1": {
+      "title": "Intermediate-mass runaway and hypervelocity star candidates in DESI DR1",
       "authors": [
-        "A. Luna",
-        "T. Marchetti",
-        "M. Rejkuba",
-        "N. W. C. Leigh",
-        "J. Alonso-García",
-        "A. Valenzuela Navarro",
-        "D. Minniti",
-        "L. C. Smith"
+        "Aakash Bhat",
+        "Matti Dorsch",
+        "Ulrich Heber",
+        "Stephan Geier",
+        "Harry Dawson"
       ],
-      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "pdf_url": "https://arxiv.org/pdf/2608.30063v1",
       "records": [
-        "/stars/19"
+        "/stars/12"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "ID 16",
+      "value": "Gaia DR3 2685101029611915136",
       "evidence": [
         {
           "location": "T:p16-b0",
-          "quote": "<td>16</td><td>17h43m10.80s</td><td>-29d03m55.52s</td>"
+          "quote": "2685101029611915136"
         }
       ],
-      "source": "2401.05630v1"
+      "source": "2608.30063v1"
     }
   ],
   "contribution_types": [
@@ -39,79 +36,73 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b13",
-          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+          "location": "T:p1-b6",
+          "quote": "potential hypervelocity candidates under the assumption that they are main-sequence stars."
         },
         {
-          "location": "T:p9-b10",
-          "quote": "65 were detected only in the VIRAC2 sample"
+          "location": "T:p6-b3",
+          "quote": "probability of being unbound greater than"
         },
         {
-          "location": "T:p17-b2",
-          "quote": "<td>16</td><td>14.64</td><td>11.7</td><td>3.58</td><td>823.63</td>"
+          "location": "I:p7-b6"
+        },
+        {
+          "location": "I:p16-b0"
         }
       ],
-      "source": "2401.05630v1"
+      "source": "2608.30063v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "ra",
-      "values": [
-        {
-          "value": "17h43m10.80s",
-          "unit": "hourangle",
-          "condition": "VIRAC2-only red clump HVS candidate ID 16 (Table B1)",
-          "evidence": [
-            {
-              "location": "T:p16-b0",
-              "quote": "16 17h43m10.80s -29d03m55.52s -0.3893 0.387 15.05 3.86"
-            },
-            {
-              "location": "I:p16-b0"
-            }
-          ],
-          "source": "2401.05630v1"
-        }
-      ]
-    },
-    {
-      "quantity": "dec",
-      "values": [
-        {
-          "value": "-29d03m55.52s",
-          "unit": "deg",
-          "condition": "VIRAC2-only red clump HVS candidate ID 16 (Table B1)",
-          "evidence": [
-            {
-              "location": "T:p16-b0",
-              "quote": "16 17h43m10.80s -29d03m55.52s -0.3893 0.387 15.05 3.86"
-            },
-            {
-              "location": "I:p16-b0"
-            }
-          ],
-          "source": "2401.05630v1"
-        }
-      ]
-    },
-    {
       "quantity": "distance",
       "values": [
         {
-          "value": "11.7",
+          "value": "71.68",
+          "lower_error": "9.28",
+          "upper_error": "9.19",
           "unit": "kpc",
-          "condition": "Heliocentric distance from red clump photometric calibration (Table B2)",
+          "condition": "Spectro-photometric distance from the Appendix final-sample table",
           "evidence": [
             {
-              "location": "T:p17-b2",
-              "quote": "16 14.64 11.7 3.58 823.63 516474 0.225 0.93"
-            },
-            {
-              "location": "I:p17-b2"
+              "location": "T:p16-b0",
+              "quote": "<td>13</td><td>2685101029611915136</td><td><eq>3.54^{+0.10}_{-0.10}</eq></td><td><eq>18630^{+716}_{-716}</eq></td><td><eq>-274^{+10}_{-10}</eq></td><td><eq>71.68^{+9.19}_{-9.28}</eq></td><td><eq>34^{+5}_{-5}</eq></td><td><eq>8.23^{+0.76}_{-0.67}</eq></td><td><eq>8.02^{+1.04}_{-0.65}</eq></td><td><eq>-11.297^{+0.006}_{-0.006}</eq></td><td><eq>749 ± 99</eq></td><td>1.00</td>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "71.68",
+            "lower_error": "9.28",
+            "upper_error": "9.19",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-274",
+          "error": "10",
+          "unit": "km/s",
+          "condition": "Spectroscopic radial velocity v_rad from the Appendix final-sample table",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<td>13</td><td>2685101029611915136</td><td><eq>3.54^{+0.10}_{-0.10}</eq></td><td><eq>18630^{+716}_{-716}</eq></td><td><eq>-274^{+10}_{-10}</eq></td><td><eq>71.68^{+9.19}_{-9.28}</eq></td><td><eq>34^{+5}_{-5}</eq></td><td><eq>8.23^{+0.76}_{-0.67}</eq></td><td><eq>8.02^{+1.04}_{-0.65}</eq></td><td><eq>-11.297^{+0.006}_{-0.006}</eq></td><td><eq>749 ± 99</eq></td><td>1.00</td>"
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-274",
+            "error": "10",
+            "approximate": false
+          }
         }
       ]
     },
@@ -119,19 +110,89 @@
       "quantity": "galactocentric_radius",
       "values": [
         {
-          "value": "3.58",
+          "value": "71",
+          "error": "7",
           "unit": "kpc",
-          "condition": "Three-dimensional galactocentric distance r_GC (Table B2)",
+          "condition": "Present-day spherical Galactocentric radius R_sph assuming main-sequence nature (Table 1)",
           "evidence": [
             {
-              "location": "T:p17-b2",
-              "quote": "16 14.64 11.7 3.58 823.63 516474 0.225 0.93"
-            },
-            {
-              "location": "I:p17-b2"
+              "location": "T:p7-b6",
+              "quote": "<tr><td>13</td><td>806 ± 89</td><td>164 ± 25</td><td>100</td><td>0</td><td>71 ± 7</td><td>-</td></tr>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "71",
+            "error": "7",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "806",
+          "error": "89",
+          "unit": "km/s",
+          "condition": "Main-sequence-nature assumption, v_grf^MS from Table 1; Model I of Irrgang et al. (2013)",
+          "evidence": [
+            {
+              "location": "T:p7-b6",
+              "quote": "<tr><td>13</td><td>806 ± 89</td><td>164 ± 25</td><td>100</td><td>0</td><td>71 ± 7</td><td>-</td></tr>"
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "806",
+            "error": "89",
+            "approximate": false
+          }
+        },
+        {
+          "value": "164",
+          "error": "25",
+          "unit": "km/s",
+          "condition": "BHB-nature assumption, v_grf^BHB from Table 1; Model I of Irrgang et al. (2013)",
+          "evidence": [
+            {
+              "location": "T:p7-b6",
+              "quote": "<tr><td>13</td><td>806 ± 89</td><td>164 ± 25</td><td>100</td><td>0</td><td>71 ± 7</td><td>-</td></tr>"
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "164",
+            "error": "25",
+            "approximate": false
+          }
+        },
+        {
+          "value": "749",
+          "error": "99",
+          "unit": "km/s",
+          "condition": "Appendix final-sample table v_GRF for this candidate, which is classified as BHB-HVS; the supplied text does not explicitly state the mass assumption for this listed value",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<td>13</td><td>2685101029611915136</td><td><eq>3.54^{+0.10}_{-0.10}</eq></td><td><eq>18630^{+716}_{-716}</eq></td><td><eq>-274^{+10}_{-10}</eq></td><td><eq>71.68^{+9.19}_{-9.28}</eq></td><td><eq>34^{+5}_{-5}</eq></td><td><eq>8.23^{+0.76}_{-0.67}</eq></td><td><eq>8.02^{+1.04}_{-0.65}</eq></td><td><eq>-11.297^{+0.006}_{-0.006}</eq></td><td><eq>749 ± 99</eq></td><td>1.00</td>"
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "749",
+            "error": "99",
+            "approximate": false
+          }
         }
       ]
     },
@@ -139,43 +200,155 @@
       "quantity": "unbound_probability",
       "values": [
         {
-          "value": "0.93",
-          "unit": "dimensionless",
-          "condition": "P, probability of exceeding escape velocity, computed as V_tan,16th(r_GC)/V_esc(r_GC) using the galpy Irrgang13III potential (Table B2)",
+          "value": "100",
+          "unit": "%",
+          "condition": "Main-sequence-nature assumption, p_unbound^MS from Table 1",
           "evidence": [
             {
-              "location": "T:p17-b2",
-              "quote": "16 14.64 11.7 3.58 823.63 516474 0.225 0.93"
-            },
-            {
-              "location": "T:p8-b2",
-              "quote": "the probability (P) of exceeding the escape velocity, given by V_tan,16th(r_GC)/V_esc(r_GC)"
-            },
-            {
-              "location": "I:p17-b2"
+              "location": "T:p7-b6",
+              "quote": "<tr><td>13</td><td>806 ± 89</td><td>164 ± 25</td><td>100</td><td>0</td><td>71 ± 7</td><td>-</td></tr>"
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0",
+          "unit": "%",
+          "condition": "BHB-nature assumption, p_unbound^BHB from Table 1",
+          "evidence": [
+            {
+              "location": "T:p7-b6",
+              "quote": "<tr><td>13</td><td>806 ± 89</td><td>164 ± 25</td><td>100</td><td>0</td><td>71 ± 7</td><td>-</td></tr>"
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.00",
+            "approximate": false
+          }
+        },
+        {
+          "value": "1.00",
+          "unit": "dimensionless",
+          "condition": "Appendix final-sample table P_unbound for this candidate; mass assumption for this listed value is not explicit in the supplied text",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<td>13</td><td>2685101029611915136</td><td><eq>3.54^{+0.10}_{-0.10}</eq></td><td><eq>18630^{+716}_{-716}</eq></td><td><eq>-274^{+10}_{-10}</eq></td><td><eq>71.68^{+9.19}_{-9.28}</eq></td><td><eq>34^{+5}_{-5}</eq></td><td><eq>8.23^{+0.76}_{-0.67}</eq></td><td><eq>8.02^{+1.04}_{-0.65}</eq></td><td><eq>-11.297^{+0.006}_{-0.006}</eq></td><td><eq>749 ± 99</eq></td><td>1.00</td>"
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_found",
-    "reason": "No candidate matched the requested identifiers or radius.",
-    "last_queried_at": "2026-10-24T06:03:36.972894+00:00"
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "GALEX J212455.3-021434",
+      "aliases": [
+        "GALEX J212455.3-021434",
+        "Gaia DR2 2685101029611915136",
+        "Gaia DR3 2685101029611915136"
+      ],
+      "object_type": "HS?",
+      "coordinates": {
+        "ra": {
+          "value": 321.23062907862,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": -2.24292977545,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.05400000140070915,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.042500000447034836,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -0.722,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -2.603,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.0689999982714653,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.04800000041723251,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.0356,
+        "unit": "mas",
+        "error": 0.06469999998807907,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "value": 16.222620010375977,
+          "error": 0.002845000009983778,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR3 2685101029611915136"
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:52:12.125860+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000653_provenance.json",
-    "sha256": "6ede375adcaa83bc4105dbc8df9a78976d5b016c808173936ea94b8f83ec7241"
+    "sha256": "b35b313be2d386c62b59ac2d034340c234197743057da5327e3a68b51be101a1"
   },
-  "warnings": [
-    "Coordinate reference frame was not reported; ICRS was assumed for matching.",
-    "2401.05630v1#/stars/19/quantities/0/values/0/evidence/0: quote audit unknown at T:p16-b0; check the paper evidence.",
-    "2401.05630v1#/stars/19/quantities/1/values/0/evidence/0: quote audit unknown at T:p16-b0; check the paper evidence.",
-    "2401.05630v1#/stars/19/quantities/2/values/0/evidence/0: quote audit unknown at T:p17-b2; check the paper evidence.",
-    "2401.05630v1#/stars/19/quantities/3/values/0/evidence/0: quote audit unknown at T:p17-b2; check the paper evidence.",
-    "2401.05630v1#/stars/19/quantities/4/values/0/evidence/0: quote audit unknown at T:p17-b2; check the paper evidence.",
-    "2401.05630v1#/stars/19/quantities/4/values/0/evidence/1: quote audit unknown at T:p8-b2; check the paper evidence."
-  ]
+  "warnings": []
 }

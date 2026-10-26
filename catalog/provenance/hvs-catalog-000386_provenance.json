@@ -1,10 +1,519 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000386",
   "associations": [],
+  "review_decisions": [
+    {
+      "id": "R21-simbad-172",
+      "type": "simbad",
+      "groups": [
+        [
+          "2011.10206v1#/stars/2"
+        ]
+      ],
+      "papers": {
+        "2011.10206v1": "a75d22d3d02b23e88389a52a9b3b64216c89b42a671dbc393f5e4738be05bbf3"
+      },
+      "responses": {
+        "4b1e9c79702b5f498013c5c74aaa355a9e97de31d3f7e4775475adf5c92ea5d2": "c16a911321451cd104316df660dfe21723df833ce42e54e6ffddcdf05b69834a"
+      },
+      "reason": "Correspondence confirmed in the stop 3 follow-up approval, keeping the value conflict between Gaia releases. G=14.39, SpT=K5 and proper motion (142.070, -285.151) in Table 1 on p.7 of 2011.10206 match the candidate's G=14.374, K5 and (142.745, -281.840) as identity features; the candidate alias WISEA J064956.16+465009.5 corresponds to the paper position. The SIMBAD RV=-80±6 km/s (bibcode 2021ApJS..252....3L) agrees with the paper's RV=-75±6 and its -5.4 km/s zero-point correction. However, the paper parallax 1.345±0.092 mas differs significantly from SIMBAD 4.1234±0.1354 mas, and the proper motions do not agree within errors; the paper's astrometric_flag=0, so the star fails its conservative quality selection. The identity confirmation does not mean the distance or velocity is reliable, and the paper values are not corrected. Added in the stop 3 follow-up approval: the paper-minus-SIMBAD position offset is parallel to the SIMBAD proper motion and the RA and Dec components imply the same time difference, about 10 years, consistent with an epoch difference of one star; this does not establish that the paper coordinates are J2015.5, no coordinate epoch propagation is applied, and the parallax conflict and paper values are kept.",
+      "evidence": [
+        {
+          "paper": "2011.10206v1",
+          "location": "Fixed PDF p.7, Table 1 row Hivel3 and footnotes",
+          "quote": "Hivel3; K5; -75±6; pmra=142.070±0.091; pmdec=-285.151±0.084; parallax=1.345±0.092; G=14.39; astrometric_flag=0"
+        }
+      ],
+      "approved_by": "Project lead (stop 3 follow-up approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": "G 107-23"
+    }
+  ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "review",
+    "selected": {
+      "main_id": "G 107-23",
+      "aliases": [
+        "2MASS J06495601+4650128",
+        "G 107-23",
+        "Gaia DR2 966594450238136704",
+        "Gaia DR3 966594450238136704",
+        "LP  161-54",
+        "LSPM J0649+4650",
+        "NLTT 17027",
+        "TIC 191879655",
+        "USNO-B1.0 1368-00179027",
+        "WISEA J064956.16+465009.5"
+      ],
+      "position": {
+        "ra_deg": 102.48343150851457,
+        "dec_deg": 46.836807967586935,
+        "frame": "icrs",
+        "equinox": null,
+        "evidence": []
+      },
+      "fields": {
+        "main_id": {
+          "value": "G 107-23"
+        },
+        "nbref": {
+          "value": 6
+        },
+        "otype": {
+          "value": "HV*"
+        },
+        "ra": {
+          "value": 102.48343150851457,
+          "unit": "deg"
+        },
+        "ra_prec": {
+          "value": 14
+        },
+        "dec": {
+          "value": 46.836807967586935,
+          "unit": "deg"
+        },
+        "dec_prec": {
+          "value": 14
+        },
+        "coo_err_maj": {
+          "value": 0.10490000247955322,
+          "unit": "mas"
+        },
+        "coo_err_maj_prec": {
+          "value": 4
+        },
+        "coo_err_min": {
+          "value": 0.11490000039339066,
+          "unit": "mas"
+        },
+        "coo_err_min_prec": {
+          "value": 4
+        },
+        "coo_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "coo_qual": {
+          "value": "A"
+        },
+        "coo_wavelength": {
+          "value": "O"
+        },
+        "coo_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "hpx": {
+          "value": 1758225
+        },
+        "pmra": {
+          "value": 142.745,
+          "unit": "mas / yr"
+        },
+        "pmra_prec": {
+          "value": 3
+        },
+        "pmdec": {
+          "value": -281.84,
+          "unit": "mas / yr"
+        },
+        "pmdec_prec": {
+          "value": 3
+        },
+        "pm_err_maj": {
+          "value": 0.11699999868869781,
+          "unit": "mas / yr"
+        },
+        "pm_err_maj_prec": {
+          "value": 3
+        },
+        "pm_err_min": {
+          "value": 0.11500000208616257,
+          "unit": "mas / yr"
+        },
+        "pm_err_min_prec": {
+          "value": 3
+        },
+        "pm_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "pm_qual": {
+          "value": "A"
+        },
+        "pm_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "plx_value": {
+          "value": 4.1234,
+          "unit": "mas"
+        },
+        "plx_prec": {
+          "value": 4
+        },
+        "plx_err": {
+          "value": 0.13539999723434448,
+          "unit": "mas"
+        },
+        "plx_err_prec": {
+          "value": 4
+        },
+        "plx_qual": {
+          "value": "A"
+        },
+        "plx_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "rvz_type": {
+          "value": "v"
+        },
+        "rvz_radvel": {
+          "value": -80.0,
+          "unit": "km / s"
+        },
+        "rvz_radvel_prec": {
+          "value": 0
+        },
+        "rvz_redshift": {
+          "value": -0.00026681568085606955
+        },
+        "rvz_redshift_prec": {
+          "value": 6
+        },
+        "rvz_err": {
+          "value": 6.0,
+          "unit": "km / s"
+        },
+        "rvz_err_prec": {
+          "value": 0
+        },
+        "rvz_nature": {
+          "value": "s"
+        },
+        "rvz_qual": {
+          "value": "D"
+        },
+        "rvz_bibcode": {
+          "value": "2021ApJS..252....3L"
+        },
+        "vlsr_wavelength": {
+          "value": ""
+        },
+        "vlsr_bibcode": {
+          "value": ""
+        },
+        "sp_type": {
+          "value": "K5"
+        },
+        "sp_qual": {
+          "value": "D"
+        },
+        "sp_bibcode": {
+          "value": "2021ApJS..252....3L"
+        },
+        "morph_type": {
+          "value": ""
+        },
+        "morph_qual": {
+          "value": ""
+        },
+        "morph_bibcode": {
+          "value": ""
+        },
+        "galdim_qual": {
+          "value": ""
+        },
+        "galdim_wavelength": {
+          "value": ""
+        },
+        "galdim_bibcode": {
+          "value": ""
+        },
+        "update_date": {
+          "value": "2026-08-09"
+        },
+        "otype_txt": {
+          "value": "HV*"
+        },
+        "rvz_wavelength": {
+          "value": "O"
+        }
+      },
+      "photometry": [
+        {
+          "band": "B",
+          "fields": {
+            "flux_prec": {
+              "value": 1
+            },
+            "oidref": {
+              "value": 397654
+            },
+            "filter": {
+              "value": "B"
+            },
+            "flux": {
+              "value": 15.5
+            },
+            "system": {
+              "value": "V"
+            },
+            "qual": {
+              "value": "E"
+            },
+            "bibcode": {
+              "value": "2003AJ....125..984M"
+            }
+          }
+        },
+        {
+          "band": "J",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 397654
+            },
+            "filter": {
+              "value": "J"
+            },
+            "flux": {
+              "value": 12.649999618530273
+            },
+            "system": {
+              "value": ""
+            },
+            "flux_err": {
+              "value": 0.023000000044703484
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2003yCat.2246....0C"
+            }
+          }
+        },
+        {
+          "band": "H",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 397654
+            },
+            "filter": {
+              "value": "H"
+            },
+            "flux": {
+              "value": 12.09000015258789
+            },
+            "system": {
+              "value": ""
+            },
+            "flux_err": {
+              "value": 0.023000000044703484
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2003yCat.2246....0C"
+            }
+          }
+        },
+        {
+          "band": "K",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 397654
+            },
+            "filter": {
+              "value": "K"
+            },
+            "flux": {
+              "value": 11.95199966430664
+            },
+            "system": {
+              "value": ""
+            },
+            "flux_err": {
+              "value": 0.024000000208616257
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2003yCat.2246....0C"
+            }
+          }
+        },
+        {
+          "band": "R",
+          "fields": {
+            "flux_prec": {
+              "value": 1
+            },
+            "oidref": {
+              "value": 397654
+            },
+            "filter": {
+              "value": "R"
+            },
+            "flux": {
+              "value": 14.300000190734863
+            },
+            "system": {
+              "value": "V"
+            },
+            "qual": {
+              "value": "E"
+            },
+            "bibcode": {
+              "value": "2003AJ....125..984M"
+            }
+          }
+        },
+        {
+          "band": "G",
+          "fields": {
+            "flux_err_prec": {
+              "value": 6
+            },
+            "flux_prec": {
+              "value": 6
+            },
+            "oidref": {
+              "value": 397654
+            },
+            "filter": {
+              "value": "G"
+            },
+            "flux": {
+              "value": 14.374300003051758
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.002767000114545226
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2020yCat.1350....0G"
+            }
+          }
+        }
+      ]
+    },
+    "reason": "Correspondence selected by review R21-simbad-172: Correspondence confirmed in the stop 3 follow-up approval, keeping the value conflict between Gaia releases. G=14.39, SpT=K5 and proper motion (142.070, -285.151) in Table 1 on p.7 of 2011.10206 match the candidate's G=14.374, K5 and (142.745, -281.840) as identity features; the candidate alias WISEA J064956.16+465009.5 corresponds to the paper position. The SIMBAD RV=-80±6 km/s (bibcode 2021ApJS..252....3L) agrees with the paper's RV=-75±6 and its -5.4 km/s zero-point correction. However, the paper parallax 1.345±0.092 mas differs significantly from SIMBAD 4.1234±0.1354 mas, and the proper motions do not agree within errors; the paper's astrometric_flag=0, so the star fails its conservative quality selection. The identity confirmation does not mean the distance or velocity is reliable, and the paper values are not corrected. Added in the stop 3 follow-up approval: the paper-minus-SIMBAD position offset is parallel to the SIMBAD proper motion and the RA and Dec components imply the same time difference, about 10 years, consistent with an epoch difference of one star; this does not establish that the paper coordinates are J2015.5, no coordinate epoch propagation is applied, and the parallax conflict and paper values are kept.",
+    "queries": [
+      {
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 102.48401,
+            "dec_deg": 46.836012,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "c16a911321451cd104316df660dfe21723df833ce42e54e6ffddcdf05b69834a",
+        "queried_at": "2026-10-25T11:48:37.810608+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "coordinate_inputs": [
+          {
+            "node": "2011.10206v1#/stars/2",
+            "position": {
+              "ra_deg": 102.48401,
+              "dec_deg": 46.836012,
+              "frame": "icrs",
+              "equinox": null,
+              "evidence": [
+                {
+                  "value": "102.4840100",
+                  "unit": "deg",
+                  "condition": "Gaia DR2 equatorial right ascension",
+                  "evidence": [
+                    {
+                      "location": "T:p7-b0",
+                      "quote": "Hivel3</td><td>102.4840100</td><td>46.83601200</td><td>33</td><td>K5</td><td>-75±6</td><td>142.070±0.091</td><td>-285.151±0.084</td><td>1.345±0.092"
+                    }
+                  ]
+                },
+                {
+                  "value": "46.83601200",
+                  "unit": "deg",
+                  "condition": "Gaia DR2 equatorial declination",
+                  "evidence": [
+                    {
+                      "location": "T:p7-b0",
+                      "quote": "Hivel3</td><td>102.4840100</td><td>46.83601200</td><td>33</td><td>K5</td><td>-75±6</td><td>142.070±0.091</td><td>-285.151±0.084</td><td>1.345±0.092"
+                    }
+                  ]
+                }
+              ]
+            },
+            "interpretation": {
+              "frame": "icrs",
+              "equinox": null,
+              "frame_basis": "gaia_coordinate_source",
+              "frame_assumed": false,
+              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+              "epoch_propagation": false
+            }
+          }
+        ]
+      }
+    ],
+    "matches": [
+      {
+        "main_id": "G 107-23",
+        "method": "coordinates",
+        "separation_arcsec": 3.2000980252440363,
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        },
+        "query": {
+          "method": "coordinates",
+          "identifier": null,
+          "position": {
+            "ra_deg": 102.48401,
+            "dec_deg": 46.836012,
+            "frame": "icrs",
+            "equinox": null,
+            "evidence": []
+          },
+          "radius_arcsec": 5.0
+        }
+      }
+    ]
   }
 }

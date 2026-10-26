@@ -1,102 +1,338 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000634",
-  "display_name": "GALEX J205030.4-061957",
+  "display_name": "Gaia DR3 2004005081455404416",
   "sources": {
-    "2304.02969v1": {
-      "title": "The fastest hot subdwarfs revisited",
+    "2509.24010v2": {
+      "title": "Search for Distant Hypervelocity Star Candidates Using RR Lyrae Stars",
       "authors": [
-        "Ulrich Heber"
+        "Haozhu Fu",
+        "Yang Huang",
+        "Huawei Zhang"
       ],
-      "pdf_url": "https://arxiv.org/pdf/2304.02969v1",
+      "pdf_url": "https://arxiv.org/pdf/2509.24010v2",
       "records": [
-        "/stars/1"
+        "/stars/5"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "SDSSJ205030.39-061957.8",
+      "value": "Gaia DR3 2004005081455404416",
       "evidence": [
         {
-          "location": "T:p3-b1",
-          "quote": "This led to the discovery of a dozen candidate HVS subdwarfs in-\ncluding the He-sdO SDSSJ205030.39-061957.8 (J2050-063) spectroscopically similar to US 708\n(Ziegerer et al., 2017)."
-        },
-        {
-          "location": "T:p5-b3",
-          "quote": "As an example we show the fit of a single SDSS spectrum of\nthe US708 twin SDSSJ205030.39-061957.8 in Fig. 4."
+          "location": "T:p8-b0",
+          "quote": "2004005081455404416"
         }
       ],
-      "source": "2304.02969v1"
-    },
-    {
-      "value": "J2050-063",
-      "evidence": [
-        {
-          "location": "T:p3-b1",
-          "quote": "the He-sdO SDSSJ205030.39-061957.8 (J2050-063)"
-        },
-        {
-          "location": "T:p5-b0",
-          "quote": "Figure 4: Fit of a SDSS spectrum of J2050-063."
-        }
-      ],
-      "source": "2304.02969v1"
+      "source": "2509.24010v2"
     }
   ],
   "contribution_types": [
     {
-      "value": "follow_up",
+      "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p3-b1",
-          "quote": "This led to the discovery of a dozen candidate HVS subdwarfs in-\ncluding the He-sdO SDSSJ205030.39-061957.8 (J2050-063) spectroscopically similar to US 708\n(Ziegerer et al., 2017)."
+          "location": "T:p8-b0",
+          "quote": "Table 2. Basic parameters for 165 HV-RRL candidates"
         },
         {
-          "location": "T:p5-b3",
-          "quote": "As an example we show the fit of a single SDSS spectrum of\nthe US708 twin SDSSJ205030.39-061957.8 in Fig. 4."
-        },
-        {
-          "location": "T:p5-b5",
-          "quote": "The resulting Galactic restframe velocities are lower than\nthe local Galactic escape velocities indicating that no star of the sample is unbound to the Galaxy."
+          "location": "T:p6-b3",
+          "quote": "As a result, we selected a final sample of 165 hypervelocity RR Lyrae (HV-RRL) candidates."
         }
       ],
-      "source": "2304.02969v1"
+      "source": "2509.24010v2"
     }
   ],
-  "quantities": [],
+  "quantities": [
+    {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "343.6118",
+          "unit": "deg",
+          "condition": "Table 2 position for the bronze-quality HV-RRL candidate in the L23 catalog",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "<td>2004005081455404416</td><td>343.6118</td><td>56.4564</td><td>-1.94 ± 0.32</td><td>-1.79 ± 0.32</td><td>31.5 ± 3.6</td><td>34.9 ± 3.5</td><td>474.6 ± 67.7</td><td>L23</td><td>bronze</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "343.6118",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "56.4564",
+          "unit": "deg",
+          "condition": "Table 2 position for the bronze-quality HV-RRL candidate in the L23 catalog",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "<td>2004005081455404416</td><td>343.6118</td><td>56.4564</td><td>-1.94 ± 0.32</td><td>-1.79 ± 0.32</td><td>31.5 ± 3.6</td><td>34.9 ± 3.5</td><td>474.6 ± 67.7</td><td>L23</td><td>bronze</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "56.4564",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "31.5",
+          "error": "3.6",
+          "unit": "kpc",
+          "condition": "L23 catalog distance listed for the bronze-quality HV-RRL candidate in Table 2",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "<td>2004005081455404416</td><td>343.6118</td><td>56.4564</td><td>-1.94 ± 0.32</td><td>-1.79 ± 0.32</td><td>31.5 ± 3.6</td><td>34.9 ± 3.5</td><td>474.6 ± 67.7</td><td>L23</td><td>bronze</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "cited",
+          "attribution_reason": "Fixed PDF §2.1: adopts RR Lyrae distances already calculated in the W22/L23 catalogs; the Galactocentric quantities recalculated here are own.",
+          "standard": {
+            "unit": "kpc",
+            "value": "31.5",
+            "error": "3.6",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-1.94",
+          "error": "0.32",
+          "unit": "mas/yr",
+          "condition": "Gaia DR3 μ_α cos δ listed in Table 2 for the bronze-quality HV-RRL candidate",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "<td>2004005081455404416</td><td>343.6118</td><td>56.4564</td><td>-1.94 ± 0.32</td><td>-1.79 ± 0.32</td><td>31.5 ± 3.6</td><td>34.9 ± 3.5</td><td>474.6 ± 67.7</td><td>L23</td><td>bronze</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-1.94",
+            "error": "0.32",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-1.79",
+          "error": "0.32",
+          "unit": "mas/yr",
+          "condition": "Gaia DR3 μ_δ listed in Table 2 for the bronze-quality HV-RRL candidate",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "<td>2004005081455404416</td><td>343.6118</td><td>56.4564</td><td>-1.94 ± 0.32</td><td>-1.79 ± 0.32</td><td>31.5 ± 3.6</td><td>34.9 ± 3.5</td><td>474.6 ± 67.7</td><td>L23</td><td>bronze</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-1.79",
+            "error": "0.32",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "34.9",
+          "error": "3.5",
+          "unit": "kpc",
+          "condition": "R_GC listed in Table 2 for the bronze-quality HV-RRL candidate",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "<td>2004005081455404416</td><td>343.6118</td><td>56.4564</td><td>-1.94 ± 0.32</td><td>-1.79 ± 0.32</td><td>31.5 ± 3.6</td><td>34.9 ± 3.5</td><td>474.6 ± 67.7</td><td>L23</td><td>bronze</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "34.9",
+            "error": "3.5",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.90",
+          "unit": "dimensionless",
+          "condition": "P_unb calculated with the Bovy15 potential model",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "<td>2004005081455404416</td><td>0.90</td><td>0.83</td><td>0.72</td><td>0.53</td><td>0.45</td><td>0.90</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.90",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.83",
+          "unit": "dimensionless",
+          "condition": "P_unb calculated with the Cautun20 potential model",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "<td>2004005081455404416</td><td>0.90</td><td>0.83</td><td>0.72</td><td>0.53</td><td>0.45</td><td>0.90</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.83",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.72",
+          "unit": "dimensionless",
+          "condition": "P_unb calculated with the Monari18 potential model",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "<td>2004005081455404416</td><td>0.90</td><td>0.83</td><td>0.72</td><td>0.53</td><td>0.45</td><td>0.90</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.72",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.53",
+          "unit": "dimensionless",
+          "condition": "P_unb calculated with the McMillan17 potential model",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "<td>2004005081455404416</td><td>0.90</td><td>0.83</td><td>0.72</td><td>0.53</td><td>0.45</td><td>0.90</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.53",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.45",
+          "unit": "dimensionless",
+          "condition": "P_unb calculated with the Irrgang13I potential model",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "<td>2004005081455404416</td><td>0.90</td><td>0.83</td><td>0.72</td><td>0.53</td><td>0.45</td><td>0.90</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.45",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.90",
+          "unit": "dimensionless",
+          "condition": "P_unb calculated with the Bovy15+LMC potential model",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "<td>2004005081455404416</td><td>0.90</td><td>0.83</td><td>0.72</td><td>0.53</td><td>0.45</td><td>0.90</td>"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.90",
+            "approximate": false
+          }
+        }
+      ]
+    }
+  ],
   "simbad": {
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "GALEX J205030.4-061957",
+      "main_id": "Gaia DR3 2004005081455404416",
       "aliases": [
-        "GALEX J205030.4-061957",
-        "Gaia DR2 6913188263109953920",
-        "Gaia DR3 6913188263109953920",
-        "SDSS J205030.39-061957.8",
-        "SDSS J205030.40-061957.9",
-        "USNO-B1.0 0836-00624817"
+        "Gaia DR3 2004005081455404416"
       ],
-      "object_type": "WD*",
+      "object_type": "RR*",
       "coordinates": {
         "ra": {
-          "value": 312.62666119652,
+          "value": 343.6117991165354,
           "unit": "deg"
         },
         "dec": {
-          "value": -6.33274096272,
+          "value": 56.45642440010889,
           "unit": "deg"
         },
         "frame": "icrs",
         "error_ellipse": {
           "major": {
-            "value": 0.1080000028014183,
+            "value": 0.2547000050544739,
             "unit": "mas"
           },
           "minor": {
-            "value": 0.06520000100135803,
+            "value": 0.2485000044107437,
             "unit": "mas"
           },
           "angle": {
@@ -110,20 +346,20 @@
       },
       "proper_motion": {
         "ra_cosdec": {
-          "value": -0.099,
+          "value": -1.944,
           "unit": "mas / yr"
         },
         "dec": {
-          "value": -4.582,
+          "value": -1.792,
           "unit": "mas / yr"
         },
         "error_ellipse": {
           "major": {
-            "value": 0.15000000596046448,
+            "value": 0.3160000145435333,
             "unit": "mas / yr"
           },
           "minor": {
-            "value": 0.10400000214576721,
+            "value": 0.3160000145435333,
             "unit": "mas / yr"
           },
           "angle": {
@@ -135,110 +371,33 @@
         "bibcode": "2020yCat.1350....0G"
       },
       "parallax": {
-        "value": 0.1705,
+        "value": 0.4736,
         "unit": "mas",
-        "error": 0.14820000529289246,
+        "error": 0.31310001015663147,
         "quality": "A",
         "bibcode": "2020yCat.1350....0G"
       },
-      "velocity": {
-        "radial_velocity": {
-          "value": -497.0,
-          "unit": "km / s"
-        },
-        "redshift": {
-          "value": -0.0016564416555409078
-        },
-        "reported_as": "v",
-        "error": {
-          "value": 6.0,
-          "unit": "km / s"
-        },
-        "nature": "s",
-        "quality": "D",
-        "bibcode": "2024A&A...690A.368G",
-        "wavelength": "O"
-      },
-      "spectral_type": {
-        "value": "DAO",
-        "quality": "D",
-        "bibcode": "2011MNRAS.417.1210G"
-      },
       "photometry": [
         {
-          "band": "i",
-          "value": 18.700000762939453,
-          "error": 0.009999999776482582,
-          "system": "A",
-          "bibcode": "2013ApJS..204....5K",
-          "quality": "B"
-        },
-        {
-          "band": "B",
-          "value": 18.100000381469727,
-          "system": "V",
-          "bibcode": "2003AJ....125..984M",
-          "quality": "E"
-        },
-        {
-          "band": "R",
-          "value": 18.0,
-          "system": "V",
-          "bibcode": "2003AJ....125..984M",
-          "quality": "E"
-        },
-        {
           "band": "G",
-          "value": 18.185705184936523,
-          "error": 0.003017999930307269,
+          "value": 19.702856063842773,
+          "error": 0.008196000009775162,
           "system": "V",
-          "bibcode": "2020yCat.1350....0G",
-          "quality": "C"
-        },
-        {
-          "band": "u",
-          "value": 17.624000549316406,
-          "error": 0.010999999940395355,
-          "system": "A",
-          "bibcode": "2012ApJS..203...21A",
-          "quality": "C"
-        },
-        {
-          "band": "g",
-          "value": 17.97800064086914,
-          "error": 0.006000000052154064,
-          "system": "A",
-          "bibcode": "2012ApJS..203...21A",
-          "quality": "B"
-        },
-        {
-          "band": "r",
-          "value": 18.406999588012695,
-          "error": 0.00800000037997961,
-          "system": "A",
-          "bibcode": "2012ApJS..203...21A",
-          "quality": "B"
-        },
-        {
-          "band": "z",
-          "value": 18.929000854492188,
-          "error": 0.04800000041723251,
-          "system": "A",
-          "bibcode": "2012ApJS..203...21A",
+          "bibcode": "2022yCat.1355....0G",
           "quality": "C"
         }
       ]
     },
     "match": {
       "identifiers": [
-        "SDSS J205030.39-061957.8"
+        "Gaia DR3 2004005081455404416"
       ]
     },
-    "last_queried_at": "2026-10-24T04:52:17.926189+00:00"
+    "last_queried_at": "2026-10-25T11:48:05.893961+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000634_provenance.json",
-    "sha256": "71975a09f54718516f9738d6fb705f258c524b5b8098c5915a3549a435bdb162"
+    "sha256": "76a475184a5a7c15713d19d4d0069171f922ce7ecd1ee82fc4899be52b6f1e74"
   },
   "warnings": []
 }

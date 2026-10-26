@@ -1,40 +1,75 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000017",
   "associations": [
     {
-      "method": "simbad",
+      "method": "review",
       "left": "0709.3748v1#/stars/5",
       "right": "2101.10878v1#/stars/2",
       "details": {
-        "main_id": "CSO  408",
-        "basis": "Reliable identifier queries.",
-        "simbad_evidence": [
-          {
-            "node": "0709.3748v1#/stars/5",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/0"
-              }
-            ]
-          },
-          {
-            "node": "2101.10878v1#/stars/2",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/1"
-              }
-            ]
-          }
-        ]
+        "decision_id": "R21-merge-022",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
       }
+    },
+    {
+      "method": "review",
+      "left": "2101.10878v1#/stars/2",
+      "right": "2411.09278v2#/stars/23",
+      "details": {
+        "decision_id": "R21-merge-022",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    }
+  ],
+  "review_decisions": [
+    {
+      "id": "R21-merge-022",
+      "type": "merge",
+      "groups": [
+        [
+          "0709.3748v1#/stars/5",
+          "2101.10878v1#/stars/2"
+        ],
+        [
+          "2411.09278v2#/stars/23"
+        ]
+      ],
+      "papers": {
+        "0709.3748v1": "6abfdd62381789a8701b47c7ef8cf1d7c279500b6c4692d37b68d0281ab4897d",
+        "2101.10878v1": "efa74a231625ee2794a59e73d39b4df3ec24d3a3513cae4703fbe7593b069856",
+        "2411.09278v2": "f1ef7471a40bfaa4b51cdf146c1ec53ef8344301f0d42572d4cf90b706471069"
+      },
+      "responses": {},
+      "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone.",
+      "evidence": [
+        {
+          "paper": "0709.3748v1",
+          "location": "T:p4-b0",
+          "quote": "SDSS J140432.38+352258.4"
+        },
+        {
+          "paper": "2101.10878v1",
+          "location": "T:p2-b5",
+          "quote": "B576(a)"
+        },
+        {
+          "paper": "2101.10878v1",
+          "location": "T:p8-b0",
+          "quote": "Gaia EDR3 1482227680963943808"
+        },
+        {
+          "paper": "2411.09278v2",
+          "location": "T:p14-b0",
+          "quote": "B576"
+        }
+      ],
+      "approved_by": "Project lead (stop 1 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
     }
   ],
   "simbad": {
@@ -470,35 +505,65 @@
       {
         "query": {
           "method": "identifier",
-          "identifier": "SDSS J140432.38+352258.4",
-          "position": null,
-          "radius_arcsec": 5.0
-        },
-        "response_sha256": "26a8e8f7a708a4945e2492d46faef9a4ff0f2d191596f5cd11d56a1a04592f05",
-        "queried_at": "2026-10-24T04:44:28.954530+00:00",
-        "client_version": "0.4.11",
-        "service_version": null,
-        "error": null
-      },
-      {
-        "query": {
-          "method": "identifier",
           "identifier": "Gaia EDR3 1482227680963943808",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "32e63bcc330f23c83648289463b12c77949944995c7f3be0e2c6c53199a37a0e",
-        "queried_at": "2026-10-24T04:45:45.245177+00:00",
+        "response_sha256": "18ff2b4a3a6379a3c01169f00e5b1b41af694cd83b0a179a3c2f8227f3affda8",
+        "queried_at": "2026-10-25T11:52:26.644379+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2101.10878v1#/stars/2",
+            "original_identifier": {
+              "value": "Gaia EDR3 1482227680963943808",
+              "evidence": [
+                {
+                  "location": "T:p8-b0",
+                  "quote": "Gaia EDR3 1482227680963943808"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J140432.38+352258.4",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "1255688192b37a435cc1bd26e8cdc4558b869b6ab6024fc31c64a9fc3786e297",
+        "queried_at": "2026-10-25T11:50:17.688902+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0709.3748v1#/stars/5",
+            "original_identifier": {
+              "value": "SDSS J140432.38+352258.4",
+              "evidence": [
+                {
+                  "location": "T:p4-b0",
+                  "quote": "SDSS J140432.38+352258.4"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       }
     ],
     "matches": [
       {
         "main_id": "CSO  408",
         "method": "identifier",
-        "identifier": "SDSS J140432.38+352258.4",
+        "identifier": "Gaia EDR3 1482227680963943808",
         "candidate": {
           "$ref": "#/simbad/selected"
         }
@@ -506,7 +571,7 @@
       {
         "main_id": "CSO  408",
         "method": "identifier",
-        "identifier": "Gaia EDR3 1482227680963943808",
+        "identifier": "SDSS J140432.38+352258.4",
         "candidate": {
           "$ref": "#/simbad/selected"
         }

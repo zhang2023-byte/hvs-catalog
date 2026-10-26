@@ -1,127 +1,121 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000221",
-  "display_name": "P14 No. 18",
+  "display_name": "Gaia-T-ES25",
   "sources": {
-    "1503.04164v1": {
-      "title": "Candidate hypervelocity stars of spectral type G and K revisited",
+    "1805.03194v3": {
+      "title": "Old, Metal-Poor Extreme Velocity Stars in the Solar Neighborhood",
       "authors": [
-        "E. Ziegerer",
-        "M. Volkert",
-        "U. Heber",
-        "A. Irrgang",
-        "B. T. Gaensicke",
-        "S. Geier"
+        "Kohei Hattori",
+        "Monica Valluri",
+        "Eric F. Bell",
+        "Ian U. Roederer"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1503.04164v1",
+      "pdf_url": "https://arxiv.org/pdf/1805.03194v3",
       "records": [
-        "/stars/17"
+        "/stars/24"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "P14 No. 18",
+      "value": "Gaia-T-ES25",
       "evidence": [
         {
-          "location": "I:p3-b0"
+          "location": "T:p4-b0",
+          "quote": "<tr><td>Gaia-T-ES25</td><td>73753560659651584</td>"
         }
       ],
-      "source": "1503.04164v1"
+      "source": "1805.03194v3"
+    },
+    {
+      "value": "Gaia DR2 73753560659651584",
+      "evidence": [
+        {
+          "location": "T:p4-b0",
+          "quote": "<td>GaiaDR2 source_id</td>"
+        },
+        {
+          "location": "T:p4-b0",
+          "quote": "<tr><td>Gaia-T-ES25</td><td>73753560659651584</td>"
+        }
+      ],
+      "source": "1805.03194v3"
     }
   ],
   "contribution_types": [
     {
-      "value": "follow_up",
+      "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b13",
-          "quote": "20 candidates\nwere found likely to be unbound, four of which at 3 and six at\n2σ significance levels."
+          "location": "T:p2-b9",
+          "quote": "6D coordinates of each star and select 30 stars that are\nunbound( E > 0 )or marginally bound"
         },
         {
-          "location": "T:p4-b5",
-          "quote": "We present a revised analysis of the 20 candidate HVSs"
+          "location": "T:p4-b0",
+          "quote": "<tr><td>Gaia-T-ES25</td><td>73753560659651584</td>"
         },
         {
-          "location": "I:p3-b0"
+          "location": "T:p9-b4",
+          "quote": "While these stars have space velocities implying that\nthey are unbound in the MWPotential2014 potential"
         }
       ],
-      "source": "1503.04164v1"
+      "source": "1805.03194v3"
     }
   ],
   "quantities": [
     {
-      "quantity": "proper_motion_ra",
+      "quantity": "distance",
       "values": [
         {
-          "value": "1.8",
-          "error": "2.3",
-          "unit": "mas/yr",
-          "condition": "This work; μ_α cos δ from positions in photographic plates and SDSS/UKIDSS images over ~60 yr baseline",
+          "value": "1.29",
+          "error": "0.07",
+          "unit": "kpc",
+          "condition": "Heliocentric distance d_helio listed in Table 1; the paper uses the point-estimate distance 1/ϖ.",
           "evidence": [
             {
-              "location": "T:p3-b0",
-              "quote": "<td>18</td><td>1.8 ± 2.3</td><td>-28.6 ± 3.5</td><td>7.2 ± 3.1</td><td>-32.2 ± 3.1</td>"
+              "location": "T:p4-b0",
+              "quote": "<tr><td>Gaia-T-ES25</td><td>73753560659651584</td><td>152.87</td><td>-45.72</td><td>1.29 ± 0.07</td><td>8.9</td><td>501.9</td><td>206.9</td><td>-166.1</td><td>-22</td><td>1050</td><td>0.47</td><td>-</td></tr>"
             },
             {
-              "location": "I:p3-b0"
+              "location": "I:p4-b0"
             }
           ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "7.2",
-          "error": "3.1",
-          "unit": "mas/yr",
-          "condition": "SDSS proper motion as used by P14",
-          "evidence": [
-            {
-              "location": "T:p3-b0",
-              "quote": "<td>18</td><td>1.8 ± 2.3</td><td>-28.6 ± 3.5</td><td>7.2 ± 3.1</td><td>-32.2 ± 3.1</td>"
-            },
-            {
-              "location": "I:p3-b0"
-            }
-          ],
-          "source": "1503.04164v1"
+          "source": "1805.03194v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "1.29",
+            "error": "0.07",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "proper_motion_dec",
+      "quantity": "radial_velocity",
       "values": [
         {
-          "value": "-28.6",
-          "error": "3.5",
-          "unit": "mas/yr",
-          "condition": "This work; μ_δ from positions in photographic plates and SDSS/UKIDSS images over ~60 yr baseline",
+          "value": "-166.1",
+          "unit": "km/s",
+          "condition": "Heliocentric line-of-sight velocity v_los from Gaia DR2, as listed in Table 1.",
           "evidence": [
             {
-              "location": "T:p3-b0",
-              "quote": "<td>18</td><td>1.8 ± 2.3</td><td>-28.6 ± 3.5</td><td>7.2 ± 3.1</td><td>-32.2 ± 3.1</td>"
+              "location": "T:p4-b0",
+              "quote": "<tr><td>Gaia-T-ES25</td><td>73753560659651584</td><td>152.87</td><td>-45.72</td><td>1.29 ± 0.07</td><td>8.9</td><td>501.9</td><td>206.9</td><td>-166.1</td><td>-22</td><td>1050</td><td>0.47</td><td>-</td></tr>"
             },
             {
-              "location": "I:p3-b0"
+              "location": "I:p4-b0"
             }
           ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "-32.2",
-          "error": "3.1",
-          "unit": "mas/yr",
-          "condition": "SDSS proper motion as used by P14",
-          "evidence": [
-            {
-              "location": "T:p3-b0",
-              "quote": "<td>18</td><td>1.8 ± 2.3</td><td>-28.6 ± 3.5</td><td>7.2 ± 3.1</td><td>-32.2 ± 3.1</td>"
-            },
-            {
-              "location": "I:p3-b0"
-            }
-          ],
-          "source": "1503.04164v1"
+          "source": "1805.03194v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-166.1",
+            "approximate": false
+          }
         }
       ]
     },
@@ -129,94 +123,25 @@
       "quantity": "galactocentric_radius",
       "values": [
         {
-          "value": "3.6",
+          "value": "8.9",
           "unit": "kpc",
-          "condition": "Average distance to GC at the 3σ level of the disk passage, model II of Irrgang et al. (2013), new proper motions",
+          "condition": "Three-dimensional Galactocentric radius r from Table 1, adopting R0 = 8 kpc.",
           "evidence": [
             {
-              "location": "T:p3-b0",
-              "quote": "<td>2.7 ± 0.5</td><td>3.6</td><td>0.5</td>"
+              "location": "T:p4-b0",
+              "quote": "<tr><td>Gaia-T-ES25</td><td>73753560659651584</td><td>152.87</td><td>-45.72</td><td>1.29 ± 0.07</td><td>8.9</td><td>501.9</td><td>206.9</td><td>-166.1</td><td>-22</td><td>1050</td><td>0.47</td><td>-</td></tr>"
             },
             {
-              "location": "I:p3-b0"
+              "location": "I:p4-b0"
             }
           ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "3.5",
-          "unit": "kpc",
-          "condition": "Average distance to GC at the 3σ level of the disk passage, model I, new proper motions",
-          "evidence": [
-            {
-              "location": "T:p6-b0",
-              "quote": "<td>18</td><td>3.5</td><td>0.5</td>"
-            },
-            {
-              "location": "I:p6-b0"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "3.6",
-          "unit": "kpc",
-          "condition": "Average distance to GC at the 3σ level of the disk passage, model III, new proper motions",
-          "evidence": [
-            {
-              "location": "T:p6-b1",
-              "quote": "<td>18</td><td>3.6</td><td>0.5</td>"
-            },
-            {
-              "location": "I:p6-b1"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "0.5",
-          "unit": "kpc",
-          "condition": "Minimum distance to GC at the 3σ level of the disk passage, model II, new proper motions",
-          "evidence": [
-            {
-              "location": "T:p3-b0",
-              "quote": "<td>2.7 ± 0.5</td><td>3.6</td><td>0.5</td>"
-            },
-            {
-              "location": "I:p3-b0"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "0.5",
-          "unit": "kpc",
-          "condition": "Minimum distance to GC at the 3σ level of the disk passage, model I, new proper motions",
-          "evidence": [
-            {
-              "location": "T:p6-b0",
-              "quote": "<td>18</td><td>3.5</td><td>0.5</td>"
-            },
-            {
-              "location": "I:p6-b0"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "0.5",
-          "unit": "kpc",
-          "condition": "Minimum distance to GC at the 3σ level of the disk passage, model III, new proper motions",
-          "evidence": [
-            {
-              "location": "T:p6-b1",
-              "quote": "<td>18</td><td>3.6</td><td>0.5</td>"
-            },
-            {
-              "location": "I:p6-b1"
-            }
-          ],
-          "source": "1503.04164v1"
+          "source": "1805.03194v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "8.9",
+            "approximate": false
+          }
         }
       ]
     },
@@ -224,214 +149,25 @@
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "537.4",
-          "error": "123.3",
+          "value": "501.9",
           "unit": "km/s",
-          "condition": "v_GRF,1 based on this work's proper motions, model II",
+          "condition": "Total space velocity v_total in the Galactocentric rest frame, derived from Gaia DR2 6D phase-space coordinates and listed in Table 1.",
           "evidence": [
             {
-              "location": "T:p3-b0",
-              "quote": "<td>537.4 ± 123.3</td><td>651.1 ± 134.8</td>"
+              "location": "T:p4-b0",
+              "quote": "<tr><td>Gaia-T-ES25</td><td>73753560659651584</td><td>152.87</td><td>-45.72</td><td>1.29 ± 0.07</td><td>8.9</td><td>501.9</td><td>206.9</td><td>-166.1</td><td>-22</td><td>1050</td><td>0.47</td><td>-</td></tr>"
             },
             {
-              "location": "I:p3-b0"
+              "location": "I:p4-b0"
             }
           ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "651.1",
-          "error": "134.8",
-          "unit": "km/s",
-          "condition": "v_GRF,2 based on SDSS proper motions as used by P14, model II",
-          "evidence": [
-            {
-              "location": "T:p3-b0",
-              "quote": "<td>537.4 ± 123.3</td><td>651.1 ± 134.8</td>"
-            },
-            {
-              "location": "I:p3-b0"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "537.1",
-          "error": "123.5",
-          "unit": "km/s",
-          "condition": "v_GRF,1 based on this work's proper motions, model I",
-          "evidence": [
-            {
-              "location": "T:p6-b0",
-              "quote": "<td>537.1 ± 123.5</td><td>651.1 ± 134.9</td>"
-            },
-            {
-              "location": "I:p6-b0"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "651.1",
-          "error": "134.9",
-          "unit": "km/s",
-          "condition": "v_GRF,2 based on SDSS proper motions as used by P14, model I",
-          "evidence": [
-            {
-              "location": "T:p6-b0",
-              "quote": "<td>537.1 ± 123.5</td><td>651.1 ± 134.9</td>"
-            },
-            {
-              "location": "I:p6-b0"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "537.4",
-          "error": "123.3",
-          "unit": "km/s",
-          "condition": "v_GRF,1 based on this work's proper motions, model III",
-          "evidence": [
-            {
-              "location": "T:p6-b1",
-              "quote": "<td>537.4 ± 123.3</td><td>651.1 ± 134.8</td>"
-            },
-            {
-              "location": "I:p6-b1"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "651.1",
-          "error": "134.8",
-          "unit": "km/s",
-          "condition": "v_GRF,2 based on SDSS proper motions as used by P14, model III",
-          "evidence": [
-            {
-              "location": "T:p6-b1",
-              "quote": "<td>537.4 ± 123.3</td><td>651.1 ± 134.8</td>"
-            },
-            {
-              "location": "I:p6-b1"
-            }
-          ],
-          "source": "1503.04164v1"
-        }
-      ]
-    },
-    {
-      "quantity": "bound_probability",
-      "values": [
-        {
-          "value": "21.30",
-          "unit": "%",
-          "condition": "As listed by P14 (P14 proper motions)",
-          "evidence": [
-            {
-              "location": "T:p3-b0",
-              "quote": "<td>21.30</td><td>29.8</td><td>63.6</td>"
-            },
-            {
-              "location": "I:p3-b0"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "29.8",
-          "unit": "%",
-          "condition": "Model II, using SDSS proper motions as used by P14",
-          "evidence": [
-            {
-              "location": "T:p3-b0",
-              "quote": "<td>21.30</td><td>29.8</td><td>63.6</td>"
-            },
-            {
-              "location": "I:p3-b0"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "63.6",
-          "unit": "%",
-          "condition": "Model II, using this work's revised proper motions",
-          "evidence": [
-            {
-              "location": "T:p3-b0",
-              "quote": "<td>21.30</td><td>29.8</td><td>63.6</td>"
-            },
-            {
-              "location": "I:p3-b0"
-            },
-            {
-              "location": "T:p3-b2",
-              "quote": "Star No. 18 has the highest probability of being unbound, but even in the lightest Galaxy model II this probabil-ity does not exceed 36%."
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "41.4",
-          "unit": "%",
-          "condition": "Model I, using SDSS proper motions as used by P14",
-          "evidence": [
-            {
-              "location": "T:p6-b0",
-              "quote": "<td>21.30</td><td>41.4</td><td>74.6</td>"
-            },
-            {
-              "location": "I:p6-b0"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "74.6",
-          "unit": "%",
-          "condition": "Model I, using this work's revised proper motions",
-          "evidence": [
-            {
-              "location": "T:p6-b0",
-              "quote": "<td>21.30</td><td>41.4</td><td>74.6</td>"
-            },
-            {
-              "location": "I:p6-b0"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "87.7",
-          "unit": "%",
-          "condition": "Model III, using SDSS proper motions as used by P14",
-          "evidence": [
-            {
-              "location": "T:p6-b1",
-              "quote": "<td>21.30</td><td>87.7</td><td>97.9</td>"
-            },
-            {
-              "location": "I:p6-b1"
-            }
-          ],
-          "source": "1503.04164v1"
-        },
-        {
-          "value": "97.9",
-          "unit": "%",
-          "condition": "Model III, using this work's revised proper motions",
-          "evidence": [
-            {
-              "location": "T:p6-b1",
-              "quote": "<td>21.30</td><td>87.7</td><td>97.9</td>"
-            },
-            {
-              "location": "I:p6-b1"
-            }
-          ],
-          "source": "1503.04164v1"
+          "source": "1805.03194v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "501.9",
+            "approximate": false
+          }
         }
       ]
     },
@@ -439,35 +175,204 @@
       "quantity": "unbound_probability",
       "values": [
         {
-          "upper_bound": "36",
-          "upper_inclusive": true,
-          "unit": "%",
-          "condition": "Model II (lightest potential), based on revised proper motions; stated as not exceeding this value",
+          "value": "0.47",
+          "unit": "dimensionless",
+          "condition": "Probability P_unb of being unbound in the MWPotential2014 potential, from 1000 Monte Carlo samples of the observed 6D phase-space error distribution.",
           "evidence": [
             {
-              "location": "T:p3-b2",
-              "quote": "Star No. 18 has the highest probability of being unbound, but even in the lightest Galaxy model II this probabil-ity does not exceed 36%."
+              "location": "T:p4-b0",
+              "quote": "<tr><td>Gaia-T-ES25</td><td>73753560659651584</td><td>152.87</td><td>-45.72</td><td>1.29 ± 0.07</td><td>8.9</td><td>501.9</td><td>206.9</td><td>-166.1</td><td>-22</td><td>1050</td><td>0.47</td><td>-</td></tr>"
+            },
+            {
+              "location": "I:p4-b0"
             }
           ],
-          "source": "1503.04164v1"
+          "source": "1805.03194v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.47",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "V* V Ari",
+      "aliases": [
+        "2MASS J02150008+1214235",
+        "AAVSO 0209+11",
+        "AG+12  238",
+        "AN  147.1907",
+        "AP J02150008+1214235",
+        "BD+11   305",
+        "C*   93",
+        "CGCS  327",
+        "DO   414",
+        "GCRV  1236",
+        "GEN# +1.00013826",
+        "GSC 00634-00589",
+        "Gaia DR1 73753556364038272",
+        "Gaia DR2 73753560659651584",
+        "Gaia DR3 73753560659651584",
+        "HD  13826",
+        "HIC  10472",
+        "HIP 10472",
+        "IRAS 02123+1200",
+        "LEE   1",
+        "PPM 118063",
+        "SAO  92853",
+        "TIC 58872758",
+        "TYC  634-589-1",
+        "UBV   21327",
+        "V* V Ari",
+        "WEB  2196",
+        "YZ  12   661",
+        "[V58]  5"
+      ],
+      "object_type": "LP?",
+      "coordinates": {
+        "ra": {
+          "value": 33.75032160365001,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 12.23989224842,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.021199999377131462,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.020899999886751175,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": 60.992,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": 45.256,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.028999999165534973,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.028999999165534973,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.8645,
+        "unit": "mas",
+        "error": 0.023099999874830246,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -167.2645,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.0005577787574657656
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 0.11680000275373459,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "A",
+        "bibcode": "2022ApJS..259...35A",
+        "wavelength": "N"
+      },
+      "spectral_type": {
+        "value": "C-H3.5",
+        "quality": "B",
+        "bibcode": "1996ApJS..105..419B"
+      },
+      "photometry": [
+        {
+          "band": "V",
+          "value": 9.800000190734863,
+          "system": "V",
+          "bibcode": "2002yCat.2237....0D",
+          "quality": "C"
+        },
+        {
+          "band": "J",
+          "value": 5.139999866485596,
+          "system": "V",
+          "bibcode": "2002yCat.2237....0D",
+          "quality": "C"
+        },
+        {
+          "band": "K",
+          "value": 4.03000020980835,
+          "system": "V",
+          "bibcode": "2002yCat.2237....0D",
+          "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 4.320000171661377,
+          "system": "V",
+          "bibcode": "2002yCat.2237....0D",
+          "quality": "C"
+        },
+        {
+          "band": "G",
+          "value": 7.649233818054199,
+          "error": 0.006246999837458134,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        },
+        {
+          "band": "B",
+          "value": 10.800000190734863,
+          "quality": "E"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR2 73753560659651584"
+      ]
+    },
+    "last_queried_at": "2026-10-25T12:03:47.982014+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000221_provenance.json",
-    "sha256": "24bb3f551f5c85ecb34dc36b1d165691cd90d5f6d5ebb041cd77c3cfcf35a6ae"
+    "sha256": "3946d61e66b3a9cc858b2cc4feaeed785a1145220e1f06bf022263c19137515b"
   },
-  "warnings": [
-    "1503.04164v1#/stars/17/quantities/3/values/2/evidence/0: quote audit unknown at T:p6-b0; check the paper evidence.",
-    "1503.04164v1#/stars/17/quantities/3/values/3/evidence/0: quote audit unknown at T:p6-b0; check the paper evidence.",
-    "1503.04164v1#/stars/17/quantities/3/values/4/evidence/0: quote audit exact_match_elsewhere at T:p6-b1; check the paper evidence.",
-    "1503.04164v1#/stars/17/quantities/3/values/5/evidence/0: quote audit exact_match_elsewhere at T:p6-b1; check the paper evidence.",
-    "1503.04164v1#/stars/17/quantities/4/values/2/evidence/2: quote audit unknown at T:p3-b2; check the paper evidence.",
-    "1503.04164v1#/stars/17/quantities/5/values/0/evidence/0: quote audit unknown at T:p3-b2; check the paper evidence."
-  ]
+  "warnings": []
 }

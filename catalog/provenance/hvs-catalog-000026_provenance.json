@@ -1,10 +1,961 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000026",
-  "associations": [],
+  "associations": [
+    {
+      "method": "coordinates",
+      "left": "0808.2469v2#/stars/10",
+      "right": "2003.12766v1#/stars/8",
+      "details": {
+        "separation_arcsec": 0.1283833784408653,
+        "threshold_arcsec": 5.0,
+        "left_position": {
+          "ra_deg": 149.77699999999996,
+          "dec_deg": 0.14816666666666667,
+          "frame": "fk5",
+          "equinox": "J2000",
+          "evidence": [
+            {
+              "value": "09:59:06.48",
+              "unit": "hourangle",
+              "condition": "J2000 equatorial right ascension from the SDSS designation; present-day position",
+              "evidence": [
+                {
+                  "location": "T:p5-b12",
+                  "quote": "SDSS J095906.48+000853.40"
+                }
+              ]
+            },
+            {
+              "value": "+00:08:53.40",
+              "unit": "deg",
+              "condition": "J2000 equatorial declination from the SDSS designation; present-day position",
+              "evidence": [
+                {
+                  "location": "T:p5-b12",
+                  "quote": "SDSS J095906.48+000853.40"
+                }
+              ]
+            }
+          ]
+        },
+        "right_position": {
+          "ra_deg": 149.7769583333333,
+          "dec_deg": 0.14816666666666667,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "09:59:06.47",
+              "unit": "hourangle",
+              "condition": "Position encoded in the SDSS designation listed in Table 4; no separate epoch or uncertainty is reported.",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "HVS11 (SDSSJ095906.47+000853.4)"
+                }
+              ]
+            },
+            {
+              "value": "+00:08:53.4",
+              "unit": "deg",
+              "condition": "Position encoded in the SDSS designation listed in Table 4; no separate epoch or uncertainty is reported.",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "HVS11 (SDSSJ095906.47+000853.4)"
+                }
+              ]
+            }
+          ]
+        },
+        "coordinate_interpretations": {
+          "left": {
+            "frame": "fk5",
+            "equinox": "J2000",
+            "frame_basis": "coordinate_conditions",
+            "frame_assumed": false,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          },
+          "right": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          }
+        },
+        "epoch_propagation": false
+      }
+    },
+    {
+      "method": "review",
+      "left": "0808.2469v2#/stars/10",
+      "right": "0811.0571v1#/stars/8",
+      "details": {
+        "decision_id": "R21-merge-025",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "0811.0571v1#/stars/8",
+      "right": "0811.0612v2#/stars/8",
+      "details": {
+        "decision_id": "R21-merge-025",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "0811.0612v2#/stars/8",
+      "right": "1203.3543v1#/stars/10",
+      "details": {
+        "decision_id": "R21-merge-025",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1203.3543v1#/stars/10",
+      "right": "1302.1899v1#/stars/8",
+      "details": {
+        "decision_id": "R21-merge-025",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1302.1899v1#/stars/8",
+      "right": "1401.7342v1#/stars/21",
+      "details": {
+        "decision_id": "R21-merge-025",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1401.7342v1#/stars/21",
+      "right": "1606.02548v1#/stars/0",
+      "details": {
+        "decision_id": "R21-merge-025",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1606.02548v1#/stars/0",
+      "right": "2003.12766v1#/stars/8",
+      "details": {
+        "decision_id": "R21-merge-025",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    }
+  ],
+  "review_decisions": [
+    {
+      "id": "R21-merge-025",
+      "type": "merge",
+      "groups": [
+        [
+          "0808.2469v2#/stars/10",
+          "2003.12766v1#/stars/8"
+        ],
+        [
+          "0811.0571v1#/stars/8"
+        ],
+        [
+          "0811.0612v2#/stars/8"
+        ],
+        [
+          "1203.3543v1#/stars/10"
+        ],
+        [
+          "1302.1899v1#/stars/8"
+        ],
+        [
+          "1401.7342v1#/stars/21"
+        ],
+        [
+          "1606.02548v1#/stars/0"
+        ]
+      ],
+      "papers": {
+        "0808.2469v2": "83ec2632b23d34fa1a436723bdf9b206bb72083415f782c7b184735e9c619e63",
+        "0811.0571v1": "2a247f63f0a340aa0f514fa7b9a3926e574c6607e187799931e77be954749e7d",
+        "0811.0612v2": "abb9d32954feb8b536c7ff71cbc37ce877e2b04eaf268490688f39d25683fbc1",
+        "1203.3543v1": "cca433462bfc5161d5f46cd55e42f124bdc526b76cb3858d59a469d53019dc0d",
+        "1302.1899v1": "eb911ec7299ff3c43aaabe2b7db1048100e613f4299a929d33094c687adc6fd0",
+        "1401.7342v1": "0e4bb1f538746c383d4659f01699ce9adbf910f90f566ece00dea214464b2a4b",
+        "1606.02548v1": "1fefc326f819210202b305bf814d14db7c627dbde579bcdea0a65a96e4fa45a5",
+        "2003.12766v1": "00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830"
+      },
+      "responses": {},
+      "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone.",
+      "evidence": [
+        {
+          "paper": "0808.2469v2",
+          "location": "T:p5-b12",
+          "quote": "SDSS J095906.48+000853.40, hereafter HVS11"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "I:p6-b0"
+        },
+        {
+          "paper": "0811.0571v1",
+          "location": "I:p7-b4"
+        },
+        {
+          "paper": "0811.0612v2",
+          "location": "T:p1-b18",
+          "quote": "The new survey includes HVS1 and HVS11-HVS16"
+        },
+        {
+          "paper": "1203.3543v1",
+          "location": "I:p5-b0"
+        },
+        {
+          "paper": "1203.3543v1",
+          "location": "T:p5-b2",
+          "quote": "place HVS11"
+        },
+        {
+          "paper": "1302.1899v1",
+          "location": "T:p2-b8",
+          "quote": "<tr><td>HVS11</td><td>7</td><td>No</td><td>-</td></tr>"
+        },
+        {
+          "paper": "1401.7342v1",
+          "location": "T:p6-b9",
+          "quote": "HVS11, given our new distance estimate, is an object\nthat we now classify as a possible “bound HVS.”"
+        },
+        {
+          "paper": "1606.02548v1",
+          "location": "T:p4-b1",
+          "quote": "In the discovery paper of HVS11, Brown et al. (2009a)"
+        },
+        {
+          "paper": "2003.12766v1",
+          "location": "T:p7-b0",
+          "quote": "HVS11 (SDSSJ095906.47+000853.4)"
+        }
+      ],
+      "approved_by": "Project lead (stop 1 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
+    },
+    {
+      "id": "R21-separate-026",
+      "type": "separate",
+      "groups": [
+        [
+          "0808.2469v2#/stars/10",
+          "0811.0571v1#/stars/8",
+          "0811.0612v2#/stars/8",
+          "1203.3543v1#/stars/10",
+          "1302.1899v1#/stars/8",
+          "1401.7342v1#/stars/21",
+          "1606.02548v1#/stars/0",
+          "2003.12766v1#/stars/8"
+        ],
+        [
+          "1308.3495v2#/stars/10"
+        ],
+        [
+          "1506.01818v2#/stars/10"
+        ],
+        [
+          "2507.00150v1#/stars/10"
+        ]
+      ],
+      "papers": {
+        "0808.2469v2": "83ec2632b23d34fa1a436723bdf9b206bb72083415f782c7b184735e9c619e63",
+        "0811.0571v1": "2a247f63f0a340aa0f514fa7b9a3926e574c6607e187799931e77be954749e7d",
+        "0811.0612v2": "abb9d32954feb8b536c7ff71cbc37ce877e2b04eaf268490688f39d25683fbc1",
+        "1203.3543v1": "cca433462bfc5161d5f46cd55e42f124bdc526b76cb3858d59a469d53019dc0d",
+        "1302.1899v1": "eb911ec7299ff3c43aaabe2b7db1048100e613f4299a929d33094c687adc6fd0",
+        "1308.3495v2": "8e99744e1acc51b2fe11d0afe7468d7d6354fe7299060defdf1c4bccbf783c0c",
+        "1401.7342v1": "0e4bb1f538746c383d4659f01699ce9adbf910f90f566ece00dea214464b2a4b",
+        "1506.01818v2": "df890e183d9ad722076d079027bbd3513b25ce452226b3498b4afed7365e7366",
+        "1606.02548v1": "1fefc326f819210202b305bf814d14db7c627dbde579bcdea0a65a96e4fa45a5",
+        "2003.12766v1": "00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830",
+        "2507.00150v1": "f915ebe3082c0f4003756ffd757bd1d2aab9cc219679ba0e7e35087a18a2e9b0"
+      },
+      "responses": {},
+      "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. The groups stay separate from each other; merges within a group are separate merge decisions.",
+      "evidence": [
+        {
+          "paper": "0808.2469v2",
+          "location": "T:p5-b12",
+          "quote": "SDSS J095906.48+000853.40, hereafter HVS11"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "I:p6-b0"
+        },
+        {
+          "paper": "0811.0571v1",
+          "location": "I:p7-b4"
+        },
+        {
+          "paper": "0811.0612v2",
+          "location": "T:p1-b18",
+          "quote": "The new survey includes HVS1 and HVS11-HVS16"
+        },
+        {
+          "paper": "1203.3543v1",
+          "location": "I:p5-b0"
+        },
+        {
+          "paper": "1203.3543v1",
+          "location": "T:p5-b2",
+          "quote": "place HVS11"
+        },
+        {
+          "paper": "1302.1899v1",
+          "location": "T:p2-b8",
+          "quote": "<tr><td>HVS11</td><td>7</td><td>No</td><td>-</td></tr>"
+        },
+        {
+          "paper": "1308.3495v2",
+          "location": "T:p7-b0",
+          "quote": "<tr><td>11</td><td>J073542.35 + 164941.4</td>"
+        },
+        {
+          "paper": "1401.7342v1",
+          "location": "T:p6-b9",
+          "quote": "HVS11, given our new distance estimate, is an object\nthat we now classify as a possible “bound HVS.”"
+        },
+        {
+          "paper": "1506.01818v2",
+          "location": "I:p9-b0"
+        },
+        {
+          "paper": "1506.01818v2",
+          "location": "T:p9-b0",
+          "quote": "J004028.68+393853.0"
+        },
+        {
+          "paper": "1606.02548v1",
+          "location": "T:p4-b1",
+          "quote": "In the discovery paper of HVS11, Brown et al. (2009a)"
+        },
+        {
+          "paper": "2003.12766v1",
+          "location": "T:p7-b0",
+          "quote": "HVS11 (SDSSJ095906.47+000853.4)"
+        },
+        {
+          "paper": "2507.00150v1",
+          "location": "T:p4-b0",
+          "quote": "HVS11</td><td>G</td><td>6407392126691609600</td><td>22:39:31.11</td><td>-59:58:10.7</td><td>62.5"
+        }
+      ],
+      "approved_by": "Project lead (stop 1 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
+    }
+  ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "[BGK2006] HV 11",
+      "aliases": [
+        "2QZ J095906.4+000852",
+        "Gaia DR2 3833516903071703040",
+        "Gaia DR3 3833516903071703040",
+        "SDSS J095906.46+000853.3",
+        "SDSS J095906.46+000853.4",
+        "SDSS J095906.47+000853.4",
+        "SDSS J095906.48+000853.4",
+        "[BGK2006] HV 11"
+      ],
+      "position": {
+        "ra_deg": 149.77695582901,
+        "dec_deg": 0.14817084447999998,
+        "frame": "icrs",
+        "equinox": null,
+        "evidence": []
+      },
+      "fields": {
+        "main_id": {
+          "value": "[BGK2006] HV 11"
+        },
+        "nbref": {
+          "value": 12
+        },
+        "otype": {
+          "value": "HV*"
+        },
+        "ra": {
+          "value": 149.77695582901,
+          "unit": "deg"
+        },
+        "ra_prec": {
+          "value": 14
+        },
+        "dec": {
+          "value": 0.14817084447999998,
+          "unit": "deg"
+        },
+        "dec_prec": {
+          "value": 14
+        },
+        "coo_err_maj": {
+          "value": 0.5131999850273132,
+          "unit": "mas"
+        },
+        "coo_err_maj_prec": {
+          "value": 4
+        },
+        "coo_err_min": {
+          "value": 0.6133000254631042,
+          "unit": "mas"
+        },
+        "coo_err_min_prec": {
+          "value": 4
+        },
+        "coo_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "coo_qual": {
+          "value": "A"
+        },
+        "coo_wavelength": {
+          "value": "O"
+        },
+        "coo_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "hpx": {
+          "value": 6973126
+        },
+        "pmra": {
+          "value": 0.977,
+          "unit": "mas / yr"
+        },
+        "pmra_prec": {
+          "value": 3
+        },
+        "pmdec": {
+          "value": -1.144,
+          "unit": "mas / yr"
+        },
+        "pmdec_prec": {
+          "value": 3
+        },
+        "pm_err_maj": {
+          "value": 0.7250000238418579,
+          "unit": "mas / yr"
+        },
+        "pm_err_maj_prec": {
+          "value": 3
+        },
+        "pm_err_min": {
+          "value": 0.9929999709129333,
+          "unit": "mas / yr"
+        },
+        "pm_err_min_prec": {
+          "value": 3
+        },
+        "pm_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "pm_qual": {
+          "value": "A"
+        },
+        "pm_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "plx_qual": {
+          "value": ""
+        },
+        "plx_bibcode": {
+          "value": ""
+        },
+        "rvz_type": {
+          "value": "z"
+        },
+        "rvz_radvel": {
+          "value": 467.3114474602832,
+          "unit": "km / s"
+        },
+        "rvz_radvel_prec": {
+          "value": 0
+        },
+        "rvz_redshift": {
+          "value": 0.00156
+        },
+        "rvz_redshift_prec": {
+          "value": 5
+        },
+        "rvz_err": {
+          "value": 2.9999999242136255e-05,
+          "unit": "km / s"
+        },
+        "rvz_err_prec": {
+          "value": 5
+        },
+        "rvz_nature": {
+          "value": ""
+        },
+        "rvz_qual": {
+          "value": "E"
+        },
+        "rvz_bibcode": {
+          "value": "2011yCat.2306....0A"
+        },
+        "vlsr_wavelength": {
+          "value": ""
+        },
+        "vlsr_bibcode": {
+          "value": ""
+        },
+        "sp_type": {
+          "value": "sdA"
+        },
+        "sp_qual": {
+          "value": "D"
+        },
+        "sp_bibcode": {
+          "value": "2019MNRAS.486.2169K"
+        },
+        "morph_type": {
+          "value": ""
+        },
+        "morph_qual": {
+          "value": ""
+        },
+        "morph_bibcode": {
+          "value": ""
+        },
+        "galdim_qual": {
+          "value": ""
+        },
+        "galdim_wavelength": {
+          "value": ""
+        },
+        "galdim_bibcode": {
+          "value": ""
+        },
+        "update_date": {
+          "value": "2023-04-10"
+        },
+        "otype_txt": {
+          "value": "HV*"
+        },
+        "rvz_wavelength": {
+          "value": "O"
+        }
+      },
+      "photometry": [
+        {
+          "band": "V",
+          "fields": {
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 4699782
+            },
+            "filter": {
+              "value": "V"
+            },
+            "flux": {
+              "value": 19.700000762939453
+            },
+            "system": {
+              "value": "V"
+            },
+            "qual": {
+              "value": "D"
+            },
+            "bibcode": {
+              "value": "2009ApJ...690.1639B"
+            }
+          }
+        },
+        {
+          "band": "r",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 4699782
+            },
+            "filter": {
+              "value": "r"
+            },
+            "flux": {
+              "value": 19.878999710083008
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.020999999716877937
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2008ApJS..175..297A"
+            }
+          }
+        },
+        {
+          "band": "z",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 4699782
+            },
+            "filter": {
+              "value": "z"
+            },
+            "flux": {
+              "value": 19.913999557495117
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.13500000536441803
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2008ApJS..175..297A"
+            }
+          }
+        },
+        {
+          "band": "u",
+          "fields": {
+            "flux_err_prec": {
+              "value": 2
+            },
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 4699782
+            },
+            "filter": {
+              "value": "u"
+            },
+            "flux": {
+              "value": 20.889999389648438
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.07000000029802322
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2011yCat.2306....0A"
+            }
+          }
+        },
+        {
+          "band": "g",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 4699782
+            },
+            "filter": {
+              "value": "g"
+            },
+            "flux": {
+              "value": 19.701000213623047
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.014000000432133675
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2011yCat.2306....0A"
+            }
+          }
+        },
+        {
+          "band": "i",
+          "fields": {
+            "flux_err_prec": {
+              "value": 2
+            },
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 4699782
+            },
+            "filter": {
+              "value": "i"
+            },
+            "flux": {
+              "value": 20.110000610351562
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.029999999329447746
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2011yCat.2306....0A"
+            }
+          }
+        },
+        {
+          "band": "G",
+          "fields": {
+            "flux_err_prec": {
+              "value": 6
+            },
+            "flux_prec": {
+              "value": 6
+            },
+            "oidref": {
+              "value": 4699782
+            },
+            "filter": {
+              "value": "G"
+            },
+            "flux": {
+              "value": 19.773595809936523
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.00659599993377924
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2020yCat.1350....0G"
+            }
+          }
+        },
+        {
+          "band": "B",
+          "fields": {
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 4699782
+            },
+            "filter": {
+              "value": "B"
+            },
+            "flux": {
+              "value": 19.829999923706055
+            },
+            "system": {
+              "value": "V"
+            },
+            "qual": {
+              "value": "E"
+            },
+            "bibcode": {
+              "value": ""
+            }
+          }
+        }
+      ]
+    },
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J095906.47+000853.4",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "6ad6d574ca8e925049efb1712ce010c06fa50b4b513709c4a2904961f4d1b485",
+        "queried_at": "2026-10-25T11:48:45.146477+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "1203.3543v1#/stars/10",
+            "original_identifier": {
+              "value": "SDSS J095906.47+000853.41",
+              "evidence": [
+                {
+                  "location": "I:p5-b0"
+                }
+              ]
+            },
+            "derivation": "sdss_standard_truncation"
+          },
+          {
+            "source_record": "2003.12766v1#/stars/8",
+            "original_identifier": {
+              "value": "SDSSJ095906.47+000853.4",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "HVS11 (SDSSJ095906.47+000853.4)"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J095906.47+000853.41",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "9ff596fbcc8669c73c5fdae3c2ddbccdb4e16ad47f7660838a0edd299afb4eec",
+        "queried_at": "2026-10-25T11:52:43.006934+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "1203.3543v1#/stars/10",
+            "original_identifier": {
+              "value": "SDSS J095906.47+000853.41",
+              "evidence": [
+                {
+                  "location": "I:p5-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J095906.48+000853.4",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "01b412c2f84bbc508b0a608935fc9995354dc0b7957d944edacca9a7c634fb27",
+        "queried_at": "2026-10-25T13:17:22.153246+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0808.2469v2#/stars/10",
+            "original_identifier": {
+              "value": "SDSS J095906.48+000853.40",
+              "evidence": [
+                {
+                  "location": "T:p5-b12",
+                  "quote": "SDSS J095906.48+000853.40, hereafter HVS11"
+                },
+                {
+                  "location": "I:p6-b0"
+                }
+              ]
+            },
+            "derivation": "sdss_standard_truncation"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J095906.48+000853.40",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "3b0265e515404fa989c9b35f11cb40abc32e0287dd78db98319f3168e41fe767",
+        "queried_at": "2026-10-25T11:44:17.066025+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0808.2469v2#/stars/10",
+            "original_identifier": {
+              "value": "SDSS J095906.48+000853.40",
+              "evidence": [
+                {
+                  "location": "T:p5-b12",
+                  "quote": "SDSS J095906.48+000853.40, hereafter HVS11"
+                },
+                {
+                  "location": "I:p6-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      }
+    ],
+    "matches": [
+      {
+        "main_id": "[BGK2006] HV 11",
+        "method": "identifier",
+        "identifier": "SDSS J095906.47+000853.4",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      },
+      {
+        "main_id": "[BGK2006] HV 11",
+        "method": "identifier",
+        "identifier": "SDSS J095906.48+000853.4",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      }
+    ]
   }
 }

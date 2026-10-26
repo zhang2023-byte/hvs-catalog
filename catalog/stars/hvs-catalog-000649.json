@@ -1,37 +1,34 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000649",
-  "display_name": "ID 12 (2401.05630)",
+  "display_name": "Gaia DR3 2515789291339579648",
   "sources": {
-    "2401.05630v1": {
-      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
+    "2608.30063v1": {
+      "title": "Intermediate-mass runaway and hypervelocity star candidates in DESI DR1",
       "authors": [
-        "A. Luna",
-        "T. Marchetti",
-        "M. Rejkuba",
-        "N. W. C. Leigh",
-        "J. Alonso-García",
-        "A. Valenzuela Navarro",
-        "D. Minniti",
-        "L. C. Smith"
+        "Aakash Bhat",
+        "Matti Dorsch",
+        "Ulrich Heber",
+        "Stephan Geier",
+        "Harry Dawson"
       ],
-      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
+      "pdf_url": "https://arxiv.org/pdf/2608.30063v1",
       "records": [
-        "/stars/15"
+        "/stars/0"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "ID 12",
+      "value": "Gaia DR3 2515789291339579648",
       "evidence": [
         {
           "location": "T:p16-b0",
-          "quote": "<td>12</td><td>17h46m40.54s</td><td>-27d40m40.52s</td>"
+          "quote": "2515789291339579648"
         }
       ],
-      "source": "2401.05630v1"
+      "source": "2608.30063v1"
     }
   ],
   "contribution_types": [
@@ -39,79 +36,93 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b13",
-          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
+          "location": "T:p6-b3",
+          "quote": "probability of being unbound greater than"
         },
         {
-          "location": "T:p9-b10",
-          "quote": "65 were detected only in the VIRAC2 sample"
+          "location": "I:p7-b6"
         },
         {
-          "location": "T:p17-b2",
-          "quote": "<td>12</td><td>16.93</td><td>10.5</td><td>2.38</td><td>863.32</td>"
+          "location": "I:p16-b0"
         }
       ],
-      "source": "2401.05630v1"
+      "source": "2608.30063v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "ra",
-      "values": [
-        {
-          "value": "17h46m40.54s",
-          "unit": "hms",
-          "condition": "VIRAC2-only candidate HVS ID 12 in Table B1, with VIRAC2 proper motion pointing away from the GC",
-          "evidence": [
-            {
-              "location": "T:p16-b0",
-              "quote": "<tr><td>12</td><td>17h46m40.54s</td><td>-27d40m40.52s</td><td>1.1956</td><td>0.4559</td><td>14.86</td><td>3.96</td></tr>"
-            },
-            {
-              "location": "I:p16-b0"
-            }
-          ],
-          "source": "2401.05630v1"
-        }
-      ]
-    },
-    {
-      "quantity": "dec",
-      "values": [
-        {
-          "value": "-27d40m40.52s",
-          "unit": "dms",
-          "condition": "VIRAC2-only candidate HVS ID 12 in Table B1, with VIRAC2 proper motion pointing away from the GC",
-          "evidence": [
-            {
-              "location": "T:p16-b0",
-              "quote": "<tr><td>12</td><td>17h46m40.54s</td><td>-27d40m40.52s</td><td>1.1956</td><td>0.4559</td><td>14.86</td><td>3.96</td></tr>"
-            },
-            {
-              "location": "I:p16-b0"
-            }
-          ],
-          "source": "2401.05630v1"
-        }
-      ]
-    },
-    {
       "quantity": "distance",
       "values": [
         {
-          "value": "10.5",
+          "value": "95.43",
+          "lower_error": "10.87",
+          "upper_error": "16.29",
           "unit": "kpc",
-          "condition": "Heliocentric distance from the red-clump calibration for VIRAC2-only candidate HVS ID 12",
+          "condition": "Spectro-photometric distance from the Appendix table for Gaia DR3 2515789291339579648 (index 1), assuming main-sequence nature. Section 6.1 notes that the distance is an upper bound because the adopted [Fe/H] = -1 may be higher than the true metallicity.",
           "evidence": [
             {
-              "location": "T:p17-b2",
-              "quote": "<tr><td>12</td><td>16.93</td><td>10.5</td><td>2.38</td><td>863.32</td><td>1119425</td><td>0.26</td><td>0.92</td></tr>"
+              "location": "T:p16-b0",
+              "quote": "<tr><td>1</td><td>2515789291339579648</td><td><eq>3.80^{+0.11}_{-0.11}</eq></td><td><eq>16400^{+570}_{-339}</eq></td><td><eq>-154^{+11}_{-11}</eq></td><td><eq>95.43^{+16.29}_{-10.87}</eq></td><td><eq>114^{+23}_{-18}</eq></td><td><eq>4.31^{+0.36}_{-0.34}</eq></td><td><eq>3.93^{+0.63}_{-0.45}</eq></td><td><eq>-11.730^{+0.007}_{-0.007}</eq></td><td><eq>928 ± 151</eq></td><td>1.00</td><td>-</td><td>-</td><td>-</td><td>HVS</td></tr>"
             },
             {
-              "location": "I:p17-b2"
+              "location": "T:p6-b7",
+              "quote": "We use low metallicity( \\mathrm { [Fe/H] } = -1 )MIST tracks\nfor this star. Since the star may have an even lower metallicity,\nthe distance and velocity estimates are upper bounds."
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "95.43",
+            "lower_error": "10.87",
+            "upper_error": "16.29",
+            "approximate": false
+          }
+        },
+        {
+          "value": "95",
+          "error": "13",
+          "unit": "kpc",
+          "condition": "Distance reported in the abstract for the fastest metal-poor hypervelocity star candidate, identified here with Gaia DR3 2515789291339579648.",
+          "evidence": [
+            {
+              "location": "T:p1-b6",
+              "quote": "The fastest object in the\nsample is a metal-poor hypervelocity star candidate with a Galactocentric velocity upper-limit of 934 ± 110 km s<sup>−1</sup> at a distance of\n95 ± 13 kpc."
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "95",
+            "error": "13",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-154",
+          "error": "11",
+          "unit": "km/s",
+          "condition": "Spectroscopic radial velocity v_rad from the Appendix table for Gaia DR3 2515789291339579648 (index 1).",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<tr><td>1</td><td>2515789291339579648</td><td><eq>3.80^{+0.11}_{-0.11}</eq></td><td><eq>16400^{+570}_{-339}</eq></td><td><eq>-154^{+11}_{-11}</eq></td><td><eq>95.43^{+16.29}_{-10.87}</eq></td><td><eq>114^{+23}_{-18}</eq></td><td><eq>4.31^{+0.36}_{-0.34}</eq></td><td><eq>3.93^{+0.63}_{-0.45}</eq></td><td><eq>-11.730^{+0.007}_{-0.007}</eq></td><td><eq>928 ± 151</eq></td><td>1.00</td><td>-</td><td>-</td><td>-</td><td>HVS</td></tr>"
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-154",
+            "error": "11",
+            "approximate": false
+          }
         }
       ]
     },
@@ -119,34 +130,255 @@
       "quantity": "galactocentric_radius",
       "values": [
         {
-          "value": "2.38",
+          "value": "100",
+          "error": "11",
           "unit": "kpc",
-          "condition": "Three-dimensional galactocentric distance derived for VIRAC2-only candidate HVS ID 12",
+          "condition": "R_sph^MS, the present-day spherical Galactocentric radius assuming main-sequence nature, from Table 1 index 1; Table 1 notes that the index corresponds to the index in the final Appendix table.",
           "evidence": [
             {
-              "location": "T:p17-b2",
-              "quote": "<tr><td>12</td><td>16.93</td><td>10.5</td><td>2.38</td><td>863.32</td><td>1119425</td><td>0.26</td><td>0.92</td></tr>"
+              "location": "T:p7-b6",
+              "quote": "<tr><td>1</td><td>936 ± 123</td><td>-</td><td>100</td><td>-</td><td>100 ± 11</td><td>89+19-19</td></tr>"
             },
             {
-              "location": "I:p17-b2"
+              "location": "T:p7-b6",
+              "quote": "Index of the star corresponds to the index in the final table given\nin the Appendix."
             }
           ],
-          "source": "2401.05630v1"
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "100",
+            "error": "11",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "936",
+          "error": "123",
+          "unit": "km/s",
+          "condition": "v_grf^MS (main-sequence assumption) from Table 1 index 1; index 1 corresponds to the Appendix index 1 for Gaia DR3 2515789291339579648. Galactic rest-frame velocity computed for Model I of Irrgang et al. (2013).",
+          "evidence": [
+            {
+              "location": "T:p7-b6",
+              "quote": "<tr><td>1</td><td>936 ± 123</td><td>-</td><td>100</td><td>-</td><td>100 ± 11</td><td>89+19-19</td></tr>"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "Index of the star corresponds to the index in the final table given\nin the Appendix."
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "936",
+            "error": "123",
+            "approximate": false
+          }
+        },
+        {
+          "value": "928",
+          "error": "151",
+          "unit": "km/s",
+          "condition": "v_GRF from the Appendix table for Gaia DR3 2515789291339579648 (index 1), an HVS candidate; Appendix table notes that Galactic Rest Frame velocity is for Model I of Irrgang et al. (2013).",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<tr><td>1</td><td>2515789291339579648</td><td><eq>3.80^{+0.11}_{-0.11}</eq></td><td><eq>16400^{+570}_{-339}</eq></td><td><eq>-154^{+11}_{-11}</eq></td><td><eq>95.43^{+16.29}_{-10.87}</eq></td><td><eq>114^{+23}_{-18}</eq></td><td><eq>4.31^{+0.36}_{-0.34}</eq></td><td><eq>3.93^{+0.63}_{-0.45}</eq></td><td><eq>-11.730^{+0.007}_{-0.007}</eq></td><td><eq>928 ± 151</eq></td><td>1.00</td><td>-</td><td>-</td><td>-</td><td>HVS</td></tr>"
+            },
+            {
+              "location": "T:p17-b0",
+              "quote": "Galactic\nRest\nFrame\nvelocity\n(vGRF)\nis\nfor\nModel\nI\nof\nIrrgang\net\nal.\n(2013)."
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "928",
+            "error": "151",
+            "approximate": false
+          }
+        },
+        {
+          "value": "934",
+          "error": "110",
+          "unit": "km/s",
+          "condition": "Galactocentric velocity upper-limit reported in the abstract for the metal-poor HVS candidate; Section 6.1 states that the distance and velocity estimates are upper bounds because the adopted [Fe/H] = -1 may be higher than the actual metallicity.",
+          "evidence": [
+            {
+              "location": "T:p1-b6",
+              "quote": "The fastest object in the\nsample is a metal-poor hypervelocity star candidate with a Galactocentric velocity upper-limit of 934 ± 110 km s<sup>−1</sup> at a distance of\n95 ± 13 kpc."
+            },
+            {
+              "location": "T:p6-b7",
+              "quote": "We use low metallicity( \\mathrm { [Fe/H] } = -1 )MIST tracks\nfor this star. Since the star may have an even lower metallicity,\nthe distance and velocity estimates are upper bounds."
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "934",
+            "error": "110",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "p_unbound^MS assuming main-sequence nature, from Table 1 index 1 (index corresponds to the Appendix table index for Gaia DR3 2515789291339579648). Section 6.1 defines p_unbound as the fraction of 1000 random realizations of v_grf exceeding the local escape velocity.",
+          "evidence": [
+            {
+              "location": "T:p7-b6",
+              "quote": "<tr><td>1</td><td>936 ± 123</td><td>-</td><td>100</td><td>-</td><td>100 ± 11</td><td>89+19-19</td></tr>"
+            },
+            {
+              "location": "T:p7-b6",
+              "quote": "Index of the star corresponds to the index in the final table given\nin the Appendix."
+            },
+            {
+              "location": "T:p6-b3",
+              "quote": "We define the probability of being unbound( p _ { \\mathrm { u n b o u n d } } )as the frac-\ntion of 1000 random realizations of\\nu _ { \\mathrm { g r f } } ,, drawn assuming Gaus-\nsian uncertainties in the proper motions, distances, and radial ve-\nlocities, that exceed the local escape velocity at the correspond\ning position."
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        },
+        {
+          "value": "1.00",
+          "unit": "dimensionless",
+          "condition": "P_unbound listed in the Appendix table for Gaia DR3 2515789291339579648 (index 1), an HVS candidate.",
+          "evidence": [
+            {
+              "location": "T:p16-b0",
+              "quote": "<tr><td>1</td><td>2515789291339579648</td><td><eq>3.80^{+0.11}_{-0.11}</eq></td><td><eq>16400^{+570}_{-339}</eq></td><td><eq>-154^{+11}_{-11}</eq></td><td><eq>95.43^{+16.29}_{-10.87}</eq></td><td><eq>114^{+23}_{-18}</eq></td><td><eq>4.31^{+0.36}_{-0.34}</eq></td><td><eq>3.93^{+0.63}_{-0.45}</eq></td><td><eq>-11.730^{+0.007}_{-0.007}</eq></td><td><eq>928 ± 151</eq></td><td>1.00</td><td>-</td><td>-</td><td>-</td><td>HVS</td></tr>"
+            }
+          ],
+          "source": "2608.30063v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_found",
-    "reason": "No candidate matched the requested identifiers or radius.",
-    "last_queried_at": "2026-10-24T06:03:43.920176+00:00"
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "GALEX J022607.9+041423",
+      "aliases": [
+        "GALEX J022607.9+041423",
+        "Gaia DR2 2515789291339579648",
+        "Gaia DR3 2515789291339579648"
+      ],
+      "object_type": "HS?",
+      "coordinates": {
+        "ra": {
+          "value": 36.53285390975999,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 4.239831896149999,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.1941000074148178,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.15919999778270721,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -0.068,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -2.396,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.2549999952316284,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.20399999618530273,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.3088,
+        "unit": "mas",
+        "error": 0.19830000400543213,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "value": 18.702022552490234,
+          "error": 0.003918000031262636,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR3 2515789291339579648"
+      ]
+    },
+    "last_queried_at": "2026-10-25T12:03:20.551791+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000649_provenance.json",
-    "sha256": "1f4f494b7405bcc30a4ac33779efba3c99d5cec99cd207623c1cc0b87b1c7dea"
+    "sha256": "75a46ea0dd345a893b32fba133227715730cf87c65321741b39bca5adced387a"
   },
   "warnings": [
-    "Coordinate reference frame was not reported; ICRS was assumed for matching.",
-    "An identity association was rejected; inspect associations."
+    "2608.30063v1#/stars/0/quantities/0/values/0/evidence/1: quote audit unknown at T:p6-b7; check the paper evidence.",
+    "2608.30063v1#/stars/0/quantities/3/values/1/evidence/1: quote audit unknown at T:p17-b0; check the paper evidence.",
+    "2608.30063v1#/stars/0/quantities/3/values/2/evidence/1: quote audit unknown at T:p6-b7; check the paper evidence."
   ]
 }

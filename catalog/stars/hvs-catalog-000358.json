@@ -1,47 +1,65 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "aliases": [
+    "HVS 15 (1912.02129)"
+  ],
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000358",
-  "display_name": "TYC 8826-415-1",
+  "display_name": "Gaia DR2 4060422022558245248",
   "sources": {
-    "1805.03194v3": {
-      "title": "Old, Metal-Poor Extreme Velocity Stars in the Solar Neighborhood",
+    "1912.02129v1": {
+      "title": "Candidate Hypervelocity Red Clump Stars in the Galactic Bulge Found Using the VVV and Gaia Surveys",
       "authors": [
-        "Kohei Hattori",
-        "Monica Valluri",
-        "Eric F. Bell",
-        "Ian U. Roederer"
+        "Alonso Luna",
+        "Dante Minniti",
+        "Javier Alonso-García"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1805.03194v3",
+      "pdf_url": "https://arxiv.org/pdf/1912.02129v1",
       "records": [
-        "/stars/3"
+        "/stars/1"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "Gaia-T-ES4",
+      "value": "HVS 15",
       "evidence": [
         {
-          "location": "T:p4-b0",
-          "quote": "<tr><td>Gaia-T-ES4</td><td>6505889848642319872</td>"
-        }
-      ],
-      "source": "1805.03194v3"
-    },
-    {
-      "value": "Gaia DR2 6505889848642319872",
-      "evidence": [
-        {
-          "location": "T:p4-b0",
-          "quote": "<td>GaiaDR2 source_id</td>"
+          "location": "T:p8-b3",
+          "quote": "HVS 10, 15, 17 and 19"
         },
         {
-          "location": "T:p4-b0",
-          "quote": "<tr><td>Gaia-T-ES4</td><td>6505889848642319872</td>"
+          "location": "T:p8-b6",
+          "quote": "we propose these seven stars as HVS candidates"
         }
       ],
-      "source": "1805.03194v3"
+      "source": "1912.02129v1"
+    },
+    {
+      "value": "ID 15",
+      "evidence": [
+        {
+          "location": "T:p5-b1",
+          "quote": "we found 7 stars that radiate from the Galactic centre, whose IDs are: 10,\n15, 17, 19, 20, 22 and 23"
+        },
+        {
+          "location": "I:p8-b0"
+        }
+      ],
+      "source": "1912.02129v1"
+    },
+    {
+      "value": "Gaia DR2 4060422022558245248",
+      "evidence": [
+        {
+          "location": "I:p8-b0"
+        },
+        {
+          "location": "T:p8-b0",
+          "quote": "Gaia DR2 ID"
+        }
+      ],
+      "source": "1912.02129v1"
     }
   ],
   "contribution_types": [
@@ -49,105 +67,110 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p2-b9",
-          "quote": "6D coordinates of each star and select 30 stars that are\nunbound( E > 0 )or marginally bound"
+          "location": "T:p1-b15",
+          "quote": "Hypervelocity stars (HVS) are rare objects that appear to be unbound from the Galaxy."
         },
         {
-          "location": "T:p4-b0",
-          "quote": "<tr><td>Gaia-T-ES4</td><td>6505889848642319872</td>"
+          "location": "T:p5-b1",
+          "quote": "we found 7 stars that radiate from the Galactic centre, whose IDs are: 10,\n15, 17, 19, 20, 22 and 23"
         },
         {
-          "location": "T:p9-b4",
-          "quote": "While these stars have space velocities implying that\nthey are unbound in the MWPotential2014 potential"
+          "location": "T:p8-b6",
+          "quote": "we propose these seven stars as HVS candidates"
         }
       ],
-      "source": "1805.03194v3"
+      "source": "1912.02129v1"
     }
   ],
   "quantities": [
     {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "264.260",
+          "unit": "deg",
+          "condition": "Equatorial right ascension for ID 15 (Gaia DR2 4060422022558245248) in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "<tr><td>15</td><td>4060422022558245248</td><td>264.260</td><td>-28.505</td><td>-0.629</td><td>1.824</td><td>14.508</td><td>13.059</td><td>18.390</td></tr>"
+            }
+          ],
+          "source": "1912.02129v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "264.260",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-28.505",
+          "unit": "deg",
+          "condition": "Equatorial declination for ID 15 (Gaia DR2 4060422022558245248) in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p5-b0",
+              "quote": "<tr><td>15</td><td>4060422022558245248</td><td>264.260</td><td>-28.505</td><td>-0.629</td><td>1.824</td><td>14.508</td><td>13.059</td><td>18.390</td></tr>"
+            }
+          ],
+          "source": "1912.02129v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "-28.505",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
       "quantity": "distance",
       "values": [
         {
-          "value": "3.63",
-          "error": "0.36",
-          "unit": "kpc",
-          "condition": "Heliocentric distance d_helio from the Gaia-DR2 parallax point estimate.",
+          "value": "7409.066",
+          "unit": "pc",
+          "condition": "d_Ks distance estimate from the W_Ks calibration in Table 2; the same value is adopted in Table 3 as the distance used with the VVV PM.",
           "evidence": [
             {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES4</td><td>6505889848642319872</td><td>332.40</td><td>-53.84</td><td>3.63 ± 0.36</td><td>6.8</td><td>583.0</td><td>568.9</td><td>-38.2</td><td>35132</td><td>-536</td><td>0.85</td><td>-</td></tr>"
+              "location": "T:p6-b0",
+              "quote": "<tr><td>15</td><td>4060422022558245248</td><td>12.407</td><td>11.731</td><td>-2.617</td><td>-1.942</td><td>7409.066</td><td>7405.655</td></tr>"
+            },
+            {
+              "location": "T:p8-b0",
+              "quote": "<tr><td>15</td><td>4060422022558245248</td><td>7409.066</td><td>269.609 ±23</td><td>9469.333</td><td>25766.906</td></tr>"
             }
           ],
-          "source": "1805.03194v3"
-        }
-      ]
-    },
-    {
-      "quantity": "radial_velocity",
-      "values": [
+          "source": "1912.02129v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "7.409066",
+            "approximate": false
+          }
+        },
         {
-          "value": "-38.2",
-          "unit": "km/s",
-          "condition": "Line-of-sight velocity v_los from Gaia DR2.",
+          "value": "7405.655",
+          "unit": "pc",
+          "condition": "d_G_DR1 distance estimate from Gaia DR1-calibrated Wesenheit magnitudes in Table 2.",
           "evidence": [
             {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES4</td><td>6505889848642319872</td><td>332.40</td><td>-53.84</td><td>3.63 ± 0.36</td><td>6.8</td><td>583.0</td><td>568.9</td><td>-38.2</td><td>35132</td><td>-536</td><td>0.85</td><td>-</td></tr>"
+              "location": "T:p6-b0",
+              "quote": "<tr><td>15</td><td>4060422022558245248</td><td>12.407</td><td>11.731</td><td>-2.617</td><td>-1.942</td><td>7409.066</td><td>7405.655</td></tr>"
             }
           ],
-          "source": "1805.03194v3"
-        }
-      ]
-    },
-    {
-      "quantity": "galactocentric_radius",
-      "values": [
-        {
-          "value": "6.8",
-          "unit": "kpc",
-          "condition": "Galactocentric radius r at the present day.",
-          "evidence": [
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES4</td><td>6505889848642319872</td><td>332.40</td><td>-53.84</td><td>3.63 ± 0.36</td><td>6.8</td><td>583.0</td><td>568.9</td><td>-38.2</td><td>35132</td><td>-536</td><td>0.85</td><td>-</td></tr>"
-            }
-          ],
-          "source": "1805.03194v3"
-        }
-      ]
-    },
-    {
-      "quantity": "galactic_rest_frame_velocity",
-      "values": [
-        {
-          "value": "583.0",
-          "unit": "km/s",
-          "condition": "Total velocity v_total in the Galactocentric rest frame from Gaia-DR2 6D phase space.",
-          "evidence": [
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES4</td><td>6505889848642319872</td><td>332.40</td><td>-53.84</td><td>3.63 ± 0.36</td><td>6.8</td><td>583.0</td><td>568.9</td><td>-38.2</td><td>35132</td><td>-536</td><td>0.85</td><td>-</td></tr>"
-            }
-          ],
-          "source": "1805.03194v3"
-        }
-      ]
-    },
-    {
-      "quantity": "unbound_probability",
-      "values": [
-        {
-          "value": "0.85",
-          "unit": "dimensionless",
-          "condition": "P_unb: probability of being unbound in the MWPotential2014 potential, from Monte Carlo sampling of the 6D uncertainties.",
-          "evidence": [
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td>Gaia-T-ES4</td><td>6505889848642319872</td><td>332.40</td><td>-53.84</td><td>3.63 ± 0.36</td><td>6.8</td><td>583.0</td><td>568.9</td><td>-38.2</td><td>35132</td><td>-536</td><td>0.85</td><td>-</td></tr>"
-            }
-          ],
-          "source": "1805.03194v3"
+          "source": "1912.02129v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "7.405655",
+            "approximate": false
+          }
         }
       ]
     }
@@ -156,33 +179,29 @@
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "TYC 8826-415-1",
+      "main_id": "Gaia DR3 4060422022558245248",
       "aliases": [
-        "2MASS J22474026-5537314",
-        "Gaia DR1 6505889844344916224",
-        "Gaia DR2 6505889848642319872",
-        "Gaia DR3 6505889848642319872",
-        "TIC 469945825",
-        "TYC 8826-415-1"
+        "Gaia DR2 4060422022558245248",
+        "Gaia DR3 4060422022558245248"
       ],
-      "object_type": "HV*",
+      "object_type": "*",
       "coordinates": {
         "ra": {
-          "value": 341.91770614175,
+          "value": 264.26023542581993,
           "unit": "deg"
         },
         "dec": {
-          "value": -55.625397480809994,
+          "value": -28.50494170076,
           "unit": "deg"
         },
         "frame": "icrs",
         "error_ellipse": {
           "major": {
-            "value": 0.01209999993443489,
+            "value": 0.3562000095844269,
             "unit": "mas"
           },
           "minor": {
-            "value": 0.012600000016391277,
+            "value": 0.26170000433921814,
             "unit": "mas"
           },
           "angle": {
@@ -196,20 +215,20 @@
       },
       "proper_motion": {
         "ra_cosdec": {
-          "value": 37.342,
+          "value": -5.209,
           "unit": "mas / yr"
         },
         "dec": {
-          "value": -15.521,
+          "value": -2.173,
           "unit": "mas / yr"
         },
         "error_ellipse": {
           "major": {
-            "value": 0.017000000923871994,
+            "value": 0.5040000081062317,
             "unit": "mas / yr"
           },
           "minor": {
-            "value": 0.014999999664723873,
+            "value": 0.3140000104904175,
             "unit": "mas / yr"
           },
           "angle": {
@@ -221,91 +240,33 @@
         "bibcode": "2020yCat.1350....0G"
       },
       "parallax": {
-        "value": 0.3793,
+        "value": 0.3602,
         "unit": "mas",
-        "error": 0.019300000742077827,
+        "error": 0.3955000042915344,
         "quality": "A",
         "bibcode": "2020yCat.1350....0G"
       },
-      "velocity": {
-        "radial_velocity": {
-          "value": -39.87,
-          "unit": "km / s"
-        },
-        "redshift": {
-          "value": -0.00013298316249477082
-        },
-        "reported_as": "v",
-        "error": {
-          "value": 1.5,
-          "unit": "km / s"
-        },
-        "nature": "s",
-        "quality": "B",
-        "bibcode": "2022yCat.1355....0G",
-        "wavelength": "O"
-      },
       "photometry": [
         {
-          "band": "V",
-          "value": 10.869999885559082,
-          "error": 0.05999999865889549,
-          "system": "V",
-          "bibcode": "2000A&A...355L..27H",
-          "quality": "D"
-        },
-        {
-          "band": "B",
-          "value": 11.859999656677246,
-          "error": 0.11999999731779099,
-          "system": "V",
-          "bibcode": "2000A&A...355L..27H",
-          "quality": "D"
-        },
-        {
-          "band": "J",
-          "value": 9.04699993133545,
-          "error": 0.026000000536441803,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
-          "band": "H",
-          "value": 8.508999824523926,
-          "error": 0.04699999839067459,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
-          "band": "K",
-          "value": 8.324000358581543,
-          "error": 0.032999999821186066,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
           "band": "G",
-          "value": 10.606267929077148,
-          "error": 0.0027600000612437725,
+          "value": 18.686124801635742,
+          "error": 0.0064860000275075436,
           "system": "V",
-          "bibcode": "2022yCat.1355....0G",
+          "bibcode": "2020yCat.1350....0G",
           "quality": "C"
         }
       ]
     },
     "match": {
       "identifiers": [
-        "Gaia DR2 6505889848642319872"
+        "Gaia DR2 4060422022558245248"
       ]
     },
-    "last_queried_at": "2026-10-24T04:47:46.828929+00:00"
+    "last_queried_at": "2026-10-25T11:48:52.365650+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000358_provenance.json",
-    "sha256": "2fa20c4893fb3b2b0a5ceb7ddbe5fef783edf564a4e26276ac0a1592b16ad939"
+    "sha256": "e119a2dcd70075c5d705bc892b335b6b1d5c3e74db9b8c2d789bdb41af119a13"
   },
   "warnings": []
 }

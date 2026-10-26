@@ -1,32 +1,34 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000128",
-  "display_name": "HVS10",
+  "display_name": "P14 No. 16",
   "sources": {
-    "1302.1899v1": {
-      "title": "Variability of Hypervelocity Stars",
+    "1503.04164v1": {
+      "title": "Candidate hypervelocity stars of spectral type G and K revisited",
       "authors": [
-        "Idan Ginsburg",
-        "Warren R. Brown",
-        "Gary A. Wegner"
+        "E. Ziegerer",
+        "M. Volkert",
+        "U. Heber",
+        "A. Irrgang",
+        "B. T. Gaensicke",
+        "S. Geier"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1302.1899v1",
+      "pdf_url": "https://arxiv.org/pdf/1503.04164v1",
       "records": [
-        "/stars/7"
+        "/stars/15"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS10",
+      "value": "P14 No. 16",
       "evidence": [
         {
-          "location": "T:p2-b8",
-          "quote": "<tr><td>HVS10</td><td>8</td><td>No</td><td>-</td></tr>"
+          "location": "I:p3-b0"
         }
       ],
-      "source": "1302.1899v1"
+      "source": "1503.04164v1"
     }
   ],
   "contribution_types": [
@@ -34,29 +36,420 @@
       "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p1-b4",
-          "quote": "We present time-series photometry of 11 hypervelocity stars (HVSs) to constrain their nature."
+          "location": "T:p1-b13",
+          "quote": "20 candidates\nwere found likely to be unbound, four of which at 3 and six at\n2σ significance levels."
         },
         {
-          "location": "T:p1-b7",
-          "quote": "over 20 HVSs have been identified in the\nMilky Way"
+          "location": "T:p4-b5",
+          "quote": "We present a revised analysis of the 20 candidate HVSs"
         },
         {
-          "location": "T:p2-b8",
-          "quote": "<tr><td>HVS10</td><td>8</td><td>No</td><td>-</td></tr>"
+          "location": "I:p3-b0"
         }
       ],
-      "source": "1302.1899v1"
+      "source": "1503.04164v1"
     }
   ],
-  "quantities": [],
+  "quantities": [
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-5.2",
+          "error": "4.6",
+          "unit": "mas/yr",
+          "condition": "New astrometric proper motion from this work, using all available images",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<td>16</td><td>-5.2 ± 4.6</td><td>1.1 ± 5.1</td><td>0.8 ± 5.7</td><td>-58.1 ± 5.7</td><td>293.3 ± 74.6</td><td>676.8 ± 113.2</td><td>1.1 ± 0.1</td><td>19.3</td><td>2.4</td><td>19.70</td><td>12.0</td><td>99.9</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-5.2",
+            "error": "4.6",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.8",
+          "error": "5.7",
+          "unit": "mas/yr",
+          "condition": "SDSS proper motion as used by P14 (prior measurement)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<td>16</td><td>-5.2 ± 4.6</td><td>1.1 ± 5.1</td><td>0.8 ± 5.7</td><td>-58.1 ± 5.7</td><td>293.3 ± 74.6</td><td>676.8 ± 113.2</td><td>1.1 ± 0.1</td><td>19.3</td><td>2.4</td><td>19.70</td><td>12.0</td><td>99.9</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "0.8",
+            "error": "5.7",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "1.1",
+          "error": "5.1",
+          "unit": "mas/yr",
+          "condition": "New astrometric proper motion from this work, using all available images",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<td>16</td><td>-5.2 ± 4.6</td><td>1.1 ± 5.1</td><td>0.8 ± 5.7</td><td>-58.1 ± 5.7</td><td>293.3 ± 74.6</td><td>676.8 ± 113.2</td><td>1.1 ± 0.1</td><td>19.3</td><td>2.4</td><td>19.70</td><td>12.0</td><td>99.9</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "1.1",
+            "error": "5.1",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-58.1",
+          "error": "5.7",
+          "unit": "mas/yr",
+          "condition": "SDSS proper motion as used by P14 (prior measurement)",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<td>16</td><td>-5.2 ± 4.6</td><td>1.1 ± 5.1</td><td>0.8 ± 5.7</td><td>-58.1 ± 5.7</td><td>293.3 ± 74.6</td><td>676.8 ± 113.2</td><td>1.1 ± 0.1</td><td>19.3</td><td>2.4</td><td>19.70</td><td>12.0</td><td>99.9</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-58.1",
+            "error": "5.7",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "293.3",
+          "error": "74.6",
+          "unit": "km/s",
+          "condition": "Model II, based on this work's proper motions; median Galactic rest-frame speed at the present location",
+          "evidence": [
+            {
+              "location": "T:p2-b15",
+              "quote": "From these simulations we also derived the median Galactic rest-frame velocities at the present locations and their distributions."
+            },
+            {
+              "location": "T:p3-b0",
+              "quote": "<td>16</td><td>-5.2 ± 4.6</td><td>1.1 ± 5.1</td><td>0.8 ± 5.7</td><td>-58.1 ± 5.7</td><td>293.3 ± 74.6</td><td>676.8 ± 113.2</td><td>1.1 ± 0.1</td><td>19.3</td><td>2.4</td><td>19.70</td><td>12.0</td><td>99.9</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "293.3",
+            "error": "74.6",
+            "approximate": false
+          }
+        },
+        {
+          "value": "676.8",
+          "error": "113.2",
+          "unit": "km/s",
+          "condition": "Model II, based on SDSS proper motions as used by P14; median Galactic rest-frame speed at the present location",
+          "evidence": [
+            {
+              "location": "T:p2-b15",
+              "quote": "From these simulations we also derived the median Galactic rest-frame velocities at the present locations and their distributions."
+            },
+            {
+              "location": "T:p3-b0",
+              "quote": "<td>16</td><td>-5.2 ± 4.6</td><td>1.1 ± 5.1</td><td>0.8 ± 5.7</td><td>-58.1 ± 5.7</td><td>293.3 ± 74.6</td><td>676.8 ± 113.2</td><td>1.1 ± 0.1</td><td>19.3</td><td>2.4</td><td>19.70</td><td>12.0</td><td>99.9</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "676.8",
+            "error": "113.2",
+            "approximate": false
+          }
+        },
+        {
+          "value": "294.5",
+          "error": "74.4",
+          "unit": "km/s",
+          "condition": "Model I, based on this work's proper motions; median Galactic rest-frame speed at the present location",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<td>16</td><td>18.6</td><td>2.5</td><td><eq>294.5 \\pm 74.4</eq></td><td><eq>675.9 \\pm 113.3</eq></td><td>19.70</td><td>22.2</td><td>100</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "294.5",
+            "error": "74.4",
+            "approximate": false
+          }
+        },
+        {
+          "value": "675.9",
+          "error": "113.3",
+          "unit": "km/s",
+          "condition": "Model I, based on SDSS proper motions as used by P14; median Galactic rest-frame speed at the present location",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<td>16</td><td>18.6</td><td>2.5</td><td><eq>294.5 \\pm 74.4</eq></td><td><eq>675.9 \\pm 113.3</eq></td><td>19.70</td><td>22.2</td><td>100</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "675.9",
+            "error": "113.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "292.5",
+          "error": "74.5",
+          "unit": "km/s",
+          "condition": "Model III, based on this work's proper motions; median Galactic rest-frame speed at the present location",
+          "evidence": [
+            {
+              "location": "T:p6-b1",
+              "quote": "<td>16</td><td>16.3</td><td>2.5</td><td><eq>292.5 \\pm 74.5</eq></td><td><eq>677.7 \\pm 113.3</eq></td><td>19.70</td><td>83.5</td><td>100</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "292.5",
+            "error": "74.5",
+            "approximate": false
+          }
+        },
+        {
+          "value": "677.7",
+          "error": "113.3",
+          "unit": "km/s",
+          "condition": "Model III, based on SDSS proper motions as used by P14; median Galactic rest-frame speed at the present location",
+          "evidence": [
+            {
+              "location": "T:p6-b1",
+              "quote": "<td>16</td><td>16.3</td><td>2.5</td><td><eq>292.5 \\pm 74.5</eq></td><td><eq>677.7 \\pm 113.3</eq></td><td>19.70</td><td>83.5</td><td>100</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "677.7",
+            "error": "113.3",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "bound_probability",
+      "values": [
+        {
+          "value": "19.70",
+          "unit": "%",
+          "condition": "Bound probability listed by P14 using P14/SDSS proper motions",
+          "evidence": [
+            {
+              "location": "T:p2-b15",
+              "quote": "The bound probability is defined as the number of orbits not exceeding the local escape velocity with respect to the number of all calculated orbits."
+            },
+            {
+              "location": "T:p3-b0",
+              "quote": "<td>16</td><td>-5.2 ± 4.6</td><td>1.1 ± 5.1</td><td>0.8 ± 5.7</td><td>-58.1 ± 5.7</td><td>293.3 ± 74.6</td><td>676.8 ± 113.2</td><td>1.1 ± 0.1</td><td>19.3</td><td>2.4</td><td>19.70</td><td>12.0</td><td>99.9</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "cited",
+          "attribution_reason": "Probability column of the original P14 paper in Tables 1–3, only compared with this paper's probabilities recalculated from old and new proper motions.",
+          "standard": {
+            "unit": "1",
+            "value": "0.1970",
+            "approximate": false
+          }
+        },
+        {
+          "value": "12.0",
+          "unit": "%",
+          "condition": "Model II, based on SDSS proper motions as used by P14",
+          "evidence": [
+            {
+              "location": "T:p2-b15",
+              "quote": "The bound probability is defined as the number of orbits not exceeding the local escape velocity with respect to the number of all calculated orbits."
+            },
+            {
+              "location": "T:p3-b0",
+              "quote": "<td>16</td><td>-5.2 ± 4.6</td><td>1.1 ± 5.1</td><td>0.8 ± 5.7</td><td>-58.1 ± 5.7</td><td>293.3 ± 74.6</td><td>676.8 ± 113.2</td><td>1.1 ± 0.1</td><td>19.3</td><td>2.4</td><td>19.70</td><td>12.0</td><td>99.9</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.120",
+            "approximate": false
+          }
+        },
+        {
+          "value": "99.9",
+          "unit": "%",
+          "condition": "Model II, based on revised proper motions from this work",
+          "evidence": [
+            {
+              "location": "T:p2-b15",
+              "quote": "The bound probability is defined as the number of orbits not exceeding the local escape velocity with respect to the number of all calculated orbits."
+            },
+            {
+              "location": "T:p3-b0",
+              "quote": "<td>16</td><td>-5.2 ± 4.6</td><td>1.1 ± 5.1</td><td>0.8 ± 5.7</td><td>-58.1 ± 5.7</td><td>293.3 ± 74.6</td><td>676.8 ± 113.2</td><td>1.1 ± 0.1</td><td>19.3</td><td>2.4</td><td>19.70</td><td>12.0</td><td>99.9</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.999",
+            "approximate": false
+          }
+        },
+        {
+          "value": "22.2",
+          "unit": "%",
+          "condition": "Model I, based on SDSS proper motions as used by P14",
+          "evidence": [
+            {
+              "location": "T:p2-b15",
+              "quote": "The bound probability is defined as the number of orbits not exceeding the local escape velocity with respect to the number of all calculated orbits."
+            },
+            {
+              "location": "T:p6-b0",
+              "quote": "<td>16</td><td>18.6</td><td>2.5</td><td><eq>294.5 \\pm 74.4</eq></td><td><eq>675.9 \\pm 113.3</eq></td><td>19.70</td><td>22.2</td><td>100</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.222",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "Model I, based on revised proper motions from this work",
+          "evidence": [
+            {
+              "location": "T:p2-b15",
+              "quote": "The bound probability is defined as the number of orbits not exceeding the local escape velocity with respect to the number of all calculated orbits."
+            },
+            {
+              "location": "T:p6-b0",
+              "quote": "<td>16</td><td>18.6</td><td>2.5</td><td><eq>294.5 \\pm 74.4</eq></td><td><eq>675.9 \\pm 113.3</eq></td><td>19.70</td><td>22.2</td><td>100</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        },
+        {
+          "value": "83.5",
+          "unit": "%",
+          "condition": "Model III, based on SDSS proper motions as used by P14",
+          "evidence": [
+            {
+              "location": "T:p2-b15",
+              "quote": "The bound probability is defined as the number of orbits not exceeding the local escape velocity with respect to the number of all calculated orbits."
+            },
+            {
+              "location": "T:p6-b1",
+              "quote": "<td>16</td><td>16.3</td><td>2.5</td><td><eq>292.5 \\pm 74.5</eq></td><td><eq>677.7 \\pm 113.3</eq></td><td>19.70</td><td>83.5</td><td>100</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.835",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "Model III, based on revised proper motions from this work",
+          "evidence": [
+            {
+              "location": "T:p2-b15",
+              "quote": "The bound probability is defined as the number of orbits not exceeding the local escape velocity with respect to the number of all calculated orbits."
+            },
+            {
+              "location": "T:p6-b1",
+              "quote": "<td>16</td><td>16.3</td><td>2.5</td><td><eq>292.5 \\pm 74.5</eq></td><td><eq>677.7 \\pm 113.3</eq></td><td>19.70</td><td>83.5</td><td>100</td>"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        }
+      ]
+    }
+  ],
   "simbad": {
     "status": "not_queried",
     "reason": "No usable query or a required frozen response is missing."
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000128_provenance.json",
-    "sha256": "753e3f9750ffe39d34e4e2cee50ab3ce386056d4c6fe3b947f26d4f180e60619"
+    "sha256": "7747b7998b68e18e38c94824c53a8d4d4709d87acb4106d327053befe876b648"
   },
-  "warnings": []
+  "warnings": [
+    "1503.04164v1#/stars/15/quantities/3/values/0/evidence/0: quote audit unknown at T:p2-b15; check the paper evidence.",
+    "1503.04164v1#/stars/15/quantities/3/values/1/evidence/0: quote audit unknown at T:p2-b15; check the paper evidence.",
+    "1503.04164v1#/stars/15/quantities/3/values/2/evidence/0: quote audit unknown at T:p2-b15; check the paper evidence.",
+    "1503.04164v1#/stars/15/quantities/3/values/3/evidence/0: quote audit unknown at T:p2-b15; check the paper evidence.",
+    "1503.04164v1#/stars/15/quantities/3/values/4/evidence/0: quote audit unknown at T:p2-b15; check the paper evidence.",
+    "1503.04164v1#/stars/15/quantities/3/values/5/evidence/0: quote audit unknown at T:p2-b15; check the paper evidence.",
+    "1503.04164v1#/stars/15/quantities/3/values/6/evidence/0: quote audit unknown at T:p2-b15; check the paper evidence."
+  ]
 }

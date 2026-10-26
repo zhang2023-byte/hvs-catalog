@@ -1,6 +1,6 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000664",
   "associations": [],
   "simbad": {
@@ -9,63 +9,29 @@
     "queries": [
       {
         "query": {
-          "method": "coordinates",
-          "identifier": null,
-          "position": {
-            "ra_deg": 264.28554166666663,
-            "dec_deg": -30.90355,
-            "frame": "icrs",
-            "equinox": null,
-            "evidence": []
-          },
+          "method": "identifier",
+          "identifier": "Gaia DR3 2572040752892873984",
+          "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "b6c5a3f86d73425629471426d5f160e97197adf8e00116f51ad0450869969008",
-        "queried_at": "2026-10-24T06:03:51.177489+00:00",
+        "response_sha256": "c8db4809f13063f1403bb08fa37af87311e5cacaf5dc39b7e56cc168e0b92eab",
+        "queried_at": "2026-10-25T11:53:11.950950+00:00",
         "client_version": "0.4.11",
         "service_version": null,
         "error": null,
-        "coordinate_inputs": [
+        "identifier_inputs": [
           {
-            "node": "2401.05630v1#/stars/29",
-            "position": {
-              "ra_deg": 264.28554166666663,
-              "dec_deg": -30.90355,
-              "frame": "icrs",
-              "equinox": null,
+            "source_record": "2608.30063v1#/stars/7",
+            "original_identifier": {
+              "value": "Gaia DR3 2572040752892873984",
               "evidence": [
                 {
-                  "value": "17h37m08.53s",
-                  "unit": "hms",
-                  "condition": "Equatorial right ascension for VIRAC2-only candidate ID 26 listed in Table B1.",
-                  "evidence": [
-                    {
-                      "location": "T:p16-b0",
-                      "quote": "<tr><td>26</td><td>17h37m08.53s</td><td>-30d54m12.78s</td><td>-2.6411</td><td>0.5185</td><td>14.7</td><td>3.06</td></tr>"
-                    }
-                  ]
-                },
-                {
-                  "value": "-30d54m12.78s",
-                  "unit": "dms",
-                  "condition": "Equatorial declination for VIRAC2-only candidate ID 26 listed in Table B1.",
-                  "evidence": [
-                    {
-                      "location": "T:p16-b0",
-                      "quote": "<tr><td>26</td><td>17h37m08.53s</td><td>-30d54m12.78s</td><td>-2.6411</td><td>0.5185</td><td>14.7</td><td>3.06</td></tr>"
-                    }
-                  ]
+                  "location": "T:p16-b0",
+                  "quote": "2572040752892873984"
                 }
               ]
             },
-            "interpretation": {
-              "frame": "icrs",
-              "equinox": null,
-              "frame_basis": "assumed_icrs",
-              "frame_assumed": true,
-              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
-              "epoch_propagation": false
-            }
+            "derivation": "reported_identifier"
           }
         ]
       }

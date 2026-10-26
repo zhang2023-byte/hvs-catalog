@@ -1,10 +1,786 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000072",
-  "associations": [],
+  "associations": [
+    {
+      "method": "coordinates",
+      "left": "1308.3495v2#/stars/16",
+      "right": "1905.07879v1#/stars/5",
+      "details": {
+        "separation_arcsec": 0.0,
+        "threshold_arcsec": 5.0,
+        "left_position": {
+          "ra_deg": 100.73758333333333,
+          "dec_deg": 37.267833333333336,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "06:42:57.02",
+              "unit": "hourangle",
+              "condition": "From the IAU designation J064257.02+371604.2; no separate right-ascension column is supplied.",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "J064257.02 + 371604.2"
+                },
+                {
+                  "location": "I:p7-b0"
+                }
+              ]
+            },
+            {
+              "value": "+37:16:04.2",
+              "unit": "deg",
+              "condition": "From the IAU designation J064257.02+371604.2; no separate declination column is supplied.",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "J064257.02 + 371604.2"
+                },
+                {
+                  "location": "I:p7-b0"
+                }
+              ]
+            }
+          ]
+        },
+        "right_position": {
+          "ra_deg": 100.73758333333333,
+          "dec_deg": 37.267833333333336,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "06:42:57.02",
+              "unit": "hourangle",
+              "condition": "Right ascension encoded in the SDSS identifier J064257.02+371604.2; no separate astrometric position is listed in the paper.",
+              "evidence": [
+                {
+                  "location": "T:p6-b1",
+                  "quote": "J064257.02+371604.2"
+                }
+              ]
+            },
+            {
+              "value": "+37:16:04.2",
+              "unit": "deg",
+              "condition": "Declination encoded in the SDSS identifier J064257.02+371604.2; no separate astrometric position is listed in the paper.",
+              "evidence": [
+                {
+                  "location": "T:p6-b1",
+                  "quote": "J064257.02+371604.2"
+                }
+              ]
+            }
+          ]
+        },
+        "coordinate_interpretations": {
+          "left": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          },
+          "right": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          }
+        },
+        "epoch_propagation": false
+      }
+    }
+  ],
+  "review_decisions": [
+    {
+      "id": "R21-name-121",
+      "type": "name",
+      "groups": [
+        [
+          "1308.3495v2#/stars/16",
+          "1905.07879v1#/stars/5"
+        ]
+      ],
+      "papers": {
+        "1308.3495v2": "8e99744e1acc51b2fe11d0afe7468d7d6354fe7299060defdf1c4bccbf783c0c",
+        "1905.07879v1": "b195fe8ce7a8a38a99fbda9e869389ce29ab067710ab23b9a0c03f107d5c03a6"
+      },
+      "responses": {},
+      "reason": "Per the stop 1 approval, an existing complete catalog or coordinate identifier is preferred as the display name; among several unique identifiers the choice follows the number of papers using it, then the shorter name, then fixed lexical order. Local numbers with the paper ID are kept as display aliases; without a unique identifier the original display name is kept.",
+      "evidence": [
+        {
+          "paper": "1308.3495v2",
+          "location": "T:p7-b0",
+          "quote": "<tr><td>17</td><td>J064257.02 + 371604.2</td>"
+        },
+        {
+          "paper": "1905.07879v1",
+          "location": "T:p10-b15",
+          "quote": "5.6. SDSS J064257.02+371604.2 (Pal ID 17)"
+        },
+        {
+          "paper": "1905.07879v1",
+          "location": "I:p10-b0"
+        }
+      ],
+      "approved_by": "Project lead (stop 1 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": "J064257.02+371604.2",
+      "aliases": [
+        "HVS 17 (1308.3495)"
+      ],
+      "main_id": null
+    },
+    {
+      "id": "R21-separate-043",
+      "type": "separate",
+      "groups": [
+        [
+          "1203.3543v1#/stars/18",
+          "1308.4181v1#/stars/0",
+          "1401.7342v1#/stars/13",
+          "1804.10179v3#/stars/13",
+          "1804.10197v1#/stars/14",
+          "1805.04184v2#/stars/13",
+          "2003.12766v1#/stars/14",
+          "2101.10878v1#/stars/15",
+          "2207.04406v2#/stars/82",
+          "2411.09278v2#/stars/21",
+          "2502.00102v2#/stars/13"
+        ],
+        [
+          "1308.3495v2#/stars/16",
+          "1905.07879v1#/stars/5"
+        ],
+        [
+          "1506.01818v2#/stars/16"
+        ],
+        [
+          "1912.02129v1#/stars/2"
+        ],
+        [
+          "2401.05630v1#/stars/20"
+        ],
+        [
+          "2507.00150v1#/stars/16"
+        ]
+      ],
+      "papers": {
+        "1203.3543v1": "cca433462bfc5161d5f46cd55e42f124bdc526b76cb3858d59a469d53019dc0d",
+        "1308.3495v2": "8e99744e1acc51b2fe11d0afe7468d7d6354fe7299060defdf1c4bccbf783c0c",
+        "1308.4181v1": "389af27371e435ace1fc9a57efc9a0f28781f3661c96a8232972380db8bc4f17",
+        "1401.7342v1": "0e4bb1f538746c383d4659f01699ce9adbf910f90f566ece00dea214464b2a4b",
+        "1506.01818v2": "df890e183d9ad722076d079027bbd3513b25ce452226b3498b4afed7365e7366",
+        "1804.10179v3": "f247c72e67ff7194ed5c87df18cb37bd2f07cc5294c679e1112df7607bf9334e",
+        "1804.10197v1": "14edfb00e7bdc5c7c02f9c0033ae1f47f3c53532dfedc00bc452ca397ad153d9",
+        "1805.04184v2": "0d82c08e5c9be96b4af3153fffed37b9f43630ee66e68ede44b43b68dd302aa3",
+        "1905.07879v1": "b195fe8ce7a8a38a99fbda9e869389ce29ab067710ab23b9a0c03f107d5c03a6",
+        "1912.02129v1": "1eefeb23c23692719bc9e576fd8570a627a63c98560b5c6fda96030d1d9637f6",
+        "2003.12766v1": "00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830",
+        "2101.10878v1": "efa74a231625ee2794a59e73d39b4df3ec24d3a3513cae4703fbe7593b069856",
+        "2207.04406v2": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+        "2401.05630v1": "cdd66187169e6dfa8037ef23a3dfc0b495ee15ab5787330f337f3b33876ea954",
+        "2411.09278v2": "f1ef7471a40bfaa4b51cdf146c1ec53ef8344301f0d42572d4cf90b706471069",
+        "2502.00102v2": "c9a8146fb8f66a27dcb4697c15442186ac56b783f99962d814b18e7f57dd28a6",
+        "2507.00150v1": "f915ebe3082c0f4003756ffd757bd1d2aab9cc219679ba0e7e35087a18a2e9b0"
+      },
+      "responses": {},
+      "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. The groups stay separate from each other; merges within a group are separate merge decisions.",
+      "evidence": [
+        {
+          "paper": "1203.3543v1",
+          "location": "T:p6-b4",
+          "quote": "hereafter HVS17"
+        },
+        {
+          "paper": "1203.3543v1",
+          "location": "T:p6-b4",
+          "quote": "SDSS J164156.391+472346.12"
+        },
+        {
+          "paper": "1203.3543v1",
+          "location": "I:p5-b0"
+        },
+        {
+          "paper": "1308.3495v2",
+          "location": "T:p7-b0",
+          "quote": "<tr><td>17</td><td>J064257.02 + 371604.2</td>"
+        },
+        {
+          "paper": "1308.4181v1",
+          "location": "T:p1-b0",
+          "quote": "THE ORIGIN OF HVS17, AN UNBOUND MAIN SEQUENCE B STAR AT 50 KPC"
+        },
+        {
+          "paper": "1308.4181v1",
+          "location": "T:p2-b2",
+          "quote": "Here,wepresent astudy of SDSS\nJ164156.39+472346.1, henceforth HVS17, a newly\ndiscovered HVS (Brown et al. 2012b) bright enough\nfor high resolution spectroscopy with the 10m Keck\ntelescope."
+        },
+        {
+          "paper": "1308.4181v1",
+          "location": "T:p1-b7",
+          "quote": "stars: individual (SDSS J164156.39+472346.1)"
+        },
+        {
+          "paper": "1401.7342v1",
+          "location": "T:p11-b0",
+          "quote": "<tr><td>17</td><td>250.2 ± 2.9</td>"
+        },
+        {
+          "paper": "1506.01818v2",
+          "location": "I:p9-b0"
+        },
+        {
+          "paper": "1506.01818v2",
+          "location": "T:p9-b0",
+          "quote": "J142235.20+455631.3"
+        },
+        {
+          "paper": "1804.10179v3",
+          "location": "T:p4-b6",
+          "quote": "HVS1,4-10,12-24 and others"
+        },
+        {
+          "paper": "1804.10197v1",
+          "location": "I:p7-b0"
+        },
+        {
+          "paper": "1805.04184v2",
+          "location": "I:p3-b0"
+        },
+        {
+          "paper": "1805.04184v2",
+          "location": "I:p10-b0"
+        },
+        {
+          "paper": "1905.07879v1",
+          "location": "T:p10-b15",
+          "quote": "5.6. SDSS J064257.02+371604.2 (Pal ID 17)"
+        },
+        {
+          "paper": "1905.07879v1",
+          "location": "I:p10-b0"
+        },
+        {
+          "paper": "1912.02129v1",
+          "location": "T:p8-b3",
+          "quote": "HVS 10, 15, 17 and 19"
+        },
+        {
+          "paper": "1912.02129v1",
+          "location": "T:p8-b6",
+          "quote": "we propose these seven stars as HVS candidates"
+        },
+        {
+          "paper": "1912.02129v1",
+          "location": "T:p5-b1",
+          "quote": "we found 7 stars that radiate from the Galactic centre, whose IDs are: 10,\n15, 17, 19, 20, 22 and 23"
+        },
+        {
+          "paper": "1912.02129v1",
+          "location": "I:p8-b0"
+        },
+        {
+          "paper": "1912.02129v1",
+          "location": "T:p8-b0",
+          "quote": "Gaia DR2 ID"
+        },
+        {
+          "paper": "2003.12766v1",
+          "location": "T:p7-b0",
+          "quote": "HVS17 (SDSSJ164156.39+472346.1)"
+        },
+        {
+          "paper": "2101.10878v1",
+          "location": "T:p2-b5",
+          "quote": "HVS 17"
+        },
+        {
+          "paper": "2101.10878v1",
+          "location": "T:p8-b0",
+          "quote": "Gaia EDR3 1407293627068696192"
+        },
+        {
+          "paper": "2207.04406v2",
+          "location": "I:p19-b0"
+        },
+        {
+          "paper": "2401.05630v1",
+          "location": "T:p16-b0",
+          "quote": "<td>17</td><td>17h41m30.29s</td><td>-29d16m18.41s</td>"
+        },
+        {
+          "paper": "2411.09278v2",
+          "location": "T:p14-b0",
+          "quote": "HVS17"
+        },
+        {
+          "paper": "2502.00102v2",
+          "location": "T:p4-b0",
+          "quote": "<tr><td>17</td><td>1407293627068696192</td>"
+        },
+        {
+          "paper": "2502.00102v2",
+          "location": "I:p4-b0"
+        },
+        {
+          "paper": "2507.00150v1",
+          "location": "T:p4-b0",
+          "quote": "HVS17</td><td>G</td><td>1758246228142845696</td><td>21:03:55.53</td><td>+12:58:19.8</td><td>53.2"
+        }
+      ],
+      "approved_by": "Project lead (stop 1 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
+    }
+  ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "[PSH2014] HVS 17",
+      "aliases": [
+        "Gaia DR2 943845863892318336",
+        "Gaia DR3 943845863892318336",
+        "SDSS J064257.02+371604.2",
+        "[PSH2014] HVS 17"
+      ],
+      "position": {
+        "ra_deg": 100.73761025758002,
+        "dec_deg": 37.26788105736001,
+        "frame": "icrs",
+        "equinox": null,
+        "evidence": []
+      },
+      "fields": {
+        "main_id": {
+          "value": "[PSH2014] HVS 17"
+        },
+        "nbref": {
+          "value": 3
+        },
+        "otype": {
+          "value": "HV*"
+        },
+        "ra": {
+          "value": 100.73761025758002,
+          "unit": "deg"
+        },
+        "ra_prec": {
+          "value": 14
+        },
+        "dec": {
+          "value": 37.26788105736001,
+          "unit": "deg"
+        },
+        "dec_prec": {
+          "value": 14
+        },
+        "coo_err_maj": {
+          "value": 0.08190000057220459,
+          "unit": "mas"
+        },
+        "coo_err_maj_prec": {
+          "value": 4
+        },
+        "coo_err_min": {
+          "value": 0.08259999752044678,
+          "unit": "mas"
+        },
+        "coo_err_min_prec": {
+          "value": 4
+        },
+        "coo_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "coo_qual": {
+          "value": "A"
+        },
+        "coo_wavelength": {
+          "value": "O"
+        },
+        "coo_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "hpx": {
+          "value": 1716845
+        },
+        "pmra": {
+          "value": 1.378,
+          "unit": "mas / yr"
+        },
+        "pmra_prec": {
+          "value": 3
+        },
+        "pmdec": {
+          "value": -2.673,
+          "unit": "mas / yr"
+        },
+        "pmdec_prec": {
+          "value": 3
+        },
+        "pm_err_maj": {
+          "value": 0.0949999988079071,
+          "unit": "mas / yr"
+        },
+        "pm_err_maj_prec": {
+          "value": 3
+        },
+        "pm_err_min": {
+          "value": 0.08399999886751175,
+          "unit": "mas / yr"
+        },
+        "pm_err_min_prec": {
+          "value": 3
+        },
+        "pm_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "pm_qual": {
+          "value": "A"
+        },
+        "pm_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "plx_value": {
+          "value": 0.5613,
+          "unit": "mas"
+        },
+        "plx_prec": {
+          "value": 4
+        },
+        "plx_err": {
+          "value": 0.08959999680519104,
+          "unit": "mas"
+        },
+        "plx_err_prec": {
+          "value": 4
+        },
+        "plx_qual": {
+          "value": "A"
+        },
+        "plx_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "rvz_type": {
+          "value": "v"
+        },
+        "rvz_radvel": {
+          "value": 6.2,
+          "unit": "km / s"
+        },
+        "rvz_radvel_prec": {
+          "value": 1
+        },
+        "rvz_redshift": {
+          "value": 2.0681187758109232e-05
+        },
+        "rvz_err": {
+          "value": 1.7999999523162842,
+          "unit": "km / s"
+        },
+        "rvz_err_prec": {
+          "value": 1
+        },
+        "rvz_nature": {
+          "value": ""
+        },
+        "rvz_qual": {
+          "value": "B"
+        },
+        "rvz_bibcode": {
+          "value": "2010ApJ...725L.186D"
+        },
+        "vlsr_wavelength": {
+          "value": ""
+        },
+        "vlsr_bibcode": {
+          "value": ""
+        },
+        "sp_type": {
+          "value": "K1"
+        },
+        "sp_qual": {
+          "value": "E"
+        },
+        "sp_bibcode": {
+          "value": "2020ApJS..249....3A"
+        },
+        "morph_type": {
+          "value": ""
+        },
+        "morph_qual": {
+          "value": ""
+        },
+        "morph_bibcode": {
+          "value": ""
+        },
+        "galdim_qual": {
+          "value": ""
+        },
+        "galdim_wavelength": {
+          "value": ""
+        },
+        "galdim_bibcode": {
+          "value": ""
+        },
+        "update_date": {
+          "value": "2024-01-23"
+        },
+        "otype_txt": {
+          "value": "HV*"
+        },
+        "rvz_wavelength": {
+          "value": "O"
+        }
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "fields": {
+            "flux_err_prec": {
+              "value": 6
+            },
+            "flux_prec": {
+              "value": 6
+            },
+            "oidref": {
+              "value": 7907451
+            },
+            "filter": {
+              "value": "G"
+            },
+            "flux": {
+              "value": 17.296110153198242
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.0029780000913888216
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2020yCat.1350....0G"
+            }
+          }
+        },
+        {
+          "band": "u",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 7907451
+            },
+            "filter": {
+              "value": "u"
+            },
+            "flux": {
+              "value": 19.5939998626709
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.02800000086426735
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        },
+        {
+          "band": "g",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 7907451
+            },
+            "filter": {
+              "value": "g"
+            },
+            "flux": {
+              "value": 17.952999114990234
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.006000000052154064
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        },
+        {
+          "band": "r",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 7907451
+            },
+            "filter": {
+              "value": "r"
+            },
+            "flux": {
+              "value": 17.26300048828125
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.004999999888241291
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        },
+        {
+          "band": "i",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 7907451
+            },
+            "filter": {
+              "value": "i"
+            },
+            "flux": {
+              "value": 16.975000381469727
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.006000000052154064
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        },
+        {
+          "band": "z",
+          "fields": {
+            "flux_err_prec": {
+              "value": 2
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 7907451
+            },
+            "filter": {
+              "value": "z"
+            },
+            "flux": {
+              "value": 16.854999542236328
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.009999999776482582
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        }
+      ]
+    },
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J064257.02+371604.2",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "150470c9bea5aeeb7b0d9a08d4195662e5a4a04288ce3f34f1fa394eabac865d",
+        "queried_at": "2026-10-25T11:48:09.681171+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "1905.07879v1#/stars/5",
+            "original_identifier": {
+              "value": "SDSS J064257.02+371604.2",
+              "evidence": [
+                {
+                  "location": "T:p10-b15",
+                  "quote": "5.6. SDSS J064257.02+371604.2 (Pal ID 17)"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      }
+    ],
+    "matches": [
+      {
+        "main_id": "[PSH2014] HVS 17",
+        "method": "identifier",
+        "identifier": "SDSS J064257.02+371604.2",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      }
+    ]
   }
 }

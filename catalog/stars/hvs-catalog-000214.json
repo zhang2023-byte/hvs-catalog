@@ -1,65 +1,369 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000214",
-  "display_name": "P14 No. 11",
+  "display_name": "Gaia-T-ES19",
   "sources": {
-    "1503.04164v1": {
-      "title": "Candidate hypervelocity stars of spectral type G and K revisited",
+    "1805.03194v3": {
+      "title": "Old, Metal-Poor Extreme Velocity Stars in the Solar Neighborhood",
       "authors": [
-        "E. Ziegerer",
-        "M. Volkert",
-        "U. Heber",
-        "A. Irrgang",
-        "B. T. Gaensicke",
-        "S. Geier"
+        "Kohei Hattori",
+        "Monica Valluri",
+        "Eric F. Bell",
+        "Ian U. Roederer"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1503.04164v1",
+      "pdf_url": "https://arxiv.org/pdf/1805.03194v3",
       "records": [
-        "/stars/10"
+        "/stars/18"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "P14 No. 11",
+      "value": "Gaia-T-ES19",
       "evidence": [
         {
-          "location": "T:p2-b8",
-          "quote": "We were able\nto derive proper motions for 14 of the 20 P14 candidates. For\nthe low Galactic latitude stars No. 5, 7, 8, and 10 we failed to\nidentify a suficiently large set of suitable background galaxies.\nNo. 1 and 11 sufered from crowding."
+          "location": "T:p4-b0",
+          "quote": "<tr><td>Gaia-T-ES19</td><td>1765600930139450752</td>"
         }
       ],
-      "source": "1503.04164v1"
+      "source": "1805.03194v3"
+    },
+    {
+      "value": "Gaia DR2 1765600930139450752",
+      "evidence": [
+        {
+          "location": "T:p4-b0",
+          "quote": "<td>GaiaDR2 source_id</td>"
+        },
+        {
+          "location": "T:p4-b0",
+          "quote": "<tr><td>Gaia-T-ES19</td><td>1765600930139450752</td>"
+        }
+      ],
+      "source": "1805.03194v3"
     }
   ],
   "contribution_types": [
     {
-      "value": "follow_up",
+      "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b13",
-          "quote": "20 candidates\nwere found likely to be unbound, four of which at 3 and six at\n2σ significance levels."
+          "location": "T:p2-b9",
+          "quote": "6D coordinates of each star and select 30 stars that are\nunbound( E > 0 )or marginally bound"
         },
         {
-          "location": "T:p4-b5",
-          "quote": "We present a revised analysis of the 20 candidate HVSs"
+          "location": "T:p4-b0",
+          "quote": "<tr><td>Gaia-T-ES19</td><td>1765600930139450752</td>"
         },
         {
-          "location": "T:p2-b8",
-          "quote": "We were able\nto derive proper motions for 14 of the 20 P14 candidates. For\nthe low Galactic latitude stars No. 5, 7, 8, and 10 we failed to\nidentify a suficiently large set of suitable background galaxies.\nNo. 1 and 11 sufered from crowding."
+          "location": "T:p9-b4",
+          "quote": "While these stars have space velocities implying that\nthey are unbound in the MWPotential2014 potential"
         }
       ],
-      "source": "1503.04164v1"
+      "source": "1805.03194v3"
     }
   ],
-  "quantities": [],
+  "quantities": [
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "1.73",
+          "error": "0.13",
+          "unit": "kpc",
+          "condition": "Heliocentric distance d_helio listed for Gaia-T-ES19 in Table 1; the paper describes the distance as a point estimate from 1/varpi.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Gaia-T-ES19</td><td>1765600930139450752</td><td>67.47</td><td>-31.88</td><td>1.73 ± 0.13</td><td>7.6</td><td>523.6</td><td>-376.3</td><td>-271.8</td><td>4102</td><td>559</td><td>0.58</td><td>-"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "the point-estimate of the distance to our sample stars,1 / \\varpi"
+            }
+          ],
+          "source": "1805.03194v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "1.73",
+            "error": "0.13",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-271.8",
+          "unit": "km/s",
+          "condition": "Line-of-sight velocity v_los from Gaia, listed for Gaia-T-ES19 in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Gaia-T-ES19</td><td>1765600930139450752</td><td>67.47</td><td>-31.88</td><td>1.73 ± 0.13</td><td>7.6</td><td>523.6</td><td>-376.3</td><td>-271.8</td><td>4102</td><td>559</td><td>0.58</td><td>-"
+            },
+            {
+              "location": "T:p2-b4",
+              "quote": "Gaia DR2 includes 7,224,631 stars with line-of-sight\nvelocities( v _ { \\mathrm { l o s } })obtained with the Gaia Radial Ve-\nlocity Spectrometer"
+            }
+          ],
+          "source": "1805.03194v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-271.8",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "7.6",
+          "unit": "kpc",
+          "condition": "Galactocentric radius r listed for Gaia-T-ES19 in Table 1, using the paper's adopted Galactocentric rest frame with R0 = 8 kpc.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Gaia-T-ES19</td><td>1765600930139450752</td><td>67.47</td><td>-31.88</td><td>1.73 ± 0.13</td><td>7.6</td><td>523.6</td><td>-376.3</td><td>-271.8</td><td>4102</td><td>559</td><td>0.58</td><td>-"
+            },
+            {
+              "location": "T:p2-b8",
+              "quote": "we derive the 3D position and velocity in the Galactocentric rest frame by additionally taking into accountv _ { \\mathrm { l o s } }from Gaia. Here,\nwe assume that the Galactocentric distance of the Sun\nisR _ { 0 } = 8 \\mathrm { k p c }"
+            }
+          ],
+          "source": "1805.03194v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "7.6",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "523.6",
+          "unit": "km/s",
+          "condition": "Total three-dimensional velocity v_total in the Galactocentric rest frame, listed for Gaia-T-ES19 in Table 1.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Gaia-T-ES19</td><td>1765600930139450752</td><td>67.47</td><td>-31.88</td><td>1.73 ± 0.13</td><td>7.6</td><td>523.6</td><td>-376.3</td><td>-271.8</td><td>4102</td><td>559</td><td>0.58</td><td>-"
+            },
+            {
+              "location": "T:p2-b8",
+              "quote": "we derive the 3D position and velocity in the Galactocentric rest frame by additionally taking into accountv _ { \\mathrm { l o s } }from Gaia. Here,\nwe assume that the Galactocentric distance of the Sun\nisR _ { 0 } = 8 \\mathrm { k p c }"
+            }
+          ],
+          "source": "1805.03194v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "523.6",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.58",
+          "unit": "dimensionless",
+          "condition": "P_unb, the probability that Gaia-T-ES19 is unbound in the MWPotential2014 potential, from Monte Carlo sampling of the 6D error distribution.",
+          "evidence": [
+            {
+              "location": "T:p4-b0",
+              "quote": "Gaia-T-ES19</td><td>1765600930139450752</td><td>67.47</td><td>-31.88</td><td>1.73 ± 0.13</td><td>7.6</td><td>523.6</td><td>-376.3</td><td>-271.8</td><td>4102</td><td>559</td><td>0.58</td><td>-"
+            },
+            {
+              "location": "T:p2-b9",
+              "quote": "evaluate the probability of each star being unbound,P _ { \\mathrm { u n b } }"
+            }
+          ],
+          "source": "1805.03194v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.58",
+            "approximate": false
+          }
+        }
+      ]
+    }
+  ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "TYC 1126-382-1",
+      "aliases": [
+        "2MASS J21494865+1048431",
+        "Gaia DR2 1765600930139450752",
+        "Gaia DR3 1765600930139450752",
+        "TIC 343969912",
+        "TYC 1126-382-1"
+      ],
+      "object_type": "SB*",
+      "coordinates": {
+        "ra": {
+          "value": 327.45273802706,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 10.8119679639,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.017000000923871994,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.016100000590085983,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -58.024,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -11.642,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.020999999716877937,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.020999999716877937,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.6126,
+        "unit": "mas",
+        "error": 0.022099999710917473,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -240.0,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.0008002336416376155
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 7.0,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "D",
+        "bibcode": "2021ApJS..252....3L",
+        "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "G2",
+        "quality": "D",
+        "bibcode": "2021ApJS..252....3L"
+      },
+      "photometry": [
+        {
+          "band": "J",
+          "value": 10.418999671936035,
+          "error": 0.02199999988079071,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 9.9350004196167,
+          "error": 0.023000000044703484,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "K",
+          "value": 9.836000442504883,
+          "error": 0.020999999716877937,
+          "system": "V",
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "V",
+          "value": 11.619999885559082,
+          "error": 0.1899999976158142,
+          "system": "V",
+          "bibcode": "2000A&A...355L..27H",
+          "quality": "D"
+        },
+        {
+          "band": "B",
+          "value": 12.6899995803833,
+          "error": 0.3700000047683716,
+          "system": "V",
+          "bibcode": "2000A&A...355L..27H",
+          "quality": "D"
+        },
+        {
+          "band": "G",
+          "value": 11.86235523223877,
+          "error": 0.002773999935016036,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR2 1765600930139450752"
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:51:40.711491+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000214_provenance.json",
-    "sha256": "22675edff1db24391b5649744511261e891fba5dec4fa222128b4e3db6388f23"
+    "sha256": "56688f9e63c49f7a86fd1164f79f05fb7683ab8fa73934f4137d2d57d34864f4"
   },
-  "warnings": []
+  "warnings": [
+    "1805.03194v3#/stars/18/quantities/1/values/0/evidence/1: quote audit unknown at T:p2-b4; check the paper evidence.",
+    "1805.03194v3#/stars/18/quantities/4/values/0/evidence/1: quote audit unknown at T:p2-b9; check the paper evidence."
+  ]
 }

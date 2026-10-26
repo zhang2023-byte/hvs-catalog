@@ -1,36 +1,34 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000133",
-  "display_name": "US708",
+  "display_name": "P14 No. 3",
   "sources": {
-    "1305.3997v1": {
-      "title": "Supernovae in the Central Parsec: A Mechanism for Producing Spatially Anisotropic Hypervelocity Stars",
+    "1503.04164v1": {
+      "title": "Candidate hypervelocity stars of spectral type G and K revisited",
       "authors": [
-        "Kastytis Zubovas",
-        "Graham A. Wynn",
-        "Alessia Gualandris"
+        "E. Ziegerer",
+        "M. Volkert",
+        "U. Heber",
+        "A. Irrgang",
+        "B. T. Gaensicke",
+        "S. Geier"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1305.3997v1",
+      "pdf_url": "https://arxiv.org/pdf/1503.04164v1",
       "records": [
-        "/stars/0"
+        "/stars/2"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "US708",
+      "value": "P14 No. 3",
       "evidence": [
         {
-          "location": "T:p4-b7",
-          "quote": "US708 withv _ { \\mathrm { r f } } \\simeq 7 5 0km/s (Hirsch et al. 2005)"
-        },
-        {
-          "location": "T:p6-b11",
-          "quote": "the HVS US708 (Hirsch et al. 2005)"
+          "location": "I:p3-b0"
         }
       ],
-      "source": "1305.3997v1"
+      "source": "1503.04164v1"
     }
   ],
   "contribution_types": [
@@ -38,40 +36,416 @@
       "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p1-b7",
-          "quote": "with a sub-population of unbound\nHVSs having v<sub>rf</sub> > 400 km/s."
+          "location": "T:p1-b13",
+          "quote": "20 candidates\nwere found likely to be unbound, four of which at 3 and six at\n2σ significance levels."
         },
         {
-          "location": "T:p4-b4",
-          "quote": "400 km/s Galactic escape velocity"
+          "location": "T:p4-b5",
+          "quote": "We present a revised analysis of the 20 candidate HVSs"
         },
         {
-          "location": "T:p4-b7",
-          "quote": "US708 withv _ { \\mathrm { r f } } \\simeq 7 5 0km/s (Hirsch et al. 2005)"
-        },
-        {
-          "location": "T:p6-b11",
-          "quote": "the HVS US708 (Hirsch et al. 2005)"
+          "location": "I:p3-b0"
         }
       ],
-      "source": "1305.3997v1"
+      "source": "1503.04164v1"
     }
   ],
   "quantities": [
     {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "5.5",
+          "error": "4.0",
+          "unit": "mas/yr",
+          "condition": "This work; μα cos δ from linear regression of all available astrometric epochs.",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>3</td><td>5.5 ± 4.0</td><td>-10.4 ± 4.7</td><td>23.6 ± 3.0</td><td>-1.6 ± 3.0</td><td>303.7 ± 75.9</td><td>645.9 ± 96.7</td><td>2.5 ± 0.5</td><td>8.7</td><td>1.5</td><td>34.88</td><td>33.3</td><td>99.9</td></tr>"
+            },
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "5.5",
+            "error": "4.0",
+            "approximate": false
+          }
+        },
+        {
+          "value": "23.6",
+          "error": "3.0",
+          "unit": "mas/yr",
+          "condition": "SDSS proper motion as used by P14.",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>3</td><td>5.5 ± 4.0</td><td>-10.4 ± 4.7</td><td>23.6 ± 3.0</td><td>-1.6 ± 3.0</td><td>303.7 ± 75.9</td><td>645.9 ± 96.7</td><td>2.5 ± 0.5</td><td>8.7</td><td>1.5</td><td>34.88</td><td>33.3</td><td>99.9</td></tr>"
+            },
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "23.6",
+            "error": "3.0",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-10.4",
+          "error": "4.7",
+          "unit": "mas/yr",
+          "condition": "This work; μδ from linear regression of all available astrometric epochs.",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>3</td><td>5.5 ± 4.0</td><td>-10.4 ± 4.7</td><td>23.6 ± 3.0</td><td>-1.6 ± 3.0</td><td>303.7 ± 75.9</td><td>645.9 ± 96.7</td><td>2.5 ± 0.5</td><td>8.7</td><td>1.5</td><td>34.88</td><td>33.3</td><td>99.9</td></tr>"
+            },
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-10.4",
+            "error": "4.7",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-1.6",
+          "error": "3.0",
+          "unit": "mas/yr",
+          "condition": "SDSS proper motion as used by P14.",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>3</td><td>5.5 ± 4.0</td><td>-10.4 ± 4.7</td><td>23.6 ± 3.0</td><td>-1.6 ± 3.0</td><td>303.7 ± 75.9</td><td>645.9 ± 96.7</td><td>2.5 ± 0.5</td><td>8.7</td><td>1.5</td><td>34.88</td><td>33.3</td><td>99.9</td></tr>"
+            },
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-1.6",
+            "error": "3.0",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "750",
+          "value": "303.7",
+          "error": "75.9",
           "unit": "km/s",
-          "condition": "Galactic rest-frame radial velocity (v_rf) of US708, as reported from Hirsch et al. (2005); described as the fastest known HVS",
+          "condition": "Model II of Irrgang et al. (2013); v_GRF,1 based on this work's proper motions.",
           "evidence": [
             {
-              "location": "T:p4-b7",
-              "quote": "US708 withv _ { \\mathrm { r f } } \\simeq 7 5 0km/s (Hirsch et al. 2005)"
+              "location": "T:p3-b0",
+              "quote": "<tr><td>3</td><td>5.5 ± 4.0</td><td>-10.4 ± 4.7</td><td>23.6 ± 3.0</td><td>-1.6 ± 3.0</td><td>303.7 ± 75.9</td><td>645.9 ± 96.7</td><td>2.5 ± 0.5</td><td>8.7</td><td>1.5</td><td>34.88</td><td>33.3</td><td>99.9</td></tr>"
+            },
+            {
+              "location": "I:p3-b0"
             }
           ],
-          "source": "1305.3997v1"
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "303.7",
+            "error": "75.9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "645.9",
+          "error": "96.7",
+          "unit": "km/s",
+          "condition": "Model II of Irrgang et al. (2013); v_GRF,2 based on SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>3</td><td>5.5 ± 4.0</td><td>-10.4 ± 4.7</td><td>23.6 ± 3.0</td><td>-1.6 ± 3.0</td><td>303.7 ± 75.9</td><td>645.9 ± 96.7</td><td>2.5 ± 0.5</td><td>8.7</td><td>1.5</td><td>34.88</td><td>33.3</td><td>99.9</td></tr>"
+            },
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "645.9",
+            "error": "96.7",
+            "approximate": false
+          }
+        },
+        {
+          "value": "304.6",
+          "error": "75.8",
+          "unit": "km/s",
+          "condition": "Model I of Irrgang et al. (2013); v_GRF,1 based on this work's proper motions.",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>3</td><td>8.5</td><td>1.3</td><td><eq>304.6 \\pm 75.8</eq></td><td><eq>647.2 \\pm 96.7</eq></td><td>34.88</td><td>49.3</td><td>100</td></tr>"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "304.6",
+            "error": "75.8",
+            "approximate": false
+          }
+        },
+        {
+          "value": "647.2",
+          "error": "96.7",
+          "unit": "km/s",
+          "condition": "Model I of Irrgang et al. (2013); v_GRF,2 based on SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>3</td><td>8.5</td><td>1.3</td><td><eq>304.6 \\pm 75.8</eq></td><td><eq>647.2 \\pm 96.7</eq></td><td>34.88</td><td>49.3</td><td>100</td></tr>"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "647.2",
+            "error": "96.7",
+            "approximate": false
+          }
+        },
+        {
+          "value": "303.2",
+          "error": "75.8",
+          "unit": "km/s",
+          "condition": "Model III of Irrgang et al. (2013); v_GRF,1 based on this work's proper motions.",
+          "evidence": [
+            {
+              "location": "T:p6-b1",
+              "quote": "<tr><td>3</td><td>7.9</td><td>1.1</td><td><eq>303.2 \\pm 75.8</eq></td><td><eq>645.3 \\pm 96.9</eq></td><td>34.88</td><td>96.3</td><td>100</td></tr>"
+            },
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "303.2",
+            "error": "75.8",
+            "approximate": false
+          }
+        },
+        {
+          "value": "645.3",
+          "error": "96.9",
+          "unit": "km/s",
+          "condition": "Model III of Irrgang et al. (2013); v_GRF,2 based on SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "T:p6-b1",
+              "quote": "<tr><td>3</td><td>7.9</td><td>1.1</td><td><eq>303.2 \\pm 75.8</eq></td><td><eq>645.3 \\pm 96.9</eq></td><td>34.88</td><td>96.3</td><td>100</td></tr>"
+            },
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "645.3",
+            "error": "96.9",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "bound_probability",
+      "values": [
+        {
+          "value": "34.88",
+          "unit": "%",
+          "condition": "P14 reported bound probability using SDSS proper motions (P14 PM: SDSS).",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>3</td><td>5.5 ± 4.0</td><td>-10.4 ± 4.7</td><td>23.6 ± 3.0</td><td>-1.6 ± 3.0</td><td>303.7 ± 75.9</td><td>645.9 ± 96.7</td><td>2.5 ± 0.5</td><td>8.7</td><td>1.5</td><td>34.88</td><td>33.3</td><td>99.9</td></tr>"
+            },
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "cited",
+          "attribution_reason": "Probability column of the original P14 paper in Tables 1–3, only compared with this paper's probabilities recalculated from old and new proper motions.",
+          "standard": {
+            "unit": "1",
+            "value": "0.3488",
+            "approximate": false
+          }
+        },
+        {
+          "value": "33.3",
+          "unit": "%",
+          "condition": "Model II of Irrgang et al. (2013), using SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>3</td><td>5.5 ± 4.0</td><td>-10.4 ± 4.7</td><td>23.6 ± 3.0</td><td>-1.6 ± 3.0</td><td>303.7 ± 75.9</td><td>645.9 ± 96.7</td><td>2.5 ± 0.5</td><td>8.7</td><td>1.5</td><td>34.88</td><td>33.3</td><td>99.9</td></tr>"
+            },
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.333",
+            "approximate": false
+          }
+        },
+        {
+          "value": "99.9",
+          "unit": "%",
+          "condition": "Model II of Irrgang et al. (2013), using this work's revised proper motions.",
+          "evidence": [
+            {
+              "location": "T:p3-b0",
+              "quote": "<tr><td>3</td><td>5.5 ± 4.0</td><td>-10.4 ± 4.7</td><td>23.6 ± 3.0</td><td>-1.6 ± 3.0</td><td>303.7 ± 75.9</td><td>645.9 ± 96.7</td><td>2.5 ± 0.5</td><td>8.7</td><td>1.5</td><td>34.88</td><td>33.3</td><td>99.9</td></tr>"
+            },
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.999",
+            "approximate": false
+          }
+        },
+        {
+          "value": "49.3",
+          "unit": "%",
+          "condition": "Model I of Irrgang et al. (2013), using SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>3</td><td>8.5</td><td>1.3</td><td><eq>304.6 \\pm 75.8</eq></td><td><eq>647.2 \\pm 96.7</eq></td><td>34.88</td><td>49.3</td><td>100</td></tr>"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.493",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "Model I of Irrgang et al. (2013), using this work's revised proper motions.",
+          "evidence": [
+            {
+              "location": "T:p6-b0",
+              "quote": "<tr><td>3</td><td>8.5</td><td>1.3</td><td><eq>304.6 \\pm 75.8</eq></td><td><eq>647.2 \\pm 96.7</eq></td><td>34.88</td><td>49.3</td><td>100</td></tr>"
+            },
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        },
+        {
+          "value": "96.3",
+          "unit": "%",
+          "condition": "Model III of Irrgang et al. (2013), using SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "T:p6-b1",
+              "quote": "<tr><td>3</td><td>7.9</td><td>1.1</td><td><eq>303.2 \\pm 75.8</eq></td><td><eq>645.3 \\pm 96.9</eq></td><td>34.88</td><td>96.3</td><td>100</td></tr>"
+            },
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.963",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "Model III of Irrgang et al. (2013), using this work's revised proper motions.",
+          "evidence": [
+            {
+              "location": "T:p6-b1",
+              "quote": "<tr><td>3</td><td>7.9</td><td>1.1</td><td><eq>303.2 \\pm 75.8</eq></td><td><eq>645.3 \\pm 96.9</eq></td><td>34.88</td><td>96.3</td><td>100</td></tr>"
+            },
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
         }
       ]
     }
@@ -82,7 +456,7 @@
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000133_provenance.json",
-    "sha256": "cec28019074ace9bcfa4a9ac80d40b643882a9fa2d73653699f4c5c3e069afa8"
+    "sha256": "b9837788ad563e488eca265bdca7e869bb9fa30811761d9c5d83680ab8c87112"
   },
   "warnings": []
 }

@@ -1,57 +1,207 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000433",
   "associations": [],
+  "review_decisions": [
+    {
+      "id": "R21-correct-029",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/24/quantities/1/values/0",
+      "original": {
+        "value": "-52.733",
+        "unit": "deg",
+        "condition": "Present-day declination for SG-HVS25, as listed in Table 2 and Table A1.",
+        "evidence": [
+          {
+            "location": "T:p9-b0",
+            "quote": "SG-HVS25</td><td>192.498020</td><td>-52.733</td><td>-67.243</td><td>-168.672</td><td>1.900</td><td>536.101</td><td>0.41</td><td>0.39</td><td>0.60</td><td>0.69</td><td>0.62</td>"
+          },
+          {
+            "location": "T:p17-b0",
+            "quote": "SG-HVS25</td><td>192.498020</td><td>-52.733</td><td>-67.243</td><td>-168.67</td><td>1.90</td><td>6129</td><td>4.06</td><td>-2.00</td><td>+0.46</td><td>-121.96</td><td>536.10</td>"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "38.947287",
+        "unit": "deg",
+        "condition": "Present-day declination for SG-HVS25, as listed in Table 2 and Table A1.",
+        "evidence": [
+          {
+            "location": "T:p9-b0",
+            "quote": "SG-HVS25</td><td>192.498020</td><td>-52.733</td><td>-67.243</td><td>-168.672</td><td>1.900</td><td>536.101</td><td>0.41</td><td>0.39</td><td>0.60</td><td>0.69</td><td>0.62</td>"
+          },
+          {
+            "location": "T:p17-b0",
+            "quote": "SG-HVS25</td><td>192.498020</td><td>-52.733</td><td>-67.243</td><td>-168.67</td><td>1.90</td><td>6129</td><td>4.06</td><td>-2.00</td><td>+0.46</td><td>-121.96</td><td>536.10</td>"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 9,
+          "location": "Table 2, SG-HVS25, Gaia 1520968079814522496, dec",
+          "quote": "SG-HVS25 192.498020 -52.733 -67.243 -168.672 1.900 536.101 0.41 0.39 0.60 0.69 0.62\n1520968079814522496 38.947287 0.030 0.032 2.317 0.176 69.351"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-correct-030",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/24/quantities/3/values/0",
+      "original": {
+        "value": "-67.243",
+        "error": "0.030",
+        "unit": "mas/yr",
+        "condition": "μ_α cos δ proper-motion component, with uncertainty; Gaia EDR3 astrometry as tabulated in Table 2.",
+        "evidence": [
+          {
+            "location": "T:p9-b0",
+            "quote": "SG-HVS25</td><td>192.498020</td><td>-52.733</td><td>-67.243</td><td>-168.672</td><td>1.900</td><td>536.101</td><td>0.41</td><td>0.39</td><td>0.60</td><td>0.69</td><td>0.62</td>"
+          },
+          {
+            "location": "T:p9-b0",
+            "quote": "1520968079814522496</td><td>38.947287</td><td>0.030</td><td>0.032</td><td>2.317</td><td>0.176</td><td>69.351"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "-52.733",
+        "error": "0.030",
+        "unit": "mas/yr",
+        "condition": "μ_α cos δ proper-motion component, with uncertainty; Gaia EDR3 astrometry as tabulated in Table 2.",
+        "evidence": [
+          {
+            "location": "T:p9-b0",
+            "quote": "SG-HVS25</td><td>192.498020</td><td>-52.733</td><td>-67.243</td><td>-168.672</td><td>1.900</td><td>536.101</td><td>0.41</td><td>0.39</td><td>0.60</td><td>0.69</td><td>0.62</td>"
+          },
+          {
+            "location": "T:p9-b0",
+            "quote": "1520968079814522496</td><td>38.947287</td><td>0.030</td><td>0.032</td><td>2.317</td><td>0.176</td><td>69.351"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 9,
+          "location": "Table 2, SG-HVS25, Gaia 1520968079814522496, proper_motion_ra",
+          "quote": "SG-HVS25 192.498020 -52.733 -67.243 -168.672 1.900 536.101 0.41 0.39 0.60 0.69 0.62\n1520968079814522496 38.947287 0.030 0.032 2.317 0.176 69.351"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-correct-031",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/24/quantities/4/values/0",
+      "original": {
+        "value": "38.947287",
+        "error": "0.032",
+        "unit": "mas/yr",
+        "condition": "μ_δ proper-motion component, with uncertainty; Gaia EDR3 astrometry as tabulated in the two-line Table 2 entry.",
+        "evidence": [
+          {
+            "location": "T:p9-b0",
+            "quote": "1520968079814522496</td><td>38.947287</td><td>0.030</td><td>0.032</td><td>2.317</td><td>0.176</td><td>69.351"
+          },
+          {
+            "location": "T:p17-b0",
+            "quote": "1520968079814522496</td><td>38.947287</td><td>0.030</td><td>0.032</td><td>2.317</td><td>0.176</td><td>69.351"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "-67.243",
+        "error": "0.032",
+        "unit": "mas/yr",
+        "condition": "μ_δ proper-motion component, with uncertainty; Gaia EDR3 astrometry as tabulated in the two-line Table 2 entry.",
+        "evidence": [
+          {
+            "location": "T:p9-b0",
+            "quote": "1520968079814522496</td><td>38.947287</td><td>0.030</td><td>0.032</td><td>2.317</td><td>0.176</td><td>69.351"
+          },
+          {
+            "location": "T:p17-b0",
+            "quote": "1520968079814522496</td><td>38.947287</td><td>0.030</td><td>0.032</td><td>2.317</td><td>0.176</td><td>69.351"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 9,
+          "location": "Table 2, SG-HVS25, Gaia 1520968079814522496, proper_motion_dec",
+          "quote": "SG-HVS25 192.498020 -52.733 -67.243 -168.672 1.900 536.101 0.41 0.39 0.60 0.69 0.62\n1520968079814522496 38.947287 0.030 0.032 2.317 0.176 69.351"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    }
+  ],
   "simbad": {
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "Gaia DR3 5365388599188363648",
+      "main_id": "Gaia DR3 1520968079814522496",
       "aliases": [
-        "Gaia DR2 5365388599188363648",
-        "Gaia DR3 5365388599188363648"
+        "Gaia DR2 1520968079814522496",
+        "Gaia DR3 1520968079814522496"
       ],
       "position": {
-        "ra_deg": 155.82930887173,
-        "dec_deg": -47.49148131460001,
+        "ra_deg": 192.49809334453496,
+        "dec_deg": 38.94732983303305,
         "frame": "icrs",
         "equinox": null,
         "evidence": []
       },
       "fields": {
         "main_id": {
-          "value": "Gaia DR3 5365388599188363648"
+          "value": "Gaia DR3 1520968079814522496"
         },
         "nbref": {
-          "value": 1
+          "value": 3
         },
         "otype": {
-          "value": "HV*"
+          "value": "Pe*"
         },
         "ra": {
-          "value": 155.82930887173,
+          "value": 192.49809334453496,
           "unit": "deg"
         },
         "ra_prec": {
           "value": 14
         },
         "dec": {
-          "value": -47.49148131460001,
+          "value": 38.94732983303305,
           "unit": "deg"
         },
         "dec_prec": {
           "value": 14
         },
         "coo_err_maj": {
-          "value": 0.009399999864399433,
+          "value": 0.031099999323487282,
           "unit": "mas"
         },
         "coo_err_maj_prec": {
           "value": 4
         },
         "coo_err_min": {
-          "value": 0.009999999776482582,
+          "value": 0.02969999983906746,
           "unit": "mas"
         },
         "coo_err_min_prec": {
@@ -71,31 +221,31 @@
           "value": "2020yCat.1350....0G"
         },
         "hpx": {
-          "value": 9759585
+          "value": 2766624
         },
         "pmra": {
-          "value": -2.631,
+          "value": -52.733,
           "unit": "mas / yr"
         },
         "pmra_prec": {
           "value": 3
         },
         "pmdec": {
-          "value": 2.079,
+          "value": -67.243,
           "unit": "mas / yr"
         },
         "pmdec_prec": {
           "value": 3
         },
         "pm_err_maj": {
-          "value": 0.013000000268220901,
+          "value": 0.029999999329447746,
           "unit": "mas / yr"
         },
         "pm_err_maj_prec": {
           "value": 3
         },
         "pm_err_min": {
-          "value": 0.012000000104308128,
+          "value": 0.03200000151991844,
           "unit": "mas / yr"
         },
         "pm_err_min_prec": {
@@ -112,14 +262,14 @@
           "value": "2020yCat.1350....0G"
         },
         "plx_value": {
-          "value": 0.0332,
+          "value": 0.5136,
           "unit": "mas"
         },
         "plx_prec": {
           "value": 4
         },
         "plx_err": {
-          "value": 0.012500000186264515,
+          "value": 0.0478999987244606,
           "unit": "mas"
         },
         "plx_err_prec": {
@@ -135,33 +285,33 @@
           "value": "v"
         },
         "rvz_radvel": {
-          "value": 120.04,
+          "value": -175.0,
           "unit": "km / s"
         },
         "rvz_radvel_prec": {
-          "value": 2
+          "value": 0
         },
         "rvz_redshift": {
-          "value": 0.00040049053620427877
+          "value": -0.0005835668914674352
         },
         "rvz_redshift_prec": {
           "value": 6
         },
         "rvz_err": {
-          "value": 1.409999966621399,
+          "value": 7.0,
           "unit": "km / s"
         },
         "rvz_err_prec": {
-          "value": 2
+          "value": 0
         },
         "rvz_nature": {
           "value": "s"
         },
         "rvz_qual": {
-          "value": "B"
+          "value": "D"
         },
         "rvz_bibcode": {
-          "value": "2018yCat.1345....0G"
+          "value": "2021ApJS..252....3L"
         },
         "vlsr_wavelength": {
           "value": ""
@@ -170,13 +320,13 @@
           "value": ""
         },
         "sp_type": {
-          "value": ""
+          "value": "A9V"
         },
         "sp_qual": {
-          "value": ""
+          "value": "C"
         },
         "sp_bibcode": {
-          "value": ""
+          "value": "2021ApJS..252....3L"
         },
         "morph_type": {
           "value": ""
@@ -197,10 +347,10 @@
           "value": ""
         },
         "update_date": {
-          "value": "2022-02-03"
+          "value": "2025-07-31"
         },
         "otype_txt": {
-          "value": "HV*"
+          "value": "Pe*"
         },
         "rvz_wavelength": {
           "value": "O"
@@ -217,25 +367,25 @@
               "value": 6
             },
             "oidref": {
-              "value": 15837954
+              "value": 24143374
             },
             "filter": {
               "value": "G"
             },
             "flux": {
-              "value": 13.47736930847168
+              "value": 16.025527954101562
             },
             "system": {
               "value": "V"
             },
             "flux_err": {
-              "value": 0.0028460000175982714
+              "value": 0.0027910000644624233
             },
             "qual": {
               "value": "C"
             },
             "bibcode": {
-              "value": "2020yCat.1350....0G"
+              "value": "2022yCat.1355....0G"
             }
           }
         }
@@ -245,22 +395,36 @@
       {
         "query": {
           "method": "identifier",
-          "identifier": "Gaia DR2 5365388599188363648",
+          "identifier": "Gaia EDR3 1520968079814522496",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "ae06a01da40657a27c0830e3c8e289d1e1c2187850bf313e7e3ac4c3059c113c",
-        "queried_at": "2026-10-24T04:47:54.188326+00:00",
+        "response_sha256": "fc155d5088c30190a5cfdbb378aecfcc3a8386f989259fbfa8fb2452dc541b4f",
+        "queried_at": "2026-10-25T11:44:44.544517+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2207.04406v2#/stars/24",
+            "original_identifier": {
+              "value": "Gaia EDR3 1520968079814522496",
+              "evidence": [
+                {
+                  "location": "I:p9-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       }
     ],
     "matches": [
       {
-        "main_id": "Gaia DR3 5365388599188363648",
+        "main_id": "Gaia DR3 1520968079814522496",
         "method": "identifier",
-        "identifier": "Gaia DR2 5365388599188363648",
+        "identifier": "Gaia EDR3 1520968079814522496",
         "candidate": {
           "$ref": "#/simbad/selected"
         }

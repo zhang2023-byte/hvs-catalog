@@ -1,84 +1,143 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000419",
-  "display_name": "[PSH2014] HVS 7",
+  "display_name": "SG-HVS12",
   "sources": {
-    "1905.07879v1": {
-      "title": "Origin and Status of Low-Mass Candidate Hypervelocity Stars",
+    "2207.04406v2": {
+      "title": "On the origins of extreme velocity stars as revealed by large-scale Galactic surveys",
       "authors": [
-        "Bum-Suk Yeom",
-        "Young Sun Lee",
-        "Jae-Rim Koo",
+        "Qing-Zheng Li",
+        "Yang Huang",
+        "Xiao-Bo Dong",
+        "Hua-Wei Zhang",
         "Timothy C. Beers",
-        "Young Kwang Kim"
+        "Zhen Yuan"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1905.07879v1",
+      "pdf_url": "https://arxiv.org/pdf/2207.04406v2",
       "records": [
-        "/stars/1"
+        "/stars/11"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "SDSS J064337.13+291410.0",
+      "value": "SG-HVS12",
       "evidence": [
         {
-          "location": "T:p10-b2",
-          "quote": "5.2. SDSS J064337.13+291410.0 (Pal14 ID 7)"
+          "location": "I:p9-b0"
         }
       ],
-      "source": "1905.07879v1"
+      "source": "2207.04406v2"
     },
     {
-      "value": "Pal14 ID 7",
+      "value": "Gaia EDR3 694458695225567872",
       "evidence": [
         {
-          "location": "T:p10-b2",
-          "quote": "5.2. SDSS J064337.13+291410.0 (Pal14 ID 7)"
+          "location": "I:p9-b0"
         }
       ],
-      "source": "1905.07879v1"
+      "source": "2207.04406v2"
     }
   ],
   "contribution_types": [
     {
-      "value": "follow_up",
+      "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b6",
-          "quote": "previously claimed to be candidate hypervelocity stars (HVSs)."
+          "location": "T:p1-b3",
+          "quote": "52 are marginally hypervelocity star (HVS) candidates"
         },
         {
-          "location": "T:p2-b9",
-          "quote": "Among the 20 HVS candidates reported by Pal14, we obtained spectroscopy for six stars"
-        },
-        {
-          "location": "T:p10-b2",
-          "quote": "5.2. SDSS J064337.13+291410.0 (Pal14 ID 7)"
+          "location": "I:p9-b0"
         }
       ],
-      "source": "1905.07879v1"
+      "source": "2207.04406v2"
     }
   ],
   "quantities": [
     {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "141.546960",
+          "unit": "deg",
+          "condition": "Coordinates reported for SG-HVS12 in Table 2 (Gaia EDR3 target).",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td>"
+            }
+          ],
+          "source": "2207.04406v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "141.546960",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "27.340210",
+          "unit": "deg",
+          "condition": "Coordinates reported for SG-HVS12 in Table 2 (Gaia EDR3 target).",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td>"
+            }
+          ],
+          "source": "2207.04406v2",
+          "correction": {
+            "decision": "R21-correct-006",
+            "evidence": [
+              {
+                "page": 9,
+                "location": "Table 2, SG-HVS12, Gaia 694458695225567872, dec",
+                "quote": "SG-HVS12 141.546960 -17.158 -33.579 223.547 3.767 484.930 0.37 0.36 0.47 0.52 0.47\n694458695225567872 27.340210 0.051 0.037 2.035 0.699 115.507"
+              }
+            ]
+          },
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "27.340210",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
       "quantity": "distance",
       "values": [
         {
-          "value": "3.16",
+          "value": "3.767",
+          "error": "0.699",
           "unit": "kpc",
-          "condition": "Adopted heliocentric distance listed in Table 5; the text gives an overall distance uncertainty of 15–20%, not tabulated for this star.",
+          "condition": "Bayesian distance derived from Gaia EDR3 parallax with a density prior; Table 2 value (Table A1 rounds this to 3.77 kpc).",
           "evidence": [
             {
-              "location": "T:p6-b1",
-              "quote": "<tr><td>J064337.13+291410.0</td><td>7</td><td>9.6 ± 3.4</td><td>3.16</td><td>-2.2 ± 3.6</td><td>-32.1 ± 8.5</td><td>-1.7 ± 5.4</td><td>8.56 ± 0.46</td><td>11.11 ± 0.64</td><td>0.65 ± 0.14</td><td>0.13 ± 0.04</td><td>187.9 ± 8.4</td></tr>"
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td>"
             },
             {
-              "location": "I:p6-b1"
+              "location": "T:p9-b0",
+              "quote": "694458695225567872</td><td>27.340210</td><td>0.051</td><td>0.037</td><td>2.035</td><td>0.699</td><td>115.507"
             }
           ],
-          "source": "1905.07879v1"
+          "source": "2207.04406v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "3.767",
+            "error": "0.699",
+            "approximate": false
+          }
         }
       ]
     },
@@ -86,36 +145,38 @@
       "quantity": "proper_motion_ra",
       "values": [
         {
-          "value": "-23.6",
-          "error": "2.6",
+          "value": "-17.158",
+          "error": "0.051",
           "unit": "mas/yr",
-          "condition": "SDSS proper motion in right ascension, μ_α cos δ, as used by Pal14 (Table 4).",
+          "condition": "Gaia EDR3 proper motion in right ascension times cos(dec), μ_α cosδ, from Table 2.",
           "evidence": [
             {
-              "location": "T:p6-b0",
-              "quote": "<tr><td>J064337.13+291410.0</td><td>7</td><td>-23.6 ± 2.6</td><td>29.9 ± 2.6</td><td>...</td><td>...</td><td>0.35 ± 0.38</td><td>-2.43 ± 0.33</td></tr>"
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td>"
             },
             {
-              "location": "I:p6-b0"
+              "location": "T:p9-b0",
+              "quote": "694458695225567872</td><td>27.340210</td><td>0.051</td><td>0.037</td><td>2.035</td><td>0.699</td><td>115.507"
             }
           ],
-          "source": "1905.07879v1"
-        },
-        {
-          "value": "0.35",
-          "error": "0.38",
-          "unit": "mas/yr",
-          "condition": "Gaia DR2 proper motion in right ascension, μ_α cos δ (Table 4).",
-          "evidence": [
-            {
-              "location": "T:p6-b0",
-              "quote": "<tr><td>J064337.13+291410.0</td><td>7</td><td>-23.6 ± 2.6</td><td>29.9 ± 2.6</td><td>...</td><td>...</td><td>0.35 ± 0.38</td><td>-2.43 ± 0.33</td></tr>"
-            },
-            {
-              "location": "I:p6-b0"
-            }
-          ],
-          "source": "1905.07879v1"
+          "source": "2207.04406v2",
+          "correction": {
+            "decision": "R21-correct-007",
+            "evidence": [
+              {
+                "page": 9,
+                "location": "Table 2, SG-HVS12, Gaia 694458695225567872, proper_motion_ra",
+                "quote": "SG-HVS12 141.546960 -17.158 -33.579 223.547 3.767 484.930 0.37 0.36 0.47 0.52 0.47\n694458695225567872 27.340210 0.051 0.037 2.035 0.699 115.507"
+              }
+            ]
+          },
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-17.158",
+            "error": "0.051",
+            "approximate": false
+          }
         }
       ]
     },
@@ -123,36 +184,34 @@
       "quantity": "proper_motion_dec",
       "values": [
         {
-          "value": "29.9",
-          "error": "2.6",
+          "value": "-33.579",
+          "error": "0.037",
           "unit": "mas/yr",
-          "condition": "SDSS proper motion in declination, μ_δ, as used by Pal14 (Table 4).",
+          "condition": "Gaia EDR3 declination proper motion, μ_δ, from Table 2 (listed after the Gaia ID in the second row, with σ_μδ=0.037 mas/yr).",
           "evidence": [
             {
-              "location": "T:p6-b0",
-              "quote": "<tr><td>J064337.13+291410.0</td><td>7</td><td>-23.6 ± 2.6</td><td>29.9 ± 2.6</td><td>...</td><td>...</td><td>0.35 ± 0.38</td><td>-2.43 ± 0.33</td></tr>"
-            },
-            {
-              "location": "I:p6-b0"
+              "location": "T:p9-b0",
+              "quote": "694458695225567872</td><td>27.340210</td><td>0.051</td><td>0.037</td><td>2.035</td><td>0.699</td><td>115.507"
             }
           ],
-          "source": "1905.07879v1"
-        },
-        {
-          "value": "-2.43",
-          "error": "0.33",
-          "unit": "mas/yr",
-          "condition": "Gaia DR2 proper motion in declination, μ_δ (Table 4).",
-          "evidence": [
-            {
-              "location": "T:p6-b0",
-              "quote": "<tr><td>J064337.13+291410.0</td><td>7</td><td>-23.6 ± 2.6</td><td>29.9 ± 2.6</td><td>...</td><td>...</td><td>0.35 ± 0.38</td><td>-2.43 ± 0.33</td></tr>"
-            },
-            {
-              "location": "I:p6-b0"
-            }
-          ],
-          "source": "1905.07879v1"
+          "source": "2207.04406v2",
+          "correction": {
+            "decision": "R21-correct-008",
+            "evidence": [
+              {
+                "page": 9,
+                "location": "Table 2, SG-HVS12, Gaia 694458695225567872, proper_motion_dec",
+                "quote": "SG-HVS12 141.546960 -17.158 -33.579 223.547 3.767 484.930 0.37 0.36 0.47 0.52 0.47\n694458695225567872 27.340210 0.051 0.037 2.035 0.699 115.507"
+              }
+            ]
+          },
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-33.579",
+            "error": "0.037",
+            "approximate": false
+          }
         }
       ]
     },
@@ -160,20 +219,28 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "9.6",
-          "error": "3.4",
+          "value": "223.547",
+          "error": "2.035",
           "unit": "km/s",
-          "condition": "Radial velocity v_r measured from the program spectra and listed in Table 5.",
+          "condition": "Line-of-sight radial velocity from spectroscopy in Table 2 (Table A1 gives 223.55 km/s).",
           "evidence": [
             {
-              "location": "T:p6-b1",
-              "quote": "<tr><td>J064337.13+291410.0</td><td>7</td><td>9.6 ± 3.4</td><td>3.16</td><td>-2.2 ± 3.6</td><td>-32.1 ± 8.5</td><td>-1.7 ± 5.4</td><td>8.56 ± 0.46</td><td>11.11 ± 0.64</td><td>0.65 ± 0.14</td><td>0.13 ± 0.04</td><td>187.9 ± 8.4</td></tr>"
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td>"
             },
             {
-              "location": "I:p6-b1"
+              "location": "T:p9-b0",
+              "quote": "694458695225567872</td><td>27.340210</td><td>0.051</td><td>0.037</td><td>2.035</td><td>0.699</td><td>115.507"
             }
           ],
-          "source": "1905.07879v1"
+          "source": "2207.04406v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "223.547",
+            "error": "2.035",
+            "approximate": false
+          }
         }
       ]
     },
@@ -181,20 +248,143 @@
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "187.9",
-          "error": "8.4",
+          "value": "484.930",
+          "error": "115.507",
           "unit": "km/s",
-          "condition": "Galactic rest-frame velocity V_GRF listed in Table 5; computed with Gaia DR2 proper motions and the adopted LSR/solar-motion conventions.",
+          "condition": "Total Galactic rest-frame speed V_GSR from Table 2.",
           "evidence": [
             {
-              "location": "T:p6-b1",
-              "quote": "<tr><td>J064337.13+291410.0</td><td>7</td><td>9.6 ± 3.4</td><td>3.16</td><td>-2.2 ± 3.6</td><td>-32.1 ± 8.5</td><td>-1.7 ± 5.4</td><td>8.56 ± 0.46</td><td>11.11 ± 0.64</td><td>0.65 ± 0.14</td><td>0.13 ± 0.04</td><td>187.9 ± 8.4</td></tr>"
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td>"
             },
             {
-              "location": "I:p6-b1"
+              "location": "T:p9-b0",
+              "quote": "694458695225567872</td><td>27.340210</td><td>0.051</td><td>0.037</td><td>2.035</td><td>0.699</td><td>115.507"
             }
           ],
-          "source": "1905.07879v1"
+          "source": "2207.04406v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "484.930",
+            "error": "115.507",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.37",
+          "unit": "dimensionless",
+          "condition": "P_ub from the escape-velocity curve under MilkyWayPotential implemented in Gala (column a), from Monte Carlo simulations.",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td><td>0.37</td><td>0.36</td><td>0.47</td><td>0.52</td><td>0.47</td>"
+            },
+            {
+              "location": "T:p10-b0",
+              "quote": "Unbound probability calculated from the Galactic escape velocity curve under the Milky Way’s potential MilkyWayPotential implemented in Gala;"
+            }
+          ],
+          "source": "2207.04406v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.37",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.36",
+          "unit": "dimensionless",
+          "condition": "P_ub from the escape-velocity curve under the Milky Way potential adopted from Monari et al. (2018) (column b), from Monte Carlo simulations.",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td><td>0.37</td><td>0.36</td><td>0.47</td><td>0.52</td><td>0.47</td>"
+            },
+            {
+              "location": "T:p10-b0",
+              "quote": "Unbound probability calculated from the Galactic escape velocity curve under the Milky Way’s potential adopted from Monari et al. (2018);"
+            }
+          ],
+          "source": "2207.04406v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.36",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.47",
+          "unit": "dimensionless",
+          "condition": "P_ub from the escape-velocity curve under the Milky Way potential adopted from Deason et al. (2019) (column c), from Monte Carlo simulations.",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td><td>0.37</td><td>0.36</td><td>0.47</td><td>0.52</td><td>0.47</td>"
+            },
+            {
+              "location": "T:p10-b0",
+              "quote": "Unbound probability calculated from the Galactic escape velocity curve under the Milky Way’s potential adopted from Deason et al. (2019);"
+            }
+          ],
+          "source": "2207.04406v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.47",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.52",
+          "unit": "dimensionless",
+          "condition": "P_ub from the escape-velocity curve under BovyMWPotential2014 implemented in Gala (column d), from Monte Carlo simulations.",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td><td>0.37</td><td>0.36</td><td>0.47</td><td>0.52</td><td>0.47</td>"
+            },
+            {
+              "location": "T:p10-b0",
+              "quote": "Unbound probability calculated from the Galactic escape velocity curve under the Milky Way’s potential BovyMWPotential2014 implemented in Gala;"
+            }
+          ],
+          "source": "2207.04406v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.52",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.47",
+          "unit": "dimensionless",
+          "condition": "P_ub from the measured escape-velocity curve derived by Williams et al. (2017) (column e), from Monte Carlo simulations.",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "SG-HVS12</td><td>141.546960</td><td>-17.158</td><td>-33.579</td><td>223.547</td><td>3.767</td><td>484.930</td><td>0.37</td><td>0.36</td><td>0.47</td><td>0.52</td><td>0.47</td>"
+            },
+            {
+              "location": "T:p10-b0",
+              "quote": "Unbound probability calculated from the Galactic escape velocity curve derived by Williams et al. (2017)."
+            }
+          ],
+          "source": "2207.04406v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.47",
+            "approximate": false
+          }
         }
       ]
     }
@@ -203,31 +393,30 @@
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "[PSH2014] HVS 7",
+      "main_id": "SDSS J092611.26+272024.7",
       "aliases": [
-        "Gaia DR2 3386644797376467840",
-        "Gaia DR3 3386644797376467840",
-        "SDSS J064337.13+291410.0",
-        "[PSH2014] HVS 7"
+        "Gaia DR2 694458695225567872",
+        "Gaia DR3 694458695225567872",
+        "SDSS J092611.26+272024.7"
       ],
-      "object_type": "HV*",
+      "object_type": "Pe*",
       "coordinates": {
         "ra": {
-          "value": 100.90471931385,
+          "value": 141.54699230847584,
           "unit": "deg"
         },
         "dec": {
-          "value": 29.236131646480004,
+          "value": 27.340253785533058,
           "unit": "deg"
         },
         "frame": "icrs",
         "error_ellipse": {
           "major": {
-            "value": 0.14740000665187836,
+            "value": 0.0406000018119812,
             "unit": "mas"
           },
           "minor": {
-            "value": 0.12929999828338623,
+            "value": 0.02810000069439411,
             "unit": "mas"
           },
           "angle": {
@@ -241,20 +430,20 @@
       },
       "proper_motion": {
         "ra_cosdec": {
-          "value": 0.022,
+          "value": -17.158,
           "unit": "mas / yr"
         },
         "dec": {
-          "value": -2.286,
+          "value": -33.579,
           "unit": "mas / yr"
         },
         "error_ellipse": {
           "major": {
-            "value": 0.18700000643730164,
+            "value": 0.050999999046325684,
             "unit": "mas / yr"
           },
           "minor": {
-            "value": 0.16300000250339508,
+            "value": 0.03700000047683716,
             "unit": "mas / yr"
           },
           "angle": {
@@ -266,95 +455,96 @@
         "bibcode": "2020yCat.1350....0G"
       },
       "parallax": {
-        "value": 0.5419,
+        "value": 0.2488,
         "unit": "mas",
-        "error": 0.16769999265670776,
+        "error": 0.046300001442432404,
         "quality": "A",
         "bibcode": "2020yCat.1350....0G"
       },
       "velocity": {
         "radial_velocity": {
-          "value": 20.4,
+          "value": 216.2472,
           "unit": "km / s"
         },
         "redshift": {
-          "value": 6.804939078031147e-05
+          "value": 0.0007215833572744579
         },
         "reported_as": "v",
         "error": {
-          "value": 2.799999952316284,
+          "value": 2.0348401069641113,
           "unit": "km / s"
         },
+        "nature": "s",
         "quality": "C",
-        "bibcode": "2010ApJ...725L.186D",
+        "bibcode": "2020ApJ...894...34D",
         "wavelength": "O"
       },
       "spectral_type": {
-        "value": "F9",
+        "value": "F5",
         "quality": "E",
         "bibcode": "2020ApJS..249....3A"
       },
       "photometry": [
         {
           "band": "G",
-          "value": 18.346309661865234,
-          "error": 0.0034439999144524336,
+          "value": 15.567850112915039,
+          "error": 0.0027830000035464764,
           "system": "V",
-          "bibcode": "2020yCat.1350....0G",
+          "bibcode": "2022yCat.1355....0G",
           "quality": "C"
         },
         {
           "band": "u",
-          "value": 20.402999877929688,
-          "error": 0.052000001072883606,
+          "value": 16.788000106811523,
+          "error": 0.00800000037997961,
           "system": "A",
-          "bibcode": "2012ApJS..203...21A",
-          "quality": "C"
+          "bibcode": "2020ApJS..249....3A",
+          "quality": "B"
         },
         {
           "band": "g",
-          "value": 18.929000854492188,
-          "error": 0.008999999612569809,
+          "value": 15.848999977111816,
+          "error": 0.004000000189989805,
           "system": "A",
-          "bibcode": "2009ApJS..182..543A",
+          "bibcode": "2020ApJS..249....3A",
           "quality": "B"
         },
         {
           "band": "r",
-          "value": 18.30500030517578,
-          "error": 0.007000000216066837,
+          "value": 15.58899974822998,
+          "error": 0.004000000189989805,
           "system": "A",
-          "bibcode": "2009ApJS..182..543A",
+          "bibcode": "2020ApJS..249....3A",
           "quality": "B"
         },
         {
           "band": "i",
-          "value": 18.030000686645508,
-          "error": 0.00800000037997961,
+          "value": 15.475000381469727,
+          "error": 0.004000000189989805,
           "system": "A",
-          "bibcode": "2009ApJS..182..543A",
+          "bibcode": "2020ApJS..249....3A",
           "quality": "B"
         },
         {
           "band": "z",
-          "value": 17.89699935913086,
-          "error": 0.01899999938905239,
+          "value": 15.4399995803833,
+          "error": 0.006000000052154064,
           "system": "A",
-          "bibcode": "2009ApJS..182..543A",
-          "quality": "C"
+          "bibcode": "2020ApJS..249....3A",
+          "quality": "B"
         }
       ]
     },
     "match": {
       "identifiers": [
-        "SDSS J064337.13+291410.0"
+        "Gaia EDR3 694458695225567872"
       ]
     },
-    "last_queried_at": "2026-10-24T04:46:00.082140+00:00"
+    "last_queried_at": "2026-10-25T11:47:14.259711+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000419_provenance.json",
-    "sha256": "c85621dbf7fcd6a139a77761094fce69e8dd1a73c517e9320be5b90d003fd5ea"
+    "sha256": "072f59d2f7dc4a619636eb5ca7941681bade8b2a83d350ab438d42e0fd94e189"
   },
   "warnings": []
 }

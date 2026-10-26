@@ -1,24 +1,606 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000035",
-  "associations": [],
+  "associations": [
+    {
+      "method": "review",
+      "left": "0808.2469v2#/stars/19",
+      "right": "0910.3260v1#/stars/2",
+      "details": {
+        "decision_id": "R21-merge-148",
+        "reason": "J1546+2437 of 0910.3260 corresponds to J154556.10+243708.9 in 0808.2469 Table 1 and .94 in its text through the citation chain; the RA minutes of the short name are approximately rounded, so prefix truncation cannot serve as automatic association."
+      }
+    }
+  ],
+  "review_decisions": [
+    {
+      "id": "R21-merge-148",
+      "type": "merge",
+      "groups": [
+        [
+          "0910.3260v1#/stars/2"
+        ],
+        [
+          "0808.2469v2#/stars/19"
+        ]
+      ],
+      "papers": {
+        "0808.2469v2": "83ec2632b23d34fa1a436723bdf9b206bb72083415f782c7b184735e9c619e63",
+        "0910.3260v1": "6d18597a5ed6d8538a3e6d3fdf19b5787187944d4ea13fc5c1102dee4da43126"
+      },
+      "responses": {},
+      "reason": "J1546+2437 of 0910.3260 corresponds to J154556.10+243708.9 in 0808.2469 Table 1 and .94 in its text through the citation chain; the RA minutes of the short name are approximately rounded, so prefix truncation cannot serve as automatic association.",
+      "evidence": [
+        {
+          "paper": "0910.3260v1",
+          "location": "Fixed PDF p.5; short-name list of the four Brown et al. (2009a) candidates"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "Fixed PDF p.6; Table 1, the four Possible HVSs rows"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "Fixed PDF p.7; the Possible HVSs text keeps two decimals of declination seconds"
+        }
+      ],
+      "approved_by": "Project lead (stop 3 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
+    },
+    {
+      "id": "R21-name-154",
+      "type": "name",
+      "groups": [
+        [
+          "0808.2469v2#/stars/19",
+          "0910.3260v1#/stars/2"
+        ]
+      ],
+      "papers": {
+        "0808.2469v2": "83ec2632b23d34fa1a436723bdf9b206bb72083415f782c7b184735e9c619e63",
+        "0910.3260v1": "6d18597a5ed6d8538a3e6d3fdf19b5787187944d4ea13fc5c1102dee4da43126"
+      },
+      "responses": {},
+      "reason": "After the merge the confirmed complete identifier is the display name; short names and original local numbers are aliases. Paper identifiers are unchanged.",
+      "evidence": [
+        {
+          "paper": "0910.3260v1",
+          "location": "Fixed PDF p.5; short-name list of the four Brown et al. (2009a) candidates"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "Fixed PDF p.6; Table 1, the four Possible HVSs rows"
+        },
+        {
+          "paper": "0808.2469v2",
+          "location": "Fixed PDF p.7; the Possible HVSs text keeps two decimals of declination seconds"
+        }
+      ],
+      "approved_by": "Project lead (stop 3 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": "SDSS J154556.10+243708.94",
+      "aliases": [
+        "SDSS J1546+2437"
+      ],
+      "main_id": null
+    }
+  ],
   "simbad": {
-    "status": "not_found",
-    "reason": "No candidate matched the requested identifiers or radius.",
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "SDSS J154556.09+243708.9",
+      "aliases": [
+        "Gaia DR2 1219722539711292416",
+        "Gaia DR3 1219722539711292416",
+        "SDSS J154556.09+243708.9",
+        "SDSS J154556.10+243708.9",
+        "[BGK2006] J154556.10+243708.9"
+      ],
+      "position": {
+        "ra_deg": 236.48373575549002,
+        "dec_deg": 24.61911116239,
+        "frame": "icrs",
+        "equinox": null,
+        "evidence": []
+      },
+      "fields": {
+        "main_id": {
+          "value": "SDSS J154556.09+243708.9"
+        },
+        "nbref": {
+          "value": 3
+        },
+        "otype": {
+          "value": "*"
+        },
+        "ra": {
+          "value": 236.48373575549002,
+          "unit": "deg"
+        },
+        "ra_prec": {
+          "value": 14
+        },
+        "dec": {
+          "value": 24.61911116239,
+          "unit": "deg"
+        },
+        "dec_prec": {
+          "value": 14
+        },
+        "coo_err_maj": {
+          "value": 0.36500000953674316,
+          "unit": "mas"
+        },
+        "coo_err_maj_prec": {
+          "value": 4
+        },
+        "coo_err_min": {
+          "value": 0.557699978351593,
+          "unit": "mas"
+        },
+        "coo_err_min_prec": {
+          "value": 4
+        },
+        "coo_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "coo_qual": {
+          "value": "A"
+        },
+        "coo_wavelength": {
+          "value": "O"
+        },
+        "coo_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "hpx": {
+          "value": 2218662
+        },
+        "pmra": {
+          "value": -0.117,
+          "unit": "mas / yr"
+        },
+        "pmra_prec": {
+          "value": 3
+        },
+        "pmdec": {
+          "value": 0.074,
+          "unit": "mas / yr"
+        },
+        "pmdec_prec": {
+          "value": 3
+        },
+        "pm_err_maj": {
+          "value": 0.5320000052452087,
+          "unit": "mas / yr"
+        },
+        "pm_err_maj_prec": {
+          "value": 3
+        },
+        "pm_err_min": {
+          "value": 0.7960000038146973,
+          "unit": "mas / yr"
+        },
+        "pm_err_min_prec": {
+          "value": 3
+        },
+        "pm_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "pm_qual": {
+          "value": "A"
+        },
+        "pm_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "plx_qual": {
+          "value": ""
+        },
+        "plx_bibcode": {
+          "value": ""
+        },
+        "rvz_type": {
+          "value": "v"
+        },
+        "rvz_radvel": {
+          "value": 192.6,
+          "unit": "km / s"
+        },
+        "rvz_radvel_prec": {
+          "value": 1
+        },
+        "rvz_redshift": {
+          "value": 0.000642650947429102
+        },
+        "rvz_err": {
+          "value": 14.800000190734863,
+          "unit": "km / s"
+        },
+        "rvz_err_prec": {
+          "value": 1
+        },
+        "rvz_nature": {
+          "value": "s"
+        },
+        "rvz_qual": {
+          "value": "D"
+        },
+        "rvz_bibcode": {
+          "value": "2010AJ....139...59B"
+        },
+        "vlsr_wavelength": {
+          "value": ""
+        },
+        "vlsr_bibcode": {
+          "value": ""
+        },
+        "sp_type": {
+          "value": "A"
+        },
+        "sp_qual": {
+          "value": "E"
+        },
+        "sp_bibcode": {
+          "value": "2009ApJ...690.1639B"
+        },
+        "morph_type": {
+          "value": ""
+        },
+        "morph_qual": {
+          "value": ""
+        },
+        "morph_bibcode": {
+          "value": ""
+        },
+        "galdim_qual": {
+          "value": ""
+        },
+        "galdim_wavelength": {
+          "value": ""
+        },
+        "galdim_bibcode": {
+          "value": ""
+        },
+        "update_date": {
+          "value": "2022-01-30"
+        },
+        "otype_txt": {
+          "value": "*"
+        },
+        "rvz_wavelength": {
+          "value": ""
+        }
+      },
+      "photometry": [
+        {
+          "band": "V",
+          "fields": {
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 4903044
+            },
+            "filter": {
+              "value": "V"
+            },
+            "flux": {
+              "value": 20.299999237060547
+            },
+            "system": {
+              "value": "V"
+            },
+            "qual": {
+              "value": "D"
+            },
+            "bibcode": {
+              "value": "2009ApJ...690.1639B"
+            }
+          }
+        },
+        {
+          "band": "G",
+          "fields": {
+            "flux_err_prec": {
+              "value": 6
+            },
+            "flux_prec": {
+              "value": 6
+            },
+            "oidref": {
+              "value": 4903044
+            },
+            "filter": {
+              "value": "G"
+            },
+            "flux": {
+              "value": 20.448549270629883
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.005721000023186207
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2020yCat.1350....0G"
+            }
+          }
+        },
+        {
+          "band": "u",
+          "fields": {
+            "flux_err_prec": {
+              "value": 2
+            },
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 4903044
+            },
+            "filter": {
+              "value": "u"
+            },
+            "flux": {
+              "value": 21.469999313354492
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.12999999523162842
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2008ApJS..175..297A"
+            }
+          }
+        },
+        {
+          "band": "g",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 4903044
+            },
+            "filter": {
+              "value": "g"
+            },
+            "flux": {
+              "value": 20.378000259399414
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.019999999552965164
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2008ApJS..175..297A"
+            }
+          }
+        },
+        {
+          "band": "r",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 4903044
+            },
+            "filter": {
+              "value": "r"
+            },
+            "flux": {
+              "value": 20.56399917602539
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.027000000700354576
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2008ApJS..175..297A"
+            }
+          }
+        },
+        {
+          "band": "i",
+          "fields": {
+            "flux_err_prec": {
+              "value": 2
+            },
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 4903044
+            },
+            "filter": {
+              "value": "i"
+            },
+            "flux": {
+              "value": 20.65999984741211
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.03999999910593033
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2008ApJS..175..297A"
+            }
+          }
+        },
+        {
+          "band": "z",
+          "fields": {
+            "flux_err_prec": {
+              "value": 2
+            },
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 4903044
+            },
+            "filter": {
+              "value": "z"
+            },
+            "flux": {
+              "value": 20.860000610351562
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.17000000178813934
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2008ApJS..175..297A"
+            }
+          }
+        }
+      ]
+    },
     "queries": [
       {
         "query": {
           "method": "identifier",
-          "identifier": "SDSS J090744.99+024506.91",
+          "identifier": "SDSS J154556.10+243708.9",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "bf805a1a991a9c05914225e1772d7bda15e21465f66f994b443f01c34d701736",
-        "queried_at": "2026-10-24T04:44:04.932901+00:00",
+        "response_sha256": "b703fb9d6d77643c66fed1cdb615a6b35acc140eaa5cb7150797278c19b6f5ae",
+        "queried_at": "2026-10-25T13:17:23.665024+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0808.2469v2#/stars/19",
+            "original_identifier": {
+              "value": "SDSS J154556.10+243708.94",
+              "evidence": [
+                {
+                  "location": "I:p6-b0"
+                },
+                {
+                  "location": "T:p7-b3",
+                  "quote": "J154556.10+243708.94"
+                }
+              ]
+            },
+            "derivation": "sdss_standard_truncation"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J154556.10+243708.94",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "b6abbeccbce135c7f57f4a6fd335851b2ac6f473f582582358d74021077e7158",
+        "queried_at": "2026-10-25T12:04:22.103225+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0808.2469v2#/stars/19",
+            "original_identifier": {
+              "value": "SDSS J154556.10+243708.94",
+              "evidence": [
+                {
+                  "location": "I:p6-b0"
+                },
+                {
+                  "location": "T:p7-b3",
+                  "quote": "J154556.10+243708.94"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J1546+2437",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "819c78694a2786a2956042e9e9c5463736013ad5e2f34d3029fd3c47bd7c4510",
+        "queried_at": "2026-10-25T12:06:35.588003+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0910.3260v1#/stars/2",
+            "original_identifier": {
+              "value": "SDSS J1546+2437",
+              "evidence": [
+                {
+                  "location": "T:p5-b1",
+                  "quote": "two of them (SDSS J1403+1450 and SDSS\nJ1546+2437) are within"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      }
+    ],
+    "matches": [
+      {
+        "main_id": "SDSS J154556.09+243708.9",
+        "method": "identifier",
+        "identifier": "SDSS J154556.10+243708.9",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
       }
     ]
   }

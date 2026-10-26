@@ -1,103 +1,168 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000117",
-  "display_name": "HVS6",
+  "display_name": "NHCa",
   "sources": {
-    "1203.3543v1": {
-      "title": "MMT Hypervelocity Star Survey. II. Five New Unbound Stars",
+    "1501.07824v1": {
+      "title": "Nearby Low-Mass Hypervelocity Stars",
       "authors": [
-        "Warren R. Brown",
-        "Margaret J. Geller",
-        "Scott J. Kenyon"
+        "Yanqiong Zhang",
+        "Martin C. Smith",
+        "Jeffrey L. Carlin"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1203.3543v1",
+      "pdf_url": "https://arxiv.org/pdf/1501.07824v1",
       "records": [
-        "/stars/5"
+        "/stars/0"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS6",
+      "value": "NHCa",
       "evidence": [
         {
-          "location": "I:p5-b0"
-        }
-      ],
-      "source": "1203.3543v1"
-    },
-    {
-      "value": "SDSS J110557.45+093439.47",
-      "evidence": [
+          "location": "T:p3-b4",
+          "quote": "NHCa"
+        },
         {
-          "location": "I:p5-b0"
+          "location": "I:p3-b4"
         }
       ],
-      "source": "1203.3543v1"
+      "source": "1501.07824v1"
     }
   ],
   "contribution_types": [
     {
-      "value": "follow_up",
+      "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b10",
-          "quote": "we reported the discovery of 14 unbound HVSs"
+          "location": "T:p2-b5",
+          "quote": "all four candidates have significant probabilities that they are not bound to the Milky Way."
         },
         {
-          "location": "I:p5-b0"
+          "location": "I:p4-b1"
+        },
+        {
+          "location": "T:p4-b3",
+          "quote": "we have presented a sample of candidate hypervelocity stars that may be unbound from the Milky Way."
         }
       ],
-      "source": "1203.3543v1"
+      "source": "1501.07824v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "radial_velocity",
+      "quantity": "proper_motion_ra",
       "values": [
         {
-          "value": "626",
-          "unit": "km/s",
-          "condition": "Heliocentric radial velocity (v_odot) from MMT Blue Channel spectroscopy; tabulated as HVS6 in Table 1",
+          "value": "99.92",
+          "error": "0.65",
+          "unit": "mas/yr",
+          "condition": "Proper motion in right ascension, μ_α cos δ, from Table 1.",
           "evidence": [
             {
-              "location": "T:p5-b0",
-              "quote": "HVS6</td><td>626</td><td>511</td><td>18.97</td><td>+0.10</td><td>61</td>"
+              "location": "T:p3-b4",
+              "quote": "NHCa 99.92 ± 0.65 -166.12 ± 0.65 0.6 -439.2 ± 1.4 501 ± 54"
             },
             {
-              "location": "T:p6-b0",
-              "quote": "HVS number, heliocentric radial velocityv _ { \\odot } ., minimum"
-            },
-            {
-              "location": "I:p5-b0"
+              "location": "I:p3-b4"
             }
           ],
-          "source": "1203.3543v1"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "99.92",
+            "error": "0.65",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "galactocentric_radius",
+      "quantity": "proper_motion_dec",
       "values": [
         {
-          "value": "61",
-          "unit": "kpc",
-          "condition": "Galactocentric distance R (R_GC) derived from Girardi et al. (2002, 2004) main-sequence distance estimate, assuming the Sun is 8 kpc from the Galactic center",
+          "value": "-166.12",
+          "error": "0.65",
+          "unit": "mas/yr",
+          "condition": "Proper motion in declination, μ_δ, from Table 1.",
           "evidence": [
             {
-              "location": "T:p5-b0",
-              "quote": "HVS6</td><td>626</td><td>511</td><td>18.97</td><td>+0.10</td><td>61</td>"
+              "location": "T:p3-b4",
+              "quote": "NHCa 99.92 ± 0.65 -166.12 ± 0.65 0.6 -439.2 ± 1.4 501 ± 54"
             },
             {
-              "location": "T:p4-b7",
-              "quote": "We then calculate heliocentric distances using de-reddened apparent magnitudes, and convert to Galactocentric distances R assuming that the Sun is 8 kpc from the Galactic center."
-            },
-            {
-              "location": "I:p5-b0"
+              "location": "I:p3-b4"
             }
           ],
-          "source": "1203.3543v1"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-166.12",
+            "error": "0.65",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "0.6",
+          "unit": "kpc",
+          "condition": "Photometric distance calculated assuming [Fe/H] = -1.5 dex.",
+          "evidence": [
+            {
+              "location": "T:p3-b4",
+              "quote": "NHCa 99.92 ± 0.65 -166.12 ± 0.65 0.6 -439.2 ± 1.4 501 ± 54"
+            },
+            {
+              "location": "T:p3-b4",
+              "quote": "∗Distance calculated assuming [Fe/H] = -1.5 dex."
+            },
+            {
+              "location": "I:p3-b4"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "0.6",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "radial_velocity",
+      "values": [
+        {
+          "value": "-439.2",
+          "error": "1.4",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity from Table 1.",
+          "evidence": [
+            {
+              "location": "T:p3-b4",
+              "quote": "NHCa 99.92 ± 0.65 -166.12 ± 0.65 0.6 -439.2 ± 1.4 501 ± 54"
+            },
+            {
+              "location": "I:p3-b4"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-439.2",
+            "error": "1.4",
+            "approximate": false
+          }
         }
       ]
     },
@@ -105,38 +170,143 @@
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "lower_bound": "511",
+          "value": "501",
+          "error": "54",
           "unit": "km/s",
-          "condition": "Minimum Galactic rest-frame velocity v_rf (radial component only, computed with Equation 1); explicitly a lower limit to the true three-dimensional velocity of the star",
+          "condition": "Total velocity in the Galactic rest frame, with distance calculated assuming [Fe/H] = -1.5 dex.",
           "evidence": [
             {
-              "location": "T:p5-b0",
-              "quote": "HVS6</td><td>626</td><td>511</td><td>18.97</td><td>+0.10</td><td>61</td>"
+              "location": "T:p3-b4",
+              "quote": "NHCa 99.92 ± 0.65 -166.12 ± 0.65 0.6 -439.2 ± 1.4 501 ± 54"
             },
             {
-              "location": "T:p4-b2",
-              "quote": "We note thatv _ {rf} represents the radial component of velocity in the Galactic rest frame, and is thus a lower limit to the true velocity of any HVS."
+              "location": "T:p3-b4",
+              "quote": "† In the Galactic rest frame."
             },
             {
-              "location": "I:p5-b0"
+              "location": "I:p3-b4"
             }
           ],
-          "source": "1203.3543v1"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "501",
+            "error": "54",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "4.3",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc, assuming [Fe/H] = -2.0 dex.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "NHCa 4.3 % 27.5 % 77.8 % 98.7 %"
+            },
+            {
+              "location": "I:p4-b1"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.043",
+            "approximate": false
+          }
+        },
+        {
+          "value": "27.5",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc, assuming [Fe/H] = -1.5 dex.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "NHCa 4.3 % 27.5 % 77.8 % 98.7 %"
+            },
+            {
+              "location": "I:p4-b1"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.275",
+            "approximate": false
+          }
+        },
+        {
+          "value": "77.8",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc, assuming [Fe/H] = -1.0 dex.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "NHCa 4.3 % 27.5 % 77.8 % 98.7 %"
+            },
+            {
+              "location": "I:p4-b1"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.778",
+            "approximate": false
+          }
+        },
+        {
+          "value": "98.7",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc, assuming [Fe/H] = -0.5 dex.",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "NHCa 4.3 % 27.5 % 77.8 % 98.7 %"
+            },
+            {
+              "location": "I:p4-b1"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.987",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_found",
-    "reason": "No candidate matched the requested identifiers or radius.",
-    "last_queried_at": "2026-10-24T04:52:19.581520+00:00"
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000117_provenance.json",
-    "sha256": "80307145470f9f70133671f2c2dc036868b3194f6c8efd403913b4095da696e4"
+    "sha256": "cc542b638093b207478c32623cdf5c4631e239b8710164669a13cb4f1a3db561"
   },
   "warnings": [
-    "1203.3543v1#/stars/5/quantities/1/values/0/evidence/1: quote audit unknown at T:p4-b7; check the paper evidence.",
-    "1203.3543v1#/stars/5/quantities/2/values/0/evidence/1: quote audit unknown at T:p4-b2; check the paper evidence."
+    "1501.07824v1#/stars/0/quantities/0/values/0/evidence/0: quote audit unknown at T:p3-b4; check the paper evidence.",
+    "1501.07824v1#/stars/0/quantities/1/values/0/evidence/0: quote audit unknown at T:p3-b4; check the paper evidence.",
+    "1501.07824v1#/stars/0/quantities/2/values/0/evidence/0: quote audit unknown at T:p3-b4; check the paper evidence.",
+    "1501.07824v1#/stars/0/quantities/2/values/0/evidence/1: quote audit unknown at T:p3-b4; check the paper evidence.",
+    "1501.07824v1#/stars/0/quantities/3/values/0/evidence/0: quote audit unknown at T:p3-b4; check the paper evidence.",
+    "1501.07824v1#/stars/0/quantities/4/values/0/evidence/0: quote audit unknown at T:p3-b4; check the paper evidence.",
+    "1501.07824v1#/stars/0/quantities/4/values/0/evidence/1: quote audit unknown at T:p3-b4; check the paper evidence.",
+    "1501.07824v1#/stars/0/quantities/5/values/0/evidence/0: quote audit unknown at T:p4-b1; check the paper evidence.",
+    "1501.07824v1#/stars/0/quantities/5/values/1/evidence/0: quote audit unknown at T:p4-b1; check the paper evidence.",
+    "1501.07824v1#/stars/0/quantities/5/values/2/evidence/0: quote audit unknown at T:p4-b1; check the paper evidence.",
+    "1501.07824v1#/stars/0/quantities/5/values/3/evidence/0: quote audit unknown at T:p4-b1; check the paper evidence."
   ]
 }

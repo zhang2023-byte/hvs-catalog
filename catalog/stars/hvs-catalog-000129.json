@@ -1,32 +1,34 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000129",
-  "display_name": "HVS11",
+  "display_name": "P14 No. 17",
   "sources": {
-    "1302.1899v1": {
-      "title": "Variability of Hypervelocity Stars",
+    "1503.04164v1": {
+      "title": "Candidate hypervelocity stars of spectral type G and K revisited",
       "authors": [
-        "Idan Ginsburg",
-        "Warren R. Brown",
-        "Gary A. Wegner"
+        "E. Ziegerer",
+        "M. Volkert",
+        "U. Heber",
+        "A. Irrgang",
+        "B. T. Gaensicke",
+        "S. Geier"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1302.1899v1",
+      "pdf_url": "https://arxiv.org/pdf/1503.04164v1",
       "records": [
-        "/stars/8"
+        "/stars/16"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS11",
+      "value": "P14 No. 17",
       "evidence": [
         {
-          "location": "T:p2-b8",
-          "quote": "<tr><td>HVS11</td><td>7</td><td>No</td><td>-</td></tr>"
+          "location": "I:p3-b0"
         }
       ],
-      "source": "1302.1899v1"
+      "source": "1503.04164v1"
     }
   ],
   "contribution_types": [
@@ -34,29 +36,472 @@
       "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p1-b4",
-          "quote": "We present time-series photometry of 11 hypervelocity stars (HVSs) to constrain their nature."
+          "location": "T:p1-b13",
+          "quote": "20 candidates\nwere found likely to be unbound, four of which at 3 and six at\n2σ significance levels."
         },
         {
-          "location": "T:p1-b7",
-          "quote": "over 20 HVSs have been identified in the\nMilky Way"
+          "location": "T:p4-b5",
+          "quote": "We present a revised analysis of the 20 candidate HVSs"
         },
         {
-          "location": "T:p2-b8",
-          "quote": "<tr><td>HVS11</td><td>7</td><td>No</td><td>-</td></tr>"
+          "location": "I:p3-b0"
         }
       ],
-      "source": "1302.1899v1"
+      "source": "1503.04164v1"
     }
   ],
-  "quantities": [],
+  "quantities": [
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "12.5",
+          "error": "3.2",
+          "unit": "mas/yr",
+          "condition": "This work; proper motion from linear regression of positions over a ~60 yr baseline using background galaxies",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "12.5",
+            "error": "3.2",
+            "approximate": false
+          }
+        },
+        {
+          "value": "25.2",
+          "error": "2.5",
+          "unit": "mas/yr",
+          "condition": "SDSS proper motion as used by P14",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "25.2",
+            "error": "2.5",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "13.0",
+          "error": "3.5",
+          "unit": "mas/yr",
+          "condition": "This work; proper motion from linear regression of positions over a ~60 yr baseline using background galaxies",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "13.0",
+            "error": "3.5",
+            "approximate": false
+          }
+        },
+        {
+          "value": "42.1",
+          "error": "2.5",
+          "unit": "mas/yr",
+          "condition": "SDSS proper motion as used by P14",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "42.1",
+            "error": "2.5",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "346.8",
+          "error": "30.9",
+          "unit": "km/s",
+          "condition": "Model II of Irrgang et al. (2013); present-day Galactic rest-frame velocity based on this work's proper motions (v_GRF,1)",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "346.8",
+            "error": "30.9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "603.0",
+          "error": "37.3",
+          "unit": "km/s",
+          "condition": "Model II of Irrgang et al. (2013); present-day Galactic rest-frame velocity based on SDSS proper motions (v_GRF,2)",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "603.0",
+            "error": "37.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "348.2",
+          "error": "30.9",
+          "unit": "km/s",
+          "condition": "Model I of Irrgang et al. (2013); present-day Galactic rest-frame velocity based on this work's proper motions (v_GRF,1)",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "348.2",
+            "error": "30.9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "604.4",
+          "error": "37.3",
+          "unit": "km/s",
+          "condition": "Model I of Irrgang et al. (2013); present-day Galactic rest-frame velocity based on SDSS proper motions (v_GRF,2)",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "604.4",
+            "error": "37.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "346.2",
+          "error": "30.9",
+          "unit": "km/s",
+          "condition": "Model III of Irrgang et al. (2013); present-day Galactic rest-frame velocity based on this work's proper motions (v_GRF,1)",
+          "evidence": [
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "346.2",
+            "error": "30.9",
+            "approximate": false
+          }
+        },
+        {
+          "value": "602.5",
+          "error": "37.3",
+          "unit": "km/s",
+          "condition": "Model III of Irrgang et al. (2013); present-day Galactic rest-frame velocity based on SDSS proper motions (v_GRF,2)",
+          "evidence": [
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "602.5",
+            "error": "37.3",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "10.3",
+          "unit": "kpc",
+          "condition": "Model II; average distance to the Galactic center at the 3σ level of the disk passage using new proper motions (r)",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "mismatch",
+          "attribution_reason": "Position where the backward orbit crosses the disk, not the present 3D Galactocentric distance; r/r_min as defined in Tables 1–3 on pp.4–6 of the fixed PDF.",
+          "standard": {
+            "unit": "kpc",
+            "value": "10.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "9.8",
+          "unit": "kpc",
+          "condition": "Model II; minimum distance to the Galactic center at the 3σ level of the disk passage using new proper motions (r_min)",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "mismatch",
+          "attribution_reason": "Position where the backward orbit crosses the disk, not the present 3D Galactocentric distance; r/r_min as defined in Tables 1–3 on pp.4–6 of the fixed PDF.",
+          "standard": {
+            "unit": "kpc",
+            "value": "9.8",
+            "approximate": false
+          }
+        },
+        {
+          "value": "10.3",
+          "unit": "kpc",
+          "condition": "Model I; average distance to the Galactic center at the 3σ level of the disk passage using new proper motions (r)",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "mismatch",
+          "attribution_reason": "Position where the backward orbit crosses the disk, not the present 3D Galactocentric distance; r/r_min as defined in Tables 1–3 on pp.4–6 of the fixed PDF.",
+          "standard": {
+            "unit": "kpc",
+            "value": "10.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "9.8",
+          "unit": "kpc",
+          "condition": "Model I; minimum distance to the Galactic center at the 3σ level of the disk passage using new proper motions (r_min)",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "mismatch",
+          "attribution_reason": "Position where the backward orbit crosses the disk, not the present 3D Galactocentric distance; r/r_min as defined in Tables 1–3 on pp.4–6 of the fixed PDF.",
+          "standard": {
+            "unit": "kpc",
+            "value": "9.8",
+            "approximate": false
+          }
+        },
+        {
+          "value": "10.3",
+          "unit": "kpc",
+          "condition": "Model III; average distance to the Galactic center at the 3σ level of the disk passage using new proper motions (r)",
+          "evidence": [
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "mismatch",
+          "attribution_reason": "Position where the backward orbit crosses the disk, not the present 3D Galactocentric distance; r/r_min as defined in Tables 1–3 on pp.4–6 of the fixed PDF.",
+          "standard": {
+            "unit": "kpc",
+            "value": "10.3",
+            "approximate": false
+          }
+        },
+        {
+          "value": "9.8",
+          "unit": "kpc",
+          "condition": "Model III; minimum distance to the Galactic center at the 3σ level of the disk passage using new proper motions (r_min)",
+          "evidence": [
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "mismatch",
+          "attribution_reason": "Position where the backward orbit crosses the disk, not the present 3D Galactocentric distance; r/r_min as defined in Tables 1–3 on pp.4–6 of the fixed PDF.",
+          "standard": {
+            "unit": "kpc",
+            "value": "9.8",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "bound_probability",
+      "values": [
+        {
+          "value": "20.01",
+          "unit": "%",
+          "condition": "As listed by P14 using P14/SDSS proper motions",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "cited",
+          "attribution_reason": "Probability column of the original P14 paper in Tables 1–3, only compared with this paper's probabilities recalculated from old and new proper motions.",
+          "standard": {
+            "unit": "1",
+            "value": "0.2001",
+            "approximate": false
+          }
+        },
+        {
+          "value": "44.4",
+          "unit": "%",
+          "condition": "Model I of Irrgang et al. (2013) using SDSS proper motions",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.444",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "Model I of Irrgang et al. (2013) using this work's revised proper motions",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        },
+        {
+          "value": "10.9",
+          "unit": "%",
+          "condition": "Model II of Irrgang et al. (2013) using SDSS proper motions",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.109",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "Model II of Irrgang et al. (2013) using this work's revised proper motions",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100.0",
+          "unit": "%",
+          "condition": "Model III of Irrgang et al. (2013) using SDSS proper motions",
+          "evidence": [
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.000",
+            "approximate": false
+          }
+        },
+        {
+          "value": "100",
+          "unit": "%",
+          "condition": "Model III of Irrgang et al. (2013) using this work's revised proper motions",
+          "evidence": [
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.00",
+            "approximate": false
+          }
+        }
+      ]
+    }
+  ],
   "simbad": {
     "status": "not_queried",
     "reason": "No usable query or a required frozen response is missing."
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000129_provenance.json",
-    "sha256": "869a25f95c412ad178ddc1e63e8167017013046a37d26340e6eb428c9905ea0c"
+    "sha256": "4dd7055e19f1039fea2fc77efb368cec08ca5128bbeb0ce5d9dabe024d176d83"
   },
   "warnings": []
 }

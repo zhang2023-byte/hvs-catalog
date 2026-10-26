@@ -1,40 +1,37 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000495",
-  "display_name": "Gaia DR3 4119759641518088960",
+  "display_name": "ID 17 (2401.05630)",
   "sources": {
-    "1907.06348v1": {
-      "title": "New nearby hypervelocity stars and their spatial distribution from Gaia DR2",
+    "2401.05630v1": {
+      "title": "New candidate hypervelocity red clump stars in the inner Galactic bulge",
       "authors": [
-        "Cuihua Du",
-        "Hefan Li",
-        "Yepeng Yan",
-        "Heidi Jo Newberg",
-        "Jianrong Shi",
-        "Jun Ma",
-        "Yuqin Chen",
-        "Zhenyu Wu"
+        "A. Luna",
+        "T. Marchetti",
+        "M. Rejkuba",
+        "N. W. C. Leigh",
+        "J. Alonso-García",
+        "A. Valenzuela Navarro",
+        "D. Minniti",
+        "L. C. Smith"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1907.06348v1",
+      "pdf_url": "https://arxiv.org/pdf/2401.05630v1",
       "records": [
-        "/stars/6"
+        "/stars/20"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "Gaia DR2 4119759641435130624",
+      "value": "ID 17",
       "evidence": [
         {
-          "location": "I:p9-b1"
-        },
-        {
-          "location": "T:p9-b1",
-          "quote": "TABLE 2 HVS identified from tangential velocity selection of Gaia DR2 5D information"
+          "location": "T:p16-b0",
+          "quote": "<td>17</td><td>17h41m30.29s</td><td>-29d16m18.41s</td>"
         }
       ],
-      "source": "1907.06348v1"
+      "source": "2401.05630v1"
     }
   ],
   "contribution_types": [
@@ -42,69 +39,71 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b5",
-          "quote": "28 nearby (less than 6 kpc) late-type Hypervelocity\nstars (HVSs) with over 99% possibility of unbound are discovered."
+          "location": "T:p1-b13",
+          "quote": "In total, we found 69 candidate HVSs pointing away from the Galactic centre with transverse velocities larger than the local escape velocity."
         },
         {
-          "location": "T:p9-b1",
-          "quote": "TABLE 2 HVS identified from tangential velocity selection of Gaia DR2 5D information"
+          "location": "T:p9-b10",
+          "quote": "65 were detected only in the VIRAC2 sample"
+        },
+        {
+          "location": "T:p17-b2",
+          "quote": "<td>17</td><td>16.33</td><td>11.5</td><td>3.39</td><td>899.95</td>"
         }
       ],
-      "source": "1907.06348v1"
+      "source": "2401.05630v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "parallax",
+      "quantity": "ra",
       "values": [
         {
-          "value": "4.807",
-          "error": "0.676",
-          "unit": "mas",
-          "condition": "Gaia DR2 parallax reported in Table 2 for the 5D HVS sample.",
+          "value": "17h41m30.29s",
+          "unit": "hms",
+          "condition": "VIRAC2-only candidate HVS (no Gaia DR3 counterpart) whose proper motion points away from 0.5 deg around the GC; equatorial coordinates from Table B1 (ID 17)",
           "evidence": [
             {
-              "location": "T:p9-b1",
-              "quote": "4119759641435130624</td><td>(7.04, 5.46)</td><td>4.807 ± 0.676</td>"
+              "location": "T:p16-b0",
+              "quote": "17</td><td>17h41m30.29s</td><td>-29d16m18.41s</td><td>-0.7574</td><td>0.589</td><td>15.17</td><td>4.22</td>"
+            },
+            {
+              "location": "I:p16-b0"
             }
           ],
-          "source": "1907.06348v1"
+          "source": "2401.05630v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "265.3762083333333333333333333",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "proper_motion_ra",
+      "quantity": "dec",
       "values": [
         {
-          "value": "285.92",
-          "error": "1.87",
-          "unit": "mas/yr",
-          "condition": "Gaia DR2 proper motion in right ascension, μ_α*, for the 5D HVS sample.",
+          "value": "-29d16m18.41s",
+          "unit": "dms",
+          "condition": "VIRAC2-only candidate HVS (no Gaia DR3 counterpart) whose proper motion points away from 0.5 deg around the GC; equatorial coordinates from Table B1 (ID 17)",
           "evidence": [
             {
-              "location": "T:p9-b1",
-              "quote": "4.807 ± 0.676</td><td>285.92 ± 1.87</td><td>244.62 ± 1.66</td>"
-            }
-          ],
-          "source": "1907.06348v1"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_dec",
-      "values": [
-        {
-          "value": "244.62",
-          "error": "1.66",
-          "unit": "mas/yr",
-          "condition": "Gaia DR2 proper motion in declination, μ_δ, for the 5D HVS sample.",
-          "evidence": [
+              "location": "T:p16-b0",
+              "quote": "17</td><td>17h41m30.29s</td><td>-29d16m18.41s</td><td>-0.7574</td><td>0.589</td><td>15.17</td><td>4.22</td>"
+            },
             {
-              "location": "T:p9-b1",
-              "quote": "285.92 ± 1.87</td><td>244.62 ± 1.66</td>"
+              "location": "I:p16-b0"
             }
           ],
-          "source": "1907.06348v1"
+          "source": "2401.05630v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "-29.27178055555555555555555556",
+            "approximate": false
+          }
         }
       ]
     },
@@ -112,18 +111,25 @@
       "quantity": "distance",
       "values": [
         {
-          "value": "0.24",
-          "lower_error": "0.04",
-          "upper_error": "0.06",
+          "value": "11.5",
           "unit": "kpc",
-          "condition": "Heliocentric distance from the Bayesian distance estimate using Gaia DR2 parallax and proper motion (5D information).",
+          "condition": "Heliocentric distance derived from the red clump calibration (Table B2, ID 17)",
           "evidence": [
             {
-              "location": "T:p9-b1",
-              "quote": "244.62 ± 1.66</td><td>0.24<eq>^{+0.06}_{-0.04}</eq></td><td>7.96<eq>^{+0.03}_{-0.05}</eq></td><td>663<eq>^{+98}_{-62}</eq></td>"
+              "location": "T:p17-b2",
+              "quote": "17</td><td>16.33</td><td>11.5</td><td>3.39</td><td>899.95</td><td>854837</td><td>0.122</td><td>1.0</td>"
+            },
+            {
+              "location": "I:p17-b2"
             }
           ],
-          "source": "1907.06348v1"
+          "source": "2401.05630v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "11.5",
+            "approximate": false
+          }
         }
       ]
     },
@@ -131,37 +137,25 @@
       "quantity": "galactocentric_radius",
       "values": [
         {
-          "value": "7.96",
-          "lower_error": "0.05",
-          "upper_error": "0.03",
+          "value": "3.39",
           "unit": "kpc",
-          "condition": "Galactocentric distance r_gc computed from the adopted 5D position and distance.",
+          "condition": "Three-dimensional distance to the GC (r_GC) computed from the heliocentric distance and the adopted GC parameters (Table B2, ID 17)",
           "evidence": [
             {
-              "location": "T:p9-b1",
-              "quote": "0.24<eq>^{+0.06}_{-0.04}</eq></td><td>7.96<eq>^{+0.03}_{-0.05}</eq></td><td>663<eq>^{+98}_{-62}</eq></td>"
-            }
-          ],
-          "source": "1907.06348v1"
-        }
-      ]
-    },
-    {
-      "quantity": "galactic_rest_frame_velocity",
-      "values": [
-        {
-          "value": "663",
-          "lower_error": "62",
-          "upper_error": "98",
-          "unit": "km/s",
-          "condition": "Galactic rest-frame speed from Gaia DR2 5D information (parallax and proper motion; tangential velocity).",
-          "evidence": [
+              "location": "T:p17-b2",
+              "quote": "17</td><td>16.33</td><td>11.5</td><td>3.39</td><td>899.95</td><td>854837</td><td>0.122</td><td>1.0</td>"
+            },
             {
-              "location": "T:p9-b1",
-              "quote": "7.96<eq>^{+0.03}_{-0.05}</eq></td><td>663<eq>^{+98}_{-62}</eq></td>"
+              "location": "I:p17-b2"
             }
           ],
-          "source": "1907.06348v1"
+          "source": "2401.05630v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "3.39",
+            "approximate": false
+          }
         }
       ]
     },
@@ -169,82 +163,43 @@
       "quantity": "unbound_probability",
       "values": [
         {
-          "lower_bound": "0.99",
-          "lower_inclusive": false,
+          "value": "1.0",
           "unit": "dimensionless",
-          "condition": "Gaia DR2 5D HVS sample; Table 2 consists of stars with P_ub > 0.99.",
+          "condition": "P = probability of exceeding the escape velocity, computed as V_tan,16th(r_GC)/V_esc(r_GC) with V_esc from the galpy Irrgang13III potential (Table B2, ID 17)",
           "evidence": [
             {
-              "location": "T:p3-b17",
-              "quote": "Table 2 provides Gaia identifiers, position, parallaxes, proper motions, distances and the Galaxy’s velocity of HVSs with the probability of unboundP _ { \\mathrm { u b } } > 0 . { \\dot { 9 } } 9\nfrom Gaia DR2 5D information"
+              "location": "T:p17-b2",
+              "quote": "17</td><td>16.33</td><td>11.5</td><td>3.39</td><td>899.95</td><td>854837</td><td>0.122</td><td>1.0</td>"
+            },
+            {
+              "location": "T:p8-b2",
+              "quote": "and the probability (�) of exceeding the escape velocity, given by\nV _ { t a n , 1 6 ^ { \\mathrm { t h } } } ( r _ { G C } ) / V _ { e s c } ( r _ { G C } )"
+            },
+            {
+              "location": "I:p17-b2"
             }
           ],
-          "source": "1907.06348v1"
+          "source": "2401.05630v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "1.0",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "matched",
-    "method": "identifier",
-    "selected": {
-      "main_id": "Gaia DR3 4119759641518088960",
-      "aliases": [
-        "Gaia DR2 4119759641435130624",
-        "Gaia DR3 4119759641518088960"
-      ],
-      "object_type": "*",
-      "coordinates": {
-        "ra": {
-          "value": 265.3324979578746,
-          "unit": "deg"
-        },
-        "dec": {
-          "value": -20.086440100411668,
-          "unit": "deg"
-        },
-        "frame": "icrs",
-        "error_ellipse": {
-          "major": {
-            "value": 3.489300012588501,
-            "unit": "mas"
-          },
-          "minor": {
-            "value": 2.730600118637085,
-            "unit": "mas"
-          },
-          "angle": {
-            "value": 90,
-            "unit": "deg"
-          }
-        },
-        "quality": "C",
-        "bibcode": "2020yCat.1350....0G",
-        "wavelength": "O"
-      },
-      "photometry": [
-        {
-          "band": "G",
-          "value": 20.009065628051758,
-          "error": 0.028162000700831413,
-          "system": "V",
-          "bibcode": "2020yCat.1350....0G",
-          "quality": "C"
-        }
-      ]
-    },
-    "match": {
-      "identifiers": [
-        "Gaia DR2 4119759641435130624"
-      ]
-    },
-    "last_queried_at": "2026-10-24T04:54:21.689299+00:00"
+    "status": "not_found",
+    "reason": "No candidate matched the requested identifiers or radius.",
+    "last_queried_at": "2026-10-25T11:59:53.461045+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000495_provenance.json",
-    "sha256": "3c1150b49cd92c4c3257d675eed1aae745709b943c34521d526178cffd5111ff"
+    "sha256": "df9c22e4bf80aed14aa835f00fafd3d16703fe6dbac62044bcb220c34a2be615"
   },
   "warnings": [
-    "1907.06348v1#/stars/6/quantities/6/values/0/evidence/0: quote audit unknown at T:p3-b17; check the paper evidence."
+    "Coordinate reference frame was not reported; ICRS was assumed for matching."
   ]
 }

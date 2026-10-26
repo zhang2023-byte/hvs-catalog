@@ -1,63 +1,159 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000401",
-  "associations": [],
+  "associations": [
+    {
+      "method": "coordinates",
+      "left": "2012.02123v2#/stars/20",
+      "right": "2401.02017v1#/stars/5",
+      "details": {
+        "separation_arcsec": 1.5288558720119962,
+        "threshold_arcsec": 5.0,
+        "left_position": {
+          "ra_deg": 236.994,
+          "dec_deg": -20.512,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "236.994",
+              "unit": "deg",
+              "condition": "Gaia EDR3 position from Table 5, the sample computed with the parallax zero-point correction.",
+              "evidence": [
+                {
+                  "location": "T:p12-b0",
+                  "quote": "<tr><td>6241679678390298880</td><td>(236.994, -20.512)</td><td>(349.46, 26.01)</td><td>0.103 ± 0.014</td><td>-9.69 ± 0.017</td><td>-11.065 ± 0.012</td><td>-304.986 ± 0.815</td><td>12.59</td><td>11410<eq>^{+2293}_{-1552}</eq></td><td>5691<eq>^{+1862}_{-1037}</eq></td><td>642<eq>^{+141}_{-89}</eq></td><td>0.22</td><td>0.73</td></tr>"
+                }
+              ]
+            },
+            {
+              "value": "-20.512",
+              "unit": "deg",
+              "condition": "Gaia EDR3 position from Table 5, the sample computed with the parallax zero-point correction.",
+              "evidence": [
+                {
+                  "location": "T:p12-b0",
+                  "quote": "<tr><td>6241679678390298880</td><td>(236.994, -20.512)</td><td>(349.46, 26.01)</td><td>0.103 ± 0.014</td><td>-9.69 ± 0.017</td><td>-11.065 ± 0.012</td><td>-304.986 ± 0.815</td><td>12.59</td><td>11410<eq>^{+2293}_{-1552}</eq></td><td>5691<eq>^{+1862}_{-1037}</eq></td><td>642<eq>^{+141}_{-89}</eq></td><td>0.22</td><td>0.73</td></tr>"
+                }
+              ]
+            }
+          ]
+        },
+        "right_position": {
+          "ra_deg": 236.9944,
+          "dec_deg": -20.5118,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "236.9944",
+              "unit": "deg",
+              "condition": "Gaia DR3 source 6241679678390298880; Table 2 basic parameters for the 9 unbound candidates",
+              "evidence": [
+                {
+                  "location": "I:p7-b1"
+                }
+              ]
+            },
+            {
+              "value": "-20.5118",
+              "unit": "deg",
+              "condition": "Gaia DR3 source 6241679678390298880; Table 2 basic parameters for the 9 unbound candidates",
+              "evidence": [
+                {
+                  "location": "I:p7-b1"
+                }
+              ]
+            }
+          ]
+        },
+        "coordinate_interpretations": {
+          "left": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          },
+          "right": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          }
+        },
+        "epoch_propagation": false
+      }
+    }
+  ],
   "simbad": {
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "UCAC4 232-006297",
+      "main_id": "UCAC2  23645344",
       "aliases": [
-        "2MASS J05303055-4342335",
-        "GALAH 150103003001240",
-        "Gaia DR2 4805658359403594624",
-        "Gaia DR3 4805658359403594624",
-        "SMSS J053030.56-434233.6",
-        "UCAC4 232-006297",
-        "WISE J053030.55-434233.6",
-        "WISEA J053030.56-434233.5"
+        "2MASS J15475866-2030423",
+        "DENIS J154758.6-203042",
+        "GALAH 170724002101061",
+        "Gaia DR2 6241679678390298880",
+        "Gaia DR3 6241679678390298880",
+        "PPMX J154758.6-203042",
+        "RAVE J154758.7-203043",
+        "TIC 71049013",
+        "UCAC2  23645344",
+        "UCAC3 139-173112",
+        "UCAC4 348-078463",
+        "UGCS J154758.65-203041.8",
+        "UGCS J154758.65-203042.4",
+        "UGCS J154758.71-203042.4",
+        "USNO-B1.0 0694-00331502",
+        "WISE J154758.66-203042.4",
+        "WISEA J154758.65-203042.4"
       ],
       "position": {
-        "ra_deg": 82.62731577446,
-        "dec_deg": -43.70930245699001,
+        "ra_deg": 236.99442372430997,
+        "dec_deg": -20.51179091071,
         "frame": "icrs",
         "equinox": null,
         "evidence": []
       },
       "fields": {
         "main_id": {
-          "value": "UCAC4 232-006297"
+          "value": "UCAC2  23645344"
         },
         "nbref": {
-          "value": 4
+          "value": 8
         },
         "otype": {
           "value": "Pe*"
         },
         "ra": {
-          "value": 82.62731577446,
+          "value": 236.99442372430997,
           "unit": "deg"
         },
         "ra_prec": {
           "value": 14
         },
         "dec": {
-          "value": -43.70930245699001,
+          "value": -20.51179091071,
           "unit": "deg"
         },
         "dec_prec": {
           "value": 14
         },
         "coo_err_maj": {
-          "value": 0.009600000455975533,
+          "value": 0.012500000186264515,
           "unit": "mas"
         },
         "coo_err_maj_prec": {
           "value": 4
         },
         "coo_err_min": {
-          "value": 0.010700000450015068,
+          "value": 0.00930000003427267,
           "unit": "mas"
         },
         "coo_err_min_prec": {
@@ -77,31 +173,31 @@
           "value": "2020yCat.1350....0G"
         },
         "hpx": {
-          "value": 8741441
+          "value": 11353549
         },
         "pmra": {
-          "value": 6.69,
+          "value": -9.69,
           "unit": "mas / yr"
         },
         "pmra_prec": {
           "value": 3
         },
         "pmdec": {
-          "value": -9.445,
+          "value": -11.065,
           "unit": "mas / yr"
         },
         "pmdec_prec": {
           "value": 3
         },
         "pm_err_maj": {
-          "value": 0.012000000104308128,
+          "value": 0.017000000923871994,
           "unit": "mas / yr"
         },
         "pm_err_maj_prec": {
           "value": 3
         },
         "pm_err_min": {
-          "value": 0.014000000432133675,
+          "value": 0.012000000104308128,
           "unit": "mas / yr"
         },
         "pm_err_min_prec": {
@@ -118,14 +214,14 @@
           "value": "2020yCat.1350....0G"
         },
         "plx_value": {
-          "value": 0.0921,
+          "value": 0.0723,
           "unit": "mas"
         },
         "plx_prec": {
           "value": 4
         },
         "plx_err": {
-          "value": 0.01080000028014183,
+          "value": 0.014100000262260437,
           "unit": "mas"
         },
         "plx_err_prec": {
@@ -141,20 +237,20 @@
           "value": "v"
         },
         "rvz_radvel": {
-          "value": 69.68673706,
+          "value": -304.748993,
           "unit": "km / s"
         },
         "rvz_radvel_prec": {
-          "value": 8
+          "value": 6
         },
         "rvz_redshift": {
-          "value": 0.00023247695671413382
+          "value": -0.001016017076043152
         },
         "rvz_redshift_prec": {
           "value": 6
         },
         "rvz_err": {
-          "value": 0.1117589995265007,
+          "value": 0.21400000154972076,
           "unit": "km / s"
         },
         "rvz_err_prec": {
@@ -167,7 +263,7 @@
           "value": "A"
         },
         "rvz_bibcode": {
-          "value": "2020ApJ...894...34D"
+          "value": "2021MNRAS.506..150B"
         },
         "vlsr_wavelength": {
           "value": ""
@@ -203,7 +299,7 @@
           "value": ""
         },
         "update_date": {
-          "value": "2023-05-17"
+          "value": "2026-08-31"
         },
         "otype_txt": {
           "value": "Pe*"
@@ -214,134 +310,6 @@
       },
       "photometry": [
         {
-          "band": "G",
-          "fields": {
-            "flux_err_prec": {
-              "value": 6
-            },
-            "flux_prec": {
-              "value": 6
-            },
-            "oidref": {
-              "value": 14958653
-            },
-            "filter": {
-              "value": "G"
-            },
-            "flux": {
-              "value": 13.449877738952637
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.0027600000612437725
-            },
-            "qual": {
-              "value": "C"
-            },
-            "bibcode": {
-              "value": "2020yCat.1350....0G"
-            }
-          }
-        },
-        {
-          "band": "R",
-          "fields": {
-            "flux_err_prec": {
-              "value": 2
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 14958653
-            },
-            "filter": {
-              "value": "R"
-            },
-            "flux": {
-              "value": 13.553999900817871
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.10000000149011612
-            },
-            "qual": {
-              "value": "E"
-            },
-            "bibcode": {
-              "value": "2012yCat.1322....0Z"
-            }
-          }
-        },
-        {
-          "band": "B",
-          "fields": {
-            "flux_err_prec": {
-              "value": 2
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 14958653
-            },
-            "filter": {
-              "value": "B"
-            },
-            "flux": {
-              "value": 14.687000274658203
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.03999999910593033
-            },
-            "qual": {
-              "value": "D"
-            },
-            "bibcode": {
-              "value": "2012yCat.1322....0Z"
-            }
-          }
-        },
-        {
-          "band": "V",
-          "fields": {
-            "flux_err_prec": {
-              "value": 2
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 14958653
-            },
-            "filter": {
-              "value": "V"
-            },
-            "flux": {
-              "value": 13.718999862670898
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.05000000074505806
-            },
-            "qual": {
-              "value": "D"
-            },
-            "bibcode": {
-              "value": "2012yCat.1322....0Z"
-            }
-          }
-        },
-        {
           "band": "J",
           "fields": {
             "flux_err_prec": {
@@ -351,51 +319,19 @@
               "value": 3
             },
             "oidref": {
-              "value": 14958653
+              "value": 8963307
             },
             "filter": {
               "value": "J"
             },
             "flux": {
-              "value": 11.892000198364258
+              "value": 10.657999992370605
             },
             "system": {
               "value": "V"
             },
             "flux_err": {
-              "value": 0.027000000700354576
-            },
-            "qual": {
-              "value": "C"
-            },
-            "bibcode": {
-              "value": "2003yCat.2246....0C"
-            }
-          }
-        },
-        {
-          "band": "H",
-          "fields": {
-            "flux_err_prec": {
-              "value": 3
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 14958653
-            },
-            "filter": {
-              "value": "H"
-            },
-            "flux": {
-              "value": 11.28600025177002
-            },
-            "system": {
-              "value": "V"
-            },
-            "flux_err": {
-              "value": 0.02199999988079071
+              "value": 0.023000000044703484
             },
             "qual": {
               "value": "C"
@@ -415,13 +351,13 @@
               "value": 3
             },
             "oidref": {
-              "value": 14958653
+              "value": 8963307
             },
             "filter": {
               "value": "K"
             },
             "flux": {
-              "value": 11.244000434875488
+              "value": 9.822999954223633
             },
             "system": {
               "value": "V"
@@ -438,7 +374,65 @@
           }
         },
         {
-          "band": "u",
+          "band": "R",
+          "fields": {
+            "flux_err_prec": {
+              "value": 2
+            },
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 8963307
+            },
+            "filter": {
+              "value": "R"
+            },
+            "flux": {
+              "value": 12.850000381469727
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.07999999821186066
+            },
+            "qual": {
+              "value": "E"
+            },
+            "bibcode": {
+              "value": "2009yCat.1315....0Z"
+            }
+          }
+        },
+        {
+          "band": "r",
+          "fields": {
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 8963307
+            },
+            "filter": {
+              "value": "r"
+            },
+            "flux": {
+              "value": 12.630000114440918
+            },
+            "system": {
+              "value": "A"
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2006yCat.1304....0C"
+            }
+          }
+        },
+        {
+          "band": "H",
           "fields": {
             "flux_err_prec": {
               "value": 3
@@ -447,25 +441,89 @@
               "value": 3
             },
             "oidref": {
-              "value": 14958653
+              "value": 8963307
             },
             "filter": {
-              "value": "u"
+              "value": "H"
             },
             "flux": {
-              "value": 16.020999908447266
+              "value": 11.880000114440918
             },
             "system": {
-              "value": "A"
+              "value": "V"
             },
             "flux_err": {
-              "value": 0.012000000104308128
+              "value": 0.0010000000474974513
             },
             "qual": {
               "value": "C"
             },
             "bibcode": {
-              "value": "2018PASA...35...10W"
+              "value": "2013yCat.2319....0L"
+            }
+          }
+        },
+        {
+          "band": "B",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 8963307
+            },
+            "filter": {
+              "value": "B"
+            },
+            "flux": {
+              "value": 14.342000007629395
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.02800000086426735
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2014AJ....148...81M"
+            }
+          }
+        },
+        {
+          "band": "V",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 8963307
+            },
+            "filter": {
+              "value": "V"
+            },
+            "flux": {
+              "value": 13.048999786376953
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.052000001072883606
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2014AJ....148...81M"
             }
           }
         },
@@ -479,57 +537,25 @@
               "value": 3
             },
             "oidref": {
-              "value": 14958653
+              "value": 8963307
             },
             "filter": {
               "value": "g"
             },
             "flux": {
-              "value": 13.970000267028809
+              "value": 13.708000183105469
             },
             "system": {
-              "value": "A"
+              "value": "V"
             },
             "flux_err": {
-              "value": 0.007000000216066837
+              "value": 0.04600000008940697
             },
             "qual": {
-              "value": "B"
+              "value": "C"
             },
             "bibcode": {
-              "value": "2018PASA...35...10W"
-            }
-          }
-        },
-        {
-          "band": "r",
-          "fields": {
-            "flux_err_prec": {
-              "value": 3
-            },
-            "flux_prec": {
-              "value": 3
-            },
-            "oidref": {
-              "value": 14958653
-            },
-            "filter": {
-              "value": "r"
-            },
-            "flux": {
-              "value": 13.46500015258789
-            },
-            "system": {
-              "value": "A"
-            },
-            "flux_err": {
-              "value": 0.007000000216066837
-            },
-            "qual": {
-              "value": "B"
-            },
-            "bibcode": {
-              "value": "2018PASA...35...10W"
+              "value": "2014AJ....148...81M"
             }
           }
         },
@@ -543,57 +569,89 @@
               "value": 3
             },
             "oidref": {
-              "value": 14958653
+              "value": 8963307
             },
             "filter": {
               "value": "i"
             },
             "flux": {
-              "value": 13.107999801635742
+              "value": 12.135000228881836
             },
             "system": {
-              "value": "A"
+              "value": "V"
             },
             "flux_err": {
-              "value": 0.004999999888241291
+              "value": 0.07500000298023224
             },
             "qual": {
-              "value": "B"
+              "value": "C"
             },
             "bibcode": {
-              "value": "2018PASA...35...10W"
+              "value": "2014AJ....148...81M"
             }
           }
         },
         {
-          "band": "z",
+          "band": "G",
           "fields": {
             "flux_err_prec": {
-              "value": 3
+              "value": 6
             },
             "flux_prec": {
-              "value": 3
+              "value": 6
             },
             "oidref": {
-              "value": 14958653
+              "value": 8963307
             },
             "filter": {
-              "value": "z"
+              "value": "G"
             },
             "flux": {
-              "value": 12.982999801635742
+              "value": 12.592817306518555
             },
             "system": {
-              "value": "A"
+              "value": "V"
             },
             "flux_err": {
-              "value": 0.0020000000949949026
+              "value": 0.002804999938234687
             },
             "qual": {
-              "value": "B"
+              "value": "C"
             },
             "bibcode": {
-              "value": "2018PASA...35...10W"
+              "value": "2020yCat.1350....0G"
+            }
+          }
+        },
+        {
+          "band": "I",
+          "fields": {
+            "flux_err_prec": {
+              "value": 2
+            },
+            "flux_prec": {
+              "value": 2
+            },
+            "oidref": {
+              "value": 8963307
+            },
+            "filter": {
+              "value": "I"
+            },
+            "flux": {
+              "value": 11.619999885559082
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.019999999552965164
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2005yCat.2263....0D"
             }
           }
         }
@@ -603,22 +661,73 @@
       {
         "query": {
           "method": "identifier",
-          "identifier": "Gaia DR2 4805658359403594624",
+          "identifier": "Gaia DR3 6241679678390298880",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "e764ba49c093361ef5b1069006e83c6928b95d322ab98f84ee98d91d23302a1e",
-        "queried_at": "2026-10-24T04:53:20.118174+00:00",
+        "response_sha256": "a09275fcb540aadace2857071c14207827c1eaee67a23ae86d9e156074fde182",
+        "queried_at": "2026-10-25T12:05:10.501268+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2401.02017v1#/stars/5",
+            "original_identifier": {
+              "value": "Gaia DR3 6241679678390298880",
+              "evidence": [
+                {
+                  "location": "T:p7-b1",
+                  "quote": "<tr><td>6241679678390298880</td><td>236.9944</td><td>-20.5118</td><td>-305 ± 1</td><td>10.90+1.61-1.31</td><td>616+171-103</td><td>0.549</td><td>0.043</td><td>574+102-144</td></tr>"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "Gaia EDR3 6241679678390298880",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "749bfbfee49f23ecd7091e33efd806348dcd551e180e7020114f3600a9ef0de5",
+        "queried_at": "2026-10-25T12:04:50.482362+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2012.02123v2#/stars/20",
+            "original_identifier": {
+              "value": "Gaia EDR3 6241679678390298880",
+              "evidence": [
+                {
+                  "location": "T:p12-b0",
+                  "quote": "6241679678390298880"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       }
     ],
     "matches": [
       {
-        "main_id": "UCAC4 232-006297",
+        "main_id": "UCAC2  23645344",
         "method": "identifier",
-        "identifier": "Gaia DR2 4805658359403594624",
+        "identifier": "Gaia DR3 6241679678390298880",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      },
+      {
+        "main_id": "UCAC2  23645344",
+        "method": "identifier",
+        "identifier": "Gaia EDR3 6241679678390298880",
         "candidate": {
           "$ref": "#/simbad/selected"
         }

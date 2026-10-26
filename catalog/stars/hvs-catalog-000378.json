@@ -1,71 +1,129 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000378",
-  "display_name": "HVS 1",
+  "display_name": "Hivel13",
   "sources": {
-    "1807.05909v2": {
-      "title": "Hypervelocity stars in the Gaia era: Runaway B stars beyond the velocity limit of classical ejection mechanisms",
+    "2011.10206v1": {
+      "title": "591 high velocity stars in the Galactic halo selected from LAMOST DR7 and Gaia DR2",
       "authors": [
-        "Andreas Irrgang",
-        "Simon Kreuzer",
-        "Ulrich Heber"
+        "Yin-Bi Li",
+        "A-Li Luo",
+        "You-Jun Lu",
+        "Xue-Sen Zhang",
+        "Jiao Li",
+        "Rui Wang",
+        "Fang Zuo",
+        "Maosheng Xiang",
+        "Yuan-Sen Ting",
+        "T. Marchetti",
+        "Shuo Li",
+        "You-Fen Wang",
+        "Shuo Zhang",
+        "Kohei Hattori",
+        "Yong-Heng Zhao",
+        "Hua-Wei Zhang",
+        "Gang Zhao"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1807.05909v2",
+      "pdf_url": "https://arxiv.org/pdf/2011.10206v1",
       "records": [
-        "/stars/0"
+        "/stars/12"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS 1",
+      "value": "Hivel13",
       "evidence": [
         {
-          "location": "T:p7-b8",
-          "quote": "For 6 stars (HVS 1, HVS 4, HVS 6, HVS 9, HVS 10, and HVS 13)"
+          "location": "T:p7-b0",
+          "quote": "<tr><td>Hivel13</td><td>256.3047540</td><td>19.94524300</td>"
         }
       ],
-      "source": "1807.05909v2"
+      "source": "2011.10206v1"
     }
   ],
   "contribution_types": [
     {
-      "value": "follow_up",
+      "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b7",
-          "quote": "We revisit some of the most interesting high-velocity stars, that is, 15 stars (11 candidate HVSs and 4 radial velocity outliers)"
-        },
-        {
-          "location": "T:p2-b10",
-          "quote": "Brown et al. (2015) determined proper motions for 12 candidate HVSs (including HVS 2 and HVS 3) as well as for 4 radial velocity outliers"
-        },
-        {
-          "location": "T:p7-b8",
-          "quote": "For 6 stars (HVS 1, HVS 4, HVS 6, HVS 9, HVS 10, and HVS 13)"
+          "location": "T:p22-b0",
+          "quote": "<tr><td>Hivel13</td><td>0.000</td><td>0.000</td><td>0.821</td><td>0.868</td><td>0.876</td><td>0.942</td><td>0.979</td><td>0.987</td><td>0.997</td><td>OUT</td></tr>"
         }
       ],
-      "source": "1807.05909v2"
+      "source": "2011.10206v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "distance",
+      "quantity": "ra",
       "values": [
         {
-          "value": "99.3",
-          "lower_error": "9.2",
-          "upper_error": "15.2",
-          "unit": "kpc",
-          "condition": "Spectrophotometric distance from Paper I, adopted for the kinematic analysis.",
+          "value": "256.3047540",
+          "unit": "deg",
+          "condition": "Equatorial right ascension from Gaia DR2, as listed for Hivel13.",
           "evidence": [
             {
-              "location": "T:p4-b0",
-              "quote": "HVS 1 (H)</td><td>99.3</td><td>+15.2-9.2</td><td>0.08 ± 0.26</td><td>-0.12 ± 0.22</td>"
+              "location": "T:p7-b0",
+              "quote": "Hivel13</td><td>256.3047540</td><td>19.94524300</td><td>65</td><td>G3</td><td>-146±7</td><td>-8.992±0.021</td><td>-26.154±0.024</td><td>0.146±0.017</td>"
             }
           ],
-          "source": "1807.05909v2"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "256.3047540",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "19.94524300",
+          "unit": "deg",
+          "condition": "Equatorial declination from Gaia DR2, as listed for Hivel13.",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "Hivel13</td><td>256.3047540</td><td>19.94524300</td><td>65</td><td>G3</td><td>-146±7</td><td>-8.992±0.021</td><td>-26.154±0.024</td><td>0.146±0.017</td>"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "19.94524300",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "parallax",
+      "values": [
+        {
+          "value": "0.146",
+          "error": "0.017",
+          "unit": "mas",
+          "condition": "Gaia DR2 parallax; the paper does not apply the global parallax zero-point correction in its main results.",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "Hivel13</td><td>256.3047540</td><td>19.94524300</td><td>65</td><td>G3</td><td>-146±7</td><td>-8.992±0.021</td><td>-26.154±0.024</td><td>0.146±0.017</td>"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "0.146",
+            "error": "0.017",
+            "approximate": false
+          }
         }
       ]
     },
@@ -73,17 +131,24 @@
       "quantity": "proper_motion_ra",
       "values": [
         {
-          "value": "0.08",
-          "error": "0.26",
+          "value": "-8.992",
+          "error": "0.021",
           "unit": "mas/yr",
-          "condition": "HST proper motion; the (H) suffix in Table 2 indicates proper motions are from the HST rather than Gaia DR2.",
+          "condition": "Gaia DR2 proper motion in right ascension (pmra).",
           "evidence": [
             {
-              "location": "T:p4-b0",
-              "quote": "HVS 1 (H)</td><td>99.3</td><td>+15.2-9.2</td><td>0.08 ± 0.26</td><td>-0.12 ± 0.22</td>"
+              "location": "T:p7-b0",
+              "quote": "Hivel13</td><td>256.3047540</td><td>19.94524300</td><td>65</td><td>G3</td><td>-146±7</td><td>-8.992±0.021</td><td>-26.154±0.024</td><td>0.146±0.017</td>"
             }
           ],
-          "source": "1807.05909v2"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-8.992",
+            "error": "0.021",
+            "approximate": false
+          }
         }
       ]
     },
@@ -91,17 +156,24 @@
       "quantity": "proper_motion_dec",
       "values": [
         {
-          "value": "-0.12",
-          "error": "0.22",
+          "value": "-26.154",
+          "error": "0.024",
           "unit": "mas/yr",
-          "condition": "HST proper motion; the (H) suffix in Table 2 indicates proper motions are from the HST rather than Gaia DR2.",
+          "condition": "Gaia DR2 proper motion in declination (pmdec).",
           "evidence": [
             {
-              "location": "T:p4-b0",
-              "quote": "HVS 1 (H)</td><td>99.3</td><td>+15.2-9.2</td><td>0.08 ± 0.26</td><td>-0.12 ± 0.22</td>"
+              "location": "T:p7-b0",
+              "quote": "Hivel13</td><td>256.3047540</td><td>19.94524300</td><td>65</td><td>G3</td><td>-146±7</td><td>-8.992±0.021</td><td>-26.154±0.024</td><td>0.146±0.017</td>"
             }
           ],
-          "source": "1807.05909v2"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-26.154",
+            "error": "0.024",
+            "approximate": false
+          }
         }
       ]
     },
@@ -109,17 +181,55 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "829.7",
-          "error": "2.2",
+          "value": "-146",
+          "error": "7",
           "unit": "km/s",
-          "condition": "Radial velocity from Paper I.",
+          "condition": "RV_LASP from the LAMOST Stellar Parameter Pipeline, as tabulated; this is not the separately zero-point-corrected RV_LASP_Calibrate value.",
           "evidence": [
             {
-              "location": "T:p4-b0",
-              "quote": "829.7</td><td>+2.2-2.2</td>"
+              "location": "T:p7-b0",
+              "quote": "Hivel13</td><td>256.3047540</td><td>19.94524300</td><td>65</td><td>G3</td><td>-146±7</td><td>-8.992±0.021</td><td>-26.154±0.024</td><td>0.146±0.017</td>"
+            },
+            {
+              "location": "T:p5-b2",
+              "quote": "After a zero-point correction of −5.4 km s−1 for RV_LASP, we recalculate the spatial velocities for 591 HiVelSCs"
             }
           ],
-          "source": "1807.05909v2"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-146",
+            "error": "7",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "6.4",
+          "lower_error": "0.1",
+          "upper_error": "0.3",
+          "unit": "kpc",
+          "condition": "Galactocentric distance r_GC from the Monte Carlo estimate; median with 16th and 84th percentiles as lower and upper uncertainties.",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "Hivel13</td><td>-3.8+0.6-0.4</td><td>3.7+0.5-0.4</td><td>3.6+0.5-0.4</td><td>6.4+0.3-0.1</td><td>508+79-59</td><td>-503+69-89</td><td>-87+4-4</td><td>718+121-87</td>"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "6.4",
+            "lower_error": "0.1",
+            "upper_error": "0.3",
+            "approximate": false
+          }
         }
       ]
     },
@@ -127,100 +237,333 @@
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "690",
-          "lower_error": "20",
-          "upper_error": "40",
+          "value": "718",
+          "lower_error": "87",
+          "upper_error": "121",
           "unit": "km/s",
-          "condition": "Current Galactic rest-frame velocity for Model I of Irrgang et al. (2013).",
+          "condition": "Total three-dimensional Galactocentric velocity V_GC in the Galactic rest frame from the Monte Carlo estimate; median with 16th and 84th percentiles.",
           "evidence": [
             {
-              "location": "T:p11-b1",
-              "quote": "HVS 1 (H)</td><td>-65.9</td><td>-62.4</td><td>51.6</td><td>-420</td><td>-310</td><td>440</td><td>690</td>"
-            }
-          ],
-          "source": "1807.05909v2"
-        },
-        {
-          "value": "700",
-          "lower_error": "30",
-          "upper_error": "40",
-          "unit": "km/s",
-          "condition": "Current Galactic rest-frame velocity for Model II of Irrgang et al. (2013).",
-          "evidence": [
+              "location": "T:p8-b0",
+              "quote": "Hivel13</td><td>-3.8+0.6-0.4</td><td>3.7+0.5-0.4</td><td>3.6+0.5-0.4</td><td>6.4+0.3-0.1</td><td>508+79-59</td><td>-503+69-89</td><td>-87+4-4</td><td>718+121-87</td>"
+            },
             {
-              "location": "T:p12-b0",
-              "quote": "HVS 1 (H)</td><td>-65.9</td><td>-62.4</td><td>51.6</td><td>-420</td><td>-310</td><td>440</td><td>700</td>"
+              "location": "T:p21-b0",
+              "quote": "Hivel13</td><td><eq>6.4^{+0.3}_{-0.1}</eq></td><td><eq>718^{+121}_{-87}</eq></td>"
             }
           ],
-          "source": "1807.05909v2"
-        },
-        {
-          "value": "700",
-          "lower_error": "30",
-          "upper_error": "40",
-          "unit": "km/s",
-          "condition": "Current Galactic rest-frame velocity for Model III of Irrgang et al. (2013).",
-          "evidence": [
-            {
-              "location": "T:p13-b0",
-              "quote": "HVS 1 (H)</td><td>-65.9</td><td>-62.4</td><td>51.6</td><td>-420</td><td>-310</td><td>440</td><td>700</td>"
-            }
-          ],
-          "source": "1807.05909v2"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "718",
+            "lower_error": "87",
+            "upper_error": "121",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "bound_probability",
+      "quantity": "unbound_probability",
       "values": [
         {
-          "value": "0",
-          "unit": "%",
-          "condition": "Probability to be bound to the Milky Way for Model I of Irrgang et al. (2013).",
+          "value": "0.821",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub(W) in the Watkins+2019 Galactic potential model.",
           "evidence": [
             {
-              "location": "T:p11-b1",
-              "quote": "HVS 1 (H)</td><td>-65.9</td><td>-62.4</td><td>51.6</td><td>-420</td><td>-310</td><td>440</td><td>690</td><td>330</td><td>0</td>"
+              "location": "T:p22-b0",
+              "quote": "Hivel13</td><td>0.000</td><td>0.000</td><td>0.821</td><td>0.868</td><td>0.876</td><td>0.942</td><td>0.979</td><td>0.987</td><td>0.997</td><td>OUT</td>"
+            },
+            {
+              "location": "T:p22-b0",
+              "quote": "<eq>P_{ub}(W)^c</eq></td><td><eq>P_{ub}(G)^c</eq></td><td><eq>P_{ub}(Ke)^c</eq></td><td><eq>P_{ub}(Ko)^c</eq></td><td><eq>P_{ub}(P)^c</eq></td><td><eq>P_{ub}(M)^c</eq></td><td><eq>P_{ub}(X)^c</eq>"
             }
           ],
-          "source": "1807.05909v2"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.821",
+            "approximate": false
+          }
         },
         {
-          "value": "0",
-          "unit": "%",
-          "condition": "Probability to be bound to the Milky Way for Model II of Irrgang et al. (2013).",
+          "value": "0.868",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub(G) in the Gnedin+2005 Galactic potential model.",
           "evidence": [
             {
-              "location": "T:p12-b0",
-              "quote": "HVS 1 (H)</td><td>-65.9</td><td>-62.4</td><td>51.6</td><td>-420</td><td>-310</td><td>440</td><td>700</td><td>380</td><td>0</td>"
+              "location": "T:p22-b0",
+              "quote": "Hivel13</td><td>0.000</td><td>0.000</td><td>0.821</td><td>0.868</td><td>0.876</td><td>0.942</td><td>0.979</td><td>0.987</td><td>0.997</td><td>OUT</td>"
+            },
+            {
+              "location": "T:p22-b0",
+              "quote": "<eq>P_{ub}(W)^c</eq></td><td><eq>P_{ub}(G)^c</eq></td><td><eq>P_{ub}(Ke)^c</eq></td><td><eq>P_{ub}(Ko)^c</eq></td><td><eq>P_{ub}(P)^c</eq></td><td><eq>P_{ub}(M)^c</eq></td><td><eq>P_{ub}(X)^c</eq>"
             }
           ],
-          "source": "1807.05909v2"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.868",
+            "approximate": false
+          }
         },
         {
-          "value": "0",
-          "unit": "%",
-          "condition": "Probability to be bound to the Milky Way for Model III of Irrgang et al. (2013).",
+          "value": "0.876",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub(Ke) in the Kenyon+2014 Galactic potential model.",
           "evidence": [
             {
-              "location": "T:p13-b0",
-              "quote": "HVS 1 (H)</td><td>-65.9</td><td>-62.4</td><td>51.6</td><td>-420</td><td>-310</td><td>440</td><td>700</td><td>120</td><td>0</td>"
+              "location": "T:p22-b0",
+              "quote": "Hivel13</td><td>0.000</td><td>0.000</td><td>0.821</td><td>0.868</td><td>0.876</td><td>0.942</td><td>0.979</td><td>0.987</td><td>0.997</td><td>OUT</td>"
+            },
+            {
+              "location": "T:p22-b0",
+              "quote": "<eq>P_{ub}(W)^c</eq></td><td><eq>P_{ub}(G)^c</eq></td><td><eq>P_{ub}(Ke)^c</eq></td><td><eq>P_{ub}(Ko)^c</eq></td><td><eq>P_{ub}(P)^c</eq></td><td><eq>P_{ub}(M)^c</eq></td><td><eq>P_{ub}(X)^c</eq>"
             }
           ],
-          "source": "1807.05909v2"
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.876",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.942",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub(Ko) in the Koposov+2010 Galactic potential model.",
+          "evidence": [
+            {
+              "location": "T:p22-b0",
+              "quote": "Hivel13</td><td>0.000</td><td>0.000</td><td>0.821</td><td>0.868</td><td>0.876</td><td>0.942</td><td>0.979</td><td>0.987</td><td>0.997</td><td>OUT</td>"
+            },
+            {
+              "location": "T:p22-b0",
+              "quote": "<eq>P_{ub}(W)^c</eq></td><td><eq>P_{ub}(G)^c</eq></td><td><eq>P_{ub}(Ke)^c</eq></td><td><eq>P_{ub}(Ko)^c</eq></td><td><eq>P_{ub}(P)^c</eq></td><td><eq>P_{ub}(M)^c</eq></td><td><eq>P_{ub}(X)^c</eq>"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.942",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.979",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub(P) in the Paczynski+1990 Galactic potential model.",
+          "evidence": [
+            {
+              "location": "T:p22-b0",
+              "quote": "Hivel13</td><td>0.000</td><td>0.000</td><td>0.821</td><td>0.868</td><td>0.876</td><td>0.942</td><td>0.979</td><td>0.987</td><td>0.997</td><td>OUT</td>"
+            },
+            {
+              "location": "T:p22-b0",
+              "quote": "<eq>P_{ub}(W)^c</eq></td><td><eq>P_{ub}(G)^c</eq></td><td><eq>P_{ub}(Ke)^c</eq></td><td><eq>P_{ub}(Ko)^c</eq></td><td><eq>P_{ub}(P)^c</eq></td><td><eq>P_{ub}(M)^c</eq></td><td><eq>P_{ub}(X)^c</eq>"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.979",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.987",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub(M) in the MWPotential2014 Galactic potential model.",
+          "evidence": [
+            {
+              "location": "T:p22-b0",
+              "quote": "Hivel13</td><td>0.000</td><td>0.000</td><td>0.821</td><td>0.868</td><td>0.876</td><td>0.942</td><td>0.979</td><td>0.987</td><td>0.997</td><td>OUT</td>"
+            },
+            {
+              "location": "T:p22-b0",
+              "quote": "<eq>P_{ub}(W)^c</eq></td><td><eq>P_{ub}(G)^c</eq></td><td><eq>P_{ub}(Ke)^c</eq></td><td><eq>P_{ub}(Ko)^c</eq></td><td><eq>P_{ub}(P)^c</eq></td><td><eq>P_{ub}(M)^c</eq></td><td><eq>P_{ub}(X)^c</eq>"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.987",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.997",
+          "unit": "dimensionless",
+          "condition": "Unbound probability P_ub(X) in the Xue+2008 Galactic potential model.",
+          "evidence": [
+            {
+              "location": "T:p22-b0",
+              "quote": "Hivel13</td><td>0.000</td><td>0.000</td><td>0.821</td><td>0.868</td><td>0.876</td><td>0.942</td><td>0.979</td><td>0.987</td><td>0.997</td><td>OUT</td>"
+            },
+            {
+              "location": "T:p22-b0",
+              "quote": "<eq>P_{ub}(W)^c</eq></td><td><eq>P_{ub}(G)^c</eq></td><td><eq>P_{ub}(Ke)^c</eq></td><td><eq>P_{ub}(Ko)^c</eq></td><td><eq>P_{ub}(P)^c</eq></td><td><eq>P_{ub}(M)^c</eq></td><td><eq>P_{ub}(X)^c</eq>"
+            }
+          ],
+          "source": "2011.10206v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.997",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "coordinates",
+    "selected": {
+      "main_id": "LAMOST J170513.12+195642.4",
+      "aliases": [
+        "Gaia DR2 4561622303376290688",
+        "Gaia DR3 4561622303377078144",
+        "LAMOST J170513.12+195642.4"
+      ],
+      "object_type": "HV*",
+      "coordinates": {
+        "ra": {
+          "value": 256.3047464315737,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 19.94522877576194,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.009700000286102295,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.00989999994635582,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -9.006,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -26.123,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.012000000104308128,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.013000000268220901,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.1903,
+        "unit": "mas",
+        "error": 0.014800000004470348,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -151.85,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.0005063888637341085
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 3.5199999809265137,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "C",
+        "bibcode": "2022yCat.1355....0G",
+        "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "G3",
+        "quality": "D",
+        "bibcode": "2021ApJS..252....3L"
+      },
+      "photometry": [
+        {
+          "band": "r",
+          "value": 13.73799991607666,
+          "error": 0.03709999844431877,
+          "system": "V",
+          "bibcode": "2023AJ....165..224Z",
+          "quality": "C"
+        },
+        {
+          "band": "g",
+          "value": 14.361200332641602,
+          "system": "V",
+          "bibcode": "2023AJ....165..224Z",
+          "quality": "D"
+        },
+        {
+          "band": "G",
+          "value": 13.89420223236084,
+          "error": 0.002764000091701746,
+          "system": "V",
+          "bibcode": "2022yCat.1355....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "coordinates": [
+        {
+          "source_record": "2011.10206v1#/stars/12",
+          "separation_arcsec": 0.057255231733563755,
+          "radius_arcsec": 5.0,
+          "assumed_frame": "icrs"
+        }
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:50:56.516532+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000378_provenance.json",
-    "sha256": "7dfab0eb2e46b32e1fc02d415d3dbc276dea2f1552d079162bfb4aeaa330767b"
+    "sha256": "6c53c646ac26a8575b2cff228938a6a3f4eeed20238363c44cbda31b7922840e"
   },
   "warnings": [
-    "1807.05909v2#/stars/0/contribution_type/evidence/1: quote audit unknown at T:p2-b10; check the paper evidence."
+    "Coordinate reference frame was not reported; ICRS was assumed for matching.",
+    "Association based on coordinates only; no epoch propagation.",
+    "2011.10206v1#/stars/12/quantities/5/values/0/evidence/1: quote audit unknown at T:p5-b2; check the paper evidence."
   ]
 }

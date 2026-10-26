@@ -1,32 +1,35 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000162",
-  "display_name": "HVS19",
+  "display_name": "J131238.82+393312.13",
   "sources": {
-    "1401.7342v1": {
-      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+    "1506.03153v1": {
+      "title": "Red Runaways: Hypervelocity Stars, Hills Ejecta and Other Outliers in the F-M Star Regime",
       "authors": [
-        "Warren R. Brown",
-        "Margaret J. Geller",
-        "Scott J. Kenyon"
+        "John J. Vickers",
+        "Martin C. Smith",
+        "Eva K. Grebel"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "pdf_url": "https://arxiv.org/pdf/1506.03153v1",
       "records": [
-        "/stars/15"
+        "/stars/2"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS19",
+      "value": "J131238.82+393312.13",
       "evidence": [
         {
-          "location": "T:p11-b0",
-          "quote": "<tr><td>19</td><td>592.8 ± 11.8</td>"
+          "location": "T:p9-b0",
+          "quote": "J131238.82+393312.13"
+        },
+        {
+          "location": "I:p9-b0"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1506.03153v1"
     }
   ],
   "contribution_types": [
@@ -34,111 +37,296 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p6-b6",
-          "quote": "21 HVSs that are unbound on the basis of radial"
+          "location": "T:p8-b10",
+          "quote": "We identify hypervelocity stars as stars whose current\nkinetic energy is greater than the gravitational potential\n(described in Section 2.2) at their position."
         },
         {
-          "location": "T:p11-b0",
-          "quote": "<tr><td>19</td><td>592.8 ± 11.8</td>"
+          "location": "T:p8-b11",
+          "quote": "We construct a catalog of objects which satisfy this\ncriterion and present a subset of them in Table 2."
+        },
+        {
+          "location": "T:p9-b0",
+          "quote": "Objects whose kinetic energy is greater than the gravitational potential at their given position. This table is truncated to\nretain only the candidates that pass our strict proper motion quality cuts"
+        },
+        {
+          "location": "T:p13-b2",
+          "quote": "Of our\n7 strong candidates, two of four are found to intersect\nthe Galactic plane at positions coincident with spiral\narm structure"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1506.03153v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "radial_velocity",
+      "quantity": "ra",
       "values": [
         {
-          "value": "592.8",
-          "error": "11.8",
+          "value": "13:12:38.82",
+          "unit": "hourangle",
+          "condition": "Equatorial right ascension encoded in the IAU designation listed in Table 2.",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "J131238.82+393312.13</td><td>8.57</td><td>11.13</td><td>22.96</td><td>4.75</td><td>-0.63</td><td>607.16 ± 133.24</td><td>531.07</td>"
+            }
+          ],
+          "source": "1506.03153v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "198.1617500000000000000000000",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "+39:33:12.13",
+          "unit": "deg",
+          "condition": "Equatorial declination encoded in the IAU designation listed in Table 2.",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "J131238.82+393312.13</td><td>8.57</td><td>11.13</td><td>22.96</td><td>4.75</td><td>-0.63</td><td>607.16 ± 133.24</td><td>531.07</td>"
+            }
+          ],
+          "source": "1506.03153v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "39.55336944444444444444444444",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "607.16",
+          "error": "133.24",
           "unit": "km/s",
-          "condition": "Heliocentric radial velocity, listed in Table 1 under v_⊙; the text uses v_helio for the same quantity.",
+          "condition": "Total space velocity V_Total listed for this Table 2 escape-velocity candidate; the local escape velocity V_esc is 531.07 km/s.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "<td>19</td><td>592.8 ± 11.8</td><td>492.0</td><td>20.061</td><td>12900 ± 793</td><td>4.53 ± 0.29</td><td>137</td><td>3.12 ± 0.17</td><td>+0.13 ± 0.34</td><td>98 ± 15</td><td>164 ± 28</td><td>-0.31, -0.39</td>"
+              "location": "T:p9-b0",
+              "quote": "J131238.82+393312.13</td><td>8.57</td><td>11.13</td><td>22.96</td><td>4.75</td><td>-0.63</td><td>607.16 ± 133.24</td><td>531.07</td>"
+            },
+            {
+              "location": "T:p8-b10",
+              "quote": "We identify hypervelocity stars as stars whose current kinetic energy is greater than the gravitational potential (described in Section 2.2) at their position."
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1506.03153v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "607.16",
+            "error": "133.24",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "galactocentric_radius",
+      "quantity": "unbound_probability",
       "values": [
         {
-          "value": "98",
-          "error": "15",
-          "unit": "kpc",
-          "condition": "Galactocentric radial distance R_GC; the authors assume the Sun is at R = 8 kpc.",
+          "lower_bound": "60",
+          "lower_inclusive": false,
+          "unit": "%",
+          "condition": "Chance of being a hypervelocity (unbound) star; stated as greater than 60% for all seven Table 2 candidates.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "<td>19</td><td>592.8 ± 11.8</td><td>492.0</td><td>20.061</td><td>12900 ± 793</td><td>4.53 ± 0.29</td><td>137</td><td>3.12 ± 0.17</td><td>+0.13 ± 0.34</td><td>98 ± 15</td><td>164 ± 28</td><td>-0.31, -0.39</td>"
+              "location": "T:p10-b5",
+              "quote": "We note that while none of these candidates have more than a 2σ chance of being unbound, they all have a greater than 60% chance of being hypervelocity stars."
             },
             {
-              "location": "T:p5-b11",
-              "quote": "We calculate HVS Galacto-centric radial distances, R, assuming the Sun is at R = 8 kpc. Table 1 summarizes the results."
+              "location": "T:p2-b6",
+              "quote": "When we use the term hypervelocity, we mean that the star is traveling fast enough to escape the potential of the Milky Way."
             }
           ],
-          "source": "1401.7342v1"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_ra",
-      "values": [
-        {
-          "value": "-0.31",
-          "unit": "mas/yr",
-          "condition": "Predicted proper-motion component for a Galactic center origin from trajectory calculations, not a measured proper motion.",
-          "evidence": [
-            {
-              "location": "T:p11-b0",
-              "quote": "<td>19</td><td>592.8 ± 11.8</td><td>492.0</td><td>20.061</td><td>12900 ± 793</td><td>4.53 ± 0.29</td><td>137</td><td>3.12 ± 0.17</td><td>+0.13 ± 0.34</td><td>98 ± 15</td><td>164 ± 28</td><td>-0.31, -0.39</td>"
-            },
-            {
-              "location": "T:p8-b13",
-              "quote": "An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
-            }
-          ],
-          "source": "1401.7342v1"
-        }
-      ]
-    },
-    {
-      "quantity": "proper_motion_dec",
-      "values": [
-        {
-          "value": "-0.39",
-          "unit": "mas/yr",
-          "condition": "Predicted proper-motion component for a Galactic center origin from trajectory calculations, not a measured proper motion.",
-          "evidence": [
-            {
-              "location": "T:p11-b0",
-              "quote": "<td>19</td><td>592.8 ± 11.8</td><td>492.0</td><td>20.061</td><td>12900 ± 793</td><td>4.53 ± 0.29</td><td>137</td><td>3.12 ± 0.17</td><td>+0.13 ± 0.34</td><td>98 ± 15</td><td>164 ± 28</td><td>-0.31, -0.39</td>"
-            },
-            {
-              "location": "T:p8-b13",
-              "quote": "An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
-            }
-          ],
-          "source": "1401.7342v1"
+          "source": "1506.03153v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "lower_bound": "0.60",
+            "lower_inclusive": false,
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "coordinates",
+    "selected": {
+      "main_id": "SDSS J131238.82+393312.1",
+      "aliases": [
+        "Gaia DR2 1523288358587638656",
+        "Gaia DR3 1523288358587638656",
+        "SDSS J131238.82+393312.1"
+      ],
+      "object_type": "HV*",
+      "coordinates": {
+        "ra": {
+          "value": 198.16178451272,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 39.55336889075001,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.2084999978542328,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.22460000216960907,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": -4.234,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -4.145,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.2840000092983246,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.2680000066757202,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.2833,
+        "unit": "mas",
+        "error": 0.364300012588501,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -95.9489359330543,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.00032
+        },
+        "reported_as": "z",
+        "error": {
+          "value": 1.9999999494757503e-05,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "E",
+        "bibcode": "2012ApJS..203...21A",
+        "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "F9",
+        "quality": "E",
+        "bibcode": "2020ApJS..249....3A"
+      },
+      "photometry": [
+        {
+          "band": "u",
+          "value": 21.67099952697754,
+          "error": 0.09600000083446503,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "g",
+          "value": 20.361000061035156,
+          "error": 0.017000000923871994,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "r",
+          "value": 19.83099937438965,
+          "error": 0.01600000075995922,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "i",
+          "value": 19.667999267578125,
+          "error": 0.017999999225139618,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "z",
+          "value": 19.655000686645508,
+          "error": 0.05999999865889549,
+          "system": "A",
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
+        },
+        {
+          "band": "G",
+          "value": 19.90583610534668,
+          "error": 0.004120000172406435,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "coordinates": [
+        {
+          "source_record": "1506.03153v1#/stars/2",
+          "separation_arcsec": 0.09581818760746871,
+          "radius_arcsec": 5.0,
+          "assumed_frame": "icrs"
+        }
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:50:10.485583+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000162_provenance.json",
-    "sha256": "ed4645572eec9c5b954820eeca38edb20dbe644fd7aaec53bef60f108493e421"
+    "sha256": "610debf3155df6e27df855403f56e669bdea8f91652aeb1b4f229cd0442bae27"
   },
   "warnings": [
-    "1401.7342v1#/stars/15/quantities/2/values/0/evidence/1: quote audit unknown at T:p8-b13; check the paper evidence.",
-    "1401.7342v1#/stars/15/quantities/3/values/0/evidence/1: quote audit unknown at T:p8-b13; check the paper evidence."
+    "Coordinate reference frame was not reported; ICRS was assumed for matching.",
+    "Association based on coordinates only; no epoch propagation.",
+    "1506.03153v1#/stars/2/quantities/3/values/0/evidence/1: quote audit unknown at T:p2-b6; check the paper evidence."
   ]
 }

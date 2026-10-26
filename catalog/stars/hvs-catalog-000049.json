@@ -1,33 +1,45 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000049",
-  "display_name": "2MASS J11110784+5853573",
+  "display_name": "mpHVS4",
   "sources": {
-    "0810.3651v1": {
-      "title": "Old-Population Hypervelocity Stars from the Galactic Center: Limits from the SDSS",
+    "1112.2088v3": {
+      "title": "Metal-poor hypervelocity star candidates from the Sloan Digital Sky Survey",
       "authors": [
-        "Juna A. Kollmeier",
-        "Andrew Gould",
-        "Gillian Knapp",
-        "Timothy C. Beers"
+        "Yinbi Li",
+        "Ali Luo",
+        "Gang Zhao",
+        "Youjun Lu",
+        "Juanjuan Ren",
+        "Fang Zuo"
       ],
-      "pdf_url": "https://arxiv.org/pdf/0810.3651v1",
+      "pdf_url": "https://arxiv.org/pdf/1112.2088v3",
       "records": [
-        "/stars/0"
+        "/stars/3"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "SDSSJ111107.85+585357.2",
+      "value": "SDSS J172915.20+431717.2",
       "evidence": [
         {
-          "location": "T:p12-b0",
-          "quote": "SDSSJ111107.85+585357.2"
+          "location": "T:p9-b0",
+          "quote": "SDSS J172915.20+431717.2</td><td>mpHVS4"
         }
       ],
-      "source": "0810.3651v1"
+      "source": "1112.2088v3"
+    },
+    {
+      "value": "mpHVS4",
+      "evidence": [
+        {
+          "location": "T:p9-b0",
+          "quote": "SDSS J172915.20+431717.2</td><td>mpHVS4"
+        }
+      ],
+      "source": "1112.2088v3"
     }
   ],
   "contribution_types": [
@@ -35,23 +47,15 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p8-b1",
-          "quote": "We select candidate unbound ejected stars with exactly the criterion as bound stars\n(eq. [1]), except reversing the sign on the second condition,v _ { \\odot - \\mathrm { c i r c l e } } \\ \\geq \\ v _ { \\mathrm { e s c } }, and of course\ndemanding that they be exiting rather than entering the Galaxy."
+          "location": "T:p4-b1",
+          "quote": "There are totally 13 objects (mpHVS1–\nmpHVS13, “mp” means metal-poor) as listed in Table 1, which are unbound to the Galaxy\nin the Xue08 model"
         },
         {
-          "location": "T:p8-b4",
-          "quote": "There is one F star candidate that survives our selection criteria and one G star. The\nproper motions for both of these stars are inconsistent with a Galactocentric origin as we\nnow show."
-        },
-        {
-          "location": "T:p1-b3",
-          "quote": "We additionally find 2 candidate unbound stars (one F\nand one G), however, existing proper motion measurements make these unlikely\nto be emerging from the GC."
-        },
-        {
-          "location": "T:p12-b0",
-          "quote": "<td>SDSSJ111107.85+585357.2</td><td>+425.4±3.1</td><td>F</td>"
+          "location": "T:p7-b3",
+          "quote": "only mpHVS1 is unbound with high statistical\nsignificance, although all 13 HVS candidates are unbound in some Galactic potential models."
         }
       ],
-      "source": "0810.3651v1"
+      "source": "1112.2088v3"
     }
   ],
   "quantities": [
@@ -59,16 +63,26 @@
       "quantity": "ra",
       "values": [
         {
-          "value": "11h11m07.85s",
+          "value": "17h29m15.20s",
           "unit": "hourangle",
-          "condition": "Equatorial right ascension encoded in the SDSS object designation SDSSJ111107.85+585357.2.",
+          "condition": "Equatorial right ascension encoded in the SDSS designation for mpHVS4; no conversion applied.",
           "evidence": [
             {
-              "location": "T:p12-b0",
-              "quote": "SDSSJ111107.85+585357.2"
+              "location": "T:p9-b0",
+              "quote": "SDSS J172915.20+431717.2"
+            },
+            {
+              "location": "T:p3-b6",
+              "quote": "equatorial coordinates( r a , d e c )"
             }
           ],
-          "source": "0810.3651v1"
+          "source": "1112.2088v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "262.3133333333333333333333332",
+            "approximate": false
+          }
         }
       ]
     },
@@ -76,16 +90,101 @@
       "quantity": "dec",
       "values": [
         {
-          "value": "+58°53′57.2″",
+          "value": "+43d17m17.2s",
           "unit": "deg",
-          "condition": "Equatorial declination encoded in the SDSS object designation SDSSJ111107.85+585357.2.",
+          "condition": "Equatorial declination encoded in the SDSS designation for mpHVS4; no conversion applied.",
           "evidence": [
             {
-              "location": "T:p12-b0",
-              "quote": "SDSSJ111107.85+585357.2"
+              "location": "T:p9-b0",
+              "quote": "SDSS J172915.20+431717.2"
+            },
+            {
+              "location": "T:p3-b6",
+              "quote": "equatorial coordinates( r a , d e c )"
             }
           ],
-          "source": "0810.3651v1"
+          "source": "1112.2088v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "43.28811111111111111111111111",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "3.3",
+          "error": "0.4",
+          "unit": "kpc",
+          "condition": "Heliocentric distance D⊙ from Table 2.",
+          "evidence": [
+            {
+              "location": "T:p9-b1",
+              "quote": "<tr><td>mpHVS4</td><td>-7.0±0.1</td><td>2.6±0.3</td><td>1.8±0.2</td><td>-526±62</td><td>-17±29</td><td>-263±33</td><td>3.3±0.4</td></tr>"
+            }
+          ],
+          "source": "1112.2088v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "3.3",
+            "error": "0.4",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "3.52",
+          "error": "2.46",
+          "unit": "mas/yr",
+          "condition": "μ_α cos(δ) from SDSS/USNO-B, as listed for mpHVS4.",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "<tr><td>SDSS J172915.20+431717.2</td><td>mpHVS4</td><td>3.52±2.46</td><td>26.12±2.46</td><td>-505±5</td><td>-315±5</td><td>17.11</td><td>6559</td><td>3.83</td><td>-2.00±0.06</td></tr>"
+            }
+          ],
+          "source": "1112.2088v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "3.52",
+            "error": "2.46",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "26.12",
+          "error": "2.46",
+          "unit": "mas/yr",
+          "condition": "μ_δ from SDSS/USNO-B, as listed for mpHVS4.",
+          "evidence": [
+            {
+              "location": "T:p9-b0",
+              "quote": "<tr><td>SDSS J172915.20+431717.2</td><td>mpHVS4</td><td>3.52±2.46</td><td>26.12±2.46</td><td>-505±5</td><td>-315±5</td><td>17.11</td><td>6559</td><td>3.83</td><td>-2.00±0.06</td></tr>"
+            }
+          ],
+          "source": "1112.2088v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "26.12",
+            "error": "2.46",
+            "approximate": false
+          }
         }
       ]
     },
@@ -93,21 +192,74 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "+425.4",
-          "error": "3.1",
+          "value": "-505",
+          "error": "5",
           "unit": "km/s",
-          "condition": "Galactocentric radial velocity V_G for the unbound F-star candidate in Table 1; converted from the observed radial velocity to the Galactic frame assuming a local rotation speed of 220 km/s and solar motion (+9,+12,+7) km/s relative to the local standard of rest.",
+          "condition": "Heliocentric radial velocity RV⊙ from the SEGUE Stellar Parameter Pipeline.",
           "evidence": [
             {
-              "location": "T:p12-b0",
-              "quote": "SDSSJ111107.85+585357.2</td><td>+425.4±3.1</td><td>F</td>"
-            },
-            {
-              "location": "T:p3-b1",
-              "quote": "Velocities were converted to Galactocentric velocity assuming that the local rotation speed is 220 km s<sup>−1</sup> and that the Sun moves at( + 9 , + 1 2 , + 7 )km s<sup>−1</sup> relative to the local standard of rest"
+              "location": "T:p9-b0",
+              "quote": "<tr><td>SDSS J172915.20+431717.2</td><td>mpHVS4</td><td>3.52±2.46</td><td>26.12±2.46</td><td>-505±5</td><td>-315±5</td><td>17.11</td><td>6559</td><td>3.83</td><td>-2.00±0.06</td></tr>"
             }
           ],
-          "source": "0810.3651v1"
+          "source": "1112.2088v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-505",
+            "error": "5",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "7.7",
+          "error": "0.4",
+          "unit": "kpc",
+          "condition": "Galactocentric distance D_G in the adopted Galactic Cartesian coordinate system.",
+          "evidence": [
+            {
+              "location": "T:p10-b0",
+              "quote": "<tr><td>mpHVS4</td><td>7.7±0.4</td><td>589±76</td><td>494</td><td>608</td></tr>"
+            }
+          ],
+          "source": "1112.2088v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "7.7",
+            "error": "0.4",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "589",
+          "error": "76",
+          "unit": "km/s",
+          "condition": "Three-dimensional total velocity V_G relative to the Galactocentric rest frame.",
+          "evidence": [
+            {
+              "location": "T:p10-b0",
+              "quote": "<tr><td>mpHVS4</td><td>7.7±0.4</td><td>589±76</td><td>494</td><td>608</td></tr>"
+            }
+          ],
+          "source": "1112.2088v3",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "589",
+            "error": "76",
+            "approximate": false
+          }
         }
       ]
     }
@@ -116,33 +268,32 @@
     "status": "matched",
     "method": "identifier",
     "selected": {
-      "main_id": "2MASS J11110784+5853573",
+      "main_id": "2MASS J17291521+4317163",
       "aliases": [
-        "2MASS J11110784+5853573",
-        "Gaia DR2 857738302253414400",
-        "Gaia DR3 857738302253414400",
-        "SDSS J111107.83+585357.2",
-        "SDSS J111107.85+585357.2",
-        "TIC 302330478"
+        "2MASS J17291521+4317163",
+        "Gaia DR2 1348589219497586560",
+        "Gaia DR3 1348589219497586560",
+        "SDSS J172915.20+431717.2",
+        "TIC 270254736"
       ],
       "object_type": "Pe*",
       "coordinates": {
         "ra": {
-          "value": 167.78268820672,
+          "value": 262.3133453394512,
           "unit": "deg"
         },
         "dec": {
-          "value": 58.899248620440005,
+          "value": 43.28811719775111,
           "unit": "deg"
         },
         "frame": "icrs",
         "error_ellipse": {
           "major": {
-            "value": 0.021800000220537186,
+            "value": 0.03750000149011612,
             "unit": "mas"
           },
           "minor": {
-            "value": 0.025200000032782555,
+            "value": 0.043699998408555984,
             "unit": "mas"
           },
           "angle": {
@@ -156,20 +307,20 @@
       },
       "proper_motion": {
         "ra_cosdec": {
-          "value": -12.58,
+          "value": -2.614,
           "unit": "mas / yr"
         },
         "dec": {
-          "value": -27.953,
+          "value": 11.614,
           "unit": "mas / yr"
         },
         "error_ellipse": {
           "major": {
-            "value": 0.026000000536441803,
+            "value": 0.05000000074505806,
             "unit": "mas / yr"
           },
           "minor": {
-            "value": 0.03099999949336052,
+            "value": 0.06400000303983688,
             "unit": "mas / yr"
           },
           "angle": {
@@ -181,23 +332,23 @@
         "bibcode": "2020yCat.1350....0G"
       },
       "parallax": {
-        "value": 0.4074,
+        "value": 0.2613,
         "unit": "mas",
-        "error": 0.03269999846816063,
+        "error": 0.04320000112056732,
         "quality": "A",
         "bibcode": "2020yCat.1350....0G"
       },
       "velocity": {
         "radial_velocity": {
-          "value": 366.9105,
+          "value": -504.9669,
           "unit": "km / s"
         },
         "redshift": {
-          "value": 0.0012246315501671656
+          "value": -0.0016829720755405786
         },
         "reported_as": "v",
         "error": {
-          "value": 2.6415300369262695,
+          "value": 4.7470197677612305,
           "unit": "km / s"
         },
         "nature": "s",
@@ -213,88 +364,80 @@
       "photometry": [
         {
           "band": "J",
-          "value": 14.949000358581543,
-          "error": 0.04100000113248825,
+          "value": 15.760000228881836,
+          "error": 0.07999999821186066,
           "system": "V",
           "bibcode": "2003yCat.2246....0C",
           "quality": "C"
         },
         {
           "band": "H",
-          "value": 14.744000434875488,
-          "error": 0.08100000023841858,
+          "value": 15.529999732971191,
+          "error": 0.14000000059604645,
           "system": "V",
           "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
-          "band": "K",
-          "value": 14.758000373840332,
-          "error": 0.09000000357627869,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
-          "band": "G",
-          "value": 15.698918342590332,
-          "error": 0.0027759999502450228,
-          "system": "V",
-          "bibcode": "2020yCat.1350....0G",
-          "quality": "C"
+          "quality": "D"
         },
         {
           "band": "u",
-          "value": 16.850000381469727,
-          "error": 0.007000000216066837,
+          "value": 18.027999877929688,
+          "error": 0.012000000104308128,
           "system": "A",
-          "bibcode": "2020ApJS..249....3A",
-          "quality": "B"
+          "bibcode": "2012ApJS..203...21A",
+          "quality": "C"
         },
         {
           "band": "g",
-          "value": 15.925000190734863,
-          "error": 0.003000000026077032,
+          "value": 17.104999542236328,
+          "error": 0.004999999888241291,
           "system": "A",
-          "bibcode": "2020ApJS..249....3A",
+          "bibcode": "2012ApJS..203...21A",
           "quality": "B"
         },
         {
           "band": "r",
-          "value": 15.713000297546387,
-          "error": 0.003000000026077032,
+          "value": 16.861000061035156,
+          "error": 0.004999999888241291,
           "system": "A",
-          "bibcode": "2020ApJS..249....3A",
+          "bibcode": "2012ApJS..203...21A",
           "quality": "B"
         },
         {
           "band": "i",
-          "value": 15.633999824523926,
-          "error": 0.004000000189989805,
+          "value": 16.77199935913086,
+          "error": 0.004999999888241291,
           "system": "A",
-          "bibcode": "2020ApJS..249....3A",
+          "bibcode": "2012ApJS..203...21A",
           "quality": "B"
         },
         {
           "band": "z",
-          "value": 15.640999794006348,
-          "error": 0.006000000052154064,
+          "value": 16.79400062561035,
+          "error": 0.009999999776482582,
           "system": "A",
-          "bibcode": "2020ApJS..249....3A",
+          "bibcode": "2012ApJS..203...21A",
           "quality": "B"
+        },
+        {
+          "band": "G",
+          "value": 16.857051849365234,
+          "error": 0.002827000105753541,
+          "system": "V",
+          "bibcode": "2022yCat.1355....0G",
+          "quality": "C"
         }
       ]
     },
     "match": {
       "identifiers": [
-        "SDSS J111107.85+585357.2"
+        "SDSS J172915.20+431717.2"
       ]
     },
-    "last_queried_at": "2026-10-24T04:43:58.317046+00:00"
+    "last_queried_at": "2026-10-25T11:44:47.357965+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000049_provenance.json",
-    "sha256": "26327f9778ed33c19c12550cd9534a8872c925d9563751ff0940a8679978db01"
+    "sha256": "4c009e3e9ece471efd469039a3f1b03afa8d6767ef5ce1811a27f8de006b8de4"
   },
   "warnings": []
 }

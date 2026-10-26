@@ -1,10 +1,1260 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000056",
-  "associations": [],
+  "associations": [
+    {
+      "method": "identifier",
+      "identifier": "SDSS J111136.44+005856.44",
+      "nodes": [
+        "1203.3543v1#/stars/17",
+        "1401.7342v1#/stars/20"
+      ]
+    },
+    {
+      "method": "coordinates",
+      "left": "1203.3543v1#/stars/17",
+      "right": "1804.10197v1#/stars/20",
+      "details": {
+        "separation_arcsec": 0.026102828702493613,
+        "threshold_arcsec": 5.0,
+        "left_position": {
+          "ra_deg": 167.90183333333331,
+          "dec_deg": 0.9823444444444445,
+          "frame": "fk5",
+          "equinox": "J2000",
+          "evidence": [
+            {
+              "value": "11:11:36.44",
+              "unit": "hourangle",
+              "condition": "J2000 equatorial coordinates encoded in the SDSS catalog identifier; target is listed among the Possible HVSs.",
+              "evidence": [
+                {
+                  "location": "T:p5-b0",
+                  "quote": "<td>496</td><td>353</td><td>18.86</td><td>+0.28</td><td>54</td><td>256.27</td><td>+54.55</td><td>SDSS J111136.44+005856.44</td>"
+                }
+              ]
+            },
+            {
+              "value": "+00:58:56.44",
+              "unit": "deg",
+              "condition": "J2000 equatorial coordinates encoded in the SDSS catalog identifier; target is listed among the Possible HVSs.",
+              "evidence": [
+                {
+                  "location": "T:p5-b0",
+                  "quote": "<td>496</td><td>353</td><td>18.86</td><td>+0.28</td><td>54</td><td>256.27</td><td>+54.55</td><td>SDSS J111136.44+005856.44</td>"
+                }
+              ]
+            }
+          ]
+        },
+        "right_position": {
+          "ra_deg": 167.90183333333331,
+          "dec_deg": 0.9823444444444445,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "11:11:36.44",
+              "unit": "hourangle",
+              "condition": "Equatorial right ascension from Table A1 (Gaia DR2 and Brown, Geller & Kenyon 2014 references)",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "HVS24</td><td>11:11:36.44</td><td>+00:58:56.44</td>"
+                },
+                {
+                  "location": "I:p7-b0"
+                }
+              ]
+            },
+            {
+              "value": "+00:58:56.44",
+              "unit": "deg",
+              "condition": "Equatorial declination from Table A1",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "HVS24</td><td>11:11:36.44</td><td>+00:58:56.44</td>"
+                },
+                {
+                  "location": "I:p7-b0"
+                }
+              ]
+            }
+          ]
+        },
+        "coordinate_interpretations": {
+          "left": {
+            "frame": "fk5",
+            "equinox": "J2000",
+            "frame_basis": "coordinate_conditions",
+            "frame_assumed": false,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          },
+          "right": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          }
+        },
+        "epoch_propagation": false
+      }
+    },
+    {
+      "method": "coordinates",
+      "left": "1804.10197v1#/stars/20",
+      "right": "2207.04406v2#/stars/68",
+      "details": {
+        "separation_arcsec": 0.042911509810512435,
+        "threshold_arcsec": 5.0,
+        "left_position": {
+          "ra_deg": 167.90183333333331,
+          "dec_deg": 0.9823444444444445,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "11:11:36.44",
+              "unit": "hourangle",
+              "condition": "Equatorial right ascension from Table A1 (Gaia DR2 and Brown, Geller & Kenyon 2014 references)",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "HVS24</td><td>11:11:36.44</td><td>+00:58:56.44</td>"
+                },
+                {
+                  "location": "I:p7-b0"
+                }
+              ]
+            },
+            {
+              "value": "+00:58:56.44",
+              "unit": "deg",
+              "condition": "Equatorial declination from Table A1",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "HVS24</td><td>11:11:36.44</td><td>+00:58:56.44</td>"
+                },
+                {
+                  "location": "I:p7-b0"
+                }
+              ]
+            }
+          ]
+        },
+        "right_position": {
+          "ra_deg": 167.90183,
+          "dec_deg": 0.982333,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "167.901830",
+              "unit": "deg",
+              "condition": "Position listed for the literature HVS24 in Table A1.",
+              "evidence": [
+                {
+                  "location": "T:p18-b1",
+                  "quote": "<td>HVS24</td><td>167.901830</td><td>0.101</td><td>-0.403</td><td>496.20</td><td>61.80</td><td>11103</td><td>4.00</td><td>-</td><td>-</td><td>357.17</td><td>383.87</td><td>Brown et al. (2014)</td>"
+                }
+              ]
+            },
+            {
+              "value": "0.982333",
+              "unit": "deg",
+              "condition": "Position listed for the literature HVS24 in Table A1.",
+              "evidence": [
+                {
+                  "location": "T:p18-b1",
+                  "quote": "<td>HVS24</td><td>167.901830</td><td>0.101</td><td>-0.403</td><td>496.20</td><td>61.80</td><td>11103</td><td>4.00</td><td>-</td><td>-</td><td>357.17</td><td>383.87</td><td>Brown et al. (2014)</td>"
+                }
+              ]
+            }
+          ]
+        },
+        "coordinate_interpretations": {
+          "left": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          },
+          "right": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          }
+        },
+        "epoch_propagation": false
+      }
+    },
+    {
+      "method": "coordinates",
+      "left": "1805.04184v2#/stars/20",
+      "right": "2207.04406v2#/stars/68",
+      "details": {
+        "separation_arcsec": 0.7221567025899807,
+        "threshold_arcsec": 5.0,
+        "left_position": {
+          "ra_deg": 167.90166666666667,
+          "dec_deg": 0.9822222222222222,
+          "frame": "fk5",
+          "equinox": "J2000",
+          "evidence": [
+            {
+              "value": "11:11:36.4",
+              "unit": "hourangle",
+              "condition": "J2000 equatorial coordinates from Table 1",
+              "evidence": [
+                {
+                  "location": "T:p3-b0",
+                  "quote": "<tr><td>HVS24</td><td>11:11:36.4</td><td>0:58:56</td><td>18.98</td><td>0.292 ± 0.777, -0.379 ± 0.578</td><td>···</td><td>-4.431 ± 2.916, -1.653 ± 3.129</td></tr>"
+                },
+                {
+                  "location": "I:p3-b0"
+                }
+              ]
+            },
+            {
+              "value": "0:58:56",
+              "unit": "deg",
+              "condition": "J2000 equatorial coordinates from Table 1",
+              "evidence": [
+                {
+                  "location": "T:p3-b0",
+                  "quote": "<tr><td>HVS24</td><td>11:11:36.4</td><td>0:58:56</td><td>18.98</td><td>0.292 ± 0.777, -0.379 ± 0.578</td><td>···</td><td>-4.431 ± 2.916, -1.653 ± 3.129</td></tr>"
+                },
+                {
+                  "location": "I:p3-b0"
+                }
+              ]
+            }
+          ]
+        },
+        "right_position": {
+          "ra_deg": 167.90183,
+          "dec_deg": 0.982333,
+          "frame": "icrs",
+          "equinox": null,
+          "evidence": [
+            {
+              "value": "167.901830",
+              "unit": "deg",
+              "condition": "Position listed for the literature HVS24 in Table A1.",
+              "evidence": [
+                {
+                  "location": "T:p18-b1",
+                  "quote": "<td>HVS24</td><td>167.901830</td><td>0.101</td><td>-0.403</td><td>496.20</td><td>61.80</td><td>11103</td><td>4.00</td><td>-</td><td>-</td><td>357.17</td><td>383.87</td><td>Brown et al. (2014)</td>"
+                }
+              ]
+            },
+            {
+              "value": "0.982333",
+              "unit": "deg",
+              "condition": "Position listed for the literature HVS24 in Table A1.",
+              "evidence": [
+                {
+                  "location": "T:p18-b1",
+                  "quote": "<td>HVS24</td><td>167.901830</td><td>0.101</td><td>-0.403</td><td>496.20</td><td>61.80</td><td>11103</td><td>4.00</td><td>-</td><td>-</td><td>357.17</td><td>383.87</td><td>Brown et al. (2014)</td>"
+                }
+              ]
+            }
+          ]
+        },
+        "coordinate_interpretations": {
+          "left": {
+            "frame": "fk5",
+            "equinox": "J2000",
+            "frame_basis": "coordinate_conditions",
+            "frame_assumed": false,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          },
+          "right": {
+            "frame": "icrs",
+            "equinox": null,
+            "frame_basis": "assumed_icrs",
+            "frame_assumed": true,
+            "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
+            "epoch_propagation": false
+          }
+        },
+        "epoch_propagation": false
+      }
+    },
+    {
+      "method": "review",
+      "left": "1203.3543v1#/stars/17",
+      "right": "1401.7342v1#/stars/20",
+      "details": {
+        "decision_id": "R21-merge-041",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. Fixed PDF 2003.12766v1 p.7 Table 4 gives HVS24 = SDSSJ111136.44+005856.4; the extracted 111336 is an identifier transcription error, not a new star."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1401.7342v1#/stars/20",
+      "right": "1804.10179v3#/stars/20",
+      "details": {
+        "decision_id": "R21-merge-041",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. Fixed PDF 2003.12766v1 p.7 Table 4 gives HVS24 = SDSSJ111136.44+005856.4; the extracted 111336 is an identifier transcription error, not a new star."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1804.10179v3#/stars/20",
+      "right": "1804.10197v1#/stars/20",
+      "details": {
+        "decision_id": "R21-merge-041",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. Fixed PDF 2003.12766v1 p.7 Table 4 gives HVS24 = SDSSJ111136.44+005856.4; the extracted 111336 is an identifier transcription error, not a new star."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1804.10197v1#/stars/20",
+      "right": "1805.04184v2#/stars/20",
+      "details": {
+        "decision_id": "R21-merge-041",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. Fixed PDF 2003.12766v1 p.7 Table 4 gives HVS24 = SDSSJ111136.44+005856.4; the extracted 111336 is an identifier transcription error, not a new star."
+      }
+    },
+    {
+      "method": "review",
+      "left": "1805.04184v2#/stars/20",
+      "right": "2003.12766v1#/stars/21",
+      "details": {
+        "decision_id": "R21-merge-041",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. Fixed PDF 2003.12766v1 p.7 Table 4 gives HVS24 = SDSSJ111136.44+005856.4; the extracted 111336 is an identifier transcription error, not a new star."
+      },
+      "origins": {
+        "2003.12766v1#/stars/21": {
+          "$ref": "#/association_origins/2003.12766v1#~1stars~121@00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830"
+        }
+      }
+    },
+    {
+      "method": "review",
+      "left": "2003.12766v1#/stars/21",
+      "right": "2207.04406v2#/stars/68",
+      "details": {
+        "decision_id": "R21-merge-041",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. Fixed PDF 2003.12766v1 p.7 Table 4 gives HVS24 = SDSSJ111136.44+005856.4; the extracted 111336 is an identifier transcription error, not a new star."
+      },
+      "origins": {
+        "2003.12766v1#/stars/21": {
+          "$ref": "#/association_origins/2003.12766v1#~1stars~121@00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830"
+        }
+      }
+    },
+    {
+      "method": "review",
+      "left": "2207.04406v2#/stars/68",
+      "right": "2411.09278v2#/stars/12",
+      "details": {
+        "decision_id": "R21-merge-041",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. Fixed PDF 2003.12766v1 p.7 Table 4 gives HVS24 = SDSSJ111136.44+005856.4; the extracted 111336 is an identifier transcription error, not a new star."
+      }
+    },
+    {
+      "method": "review",
+      "left": "2411.09278v2#/stars/12",
+      "right": "2502.00102v2#/stars/20",
+      "details": {
+        "decision_id": "R21-merge-041",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. Fixed PDF 2003.12766v1 p.7 Table 4 gives HVS24 = SDSSJ111136.44+005856.4; the extracted 111336 is an identifier transcription error, not a new star."
+      }
+    }
+  ],
+  "review_decisions": [
+    {
+      "id": "R21-correct-102",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/68/quantities/1/values/0",
+      "original": {
+        "value": "0.101",
+        "unit": "deg",
+        "condition": "Position listed for the literature HVS24 in Table A1.",
+        "evidence": [
+          {
+            "location": "T:p18-b1",
+            "quote": "<td>HVS24</td><td>167.901830</td><td>0.101</td><td>-0.403</td><td>496.20</td><td>61.80</td><td>11103</td><td>4.00</td><td>-</td><td>-</td><td>357.17</td><td>383.87</td><td>Brown et al. (2014)</td>"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "0.982333",
+        "unit": "deg",
+        "condition": "Position listed for the literature HVS24 in Table A1.",
+        "evidence": [
+          {
+            "location": "T:p18-b1",
+            "quote": "<td>HVS24</td><td>167.901830</td><td>0.101</td><td>-0.403</td><td>496.20</td><td>61.80</td><td>11103</td><td>4.00</td><td>-</td><td>-</td><td>357.17</td><td>383.87</td><td>Brown et al. (2014)</td>"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 18,
+          "location": "Table A1, HVS24, Gaia 3810351984075984768, dec",
+          "quote": "69 HVS24 167.901830 0.101 -0.403 496.20 61.80 11103 4.00 – – 357.17 383.87 Brown et al. (2014)\n3810351984075984768 0.982333 0.311 0.265 6.80 11.10 806 0.31 – – 6.80 33.78"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-correct-103",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/68/quantities/2/values/0",
+      "original": {
+        "value": "-0.403",
+        "error": "0.311",
+        "unit": "mas/yr",
+        "condition": "Table A1 proper motion; in the two-line row, the first-line value after declination is μ_α cos δ, with its uncertainty on the second line.",
+        "evidence": [
+          {
+            "location": "T:p18-b1",
+            "quote": "<tr><td rowspan=\"2\">69</td><td>HVS24</td><td>167.901830</td><td>0.101</td><td>-0.403</td><td>496.20</td><td>61.80</td><td>11103</td><td>4.00</td><td>-</td><td>-</td><td>357.17</td><td>383.87</td><td>Brown et al. (2014)</td></tr><tr><td>3810351984075984768</td><td>0.982333</td><td>0.311</td><td>0.265</td><td>6.80</td><td>11.10</td><td>806</td><td>0.31</td><td>-</td><td>-</td><td>6.80</td><td>33.78</td></tr>"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "0.101",
+        "error": "0.311",
+        "unit": "mas/yr",
+        "condition": "Table A1 proper motion; in the two-line row, the first-line value after declination is μ_α cos δ, with its uncertainty on the second line.",
+        "evidence": [
+          {
+            "location": "T:p18-b1",
+            "quote": "<tr><td rowspan=\"2\">69</td><td>HVS24</td><td>167.901830</td><td>0.101</td><td>-0.403</td><td>496.20</td><td>61.80</td><td>11103</td><td>4.00</td><td>-</td><td>-</td><td>357.17</td><td>383.87</td><td>Brown et al. (2014)</td></tr><tr><td>3810351984075984768</td><td>0.982333</td><td>0.311</td><td>0.265</td><td>6.80</td><td>11.10</td><td>806</td><td>0.31</td><td>-</td><td>-</td><td>6.80</td><td>33.78</td></tr>"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 18,
+          "location": "Table A1, HVS24, Gaia 3810351984075984768, proper_motion_ra",
+          "quote": "69 HVS24 167.901830 0.101 -0.403 496.20 61.80 11103 4.00 – – 357.17 383.87 Brown et al. (2014)\n3810351984075984768 0.982333 0.311 0.265 6.80 11.10 806 0.31 – – 6.80 33.78"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-correct-104",
+      "type": "correct",
+      "paper": "2207.04406v2",
+      "science_sha256": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+      "pdf_sha256": "457f47491be4e2c1c983e5d1c04de1eb2f4345c356e3bc2aaa2578b0b5b80765",
+      "path": "/stars/68/quantities/3/values/0",
+      "original": {
+        "value": "0.982333",
+        "error": "0.265",
+        "unit": "mas/yr",
+        "condition": "Table A1 proper motion; the second-line leading value after the Gaia ID is μ_δ, followed by its uncertainty.",
+        "evidence": [
+          {
+            "location": "T:p18-b1",
+            "quote": "<tr><td rowspan=\"2\">69</td><td>HVS24</td><td>167.901830</td><td>0.101</td><td>-0.403</td><td>496.20</td><td>61.80</td><td>11103</td><td>4.00</td><td>-</td><td>-</td><td>357.17</td><td>383.87</td><td>Brown et al. (2014)</td></tr><tr><td>3810351984075984768</td><td>0.982333</td><td>0.311</td><td>0.265</td><td>6.80</td><td>11.10</td><td>806</td><td>0.31</td><td>-</td><td>-</td><td>6.80</td><td>33.78</td></tr>"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "-0.403",
+        "error": "0.265",
+        "unit": "mas/yr",
+        "condition": "Table A1 proper motion; the second-line leading value after the Gaia ID is μ_δ, followed by its uncertainty.",
+        "evidence": [
+          {
+            "location": "T:p18-b1",
+            "quote": "<tr><td rowspan=\"2\">69</td><td>HVS24</td><td>167.901830</td><td>0.101</td><td>-0.403</td><td>496.20</td><td>61.80</td><td>11103</td><td>4.00</td><td>-</td><td>-</td><td>357.17</td><td>383.87</td><td>Brown et al. (2014)</td></tr><tr><td>3810351984075984768</td><td>0.982333</td><td>0.311</td><td>0.265</td><td>6.80</td><td>11.10</td><td>806</td><td>0.31</td><td>-</td><td>-</td><td>6.80</td><td>33.78</td></tr>"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 18,
+          "location": "Table A1, HVS24, Gaia 3810351984075984768, proper_motion_dec",
+          "quote": "69 HVS24 167.901830 0.101 -0.403 496.20 61.80 11103 4.00 – – 357.17 383.87 Brown et al. (2014)\n3810351984075984768 0.982333 0.311 0.265 6.80 11.10 806 0.31 – – 6.80 33.78"
+        }
+      ],
+      "reason": "The two-row header of the fixed PDF locates the central value and its error; corrects an extraction column shift or digit transcription error. Original evidence kept, with the fixed-PDF evidence added by this decision.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-correct-128",
+      "type": "correct",
+      "paper": "2003.12766v1",
+      "science_sha256": "00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830",
+      "pdf_sha256": "e7cae30e6c42a83152d1ed6138e7dbf7521869f8b74fe81c1a297853c56b48ea",
+      "path": "/stars/21/identifiers/1",
+      "original": {
+        "value": "SDSSJ111336.44+005856.4",
+        "evidence": [
+          {
+            "location": "I:p7-b0"
+          }
+        ]
+      },
+      "replacement": {
+        "value": "SDSSJ111136.44+005856.4",
+        "evidence": [
+          {
+            "location": "I:p7-b0"
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "page": 7,
+          "location": "Table 4, HVS24",
+          "quote": "HVS24 (SDSSJ111136.44+005856.4)"
+        }
+      ],
+      "reason": "The fixed PDF gives the full coordinate name with 111136; the extraction wrote 111336 by mistake. The original identifier is kept in provenance.",
+      "approved_by": "Project lead (stop 1 approval of the fixed-PDF transcription correction scope)",
+      "approved_on": "2026-10-25"
+    },
+    {
+      "id": "R21-merge-041",
+      "type": "merge",
+      "groups": [
+        [
+          "1203.3543v1#/stars/17",
+          "1401.7342v1#/stars/20",
+          "1804.10197v1#/stars/20",
+          "1805.04184v2#/stars/20"
+        ],
+        [
+          "1804.10179v3#/stars/20"
+        ],
+        [
+          "2003.12766v1#/stars/21"
+        ],
+        [
+          "2207.04406v2#/stars/68",
+          "2502.00102v2#/stars/20"
+        ],
+        [
+          "2411.09278v2#/stars/12"
+        ]
+      ],
+      "papers": {
+        "1203.3543v1": "cca433462bfc5161d5f46cd55e42f124bdc526b76cb3858d59a469d53019dc0d",
+        "1401.7342v1": "0e4bb1f538746c383d4659f01699ce9adbf910f90f566ece00dea214464b2a4b",
+        "1804.10179v3": "f247c72e67ff7194ed5c87df18cb37bd2f07cc5294c679e1112df7607bf9334e",
+        "1804.10197v1": "14edfb00e7bdc5c7c02f9c0033ae1f47f3c53532dfedc00bc452ca397ad153d9",
+        "1805.04184v2": "0d82c08e5c9be96b4af3153fffed37b9f43630ee66e68ede44b43b68dd302aa3",
+        "2003.12766v1": "00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830",
+        "2207.04406v2": "6c08f575d7db3d68e188ba67206958ab451e8f1e3ef588bd3ddff83fc95a1020",
+        "2411.09278v2": "f1ef7471a40bfaa4b51cdf146c1ec53ef8344301f0d42572d4cf90b706471069",
+        "2502.00102v2": "c9a8146fb8f66a27dcb4697c15442186ac56b783f99962d814b18e7f57dd28a6"
+      },
+      "responses": {},
+      "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone. Fixed PDF 2003.12766v1 p.7 Table 4 gives HVS24 = SDSSJ111136.44+005856.4; the extracted 111336 is an identifier transcription error, not a new star.",
+      "evidence": [
+        {
+          "paper": "1203.3543v1",
+          "location": "I:p5-b0"
+        },
+        {
+          "paper": "1401.7342v1",
+          "location": "T:p3-b12",
+          "quote": "SDSS J111136.44+005856.44 as HVS24."
+        },
+        {
+          "paper": "1804.10179v3",
+          "location": "T:p4-b6",
+          "quote": "HVS1,4-10,12-24 and others"
+        },
+        {
+          "paper": "1804.10197v1",
+          "location": "I:p7-b0"
+        },
+        {
+          "paper": "1805.04184v2",
+          "location": "I:p3-b0"
+        },
+        {
+          "paper": "1805.04184v2",
+          "location": "I:p10-b0"
+        },
+        {
+          "paper": "2003.12766v1",
+          "location": "T:p7-b0",
+          "quote": "HVS24 (SDSSJ11136.44+005856.4)"
+        },
+        {
+          "paper": "2003.12766v1",
+          "location": "I:p7-b0"
+        },
+        {
+          "paper": "2207.04406v2",
+          "location": "I:p18-b1"
+        },
+        {
+          "paper": "2411.09278v2",
+          "location": "T:p14-b0",
+          "quote": "HVS24"
+        },
+        {
+          "paper": "2502.00102v2",
+          "location": "T:p4-b0",
+          "quote": "<tr><td>24</td><td>3810351984075984768</td>"
+        },
+        {
+          "paper": "2502.00102v2",
+          "location": "I:p4-b0"
+        }
+      ],
+      "approved_by": "Project lead (stop 1 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
+    }
+  ],
+  "association_origins": {
+    "2003.12766v1#/stars/21@00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830": {
+      "source": {
+        "arxiv_id": "2003.12766",
+        "version": "v1",
+        "title": "Hypervelocity Stars in the Gaia era. Revisiting the most extreme stars from the MMT survey",
+        "authors": [
+          "S. Kreuzer",
+          "A. Irrgang",
+          "U. Heber"
+        ]
+      },
+      "result_sha256": "00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830",
+      "pdf_sha256": "e7cae30e6c42a83152d1ed6138e7dbf7521869f8b74fe81c1a297853c56b48ea",
+      "pdf_url": "https://arxiv.org/pdf/2003.12766v1",
+      "pdf_origin": {
+        "kind": "arxiv",
+        "arxiv_id": "2003.12766v1",
+        "retrieval": "downloaded from https://arxiv.org/pdf/2003.12766v1 at 1792658199.382625"
+      },
+      "result_index": 21,
+      "identifiers": [
+        {
+          "value": "HVS 24",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "HVS24 (SDSSJ11136.44+005856.4)"
+            },
+            {
+              "location": "I:p7-b0"
+            }
+          ]
+        },
+        {
+          "value": "SDSSJ111136.44+005856.4",
+          "evidence": [
+            {
+              "location": "I:p7-b0"
+            }
+          ]
+        }
+      ]
+    }
+  },
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "2QZ J111136.4+005855",
+      "aliases": [
+        "2QZ J111136.4+005855",
+        "Gaia DR2 3810351984075984768",
+        "Gaia DR3 3810351984075984768",
+        "SDSS J111136.44+005856.4",
+        "[BGK2006] HV 24"
+      ],
+      "position": {
+        "ra_deg": 167.90184865749,
+        "dec_deg": 0.9823418735,
+        "frame": "icrs",
+        "equinox": null,
+        "evidence": []
+      },
+      "fields": {
+        "main_id": {
+          "value": "2QZ J111136.4+005855"
+        },
+        "nbref": {
+          "value": 10
+        },
+        "otype": {
+          "value": "HV*"
+        },
+        "ra": {
+          "value": 167.90184865749,
+          "unit": "deg"
+        },
+        "ra_prec": {
+          "value": 14
+        },
+        "dec": {
+          "value": 0.9823418735,
+          "unit": "deg"
+        },
+        "dec_prec": {
+          "value": 14
+        },
+        "coo_err_maj": {
+          "value": 0.3041999936103821,
+          "unit": "mas"
+        },
+        "coo_err_maj_prec": {
+          "value": 4
+        },
+        "coo_err_min": {
+          "value": 0.23409999907016754,
+          "unit": "mas"
+        },
+        "coo_err_min_prec": {
+          "value": 4
+        },
+        "coo_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "coo_qual": {
+          "value": "A"
+        },
+        "coo_wavelength": {
+          "value": "O"
+        },
+        "coo_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "hpx": {
+          "value": 6930989
+        },
+        "pmra": {
+          "value": 0.101,
+          "unit": "mas / yr"
+        },
+        "pmra_prec": {
+          "value": 3
+        },
+        "pmdec": {
+          "value": -0.403,
+          "unit": "mas / yr"
+        },
+        "pmdec_prec": {
+          "value": 3
+        },
+        "pm_err_maj": {
+          "value": 0.3109999895095825,
+          "unit": "mas / yr"
+        },
+        "pm_err_maj_prec": {
+          "value": 3
+        },
+        "pm_err_min": {
+          "value": 0.26499998569488525,
+          "unit": "mas / yr"
+        },
+        "pm_err_min_prec": {
+          "value": 3
+        },
+        "pm_err_angle": {
+          "value": 90,
+          "unit": "deg"
+        },
+        "pm_qual": {
+          "value": "A"
+        },
+        "pm_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "plx_value": {
+          "value": 0.8482,
+          "unit": "mas"
+        },
+        "plx_prec": {
+          "value": 4
+        },
+        "plx_err": {
+          "value": 0.32739999890327454,
+          "unit": "mas"
+        },
+        "plx_err_prec": {
+          "value": 4
+        },
+        "plx_qual": {
+          "value": "A"
+        },
+        "plx_bibcode": {
+          "value": "2020yCat.1350....0G"
+        },
+        "rvz_type": {
+          "value": "v"
+        },
+        "rvz_radvel": {
+          "value": 496.2,
+          "unit": "km / s"
+        },
+        "rvz_radvel_prec": {
+          "value": 1
+        },
+        "rvz_redshift": {
+          "value": 0.0016565170628837222
+        },
+        "rvz_err": {
+          "value": 9.800000190734863,
+          "unit": "km / s"
+        },
+        "rvz_err_prec": {
+          "value": 1
+        },
+        "rvz_nature": {
+          "value": ""
+        },
+        "rvz_qual": {
+          "value": "D"
+        },
+        "rvz_bibcode": {
+          "value": "2012ApJ...751...55B"
+        },
+        "vlsr_wavelength": {
+          "value": ""
+        },
+        "vlsr_bibcode": {
+          "value": ""
+        },
+        "sp_type": {
+          "value": "B"
+        },
+        "sp_qual": {
+          "value": "E"
+        },
+        "sp_bibcode": {
+          "value": "2012ApJ...751...55B"
+        },
+        "morph_type": {
+          "value": ""
+        },
+        "morph_qual": {
+          "value": ""
+        },
+        "morph_bibcode": {
+          "value": ""
+        },
+        "galdim_qual": {
+          "value": ""
+        },
+        "galdim_wavelength": {
+          "value": ""
+        },
+        "galdim_bibcode": {
+          "value": ""
+        },
+        "update_date": {
+          "value": "2025-07-31"
+        },
+        "otype_txt": {
+          "value": "HV*"
+        },
+        "rvz_wavelength": {
+          "value": "O"
+        }
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "fields": {
+            "flux_err_prec": {
+              "value": 6
+            },
+            "flux_prec": {
+              "value": 6
+            },
+            "oidref": {
+              "value": 8267844
+            },
+            "filter": {
+              "value": "G"
+            },
+            "flux": {
+              "value": 19.09869384765625
+            },
+            "system": {
+              "value": "V"
+            },
+            "flux_err": {
+              "value": 0.004304000176489353
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2020yCat.1350....0G"
+            }
+          }
+        },
+        {
+          "band": "u",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 8267844
+            },
+            "filter": {
+              "value": "u"
+            },
+            "flux": {
+              "value": 19.878999710083008
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.04600000008940697
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        },
+        {
+          "band": "g",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 8267844
+            },
+            "filter": {
+              "value": "g"
+            },
+            "flux": {
+              "value": 18.95599937438965
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.008999999612569809
+            },
+            "qual": {
+              "value": "B"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        },
+        {
+          "band": "r",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 8267844
+            },
+            "filter": {
+              "value": "r"
+            },
+            "flux": {
+              "value": 19.239999771118164
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.013000000268220901
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        },
+        {
+          "band": "i",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 8267844
+            },
+            "filter": {
+              "value": "i"
+            },
+            "flux": {
+              "value": 19.44499969482422
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.020999999716877937
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        },
+        {
+          "band": "z",
+          "fields": {
+            "flux_err_prec": {
+              "value": 3
+            },
+            "flux_prec": {
+              "value": 3
+            },
+            "oidref": {
+              "value": 8267844
+            },
+            "filter": {
+              "value": "z"
+            },
+            "flux": {
+              "value": 19.531999588012695
+            },
+            "system": {
+              "value": "A"
+            },
+            "flux_err": {
+              "value": 0.06800000369548798
+            },
+            "qual": {
+              "value": "C"
+            },
+            "bibcode": {
+              "value": "2009ApJS..182..543A"
+            }
+          }
+        }
+      ]
+    },
+    "queries": [
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "Gaia DR3 3810351984075984768",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "9154e75bb9188eddb06262588bf4bf16e44a64f0c5c5e5691686a954d79f0f2c",
+        "queried_at": "2026-10-25T12:01:15.661721+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2502.00102v2#/stars/20",
+            "original_identifier": {
+              "value": "Gaia DR3 3810351984075984768",
+              "evidence": [
+                {
+                  "location": "T:p4-b0",
+                  "quote": "<tr><td>24</td><td>3810351984075984768</td>"
+                },
+                {
+                  "location": "I:p4-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "Gaia EDR3 3810351984075984768",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "4969e534dbda81ff98fa0c7182a9e9fb73802cf688af0fa5a4302e5a11ceeae7",
+        "queried_at": "2026-10-25T11:46:18.826413+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2207.04406v2#/stars/68",
+            "original_identifier": {
+              "value": "Gaia EDR3 3810351984075984768",
+              "evidence": [
+                {
+                  "location": "I:p18-b1"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J111136.44+005856.4",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "d06618eecdb172cd691b8ba59ba59ed4a770f251164087bd09b5d777fda20cdc",
+        "queried_at": "2026-10-25T11:48:38.984817+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "1203.3543v1#/stars/17",
+            "original_identifier": {
+              "value": "SDSS J111136.44+005856.44",
+              "evidence": [
+                {
+                  "location": "I:p5-b0"
+                }
+              ]
+            },
+            "derivation": "sdss_standard_truncation"
+          },
+          {
+            "source_record": "1401.7342v1#/stars/20",
+            "original_identifier": {
+              "value": "SDSS J111136.44+005856.44",
+              "evidence": [
+                {
+                  "location": "T:p3-b12",
+                  "quote": "SDSS J111136.44+005856.44 as HVS24."
+                }
+              ]
+            },
+            "derivation": "sdss_standard_truncation"
+          },
+          {
+            "source_record": "2003.12766v1#/stars/21",
+            "original_identifier": {
+              "value": "SDSSJ111136.44+005856.4",
+              "evidence": [
+                {
+                  "location": "I:p7-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J111136.44+005856.44",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "02ae6aba9ce84d833ebf09bb71bf7a66de2fd906ab20a2f54224b54d85119783",
+        "queried_at": "2026-10-25T11:47:59.182857+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "1203.3543v1#/stars/17",
+            "original_identifier": {
+              "value": "SDSS J111136.44+005856.44",
+              "evidence": [
+                {
+                  "location": "I:p5-b0"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          },
+          {
+            "source_record": "1401.7342v1#/stars/20",
+            "original_identifier": {
+              "value": "SDSS J111136.44+005856.44",
+              "evidence": [
+                {
+                  "location": "T:p3-b12",
+                  "quote": "SDSS J111136.44+005856.44 as HVS24."
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      }
+    ],
+    "matches": [
+      {
+        "main_id": "2QZ J111136.4+005855",
+        "method": "identifier",
+        "identifier": "Gaia DR3 3810351984075984768",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      },
+      {
+        "main_id": "2QZ J111136.4+005855",
+        "method": "identifier",
+        "identifier": "Gaia EDR3 3810351984075984768",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      },
+      {
+        "main_id": "2QZ J111136.4+005855",
+        "method": "identifier",
+        "identifier": "SDSS J111136.44+005856.4",
+        "candidate": {
+          "$ref": "#/simbad/selected"
+        }
+      }
+    ]
   }
 }

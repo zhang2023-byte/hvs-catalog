@@ -1,33 +1,34 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000122",
-  "display_name": "HVS8",
+  "display_name": "P14 No. 2",
   "sources": {
-    "1206.4057v1": {
-      "title": "The Nature of Hypervelocity Stars and the Time Between Their Formation and Ejection",
+    "1503.04164v1": {
+      "title": "Candidate hypervelocity stars of spectral type G and K revisited",
       "authors": [
-        "Warren R. Brown",
-        "Judith G. Cohen",
-        "Margaret J. Geller",
-        "Scott J. Kenyon"
+        "E. Ziegerer",
+        "M. Volkert",
+        "U. Heber",
+        "A. Irrgang",
+        "B. T. Gaensicke",
+        "S. Geier"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1206.4057v1",
+      "pdf_url": "https://arxiv.org/pdf/1503.04164v1",
       "records": [
-        "/stars/2"
+        "/stars/1"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS8",
+      "value": "P14 No. 2",
       "evidence": [
         {
-          "location": "T:p1-b14",
-          "quote": "HVS3, HVS7, and HVS8 have been studied with"
+          "location": "I:p3-b0"
         }
       ],
-      "source": "1206.4057v1"
+      "source": "1503.04164v1"
     }
   ],
   "contribution_types": [
@@ -35,44 +36,348 @@
       "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p1-b14",
-          "quote": "Of the B-type HVSs discovered to date, only\nHVS3, HVS7, and HVS8 have been studied with\nhigh-resolution spectroscopy."
+          "location": "T:p1-b13",
+          "quote": "20 candidates\nwere found likely to be unbound, four of which at 3 and six at\n2σ significance levels."
         },
         {
-          "location": "T:p3-b3",
-          "quote": "HVS8, and HVS1 measured by Przybilla et al. (2008c),"
+          "location": "T:p4-b5",
+          "quote": "We present a revised analysis of the 20 candidate HVSs"
         },
         {
-          "location": "T:p5-b1",
-          "quote": "The HVSs are significantly unbound based on radial\nvelocity alone. The four HVSs with known evolutionary"
+          "location": "I:p3-b0"
         }
       ],
-      "source": "1206.4057v1"
+      "source": "1503.04164v1"
     }
   ],
   "quantities": [
     {
-      "quantity": "galactocentric_radius",
+      "quantity": "proper_motion_ra",
       "values": [
         {
-          "value": "60",
-          "error": "10",
-          "unit": "kpc",
-          "condition": "Galactocentric distance r_GC for HVS8 listed in Table 1.",
+          "value": "8.9",
+          "error": "4.7",
+          "unit": "mas/yr",
+          "condition": "This work; new proper motion derived from all available images relative to background galaxies.",
           "evidence": [
             {
-              "location": "T:p4-b0",
-              "quote": "<table><tr><td></td><td>HVS5</td><td>HVS7</td><td>HVS8</td><td>HVS1</td></tr>"
-            },
-            {
-              "location": "T:p4-b0",
-              "quote": "<tr><td><eq>r_{GC}</eq> (kpc)</td><td>50 ± 5</td><td>53 ± 4</td><td>60 ± 10</td><td>130 ± 18</td></tr>"
-            },
-            {
-              "location": "I:p4-b0"
+              "location": "I:p3-b0"
             }
           ],
-          "source": "1206.4057v1"
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "8.9",
+            "error": "4.7",
+            "approximate": false
+          }
+        },
+        {
+          "value": "-2.6",
+          "error": "3.0",
+          "unit": "mas/yr",
+          "condition": "SDSS proper motion as used by P14.",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-2.6",
+            "error": "3.0",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "8.6",
+          "error": "3.7",
+          "unit": "mas/yr",
+          "condition": "This work; new proper motion derived from all available images relative to background galaxies.",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "8.6",
+            "error": "3.7",
+            "approximate": false
+          }
+        },
+        {
+          "value": "15.5",
+          "error": "3.0",
+          "unit": "mas/yr",
+          "condition": "SDSS proper motion as used by P14.",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "15.5",
+            "error": "3.0",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactic_rest_frame_velocity",
+      "values": [
+        {
+          "value": "423.9",
+          "error": "100.7",
+          "unit": "km/s",
+          "condition": "v_GRF,1: median Galactic rest-frame velocity at the present location, model II, based on this work's proper motions; Monte Carlo with 10^6 realizations.",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "423.9",
+            "error": "100.7",
+            "approximate": false
+          }
+        },
+        {
+          "value": "635.2",
+          "error": "86.7",
+          "unit": "km/s",
+          "condition": "v_GRF,2: median Galactic rest-frame velocity at the present location, model II, based on SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "635.2",
+            "error": "86.7",
+            "approximate": false
+          }
+        },
+        {
+          "value": "424.5",
+          "error": "100.5",
+          "unit": "km/s",
+          "condition": "v_GRF,1: median Galactic rest-frame velocity at the present location, model I, based on this work's proper motions.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "424.5",
+            "error": "100.5",
+            "approximate": false
+          }
+        },
+        {
+          "value": "636.4",
+          "error": "86.7",
+          "unit": "km/s",
+          "condition": "v_GRF,2: median Galactic rest-frame velocity at the present location, model I, based on SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "636.4",
+            "error": "86.7",
+            "approximate": false
+          }
+        },
+        {
+          "value": "423.3",
+          "error": "100.5",
+          "unit": "km/s",
+          "condition": "v_GRF,1: median Galactic rest-frame velocity at the present location, model III, based on this work's proper motions.",
+          "evidence": [
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "423.3",
+            "error": "100.5",
+            "approximate": false
+          }
+        },
+        {
+          "value": "634.4",
+          "error": "86.7",
+          "unit": "km/s",
+          "condition": "v_GRF,2: median Galactic rest-frame velocity at the present location, model III, based on SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "634.4",
+            "error": "86.7",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "bound_probability",
+      "values": [
+        {
+          "value": "7.43",
+          "unit": "%",
+          "condition": "Bound probability listed by P14 using SDSS proper motions.",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "cited",
+          "attribution_reason": "Probability column of the original P14 paper in Tables 1–3, only compared with this paper's probabilities recalculated from old and new proper motions.",
+          "standard": {
+            "unit": "1",
+            "value": "0.0743",
+            "approximate": false
+          }
+        },
+        {
+          "value": "10.7",
+          "unit": "%",
+          "condition": "Bound probability from model II using SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.107",
+            "approximate": false
+          }
+        },
+        {
+          "value": "84.7",
+          "unit": "%",
+          "condition": "Bound probability from model II using this work's revised proper motions.",
+          "evidence": [
+            {
+              "location": "I:p3-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.847",
+            "approximate": false
+          }
+        },
+        {
+          "value": "23.4",
+          "unit": "%",
+          "condition": "Bound probability from model I using SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.234",
+            "approximate": false
+          }
+        },
+        {
+          "value": "92.3",
+          "unit": "%",
+          "condition": "Bound probability from model I using this work's revised proper motions.",
+          "evidence": [
+            {
+              "location": "I:p6-b0"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.923",
+            "approximate": false
+          }
+        },
+        {
+          "value": "94.4",
+          "unit": "%",
+          "condition": "Bound probability from model III using SDSS proper motions as used by P14.",
+          "evidence": [
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.944",
+            "approximate": false
+          }
+        },
+        {
+          "value": "99.9",
+          "unit": "%",
+          "condition": "Bound probability from model III using this work's revised proper motions.",
+          "evidence": [
+            {
+              "location": "I:p6-b1"
+            }
+          ],
+          "source": "1503.04164v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.999",
+            "approximate": false
+          }
         }
       ]
     }
@@ -83,7 +388,7 @@
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000122_provenance.json",
-    "sha256": "7c4a0903aae4e4d236c6b34a10f7c4d8a0a2b19272ac5e1c7e2af035c2a8d1a6"
+    "sha256": "e59f208bc83046f397bbe94deff6f9b844e5930b1554b2a159eb2261bcfd9de5"
   },
   "warnings": []
 }

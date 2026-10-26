@@ -1,6 +1,6 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000658",
   "associations": [],
   "simbad": {
@@ -9,63 +9,29 @@
     "queries": [
       {
         "query": {
-          "method": "coordinates",
-          "identifier": null,
-          "position": {
-            "ra_deg": 265.178375,
-            "dec_deg": -29.912644444444442,
-            "frame": "icrs",
-            "equinox": null,
-            "evidence": []
-          },
+          "method": "identifier",
+          "identifier": "Gaia DR3 3861665332750313856",
+          "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "0aaadd2927accce2be83e83766e7bc1847d72e1ec951cea3d0e835ca6eef43fe",
-        "queried_at": "2026-10-24T06:03:28.905160+00:00",
+        "response_sha256": "619ba06b3c2772a24eaf1ccdb6d46f988d2d400580f23efde18752b535836eed",
+        "queried_at": "2026-10-25T12:01:56.910181+00:00",
         "client_version": "0.4.11",
         "service_version": null,
         "error": null,
-        "coordinate_inputs": [
+        "identifier_inputs": [
           {
-            "node": "2401.05630v1#/stars/23",
-            "position": {
-              "ra_deg": 265.178375,
-              "dec_deg": -29.912644444444442,
-              "frame": "icrs",
-              "equinox": null,
+            "source_record": "2608.30063v1#/stars/17",
+            "original_identifier": {
+              "value": "Gaia DR3 3861665332750313856",
               "evidence": [
                 {
-                  "value": "17h40m42.81s",
-                  "unit": "hourangle",
-                  "condition": "Equatorial coordinates listed for candidate ID 20 (red VIRAC2-only sample, no Gaia DR3 counterpart)",
-                  "evidence": [
-                    {
-                      "location": "T:p16-b0",
-                      "quote": "20 17h40m42.81s -29d54m45.52s -1.3922 0.3958 14.4 2.34"
-                    }
-                  ]
-                },
-                {
-                  "value": "-29d54m45.52s",
-                  "unit": "deg",
-                  "condition": "Equatorial coordinates listed for candidate ID 20 (red VIRAC2-only sample, no Gaia DR3 counterpart)",
-                  "evidence": [
-                    {
-                      "location": "T:p16-b0",
-                      "quote": "20 17h40m42.81s -29d54m45.52s -1.3922 0.3958 14.4 2.34"
-                    }
-                  ]
+                  "location": "T:p16-b0",
+                  "quote": "3861665332750313856"
                 }
               ]
             },
-            "interpretation": {
-              "frame": "icrs",
-              "equinox": null,
-              "frame_basis": "assumed_icrs",
-              "frame_assumed": true,
-              "pairing": "Shared evidence location or identical nonempty condition within one source object; only one distinct pair.",
-              "epoch_propagation": false
-            }
+            "derivation": "reported_identifier"
           }
         ]
       }

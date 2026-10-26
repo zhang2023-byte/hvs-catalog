@@ -1,40 +1,70 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000011",
   "associations": [
     {
-      "method": "simbad",
+      "method": "review",
       "left": "0709.3748v1#/stars/0",
       "right": "2003.12766v1#/stars/23",
       "details": {
-        "main_id": "SDSS J074950.24+243841.2",
-        "basis": "Reliable identifier queries.",
-        "simbad_evidence": [
-          {
-            "node": "0709.3748v1#/stars/0",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/0"
-              }
-            ]
-          },
-          {
-            "node": "2003.12766v1#/stars/23",
-            "candidate": {
-              "$ref": "#/simbad/selected"
-            },
-            "queries": [
-              {
-                "$ref": "#/simbad/queries/1"
-              }
-            ]
-          }
-        ]
+        "decision_id": "R21-merge-020",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
       }
+    },
+    {
+      "method": "review",
+      "left": "2003.12766v1#/stars/23",
+      "right": "2411.09278v2#/stars/15",
+      "details": {
+        "decision_id": "R21-merge-020",
+        "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone."
+      }
+    }
+  ],
+  "review_decisions": [
+    {
+      "id": "R21-merge-020",
+      "type": "merge",
+      "groups": [
+        [
+          "0709.3748v1#/stars/0",
+          "2003.12766v1#/stars/23"
+        ],
+        [
+          "2411.09278v2#/stars/15"
+        ]
+      ],
+      "papers": {
+        "0709.3748v1": "6abfdd62381789a8701b47c7ef8cf1d7c279500b6c4692d37b68d0281ab4897d",
+        "2003.12766v1": "00d272e1f4a1022e12585b06118fd066708cda16959304c354eacc155b60f830",
+        "2411.09278v2": "f1ef7471a40bfaa4b51cdf146c1ec53ef8344301f0d42572d4cf90b706471069"
+      },
+      "responses": {},
+      "reason": "Brown/MMT and follow-up papers use the same HVS/B objects; survey-local numbers are separate objects. Identity rests on the naming system, explicit aliases and the cited discovery or follow-up papers, not on a shared name alone.",
+      "evidence": [
+        {
+          "paper": "0709.3748v1",
+          "location": "T:p4-b0",
+          "quote": "SDSS J074950.24+243841.2"
+        },
+        {
+          "paper": "2003.12766v1",
+          "location": "T:p7-b0",
+          "quote": "B129 (SDSSJ074950.24+243841.1)"
+        },
+        {
+          "paper": "2411.09278v2",
+          "location": "T:p14-b0",
+          "quote": "B129"
+        }
+      ],
+      "approved_by": "Project lead (stop 1 approval)",
+      "approved_on": "2026-10-25",
+      "unresolved": false,
+      "display_name": null,
+      "aliases": [],
+      "main_id": null
     }
   ],
   "simbad": {
@@ -426,35 +456,65 @@
       {
         "query": {
           "method": "identifier",
-          "identifier": "SDSS J074950.24+243841.2",
-          "position": null,
-          "radius_arcsec": 5.0
-        },
-        "response_sha256": "ff91f8be89001aafe5187084c7cbcdf6eafea6c8dd3bedca64bc86c3295322de",
-        "queried_at": "2026-10-24T04:49:02.932028+00:00",
-        "client_version": "0.4.11",
-        "service_version": null,
-        "error": null
-      },
-      {
-        "query": {
-          "method": "identifier",
           "identifier": "SDSS J074950.24+243841.1",
           "position": null,
           "radius_arcsec": 5.0
         },
-        "response_sha256": "ccffff6cd08cd3a944c742b847b96f95d193c8e2b5b161507ed2d90570150b9a",
-        "queried_at": "2026-10-24T04:53:56.329637+00:00",
+        "response_sha256": "c3fdec65bfb3a6abd0f3618f624db189da25d787aaf8451755f408df05adb80a",
+        "queried_at": "2026-10-25T12:06:54.727613+00:00",
         "client_version": "0.4.11",
         "service_version": null,
-        "error": null
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "2003.12766v1#/stars/23",
+            "original_identifier": {
+              "value": "SDSSJ074950.24+243841.1",
+              "evidence": [
+                {
+                  "location": "T:p7-b0",
+                  "quote": "B129 (SDSSJ074950.24+243841.1)"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
+      },
+      {
+        "query": {
+          "method": "identifier",
+          "identifier": "SDSS J074950.24+243841.2",
+          "position": null,
+          "radius_arcsec": 5.0
+        },
+        "response_sha256": "dcb2b9cccc7182bd9b92a9bed7502f94af0a788a9685b18668eacb8d183b6c76",
+        "queried_at": "2026-10-25T11:58:56.581827+00:00",
+        "client_version": "0.4.11",
+        "service_version": null,
+        "error": null,
+        "identifier_inputs": [
+          {
+            "source_record": "0709.3748v1#/stars/0",
+            "original_identifier": {
+              "value": "SDSS J074950.24+243841.2",
+              "evidence": [
+                {
+                  "location": "T:p4-b0",
+                  "quote": "SDSS J074950.24+243841.2"
+                }
+              ]
+            },
+            "derivation": "reported_identifier"
+          }
+        ]
       }
     ],
     "matches": [
       {
         "main_id": "SDSS J074950.24+243841.2",
         "method": "identifier",
-        "identifier": "SDSS J074950.24+243841.2",
+        "identifier": "SDSS J074950.24+243841.1",
         "candidate": {
           "$ref": "#/simbad/selected"
         }
@@ -462,7 +522,7 @@
       {
         "main_id": "SDSS J074950.24+243841.2",
         "method": "identifier",
-        "identifier": "SDSS J074950.24+243841.1",
+        "identifier": "SDSS J074950.24+243841.2",
         "candidate": {
           "$ref": "#/simbad/selected"
         }

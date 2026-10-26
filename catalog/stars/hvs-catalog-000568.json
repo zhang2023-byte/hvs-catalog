@@ -1,38 +1,48 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000568",
-  "display_name": "HVS3",
+  "display_name": "GHS22",
   "sources": {
-    "2108.01100v1": {
-      "title": "Comparing hypervelocity star populations from the Large Magellanic Cloud and the Milky Way",
+    "2402.02876v1": {
+      "title": "High-speed stars. II. An unbound star, young stars, bulge metal-poor stars, and Aurora candidates",
       "authors": [
-        "Fraser A. Evans",
-        "Tommaso Marchetti",
-        "Elena Maria Rossi",
-        "Josephine F. W. Baggen",
-        "Sanne Bloot"
+        "P. Bonifacio",
+        "E. Caffau",
+        "L. Monaco",
+        "L. Sbordone",
+        "M. Spite",
+        "A. Mucciarelli",
+        "P. François",
+        "L. Lombardo",
+        "A. D. M. Matas Pinto"
       ],
-      "pdf_url": "https://arxiv.org/pdf/2108.01100v1",
+      "pdf_url": "https://arxiv.org/pdf/2402.02876v1",
       "records": [
-        "/stars/0"
+        "/stars/1"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS3",
+      "value": "GHS22",
       "evidence": [
         {
-          "location": "T:p2-b1",
-          "quote": "HVS3 (Edelmann et al. 2005)"
-        },
-        {
-          "location": "T:p12-b13",
-          "quote": "HVS3 was discovered by Edelmann et al. (2005)"
+          "location": "T:p20-b1",
+          "quote": "<tr><td>GHS22</td><td>6425686935027126016</td></tr>"
         }
       ],
-      "source": "2108.01100v1"
+      "source": "2402.02876v1"
+    },
+    {
+      "value": "Gaia DR3 6425686935027126016",
+      "evidence": [
+        {
+          "location": "T:p20-b1",
+          "quote": "<tr><td>GHS22</td><td>6425686935027126016</td></tr>"
+        }
+      ],
+      "source": "2402.02876v1"
     }
   ],
   "contribution_types": [
@@ -40,86 +50,124 @@
       "value": "follow_up",
       "evidence": [
         {
-          "location": "T:p1-b9",
-          "quote": "Further detections of unbound HVS candidates followed soon"
-        },
-        {
-          "location": "T:p2-b1",
-          "quote": "With the confirmation of HVS3 as an HVS of Magellanic"
-        },
-        {
-          "location": "T:p12-b13",
-          "quote": "HVS3 was discovered by Edelmann et al. (2005)"
+          "location": "T:p4-b9",
+          "quote": "Stars GHS22, GHS33, GHS37, GHS58, GHS64 were in-\ndicated as unbound in Paper I, while they are found to be bound\nin the present analysis."
         }
       ],
-      "source": "2108.01100v1"
+      "source": "2402.02876v1"
     }
   ],
-  "quantities": [
-    {
-      "quantity": "ra",
-      "values": [
-        {
-          "value": "69.6",
-          "unit": "deg",
-          "condition": "Equatorial right ascension reported for HVS3 by Przybilla et al. (2008).",
-          "evidence": [
-            {
-              "location": "T:p14-b1",
-              "quote": "HVS3 is\\mathrm { ~ a ~ } 8 \\pm 1 \\mathrm { M _ { \\odot } }star located at\\alpha = 6 9 . 6 ^ { \\circ } , \\delta = - 5 4 . 6 ^ { \\circ }"
-            }
-          ],
-          "source": "2108.01100v1"
-        }
-      ]
-    },
-    {
-      "quantity": "dec",
-      "values": [
-        {
-          "value": "-54.6",
-          "unit": "deg",
-          "condition": "Equatorial declination reported for HVS3 by Przybilla et al. (2008).",
-          "evidence": [
-            {
-              "location": "T:p14-b1",
-              "quote": "HVS3 is\\mathrm { ~ a ~ } 8 \\pm 1 \\mathrm { M _ { \\odot } }star located at\\alpha = 6 9 . 6 ^ { \\circ } , \\delta = - 5 4 . 6 ^ { \\circ }"
-            }
-          ],
-          "source": "2108.01100v1"
-        }
-      ]
-    },
-    {
-      "quantity": "distance",
-      "values": [
-        {
-          "value": "61",
-          "unit": "kpc",
-          "condition": "Distance reported for HVS3 in the Introduction; the sentence does not explicitly label it heliocentric.",
-          "evidence": [
-            {
-              "location": "T:p2-b1",
-              "quote": "HVS3 (Edelmann et al. 2005), an8 \\mathrm { M _ { \\odot } }HVS candidate at\\na distance of 61 kpc."
-            }
-          ],
-          "source": "2108.01100v1"
-        }
-      ]
-    }
-  ],
+  "quantities": [],
   "simbad": {
-    "status": "not_found",
-    "reason": "No candidate matched the requested identifiers or radius.",
-    "last_queried_at": "2026-10-24T06:01:38.021695+00:00"
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "Gaia DR3 6425686935027126016",
+      "aliases": [
+        "Gaia DR2 6425686935027126016",
+        "Gaia DR3 6425686935027126016"
+      ],
+      "object_type": "Pe*",
+      "coordinates": {
+        "ra": {
+          "value": 308.63122278833873,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": -66.76026572675583,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.00839999970048666,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.012900000438094139,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": 9.783,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -21.753,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.010999999940395355,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.014999999664723873,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.1494,
+        "unit": "mas",
+        "error": 0.01679999940097332,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -35.89,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.00011970898864566148
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 2.819999933242798,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "C",
+        "bibcode": "2022yCat.1355....0G",
+        "wavelength": "O"
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "value": 14.150503158569336,
+          "error": 0.0027600000612437725,
+          "system": "V",
+          "bibcode": "2022yCat.1355....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR3 6425686935027126016"
+      ]
+    },
+    "last_queried_at": "2026-10-25T12:07:04.371911+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000568_provenance.json",
-    "sha256": "6a8df25136791705416d1b76f75187d0490752fdc0658aac2c75ed2c219945fe"
+    "sha256": "84417bafbda25500f2461ba602219483001adbd7eef624921432104090e049c4"
   },
-  "warnings": [
-    "Coordinate reference frame was not reported; ICRS was assumed for matching.",
-    "2108.01100v1#/stars/0/contribution_type/evidence/1: quote audit exact_match_elsewhere at T:p2-b1; check the paper evidence.",
-    "2108.01100v1#/stars/0/quantities/2/values/0/evidence/0: quote audit unknown at T:p2-b1; check the paper evidence."
-  ]
+  "warnings": []
 }

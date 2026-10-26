@@ -1,107 +1,439 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000638",
-  "display_name": "J0927−6335",
+  "display_name": "Gaia DR3 6343475759127147008",
   "sources": {
-    "2311.13388v1": {
-      "title": "The photospheres of the hottest fastest stars in the Galaxy",
+    "2509.24010v2": {
+      "title": "Search for Distant Hypervelocity Star Candidates Using RR Lyrae Stars",
       "authors": [
-        "Klaus Werner",
-        "Nicole Reindl",
-        "Thomas Rauch",
-        "Kareem El-Badry",
-        "Antoine Bédard"
+        "Haozhu Fu",
+        "Yang Huang",
+        "Huawei Zhang"
       ],
-      "pdf_url": "https://arxiv.org/pdf/2311.13388v1",
+      "pdf_url": "https://arxiv.org/pdf/2509.24010v2",
       "records": [
-        "/stars/1"
+        "/stars/9"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "J0927−6335",
+      "value": "Gaia DR3 6343475759127147008",
       "evidence": [
         {
-          "location": "T:p5-b7",
-          "quote": "We analyzed the spectrum of J0927−6335 obtained by E23 on"
+          "location": "T:p8-b0",
+          "quote": "6343475759127147008"
         }
       ],
-      "source": "2311.13388v1"
+      "source": "2509.24010v2"
     }
   ],
   "contribution_types": [
     {
-      "value": "follow_up",
+      "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p1-b9",
-          "quote": "We perform nonlocal thermodynamic equilibrium (NLTE) model atmosphere analyses of the three hottest hypervelocity stars (space\nvelocities between ≈ 1500–2800 km s<sup>−1</sup>) known to date, which were recently discovered spectroscopically and identified as runaways\nfrom Type Ia supernovae."
+          "location": "T:p8-b0",
+          "quote": "Table 2. Basic parameters for 165 HV-RRL candidates"
         },
         {
-          "location": "T:p1-b14",
-          "quote": "El-Badry et al. (2023, hereafter E23) reported the discovery of\nfour hypervelocity WDs that appear to be hotter and smaller"
-        },
-        {
-          "location": "T:p8-b7",
-          "quote": "We performed detailed line identifications and NLTE spectral\nanalyses of the three hottest hypervelocity stars discovered spec-\ntroscopically and characterized preliminarily by E23."
+          "location": "T:p6-b3",
+          "quote": "As a result, we selected a final sample of 165 hypervelocity RR Lyrae (HV-RRL) candidates."
         }
       ],
-      "source": "2311.13388v1"
+      "source": "2509.24010v2"
     }
   ],
   "quantities": [
     {
+      "quantity": "ra",
+      "values": [
+        {
+          "value": "356.6685",
+          "unit": "deg",
+          "condition": "Catalog position (L23) for the HV-RRL candidate",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "6343475759127147008</td><td>356.6685</td><td>-85.9455</td>"
+            },
+            {
+              "location": "I:p8-b0"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "356.6685",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "-85.9455",
+          "unit": "deg",
+          "condition": "Catalog position (L23) for the HV-RRL candidate",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "6343475759127147008</td><td>356.6685</td><td>-85.9455</td>"
+            },
+            {
+              "location": "I:p8-b0"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "-85.9455",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
       "quantity": "distance",
       "values": [
         {
-          "value": "2.5",
-          "error": "0.9",
+          "value": "43.9",
+          "error": "4.3",
           "unit": "kpc",
-          "condition": "Spectroscopic distance from SED fit to the best-fitting model, with E(B-V)=0.15 mag adopted",
+          "condition": "Heliocentric distance from the L23 RRL period–metallicity relation",
           "evidence": [
             {
-              "location": "T:p8-b3",
-              "quote": "With\nE ( B - V ) = 0 . 1 5mag, which was also adopted by El-Badry et al.\n(2023), we find that the SED of J0927−6335 is well reproduced\nat a spectroscopic distance of2 . 5 \\pm 0 . 9kpc"
+              "location": "T:p8-b0",
+              "quote": "6343475759127147008</td><td>356.6685</td><td>-85.9455</td><td>1.45 ± 0.15</td><td>-2.24 ± 0.19</td><td>43.9 ± 4.3</td>"
             },
             {
-              "location": "T:p8-b0",
-              "quote": "<td>d (kpc) (SED fit)</td><td>15<eq>_{-8}^{+4}</eq></td><td>2.5 ± 0.9</td>"
+              "location": "I:p8-b0"
             }
           ],
-          "source": "2311.13388v1"
+          "source": "2509.24010v2",
+          "attribution": "cited",
+          "attribution_reason": "Fixed PDF §2.1: adopts RR Lyrae distances already calculated in the W22/L23 catalogs; the Galactocentric quantities recalculated here are own.",
+          "standard": {
+            "unit": "kpc",
+            "value": "43.9",
+            "error": "4.3",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "1.45",
+          "error": "0.15",
+          "unit": "mas/yr",
+          "condition": "Gaia DR3 proper motion μ_α cos δ",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "1.45 ± 0.15</td><td>-2.24 ± 0.19</td><td>43.9 ± 4.3</td>"
+            },
+            {
+              "location": "I:p8-b0"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "1.45",
+            "error": "0.15",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-2.24",
+          "error": "0.19",
+          "unit": "mas/yr",
+          "condition": "Gaia DR3 proper motion μ_δ",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "1.45 ± 0.15</td><td>-2.24 ± 0.19</td><td>43.9 ± 4.3</td>"
+            },
+            {
+              "location": "I:p8-b0"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-2.24",
+            "error": "0.19",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "galactocentric_radius",
+      "values": [
+        {
+          "value": "40.5",
+          "error": "4.2",
+          "unit": "kpc",
+          "condition": "Three-dimensional Galactocentric distance computed with R_⊙ = 8.2 kpc and Z_⊙ = 20.8 pc",
+          "evidence": [
+            {
+              "location": "T:p8-b0",
+              "quote": "43.9 ± 4.3</td><td>40.5 ± 4.2</td><td>383.9 ± 66.1</td>"
+            },
+            {
+              "location": "I:p8-b0"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "40.5",
+            "error": "4.2",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.58",
+          "unit": "dimensionless",
+          "condition": "P_unb from MWPotential2014 (Bovy15)",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "6343475759127147008</td><td>0.58</td><td>0.44</td><td>0.31</td><td>0.16</td><td>0.13</td><td>0.07</td>"
+            },
+            {
+              "location": "I:p8-b1"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.58",
+            "approximate": false
+          }
         },
         {
-          "value": "4.5",
-          "lower_error": "1.7",
-          "upper_error": "2.2",
-          "unit": "kpc",
-          "condition": "Gaia distance determined by E23 assuming a flat prior on the absolute magnitude M_G,0",
+          "value": "0.44",
+          "unit": "dimensionless",
+          "condition": "P_unb from the Cautun20 potential model",
           "evidence": [
             {
-              "location": "T:p8-b0",
-              "quote": "<td>d (kpc) (Gaia)</td><td>4.0<eq>_{-1.7}^{+2.3}</eq></td><td>4.5<eq>_{-1.7}^{+2.2}</eq></td>"
+              "location": "T:p8-b1",
+              "quote": "6343475759127147008</td><td>0.58</td><td>0.44</td><td>0.31</td><td>0.16</td><td>0.13</td><td>0.07</td>"
             },
             {
-              "location": "T:p8-b0",
-              "quote": "The Gaia distances were determined by E23 assuming a flat prior onM _ { G , 0 },"
+              "location": "I:p8-b1"
             }
           ],
-          "source": "2311.13388v1"
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.44",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.31",
+          "unit": "dimensionless",
+          "condition": "P_unb from the Monari18 potential model",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "6343475759127147008</td><td>0.58</td><td>0.44</td><td>0.31</td><td>0.16</td><td>0.13</td><td>0.07</td>"
+            },
+            {
+              "location": "I:p8-b1"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.31",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.16",
+          "unit": "dimensionless",
+          "condition": "P_unb from the McMillan17 potential model",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "6343475759127147008</td><td>0.58</td><td>0.44</td><td>0.31</td><td>0.16</td><td>0.13</td><td>0.07</td>"
+            },
+            {
+              "location": "I:p8-b1"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.16",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.13",
+          "unit": "dimensionless",
+          "condition": "P_unb from the Irrgang13I potential model",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "6343475759127147008</td><td>0.58</td><td>0.44</td><td>0.31</td><td>0.16</td><td>0.13</td><td>0.07</td>"
+            },
+            {
+              "location": "I:p8-b1"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.13",
+            "approximate": false
+          }
+        },
+        {
+          "value": "0.07",
+          "unit": "dimensionless",
+          "condition": "P_unb from Bovy15 plus the LMC Hernquist potential (Bovy15+LMC)",
+          "evidence": [
+            {
+              "location": "T:p8-b1",
+              "quote": "6343475759127147008</td><td>0.58</td><td>0.44</td><td>0.31</td><td>0.16</td><td>0.13</td><td>0.07</td>"
+            },
+            {
+              "location": "I:p8-b1"
+            }
+          ],
+          "source": "2509.24010v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.07",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "Gaia DR3 6343475759127147008",
+      "aliases": [
+        "Gaia DR3 6343475759127147008"
+      ],
+      "object_type": "RR*",
+      "coordinates": {
+        "ra": {
+          "value": 356.66839167527917,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": -85.94544461344138,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.12559999525547028,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.12549999356269836,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": 1.453,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": -2.245,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.15299999713897705,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.19200000166893005,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 0.0326,
+        "unit": "mas",
+        "error": 0.13680000603199005,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "photometry": [
+        {
+          "band": "G",
+          "value": 18.85763931274414,
+          "error": 0.014431999996304512,
+          "system": "V",
+          "bibcode": "2022yCat.1355....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "Gaia DR3 6343475759127147008"
+      ]
+    },
+    "last_queried_at": "2026-10-25T11:50:07.918998+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000638_provenance.json",
-    "sha256": "22a8726830022354391dd08fb6d4919e2998810ff0b6814a72f8a0478ab19047"
+    "sha256": "7a549b8191eb42a921c117db35753bb79276729ef4821fca1b453bd006a542e0"
   },
-  "warnings": [
-    "2311.13388v1#/stars/1/quantities/0/values/1/evidence/1: quote audit unknown at T:p8-b0; check the paper evidence."
-  ]
+  "warnings": []
 }

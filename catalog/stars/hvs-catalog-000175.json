@@ -1,32 +1,65 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000175",
-  "display_name": "HVS12",
+  "display_name": "BD+51 3413",
   "sources": {
-    "1401.7342v1": {
-      "title": "MMT Hypervelocity Star Survey III: A Complete Survey of Faint B-type Stars in the Northern Milky Way Halo",
+    "1704.07990v2": {
+      "title": "An artificial neural network to discover Hypervelocity stars: Candidates in Gaia DR1/TGAS",
       "authors": [
-        "Warren R. Brown",
-        "Margaret J. Geller",
-        "Scott J. Kenyon"
+        "T. Marchetti",
+        "E. M. Rossi",
+        "G. Kordopatis",
+        "A. G. A. Brown",
+        "A. Rimoldi",
+        "E. Starkenburg",
+        "K. Youakim",
+        "R. Ashley"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1401.7342v1",
+      "pdf_url": "https://arxiv.org/pdf/1704.07990v2",
       "records": [
-        "/stars/8"
+        "/stars/3"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HVS12",
+      "value": "TYC 3983-1873-1",
       "evidence": [
         {
-          "location": "T:p11-b0",
-          "quote": "<tr><td>12</td><td>552.2 ± 6.6</td>"
+          "location": "T:p13-b14",
+          "quote": "TYC 3983-1873-1 (BD+51 3413)"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1704.07990v2"
+    },
+    {
+      "value": "BD+51 3413",
+      "evidence": [
+        {
+          "location": "T:p13-b14",
+          "quote": "TYC 3983-1873-1 (BD+51 3413)"
+        }
+      ],
+      "source": "1704.07990v2"
+    },
+    {
+      "value": "HIP 111334",
+      "evidence": [
+        {
+          "location": "I:p16-b45"
+        }
+      ],
+      "source": "1704.07990v2"
+    },
+    {
+      "value": "Gaia DR1 2000722382112691456",
+      "evidence": [
+        {
+          "location": "I:p16-b45"
+        }
+      ],
+      "source": "1704.07990v2"
     }
   ],
   "contribution_types": [
@@ -34,33 +67,85 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p6-b6",
-          "quote": "21 HVSs that are unbound on the basis of radial"
+          "location": "T:p13-b14",
+          "quote": "should therefore be classified as a HRS"
         },
         {
-          "location": "T:p11-b0",
-          "quote": "<tr><td>12</td><td>552.2 ± 6.6</td>"
+          "location": "I:p12-b2"
         }
       ],
-      "source": "1401.7342v1"
+      "source": "1704.07990v2"
     }
   ],
   "quantities": [
     {
-      "quantity": "radial_velocity",
+      "quantity": "ra",
       "values": [
         {
-          "value": "552.2",
-          "error": "6.6",
-          "unit": "km/s",
-          "condition": "Heliocentric radial velocity (Table 1 v⊙).",
+          "value": "338.34366",
+          "unit": "deg",
+          "condition": "Equatorial right ascension in Table 1; the table gives the position as (RA, dec).",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "12</td><td>552.2 ± 6.6</td><td>416.5</td><td>19.609</td><td>12098 ± 632</td><td>4.62 ± 0.28</td><td>78</td><td>2.73 ± 0.14</td><td>+0.56 ± 0.28</td><td>67 ± 8</td><td>127 ± 17</td><td>-0.41, -0.55</td>"
+              "location": "T:p7-b0",
+              "quote": "<tr><td>3983-1873-1</td><td>(338.34366, 52.68866)</td><td>1.84 ± 0.23</td><td>133.342 ± 0.094</td><td>72.34 ± 0.082</td><td>-165.28 ± 0.86</td><td>4832 ± 68</td><td>2.0 ± 0.2</td><td>-1.27 ± 0.14</td><td>1096 ± 151</td><td>1.06 ± 0.19</td><td>5.4 ± 2.5</td><td>0</td></tr>"
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "338.34366",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "dec",
+      "values": [
+        {
+          "value": "52.68866",
+          "unit": "deg",
+          "condition": "Equatorial declination in Table 1; the table gives the position as (RA, dec).",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "<tr><td>3983-1873-1</td><td>(338.34366, 52.68866)</td><td>1.84 ± 0.23</td><td>133.342 ± 0.094</td><td>72.34 ± 0.082</td><td>-165.28 ± 0.86</td><td>4832 ± 68</td><td>2.0 ± 0.2</td><td>-1.27 ± 0.14</td><td>1096 ± 151</td><td>1.06 ± 0.19</td><td>5.4 ± 2.5</td><td>0</td></tr>"
+            }
+          ],
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "deg",
+            "value": "52.68866",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "parallax",
+      "values": [
+        {
+          "value": "1.84",
+          "error": "0.23",
+          "unit": "mas",
+          "condition": "TGAS parallax from Table 1.",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "<tr><td>3983-1873-1</td><td>(338.34366, 52.68866)</td><td>1.84 ± 0.23</td><td>133.342 ± 0.094</td><td>72.34 ± 0.082</td><td>-165.28 ± 0.86</td><td>4832 ± 68</td><td>2.0 ± 0.2</td><td>-1.27 ± 0.14</td><td>1096 ± 151</td><td>1.06 ± 0.19</td><td>5.4 ± 2.5</td><td>0</td></tr>"
+            }
+          ],
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas",
+            "value": "1.84",
+            "error": "0.23",
+            "approximate": false
+          }
         }
       ]
     },
@@ -68,20 +153,24 @@
       "quantity": "proper_motion_ra",
       "values": [
         {
-          "value": "-0.41",
+          "value": "133.342",
+          "error": "0.094",
           "unit": "mas/yr",
-          "condition": "Predicted proper motion in right ascension for a Galactic center origin (trajectory with the smallest Galactic pericenter passage); not a measured proper motion.",
+          "condition": "TGAS proper-motion component mu_alpha* in Table 1.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "12</td><td>552.2 ± 6.6</td><td>416.5</td><td>19.609</td><td>12098 ± 632</td><td>4.62 ± 0.28</td><td>78</td><td>2.73 ± 0.14</td><td>+0.56 ± 0.28</td><td>67 ± 8</td><td>127 ± 17</td><td>-0.41, -0.55</td>"
-            },
-            {
-              "location": "T:p8-b13",
-              "quote": "An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
+              "location": "T:p7-b0",
+              "quote": "<tr><td>3983-1873-1</td><td>(338.34366, 52.68866)</td><td>1.84 ± 0.23</td><td>133.342 ± 0.094</td><td>72.34 ± 0.082</td><td>-165.28 ± 0.86</td><td>4832 ± 68</td><td>2.0 ± 0.2</td><td>-1.27 ± 0.14</td><td>1096 ± 151</td><td>1.06 ± 0.19</td><td>5.4 ± 2.5</td><td>0</td></tr>"
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "133.342",
+            "error": "0.094",
+            "approximate": false
+          }
         }
       ]
     },
@@ -89,42 +178,108 @@
       "quantity": "proper_motion_dec",
       "values": [
         {
-          "value": "-0.55",
+          "value": "72.34",
+          "error": "0.082",
           "unit": "mas/yr",
-          "condition": "Predicted proper motion in declination for a Galactic center origin (trajectory with the smallest Galactic pericenter passage); not a measured proper motion.",
+          "condition": "TGAS proper-motion component mu_delta in Table 1.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "12</td><td>552.2 ± 6.6</td><td>416.5</td><td>19.609</td><td>12098 ± 632</td><td>4.62 ± 0.28</td><td>78</td><td>2.73 ± 0.14</td><td>+0.56 ± 0.28</td><td>67 ± 8</td><td>127 ± 17</td><td>-0.41, -0.55</td>"
-            },
-            {
-              "location": "T:p8-b13",
-              "quote": "An x marks this trajectory, and Table 1 lists the corresponding proper motion for the Galactic center origin."
+              "location": "T:p7-b0",
+              "quote": "<tr><td>3983-1873-1</td><td>(338.34366, 52.68866)</td><td>1.84 ± 0.23</td><td>133.342 ± 0.094</td><td>72.34 ± 0.082</td><td>-165.28 ± 0.86</td><td>4832 ± 68</td><td>2.0 ± 0.2</td><td>-1.27 ± 0.14</td><td>1096 ± 151</td><td>1.06 ± 0.19</td><td>5.4 ± 2.5</td><td>0</td></tr>"
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "72.34",
+            "error": "0.082",
+            "approximate": false
+          }
         }
       ]
     },
     {
-      "quantity": "galactocentric_radius",
+      "quantity": "radial_velocity",
       "values": [
         {
-          "value": "67",
-          "error": "8",
-          "unit": "kpc",
-          "condition": "Galactocentric radial distance R_GC, assuming the Sun is at R = 8 kpc.",
+          "value": "-165.28",
+          "error": "0.86",
+          "unit": "km/s",
+          "condition": "Heliocentric radial velocity (HRV) from Table 1; the quoted uncertainty does not include the adopted 2.5 km/s uncertainty floor.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "12</td><td>552.2 ± 6.6</td><td>416.5</td><td>19.609</td><td>12098 ± 632</td><td>4.62 ± 0.28</td><td>78</td><td>2.73 ± 0.14</td><td>+0.56 ± 0.28</td><td>67 ± 8</td><td>127 ± 17</td><td>-0.41, -0.55</td>"
+              "location": "T:p7-b0",
+              "quote": "<tr><td>3983-1873-1</td><td>(338.34366, 52.68866)</td><td>1.84 ± 0.23</td><td>133.342 ± 0.094</td><td>72.34 ± 0.082</td><td>-165.28 ± 0.86</td><td>4832 ± 68</td><td>2.0 ± 0.2</td><td>-1.27 ± 0.14</td><td>1096 ± 151</td><td>1.06 ± 0.19</td><td>5.4 ± 2.5</td><td>0</td></tr>"
             },
             {
-              "location": "T:p5-b11",
-              "quote": "We calculate HVS Galacto-centric radial distances, R,"
+              "location": "T:p12-b3",
+              "quote": "The 2.5 km s<sup>−1</sup>uncertainty floor (see discussion in §4.2.2) is not included in the quoted HRV errors."
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-165.28",
+            "error": "0.86",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "distance",
+      "values": [
+        {
+          "value": "572",
+          "lower_error": "67",
+          "upper_error": "88",
+          "unit": "pc",
+          "condition": "Parallax-inferred distance d using TGAS astrometry and the Milky Way prior; median with 16th/84th percentile errors.",
+          "evidence": [
+            {
+              "location": "T:p12-b2",
+              "quote": "<tr><td>3983-1873-1</td><td>-165.28 ± 0.86</td><td>-1.27 ± 0.14</td><td>572+88-67</td><td>1096 ± 151</td><td>351+64-47</td><td>726+107-108</td><td>1.5%</td><td>97.2%</td><td>1</td></tr>"
+            },
+            {
+              "location": "T:p12-b3",
+              "quote": "For distances and Galactocentric velocities, results are quoted in terms of the median of the distribution with uncertainties derived from the 16th and 84th percentiles."
+            }
+          ],
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "0.572",
+            "lower_error": "0.067",
+            "upper_error": "0.088",
+            "approximate": false
+          }
+        },
+        {
+          "value": "1096",
+          "error": "151",
+          "unit": "pc",
+          "condition": "Spectroscopic distance d_spec from the INT spectrum and isochrone fitting.",
+          "evidence": [
+            {
+              "location": "T:p7-b0",
+              "quote": "<tr><td>3983-1873-1</td><td>(338.34366, 52.68866)</td><td>1.84 ± 0.23</td><td>133.342 ± 0.094</td><td>72.34 ± 0.082</td><td>-165.28 ± 0.86</td><td>4832 ± 68</td><td>2.0 ± 0.2</td><td>-1.27 ± 0.14</td><td>1096 ± 151</td><td>1.06 ± 0.19</td><td>5.4 ± 2.5</td><td>0</td></tr>"
+            },
+            {
+              "location": "T:p12-b2",
+              "quote": "<tr><td>3983-1873-1</td><td>-165.28 ± 0.86</td><td>-1.27 ± 0.14</td><td>572+88-67</td><td>1096 ± 151</td><td>351+64-47</td><td>726+107-108</td><td>1.5%</td><td>97.2%</td><td>1</td></tr>"
+            }
+          ],
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "1.096",
+            "error": "0.151",
+            "approximate": false
+          }
         }
       ]
     },
@@ -132,34 +287,270 @@
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "lower_bound": "416.5",
+          "value": "351",
+          "lower_error": "47",
+          "upper_error": "64",
           "unit": "km/s",
-          "condition": "Line-of-sight Galactic rest-frame velocity v_rf; because only radial velocity is measured, this is a lower limit on the total 3D speed in the Galactic rest frame.",
+          "condition": "Total Galactic rest-frame velocity v_GC computed using the parallax-inferred distance (Milky Way prior); median with 16th/84th percentile errors.",
           "evidence": [
             {
-              "location": "T:p11-b0",
-              "quote": "12</td><td>552.2 ± 6.6</td><td>416.5</td><td>19.609</td><td>12098 ± 632</td><td>4.62 ± 0.28</td><td>78</td><td>2.73 ± 0.14</td><td>+0.56 ± 0.28</td><td>67 ± 8</td><td>127 ± 17</td><td>-0.41, -0.55</td>"
+              "location": "T:p12-b2",
+              "quote": "<tr><td>3983-1873-1</td><td>-165.28 ± 0.86</td><td>-1.27 ± 0.14</td><td>572+88-67</td><td>1096 ± 151</td><td>351+64-47</td><td>726+107-108</td><td>1.5%</td><td>97.2%</td><td>1</td></tr>"
             },
             {
-              "location": "T:p3-b4",
-              "quote": "Because we measure radial velocity, the full space motion of the stars can only be larger."
+              "location": "T:p12-b3",
+              "quote": "For distances and Galactocentric velocities, results are quoted in terms of the median of the distribution with uncertainties derived from the 16th and 84th percentiles."
             }
           ],
-          "source": "1401.7342v1"
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "351",
+            "lower_error": "47",
+            "upper_error": "64",
+            "approximate": false
+          }
+        },
+        {
+          "value": "726",
+          "lower_error": "108",
+          "upper_error": "107",
+          "unit": "km/s",
+          "condition": "Total Galactic rest-frame velocity v_GC,spec computed using the spectroscopic distance; median with 16th/84th percentile errors.",
+          "evidence": [
+            {
+              "location": "T:p12-b2",
+              "quote": "<tr><td>3983-1873-1</td><td>-165.28 ± 0.86</td><td>-1.27 ± 0.14</td><td>572+88-67</td><td>1096 ± 151</td><td>351+64-47</td><td>726+107-108</td><td>1.5%</td><td>97.2%</td><td>1</td></tr>"
+            },
+            {
+              "location": "T:p12-b3",
+              "quote": "For distances and Galactocentric velocities, results are quoted in terms of the median of the distribution with uncertainties derived from the 16th and 84th percentiles."
+            }
+          ],
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "726",
+            "lower_error": "108",
+            "upper_error": "107",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "1.5",
+          "unit": "%",
+          "condition": "P^u, the fraction of Monte Carlo realizations with v_GC(d) > v_esc(d), using the parallax-inferred distance (Milky Way prior).",
+          "evidence": [
+            {
+              "location": "T:p12-b2",
+              "quote": "<tr><td>3983-1873-1</td><td>-165.28 ± 0.86</td><td>-1.27 ± 0.14</td><td>572+88-67</td><td>1096 ± 151</td><td>351+64-47</td><td>726+107-108</td><td>1.5%</td><td>97.2%</td><td>1</td></tr>"
+            },
+            {
+              "location": "T:p9-b2",
+              "quote": "We defineP ^ { \\mathrm { u } }as the fraction of Monte Carlo realizations with\\nu _ { \\mathrm { G C } } ( d ) > \\nu _ { \\mathrm { e s c } } ( d )"
+            }
+          ],
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.015",
+            "approximate": false
+          }
+        },
+        {
+          "value": "97.2",
+          "unit": "%",
+          "condition": "P^u_spec, the fraction of Monte Carlo realizations with v_GC(d) > v_esc(d), using the spectroscopic distance.",
+          "evidence": [
+            {
+              "location": "T:p12-b2",
+              "quote": "<tr><td>3983-1873-1</td><td>-165.28 ± 0.86</td><td>-1.27 ± 0.14</td><td>572+88-67</td><td>1096 ± 151</td><td>351+64-47</td><td>726+107-108</td><td>1.5%</td><td>97.2%</td><td>1</td></tr>"
+            },
+            {
+              "location": "T:p9-b2",
+              "quote": "We defineP ^ { \\mathrm { u } }as the fraction of Monte Carlo realizations with\\nu _ { \\mathrm { G C } } ( d ) > \\nu _ { \\mathrm { e s c } } ( d )"
+            }
+          ],
+          "source": "1704.07990v2",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.972",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "not_queried",
-    "reason": "No usable query or a required frozen response is missing."
+    "status": "matched",
+    "method": "identifier",
+    "selected": {
+      "main_id": "BD+51  3413",
+      "aliases": [
+        "2MASS J22332226+5241178",
+        "ASCC  287211",
+        "BD+51  3413",
+        "GSC 03983-01873",
+        "Gaia DR1 2000722382112691456",
+        "Gaia DR2 2000722386425055104",
+        "Gaia DR3 2000722386425055104",
+        "HIC 111334",
+        "HIP 111334",
+        "LF  4 +52  853",
+        "LSPM J2233+5241",
+        "LTT 16619",
+        "NLTT 54181",
+        "Ross  221",
+        "TIC 315361956",
+        "TYC 3983-1873-1",
+        "USNO-B1.0 1426-00519154",
+        "WISEA J223322.41+524118.8"
+      ],
+      "object_type": "PM*",
+      "coordinates": {
+        "ra": {
+          "value": 338.34274215398,
+          "unit": "deg"
+        },
+        "dec": {
+          "value": 52.68835777732,
+          "unit": "deg"
+        },
+        "frame": "icrs",
+        "error_ellipse": {
+          "major": {
+            "value": 0.008299999870359898,
+            "unit": "mas"
+          },
+          "minor": {
+            "value": 0.009399999864399433,
+            "unit": "mas"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G",
+        "wavelength": "O"
+      },
+      "proper_motion": {
+        "ra_cosdec": {
+          "value": 133.323,
+          "unit": "mas / yr"
+        },
+        "dec": {
+          "value": 72.365,
+          "unit": "mas / yr"
+        },
+        "error_ellipse": {
+          "major": {
+            "value": 0.009999999776482582,
+            "unit": "mas / yr"
+          },
+          "minor": {
+            "value": 0.010999999940395355,
+            "unit": "mas / yr"
+          },
+          "angle": {
+            "value": 90,
+            "unit": "deg"
+          }
+        },
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "parallax": {
+        "value": 1.8008,
+        "unit": "mas",
+        "error": 0.01080000028014183,
+        "quality": "A",
+        "bibcode": "2020yCat.1350....0G"
+      },
+      "velocity": {
+        "radial_velocity": {
+          "value": -170.08,
+          "unit": "km / s"
+        },
+        "redshift": {
+          "value": -0.0005671649750843555
+        },
+        "reported_as": "v",
+        "error": {
+          "value": 0.25,
+          "unit": "km / s"
+        },
+        "nature": "s",
+        "quality": "A",
+        "bibcode": "2018yCat.1345....0G",
+        "wavelength": "O"
+      },
+      "spectral_type": {
+        "value": "G5V",
+        "quality": "C"
+      },
+      "photometry": [
+        {
+          "band": "J",
+          "value": 8.079999923706055,
+          "error": 0.019999999552965164,
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "H",
+          "value": 7.598999977111816,
+          "error": 0.03799999877810478,
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "K",
+          "value": 7.456999778747559,
+          "error": 0.026000000536441803,
+          "bibcode": "2003yCat.2246....0C",
+          "quality": "C"
+        },
+        {
+          "band": "R",
+          "value": 9.600000381469727,
+          "system": "V",
+          "bibcode": "2003AJ....125..984M",
+          "quality": "E"
+        },
+        {
+          "band": "G",
+          "value": 9.7483549118042,
+          "error": 0.002759000053629279,
+          "system": "V",
+          "bibcode": "2020yCat.1350....0G",
+          "quality": "C"
+        }
+      ]
+    },
+    "match": {
+      "identifiers": [
+        "BD +51 3413",
+        "Gaia DR1 2000722382112691456",
+        "HIP 111334",
+        "TYC 3983-1873-1"
+      ]
+    },
+    "last_queried_at": "2026-10-25T12:07:57.509180+00:00"
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000175_provenance.json",
-    "sha256": "4f957cc5924795491a5161867f3d5c700cd1754a6a67b6f697fe85f011f68f37"
+    "sha256": "5a3a6e87694c096c559418cb31212f854615f4b68c00907140d70544bce1d9e6"
   },
-  "warnings": [
-    "1401.7342v1#/stars/8/quantities/1/values/0/evidence/1: quote audit unknown at T:p8-b13; check the paper evidence.",
-    "1401.7342v1#/stars/8/quantities/2/values/0/evidence/1: quote audit unknown at T:p8-b13; check the paper evidence."
-  ]
+  "warnings": []
 }

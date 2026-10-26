@@ -1,77 +1,35 @@
 {
-  "schema_version": 4,
-  "data_version": "2026-10-24-display-names",
+  "schema_version": 5,
+  "data_version": "2026-10-25-release-review",
   "catalog_id": "hvs-catalog-000120",
-  "display_name": "HD   5223",
+  "display_name": "NHCd",
   "sources": {
-    "1204.4755v1": {
-      "title": "CD-62\\degree1346: an extreme halo or hypervelocity CH~star?",
+    "1501.07824v1": {
+      "title": "Nearby Low-Mass Hypervelocity Stars",
       "authors": [
-        "C. B. Pereira",
-        "E. Jilinski",
-        "N. A. Drake",
-        "D. B. de Castro",
-        "V. G. Ortega",
-        "C. Chavero",
-        "F. Roig"
+        "Yanqiong Zhang",
+        "Martin C. Smith",
+        "Jeffrey L. Carlin"
       ],
-      "pdf_url": "https://arxiv.org/pdf/1204.4755v1",
+      "pdf_url": "https://arxiv.org/pdf/1501.07824v1",
       "records": [
-        "/stars/1"
-      ]
-    },
-    "1704.07990v2": {
-      "title": "An artificial neural network to discover Hypervelocity stars: Candidates in Gaia DR1/TGAS",
-      "authors": [
-        "T. Marchetti",
-        "E. M. Rossi",
-        "G. Kordopatis",
-        "A. G. A. Brown",
-        "A. Rimoldi",
-        "E. Starkenburg",
-        "K. Youakim",
-        "R. Ashley"
-      ],
-      "pdf_url": "https://arxiv.org/pdf/1704.07990v2",
-      "records": [
-        "/stars/6"
+        "/stars/3"
       ]
     }
   },
   "identifiers": [
     {
-      "value": "HD 5223",
+      "value": "NHCd",
       "evidence": [
         {
-          "location": "T:p10-b9",
-          "quote": "HD 5223 is not bound"
+          "location": "T:p3-b4",
+          "quote": "NHCd"
         },
         {
-          "location": "T:p8-b8",
-          "quote": "HD 5223 is a hypervelocity star"
+          "location": "I:p3-b4"
         }
       ],
-      "source": "1204.4755v1"
-    },
-    {
-      "value": "TYC 1739-1500-1",
-      "evidence": [
-        {
-          "location": "T:p14-b4",
-          "quote": "TYC 1739-1500-1 (HD 5223)"
-        }
-      ],
-      "source": "1704.07990v2"
-    },
-    {
-      "value": "HD 5223",
-      "evidence": [
-        {
-          "location": "T:p14-b4",
-          "quote": "TYC 1739-1500-1 (HD 5223)"
-        }
-      ],
-      "source": "1704.07990v2"
+      "source": "1501.07824v1"
     }
   ],
   "contribution_types": [
@@ -79,72 +37,100 @@
       "value": "candidates_found",
       "evidence": [
         {
-          "location": "T:p8-b8",
-          "quote": "HD 5223 is a hypervelocity star"
+          "location": "T:p2-b5",
+          "quote": "all four candidates have significant probabilities that they are not bound to the Milky Way."
         },
         {
-          "location": "T:p10-b9",
-          "quote": "It is unbound for any Galactic potential considered"
-        }
-      ],
-      "source": "1204.4755v1"
-    },
-    {
-      "value": "follow_up",
-      "evidence": [
+          "location": "I:p4-b1"
+        },
         {
-          "location": "T:p14-b5",
-          "quote": "Pereira et al. (2012), which concluded that this object is a hyper-velocity star with a total velocity in the Galactic frame of 713 km"
+          "location": "T:p4-b3",
+          "quote": "we have presented a sample of candidate hypervelocity stars that may be unbound from the Milky Way."
         }
       ],
-      "source": "1704.07990v2"
+      "source": "1501.07824v1"
     }
   ],
   "quantities": [
     {
+      "quantity": "proper_motion_ra",
+      "values": [
+        {
+          "value": "-45.24",
+          "error": "0.96",
+          "unit": "mas/yr",
+          "condition": "Equatorial proper-motion component μ_α cos δ from Table 1; present-day state.",
+          "evidence": [
+            {
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCd</td><td>-45.24 ± 0.96</td><td>-225.15 ± 0.96</td><td>0.6</td><td>-123.4 ± 5.2</td><td>432 ± 66</td></tr>"
+            },
+            {
+              "location": "I:p3-b4"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-45.24",
+            "error": "0.96",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "proper_motion_dec",
+      "values": [
+        {
+          "value": "-225.15",
+          "error": "0.96",
+          "unit": "mas/yr",
+          "condition": "Equatorial proper-motion component μ_δ from Table 1; present-day state.",
+          "evidence": [
+            {
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCd</td><td>-45.24 ± 0.96</td><td>-225.15 ± 0.96</td><td>0.6</td><td>-123.4 ± 5.2</td><td>432 ± 66</td></tr>"
+            },
+            {
+              "location": "I:p3-b4"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "mas/yr",
+            "value": "-225.15",
+            "error": "0.96",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
       "quantity": "distance",
       "values": [
         {
-          "value": "1.20",
+          "value": "0.6",
           "unit": "kpc",
-          "condition": "Heliocentric distance computed as in Equation (1) with adopted mass 0.8 M_sun (Table 9); also adopted as the present distance for the orbit integration.",
+          "condition": "Photometric distance from the Ivezić et al. (2008) relation, calculated assuming [Fe/H] = -1.5 dex (Table 1).",
           "evidence": [
             {
-              "location": "T:p9-b0",
-              "quote": "HD 5223 | 4500/1.0 | 1.20 | -239.2"
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCd</td><td>-45.24 ± 0.96</td><td>-225.15 ± 0.96</td><td>0.6</td><td>-123.4 ± 5.2</td><td>432 ± 66</td></tr>"
             },
             {
-              "location": "T:p10-b0",
-              "quote": "for the adopted present distances of 1.6 kpc and 1.2 kpc, respectively"
+              "location": "I:p3-b4"
             }
           ],
-          "source": "1204.4755v1"
-        },
-        {
-          "value": "1.2",
-          "unit": "kpc",
-          "condition": "Distance adopted by Pereira et al. (2012), as reported in the paper.",
-          "evidence": [
-            {
-              "location": "T:p14-b5",
-              "quote": "Pereira et al. (2012) determined d = 1.2 kpc"
-            }
-          ],
-          "source": "1704.07990v2"
-        },
-        {
-          "value": "565",
-          "lower_error": "80",
-          "upper_error": "117",
-          "unit": "pc",
-          "condition": "The paper's computed distance estimate for HD 5223.",
-          "evidence": [
-            {
-              "location": "T:p14-b5",
-              "quote": "our computation seems to suggest lower values: d = 565−80+117 pc"
-            }
-          ],
-          "source": "1704.07990v2"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "kpc",
+            "value": "0.6",
+            "approximate": false
+          }
         }
       ]
     },
@@ -152,19 +138,27 @@
       "quantity": "radial_velocity",
       "values": [
         {
-          "value": "-239.2",
+          "value": "-123.4",
+          "error": "5.2",
           "unit": "km/s",
-          "condition": "Heliocentric radial velocity adopted in Table 9 (T_eff/log g/RV from Goswami et al. 2006).",
+          "condition": "Radial velocity v_r from Table 1.",
           "evidence": [
             {
-              "location": "T:p9-b0",
-              "quote": "HD 5223 | 4500/1.0 | 1.20 | -239.2"
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCd</td><td>-45.24 ± 0.96</td><td>-225.15 ± 0.96</td><td>0.6</td><td>-123.4 ± 5.2</td><td>432 ± 66</td></tr>"
             },
             {
-              "location": "I:p9-b0"
+              "location": "I:p3-b4"
             }
           ],
-          "source": "1204.4755v1"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "-123.4",
+            "error": "5.2",
+            "approximate": false
+          }
         }
       ]
     },
@@ -172,244 +166,127 @@
       "quantity": "galactic_rest_frame_velocity",
       "values": [
         {
-          "value": "713",
+          "value": "432",
+          "error": "66",
           "unit": "km/s",
-          "condition": "Total space velocity in the Galactocentric rest frame, computed with solar motion of Coskunoğlu et al. (2011), R_0 = 8.5 kpc and LSR rotation 220 km/s; Table 9.",
+          "condition": "Total velocity in the Galactic rest frame from Table 1; distance calculated assuming [Fe/H] = -1.5 dex.",
           "evidence": [
             {
-              "location": "T:p9-b0",
-              "quote": "HD 5223 | 4500/1.0 | 1.20 | -239.2 | -565.1 | -421.1 | 107.6 | 713 | 5"
+              "location": "T:p3-b4",
+              "quote": "<tr><td>NHCd</td><td>-45.24 ± 0.96</td><td>-225.15 ± 0.96</td><td>0.6</td><td>-123.4 ± 5.2</td><td>432 ± 66</td></tr>"
             },
             {
-              "location": "T:p2-b1",
-              "quote": "another CH star, HD 5223, has aV _ { \\mathrm { G R F } } of 713 km\\mathbf { s } ^ { - 1 } ."
+              "location": "I:p3-b4"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "km/s",
+            "value": "432",
+            "error": "66",
+            "approximate": false
+          }
+        }
+      ]
+    },
+    {
+      "quantity": "unbound_probability",
+      "values": [
+        {
+          "value": "0.3",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -2.0 dex (Table 2).",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "<tr><td>NHCd</td><td>0.3 %</td><td>6.3 %</td><td>48.3 %</td><td>94.1 %</td></tr>"
             },
             {
-              "location": "I:p9-b0"
+              "location": "I:p4-b1"
             }
           ],
-          "source": "1204.4755v1"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.003",
+            "approximate": false
+          }
         },
         {
-          "value": "713",
-          "unit": "km/s",
-          "condition": "Total velocity in the Galactic frame reported by Pereira et al. (2012).",
+          "value": "6.3",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -1.5 dex (Table 2).",
           "evidence": [
             {
-              "location": "T:p14-b5",
-              "quote": "Pereira et al. (2012), which concluded that this object is a hypervelocity star with a total velocity in the Galactic frame of 713 km s−1"
+              "location": "T:p4-b1",
+              "quote": "<tr><td>NHCd</td><td>0.3 %</td><td>6.3 %</td><td>48.3 %</td><td>94.1 %</td></tr>"
+            },
+            {
+              "location": "I:p4-b1"
             }
           ],
-          "source": "1704.07990v2"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.063",
+            "approximate": false
+          }
         },
         {
-          "value": "288",
-          "lower_error": "46",
-          "upper_error": "72",
-          "unit": "km/s",
-          "condition": "The paper's velocity determination for HD 5223, compared directly with the Pereira et al. Galactic-frame total velocity.",
+          "value": "48.3",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -1.0 dex (Table 2).",
           "evidence": [
             {
-              "location": "T:p14-b5",
-              "quote": "Our velocity determination ν = 288−46+72 km s−1 is considerably lower because of a substantial difference in the assumed distance"
+              "location": "T:p4-b1",
+              "quote": "<tr><td>NHCd</td><td>0.3 %</td><td>6.3 %</td><td>48.3 %</td><td>94.1 %</td></tr>"
+            },
+            {
+              "location": "I:p4-b1"
             }
           ],
-          "source": "1704.07990v2"
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.483",
+            "approximate": false
+          }
+        },
+        {
+          "value": "94.1",
+          "unit": "%",
+          "condition": "Probability that v_tot > v_esc for [Fe/H] = -0.5 dex (Table 2).",
+          "evidence": [
+            {
+              "location": "T:p4-b1",
+              "quote": "<tr><td>NHCd</td><td>0.3 %</td><td>6.3 %</td><td>48.3 %</td><td>94.1 %</td></tr>"
+            },
+            {
+              "location": "I:p4-b1"
+            }
+          ],
+          "source": "1501.07824v1",
+          "attribution": "own",
+          "standard": {
+            "unit": "1",
+            "value": "0.941",
+            "approximate": false
+          }
         }
       ]
     }
   ],
   "simbad": {
-    "status": "matched",
-    "method": "identifier",
-    "selected": {
-      "main_id": "HD   5223",
-      "aliases": [
-        "2MASS J00541358+2404014",
-        "AG+23   83",
-        "BD+23   123",
-        "C*   39",
-        "CGCS  135",
-        "DO  8561",
-        "GCRV   506",
-        "GEN# +1.00005223",
-        "GSC 01739-01500",
-        "Gaia DR1 2804008466216128640",
-        "Gaia DR2 2804008466216128640",
-        "Gaia DR3 2804008466216128640",
-        "HD   5223",
-        "HIC   4252",
-        "HIP 4252",
-        "LEE 158",
-        "PLX  180",
-        "PLX  180.00",
-        "PPM  90275",
-        "SAO  74353",
-        "SBC9 2160",
-        "TIC 13939217",
-        "TYC 1739-1500-1",
-        "UBV     793",
-        "UBV M   7747",
-        "WEB   759",
-        "YZ  23   276",
-        "[V58] 98",
-        "uvby98 100005223"
-      ],
-      "object_type": "SB*",
-      "coordinates": {
-        "ra": {
-          "value": 13.5567079105,
-          "unit": "deg"
-        },
-        "dec": {
-          "value": 24.0670877341,
-          "unit": "deg"
-        },
-        "frame": "icrs",
-        "error_ellipse": {
-          "major": {
-            "value": 0.07190000265836716,
-            "unit": "mas"
-          },
-          "minor": {
-            "value": 0.05779999867081642,
-            "unit": "mas"
-          },
-          "angle": {
-            "value": 90,
-            "unit": "deg"
-          }
-        },
-        "quality": "A",
-        "bibcode": "2020yCat.1350....0G",
-        "wavelength": "O"
-      },
-      "proper_motion": {
-        "ra_cosdec": {
-          "value": 146.539,
-          "unit": "mas / yr"
-        },
-        "dec": {
-          "value": -12.25,
-          "unit": "mas / yr"
-        },
-        "error_ellipse": {
-          "major": {
-            "value": 0.08900000154972076,
-            "unit": "mas / yr"
-          },
-          "minor": {
-            "value": 0.06700000166893005,
-            "unit": "mas / yr"
-          },
-          "angle": {
-            "value": 90,
-            "unit": "deg"
-          }
-        },
-        "quality": "A",
-        "bibcode": "2020yCat.1350....0G"
-      },
-      "parallax": {
-        "value": 1.834,
-        "unit": "mas",
-        "error": 0.08420000225305557,
-        "quality": "A",
-        "bibcode": "2020yCat.1350....0G"
-      },
-      "velocity": {
-        "radial_velocity": {
-          "value": -238.82,
-          "unit": "km / s"
-        },
-        "redshift": {
-          "value": -0.000796300724830612
-        },
-        "reported_as": "v",
-        "error": {
-          "value": 0.20000000298023224,
-          "unit": "km / s"
-        },
-        "quality": "A",
-        "bibcode": "2004A&A...424..727P"
-      },
-      "spectral_type": {
-        "value": "C-H2IIIb:",
-        "quality": "B",
-        "bibcode": "1993PASP..105..905K"
-      },
-      "photometry": [
-        {
-          "band": "V",
-          "value": 8.470000267028809,
-          "error": 0.009999999776482582,
-          "system": "V",
-          "bibcode": "2000A&A...355L..27H",
-          "quality": "D"
-        },
-        {
-          "band": "B",
-          "value": 9.869999885559082,
-          "error": 0.029999999329447746,
-          "system": "V",
-          "bibcode": "2000A&A...355L..27H",
-          "quality": "D"
-        },
-        {
-          "band": "J",
-          "value": 6.372000217437744,
-          "error": 0.026000000536441803,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
-          "band": "H",
-          "value": 5.84499979019165,
-          "error": 0.017999999225139618,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
-          "band": "K",
-          "value": 5.672999858856201,
-          "error": 0.019999999552965164,
-          "system": "V",
-          "bibcode": "2003yCat.2246....0C",
-          "quality": "C"
-        },
-        {
-          "band": "G",
-          "value": 8.1240873336792,
-          "error": 0.002770999912172556,
-          "system": "V",
-          "bibcode": "2020yCat.1350....0G",
-          "quality": "C"
-        }
-      ]
-    },
-    "match": {
-      "identifiers": [
-        "HD 5223",
-        "TYC 1739-1500-1"
-      ]
-    },
-    "last_queried_at": "2026-10-24T04:49:57.134027+00:00"
+    "status": "not_queried",
+    "reason": "No usable query or a required frozen response is missing."
   },
   "provenance": {
     "path": "provenance/hvs-catalog-000120_provenance.json",
-    "sha256": "ea56e5d9e4e368bf5020ddfba8cfc0aa393597b1ae401e009afc7f905e5ccafb"
+    "sha256": "153073c3f514979d38d64e709be7c45e9e1962c9021574162d072405b6c16090"
   },
-  "warnings": [
-    "1204.4755v1#/stars/1/quantities/0/values/0/evidence/0: quote audit unknown at T:p9-b0; check the paper evidence.",
-    "1204.4755v1#/stars/1/quantities/0/values/0/evidence/1: quote audit unknown at T:p10-b0; check the paper evidence.",
-    "1204.4755v1#/stars/1/quantities/1/values/0/evidence/0: quote audit unknown at T:p9-b0; check the paper evidence.",
-    "1204.4755v1#/stars/1/quantities/2/values/0/evidence/0: quote audit unknown at T:p9-b0; check the paper evidence.",
-    "1704.07990v2#/stars/6/contribution_type/evidence/0: quote audit unknown at T:p14-b5; check the paper evidence.",
-    "1704.07990v2#/stars/6/quantities/0/values/0/evidence/0: quote audit unknown at T:p14-b5; check the paper evidence.",
-    "1704.07990v2#/stars/6/quantities/0/values/1/evidence/0: quote audit unknown at T:p14-b5; check the paper evidence.",
-    "1704.07990v2#/stars/6/quantities/1/values/0/evidence/0: quote audit unknown at T:p14-b5; check the paper evidence.",
-    "1704.07990v2#/stars/6/quantities/1/values/1/evidence/0: quote audit unknown at T:p14-b5; check the paper evidence."
-  ]
+  "warnings": []
 }
