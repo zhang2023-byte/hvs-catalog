@@ -16,8 +16,6 @@ from .backup import (
     verify_record_artifacts,
 )
 from .errors import (
-    AdjudicationNotAllowedError,
-    DecisionConflictError,
     OperationKeyConflictError,
     RecoveryInconsistentError,
     RevisionStaleError,
@@ -45,7 +43,6 @@ from .locking import SpaceLock
 from .store import (
     CommitRequest,
     ExecutionRow,
-    QuestionIndexRow,
     Receipt,
     ReceiptRow,
     RecordStore,
@@ -64,13 +61,10 @@ __all__ = [
     "RUNS_DIR",
     "SOURCE_DIR",
     "WORKSPACE_FILENAME",
-    "AdjudicationNotAllowedError",
     "BackupReport",
     "CommitRequest",
-    "DecisionConflictError",
     "ExecutionRow",
     "OperationKeyConflictError",
-    "QuestionIndexRow",
     "Receipt",
     "ReceiptRow",
     "RecordStore",

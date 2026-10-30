@@ -1,12 +1,9 @@
-"""Execution recovery validates fixed inputs, pending decisions, checkpoints, and flow
-continuation.
+"""Execution recovery validates fixed inputs, checkpoints, and flow continuation.
 
-Review saves decisions; recovery applies and advances. Validate the complete current
-checkpoint before application. Known inconsistencies preserve decisions/diagnostics but
-create no scientific revisions/receipts. Allow legitimate
-committed-business/lagging-framework stages. Recheck applicability and reuse existing
-application receipts without repeated revisions. Completion requires both valid business
-output and terminal framework nodes, never merely a returned call.
+Validate the complete current checkpoint before advancing. Known inconsistencies create
+no scientific revisions/receipts. Allow legitimate committed-business/lagging-framework
+stages. Completion requires both valid business output and terminal framework nodes,
+never merely a returned call.
 """
 
 from __future__ import annotations
@@ -16,18 +13,9 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from langgraph.checkpoint.sqlite import SqliteSaver
-from langgraph.types import Command
 
-from ..records.common import PatchApplicationError, RecordRef
-from ..records.questions import DecisionRecord, QuestionRecord
-from ..records.runs import RunError, RunRecord, StepRecord
-from ..review import ReviewService
-from ..review.service import DECISION_APPLY_KIND
-from ..workspace import (
-    CommitRequest,
-    RecoveryInconsistentError,
-    WorkspaceIntegrityError,
-)
+from ..records.runs import RunError, RunRecord
+from ..workspace import RecoveryInconsistentError, WorkspaceIntegrityError
 from ..workspace.backup import (
     checkpoint_state_problems,
     framework_final_key,
@@ -50,20 +38,10 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class AppliedDecisionInfo:
-    decision_ref: RecordRef
-    question_ref: RecordRef
-    result_refs: tuple[RecordRef, ...]
-    blocked_reason: str | None = None
-
-
-@dataclass
 class ExecutionReport:
     execution_id: str
-    outcome: str  # paused | finished | failed
+    outcome: str  # running | finished | failed
     mode: str  # fresh | resumed | already-finished
-    pending_question: Any | None = None
-    applied: list[AppliedDecisionInfo] = field(default_factory=list)
     steps: list[StepRunInfo] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     service_summary: dict | None = None
@@ -76,9 +54,9 @@ def resume_execution(
     *,
     service: Any | None = None,
 ) -> ExecutionReport:
-    """Advance execution by applying pending decisions and continuing matching checkpoints.
+    """Advance execution by continuing matching checkpoints.
 
-    Hold locks for framework writes and release on pause/completion. Mismatched frozen
+    Hold locks for framework writes and release on completion. Mismatched frozen
     input/flow/code blocks recovery, never substituting current versions.
     """
     lock = space.lock()
@@ -127,10 +105,9 @@ def _resume_locked(
             + "；".join(input_problems)
         )
 
-    review = ReviewService(space)
     run = _current_run(space, execution)
     # Read/validate checkpoints before recovery actions that can generate business results;
-    # known inconsistencies prohibit applying decisions or creating revisions first.
+    # known inconsistencies prohibit creating revisions first.
     conn = space.checkpoint_connection()
     try:
         ctx = RuntimeContext(
@@ -214,65 +191,11 @@ def _resume_locked(
             report.service_summary = _service_summary(service)
             return report
 
-        try:
-            report.applied = _apply_pending_decisions(space, ctx, review)
-        except RecoveryInconsistentError:
-            raise
-        except Exception as exc:  # noqa: BLE001 - all application failures become failure reports
-            message = f"{type(exc).__name__}: {exc}"
-            append_run_revision(
-                space,
-                execution,
-                state="failed",
-                errors=[
-                    RunError(
-                        error_id=f"err-apply-{execution_id}-{uuid4().hex}",
-                        kind="apply_failure",
-                        message=message,
-                    )
-                ],
-            )
-            report.outcome = "failed"
-            report.errors.append(message)
-            report.steps = ctx.journal
-            report.service_summary = _service_summary(service)
-            return report
-
         mode = "resumed"
         if snapshot.created_at is None:
             mode = "fresh"
             # Commit recovery checkpoints before external calls so hard exits retain asynchronous progress.
             graph.invoke(flow.initial_state(ctx), config, durability="sync")
-        elif _has_interrupt(snapshot):
-            payload = _interrupt_payload(snapshot)
-            question = _question_from_payload(review, payload)
-            applied_now = (
-                question is not None
-                and question.application is not None
-                and question.application.phase == "applied"
-            )
-            if applied_now:
-                graph.invoke(
-                    Command(
-                        resume={
-                            "question_ref": question.question_ref.model_dump(
-                                mode="json"
-                            ),
-                            "resume_kind": "decision_applied",
-                        }
-                    ),
-                    config,
-                    durability="sync",
-                )
-            else:
-                # Unanswered, answered-but-unresolved, or blocked applications keep affected steps waiting.
-                _mark_waiting(space, execution, flow, payload, None)
-                report.pending_question = question
-                report.outcome = "paused"
-                report.mode = mode
-                report.steps = ctx.journal
-                report.service_summary = _service_summary(service)
-                return report
         else:
             graph.invoke(None, config, durability="sync")
         end = graph.get_state(config)
@@ -307,17 +230,6 @@ def _resume_locked(
         conn.close()
 
     assert end is not None
-    if _has_interrupt(end):
-        payload = _interrupt_payload(end)
-        question = _question_from_payload(review, payload)
-        _mark_waiting(space, execution, flow, payload, None)
-        report.pending_question = question
-        report.outcome = "paused"
-        report.mode = mode
-        report.steps = ctx.journal
-        report.service_summary = _service_summary(service)
-        return report
-
     problems = _verify_business_results(space, execution)
     if end.next != () or problems:
         append_run_revision(
@@ -372,212 +284,6 @@ def _current_run(space: Workspace, execution: ExecutionHandle) -> RunRecord:
             f"执行 {execution.execution_id} 的运行清单缺失或损坏"
         )
     return run
-
-
-def _apply_pending_decisions(
-    space: Workspace, ctx: RuntimeContext, review: ReviewService
-) -> list[AppliedDecisionInfo]:
-    """Application rechecks applicability, builds controlled results, and atomically
-    commits revisions/receipts.
-    """
-    applied: list[AppliedDecisionInfo] = []
-    snapshot = ctx.execution.input_snapshot
-    allowed_existing = {
-        (ref.record_id, ref.revision) for ref in snapshot.existing_decision_refs
-    }
-    for row in space.store().list_questions(execution_id=ctx.execution.execution_id):
-        latest = space.store().read_record_current(row.question_id)
-        if not isinstance(latest, QuestionRecord) or latest.data.status != "answered":
-            continue
-        for decision_ref in latest.data.decision_refs:
-            record = space.store().read_record(decision_ref)
-            if not isinstance(record, DecisionRecord):
-                continue
-            state = review.find_application(record.ref())
-            if state is not None:
-                applied.append(
-                    AppliedDecisionInfo(
-                        decision_ref=record.ref(),
-                        question_ref=latest.ref(),
-                        result_refs=state.result_refs,
-                        blocked_reason=state.error
-                        if state.phase == "blocked"
-                        else None,
-                    )
-                )
-                continue
-            if record.data.outcome == "unresolved":
-                continue  # Unresolved answers apply no patches and never automatically exclude objects.
-            decision_binding = (record.record_id, record.revision)
-            if (
-                record.execution_id != ctx.execution.execution_id
-                and decision_binding not in allowed_existing
-            ):
-                applied.append(
-                    AppliedDecisionInfo(
-                        decision_ref=record.ref(),
-                        question_ref=latest.ref(),
-                        result_refs=(),
-                        blocked_reason=("决定不属于本执行，也不在运行固定的允许集合内"),
-                    )
-                )
-                continue
-            blocked = _apply_one_decision(space, ctx, review, record, latest, snapshot)
-            applied.append(blocked)
-    return applied
-
-
-def _apply_one_decision(
-    space: Workspace,
-    ctx: RuntimeContext,
-    review: ReviewService,
-    decision: DecisionRecord,
-    question: QuestionRecord,
-    snapshot: Any,
-) -> AppliedDecisionInfo:
-    """Apply one decision; blocked applications save blocked receipts with
-    decisions/diagnostics retained.
-    """
-    flow = ctx.flow
-    run = _current_run(space, ctx.execution)
-
-    def block(reason: str) -> AppliedDecisionInfo:
-        store = space.store()
-        store.commit(
-            CommitRequest(
-                operation_key=f"apply:{decision.record_id}:{decision.revision}",
-                kind=DECISION_APPLY_KIND,
-                new_records=[],
-                expected_revisions={},
-                execution_id=ctx.execution.execution_id,
-                links={
-                    "decision_ref": decision.ref().model_dump(mode="json"),
-                    "question_ref": question.ref().model_dump(mode="json"),
-                    "phase": "blocked",
-                    "error": reason,
-                },
-            )
-        )
-        return AppliedDecisionInfo(
-            decision_ref=decision.ref(),
-            question_ref=question.ref(),
-            result_refs=(),
-            blocked_reason=reason,
-        )
-
-    if decision.data.question_ref.record_id != question.record_id:
-        return block("决定指向的问题与当前问题不一致")
-    if decision.data.question_fingerprint != question.data.fingerprint:
-        return block("决定依据的问题指纹与当前问题不一致")
-    patch = decision.data.result_patch
-    if patch is not None:
-        target_current = space.store().current_revision(patch.target.record_id)
-        if target_current != patch.target.revision:
-            return block(
-                f"决定目标 {patch.target.record_id} 的当前修订为 v{target_current}，"
-                f"决定基于 v{patch.target.revision}；旧补丁不能移植到新目标"
-            )
-    try:
-        plan = flow.apply_decision(ctx, decision, question)
-    except PatchApplicationError as exc:
-        return block("; ".join(exc.reasons))
-    if plan is None:
-        return block(
-            "该步骤无法据此决定构造结果；已保存决定并报告应用受阻，"
-            "不从答复自由文本推断科学修改"
-        )
-    new_run = run.model_copy(
-        update={
-            "revision": run.revision + 1,
-            "created_at": ctx.now(),
-            "data": run.data.model_copy(
-                update={
-                    "state": "running",
-                    "result_refs": [
-                        *run.data.result_refs,
-                        *[
-                            ref
-                            for ref in plan.result_refs
-                            if ref not in run.data.result_refs
-                        ],
-                    ],
-                }
-            ),
-        }
-    )
-    receipt = space.store().commit(
-        CommitRequest(
-            operation_key=f"apply:{decision.record_id}:{decision.revision}",
-            kind=DECISION_APPLY_KIND,
-            new_records=[*plan.records, new_run],
-            expected_revisions=plan.expected_revisions,
-            result_refs=list(plan.result_refs),
-            execution_id=ctx.execution.execution_id,
-            links={
-                "decision_ref": decision.ref().model_dump(mode="json"),
-                "question_ref": question.ref().model_dump(mode="json"),
-                "phase": "applied",
-            },
-        )
-    )
-    flow.hook("after_apply")
-    return AppliedDecisionInfo(
-        decision_ref=decision.ref(),
-        question_ref=question.ref(),
-        result_refs=tuple(plan.result_refs) or receipt.result_refs,
-    )
-
-
-def _mark_waiting(
-    space: Workspace,
-    execution: ExecutionHandle,
-    flow: DefaultFlowAdapter,
-    payload: dict,
-    note: str | None,
-) -> None:
-    step_id = flow.waiting_step(payload) or str(
-        payload.get("step_id") or "await_decision"
-    )
-    run = _current_run(space, execution)
-    steps = {item.step_id: item for item in run.data.steps}
-    previous = steps.get(step_id)
-    steps[step_id] = StepRecord(
-        step_id=step_id,
-        state="waiting_review",
-        input_refs=[],
-        # Review waits retain archived request/response attempts.
-        attempts=list(previous.attempts) if previous is not None else [],
-        result_refs=list(previous.result_refs) if previous else [],
-        error_refs=[],
-    )
-    append_run_revision(
-        space,
-        execution,
-        state="waiting_review",
-        step=steps[step_id],
-    )
-
-
-def _has_interrupt(snapshot: Any) -> bool:
-    return any(intr.value for task in snapshot.tasks for intr in task.interrupts)
-
-
-def _interrupt_payload(snapshot: Any) -> dict:
-    for task in snapshot.tasks:
-        for intr in task.interrupts:
-            if intr.value:
-                return dict(intr.value)
-    return {}
-
-
-def _question_from_payload(review: ReviewService, payload: dict) -> Any | None:
-    ref = payload.get("question_ref")
-    if not isinstance(ref, dict) or "record_id" not in ref:
-        return None
-    try:
-        return review.get_question(RecordRef.model_validate(ref))
-    except WorkspaceIntegrityError:
-        return None
 
 
 def _runtime_state_problems(

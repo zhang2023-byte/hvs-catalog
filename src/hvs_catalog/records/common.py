@@ -126,7 +126,3 @@ def build_record(
         execution_id=execution_id,
         data=data,
     )
-
-
-class PatchApplicationError(ValueError):
-    """A retired decision patch cannot be applied."""

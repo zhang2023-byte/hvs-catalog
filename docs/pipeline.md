@@ -161,8 +161,8 @@ without category limits. This search is not claimed to be exhaustive.
 - Backups are taken under the lock and exclude credentials; restore goes only to a new
   directory and is verified in a new process. Ended executions are compacted after
   verification; failed or interrupted ones stay recoverable.
-- Historical expert decisions, questions and paused executions remain readable only; they are
-  not resumed or completed under new rules.
+- Historical paused executions remain readable only; they are not resumed or completed under
+  new rules. Question, decision and release records are no longer supported record types.
 
 ## Benchmarks, Gold and scoring
 

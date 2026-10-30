@@ -22,7 +22,7 @@ from .registry import RECORD_MODELS, RECORD_TYPE_NAMES, AnyRecord
 from .roster import RosterData, RosterRecord
 from .roster_input import RosterStar, RosterSubmission
 from .rules import ScienceRules, current_rules_ref, load_rules
-from .runs import ReleaseData, ReleaseRecord, RunData, RunRecord
+from .runs import RunData, RunRecord
 from .serialize import (
     load_records,
     parse_record,
@@ -48,8 +48,6 @@ __all__ = [
     "Record",
     "RecordFormatError",
     "RecordRef",
-    "ReleaseData",
-    "ReleaseRecord",
     "RosterData",
     "RosterRecord",
     "RosterStar",

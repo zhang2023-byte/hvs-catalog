@@ -1,4 +1,4 @@
-"""Run/release manifest records."""
+"""Run manifest records."""
 
 from __future__ import annotations
 
@@ -8,9 +8,10 @@ from typing import Literal
 from pydantic import Field, model_serializer, model_validator
 
 from .common import ArtifactRef, Config, Record, RecordRef
-from .questions import RulesRef
 
 RunMode = Literal["daily", "evaluation", "synthetic"]
+# waiting_review, expert_adjudication and existing_decision_refs belong to the retired
+# expert question loop; they stay so saved run records remain readable.
 RunState = Literal[
     "created", "running", "waiting_review", "finished", "failed", "cancelled"
 ]
@@ -18,7 +19,11 @@ StepState = Literal[
     "created", "pending", "running", "waiting_review", "finished", "failed", "cancelled"
 ]
 AttemptState = Literal["pending", "succeeded", "failed"]
-ChannelState = Literal["not_started", "succeeded", "failed"]
+
+
+class RulesRef(Config):
+    version: str = Field(min_length=1)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 def _omit_unfilled_money(data: dict) -> dict:
@@ -180,82 +185,3 @@ class RunRecord(Record[RunData]):
         ):
             raise ValueError("运行清单的 execution_id 与外层不一致")
         return self
-
-
-class Approval(Config):
-    approver: str = Field(min_length=1)
-    approved_at: datetime
-    manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    target: str = Field(min_length=1)
-
-    @model_validator(mode="after")
-    def _timestamped(self) -> Approval:
-        if self.approved_at.tzinfo is None:
-            raise ValueError("approved_at 必须带时区")
-        return self
-
-
-class Channel(Config):
-    target: str = Field(min_length=1)
-    state: ChannelState
-    receipt_ref: ArtifactRef | None
-    error: str | None
-
-    @model_validator(mode="after")
-    def _state_grounded(self) -> Channel:
-        if self.state == "succeeded" and self.receipt_ref is None:
-            raise ValueError("渠道成功必须保存回执引用")
-        if self.state == "failed" and not (self.error or "").strip():
-            raise ValueError("渠道失败必须说明错误")
-        return self
-
-
-def compute_release_manifest_sha256(data: ReleaseData) -> str:
-    """Manifest hashes cover approvable content/targets, excluding approval
-    receipts/channel execution.
-    """
-    from .common import sha256_of
-
-    return sha256_of(
-        {
-            "data_version": data.data_version,
-            "content_refs": [ref.model_dump(mode="json") for ref in data.content_refs],
-            "artifacts": [ref.model_dump(mode="json") for ref in data.artifacts],
-            "source_run_refs": [
-                ref.model_dump(mode="json") for ref in data.source_run_refs
-            ],
-            "code_version": data.code_version,
-            "change_summary": data.change_summary,
-            "channel_targets": [channel.target for channel in data.channels],
-        }
-    )
-
-
-class ReleaseData(Config):
-    data_version: str = Field(min_length=1)
-    content_refs: list[RecordRef] = Field(min_length=0)
-    artifacts: list[ArtifactRef] = Field(min_length=0)
-    manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    source_run_refs: list[RecordRef] = Field(min_length=1)
-    code_version: str = Field(min_length=1)
-    change_summary: str = Field(min_length=1)
-    approval: Approval | None = None
-    channels: list[Channel] = Field(min_length=0)
-
-    @model_validator(mode="after")
-    def _manifest_and_approval_consistent(self) -> ReleaseData:
-        if self.manifest_sha256 != compute_release_manifest_sha256(self):
-            raise ValueError("清单哈希与实际待发布内容不一致，必须按当前内容重新计算")
-        if self.approval is None:
-            return self
-        if self.approval.manifest_sha256 != self.manifest_sha256:
-            raise ValueError("批准必须绑定当前清单哈希")
-        if self.channels and self.approval.target not in {
-            channel.target for channel in self.channels
-        }:
-            raise ValueError("批准目标必须是已声明的发布渠道之一")
-        return self
-
-
-class ReleaseRecord(Record[ReleaseData]):
-    RECORD_NAME = "release"

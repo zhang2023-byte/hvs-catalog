@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from .execution import (
     RULES_ARCHIVE_REL,
-    ApplicationPlan,
     DefaultFlowAdapter,
     ExecutionHandle,
     FlowAdapter,
@@ -26,15 +25,12 @@ from .execution import (
     verify_flow_compatibility,
 )
 from .recovery import (
-    AppliedDecisionInfo,
     ExecutionReport,
     resume_execution,
 )
 
 __all__ = [
     "RULES_ARCHIVE_REL",
-    "ApplicationPlan",
-    "AppliedDecisionInfo",
     "DefaultFlowAdapter",
     "ExecutionHandle",
     "ExecutionReport",

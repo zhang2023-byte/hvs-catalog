@@ -15,12 +15,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
 from ..records.common import ArtifactRef, RecordRef, sha256_of
-from ..records.questions import RulesRef
 from ..records.registry import AnyRecord
 from ..records.rules import rules_bytes
 from ..records.runs import (
     InputSnapshot,
     ModelJudgment,
+    RulesRef,
     RunData,
     RunError,
     RunRecord,
@@ -59,24 +59,11 @@ class FlowAdapter(Protocol):
     def build_graph(self, ctx: RuntimeContext) -> Any: ...
 
 
-@dataclass
-class ApplicationPlan:
-    """Controlled decision-application plan: new records, expected revisions, and output
-    references.
-    """
-
-    records: list[AnyRecord]
-    expected_revisions: dict[str, int]
-    result_refs: list[RecordRef]
-    notes: dict[str, Any] = field(default_factory=dict)
-
-
 class DefaultFlowAdapter:
     """Base adapter for synthetic flows to extend.
 
-    apply_decision=None means no derivable result and blocked application. verify_state
-    reports checkpoint/business inconsistencies. hook injects synthetic failures outside
-    ordinary user workflows.
+    verify_state reports checkpoint/business inconsistencies. hook injects synthetic
+    failures outside ordinary user workflows.
     """
 
     flow_id: str = "unnamed-flow"
@@ -89,16 +76,8 @@ class DefaultFlowAdapter:
     def build_graph(self, ctx: RuntimeContext) -> Any:  # pragma: no cover
         raise NotImplementedError
 
-    def apply_decision(
-        self, ctx: RuntimeContext, decision, question
-    ) -> ApplicationPlan | None:
-        return None
-
     def verify_state(self, ctx: RuntimeContext, state: dict) -> list[str]:
         return []
-
-    def waiting_step(self, interrupt_payload: dict) -> str | None:
-        return None
 
     def hook(self, name: str) -> None:
         return None
@@ -194,7 +173,6 @@ def build_input_snapshot(
     prompt_refs: list | None = None,
     example_refs: list | None = None,
     precedent_refs: list | None = None,
-    existing_decision_refs: list[RecordRef] | None = None,
     rules: RulesRef | None = None,
     options: dict[str, str] | None = None,
 ) -> InputSnapshot:
@@ -214,7 +192,7 @@ def build_input_snapshot(
         prompt_refs=list(prompt_refs or []),
         example_refs=list(example_refs or []),
         precedent_refs=list(precedent_refs or []),
-        existing_decision_refs=list(existing_decision_refs or []),
+        existing_decision_refs=[],
         options=dict(options or {}),
     )
 
@@ -730,10 +708,6 @@ def verify_execution_inputs(space: Workspace, execution: ExecutionHandle) -> lis
             or hashlib.sha256(path.read_bytes()).hexdigest() != artifact.sha256
         ):
             problems.append(f"判例归档缺失或哈希改变：{artifact.path}")
-    for ref in snapshot.existing_decision_refs:
-        record = store.read_record(ref)
-        if record is None:
-            problems.append(f"固定允许的决定缺失：{ref.record_id} v{ref.revision}")
     return problems
 
 

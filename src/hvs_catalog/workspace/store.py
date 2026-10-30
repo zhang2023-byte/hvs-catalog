@@ -1,5 +1,5 @@
-"""Business database stores original records, current indexes, execution/step/question
-bindings, and receipts.
+"""Business database stores original records, current indexes, execution/step bindings,
+and receipts.
 
 Record JSON is authoritative science; indexes can rebuild. Validate complete candidate
 collections, then append revisions/update indexes/save receipts in one transaction.
@@ -60,8 +60,7 @@ class CommitRequest:
 
     content supplies replay digests excluding generated IDs/times/receipts, otherwise
     use new record contents. Check expected_revisions inside transactions and roll back
-    mismatches. question_steps saves bindings together with questions; unbound questions
-    never exist. meta_updates saves runtime/completion credentials atomically,
+    mismatches. meta_updates saves runtime/completion credentials atomically,
     preventing revision/credential separation.
     """
 
@@ -75,7 +74,6 @@ class CommitRequest:
     input_digest: str | None = None
     links: dict[str, object] = field(default_factory=dict)
     content: dict[str, object] | None = None
-    question_steps: dict[str, str] = field(default_factory=dict)
     meta_updates: dict[str, str] = field(default_factory=dict)
 
 
@@ -100,7 +98,8 @@ def commit_request_digest(request: CommitRequest) -> str:
             "step_id": request.step_id,
             "input_digest": request.input_digest,
             "links": request.links,
-            "question_steps": request.question_steps,
+            # Retired question bindings; the empty value keeps saved digests replayable.
+            "question_steps": {},
             "meta_updates": request.meta_updates,
         }
     )
@@ -154,15 +153,6 @@ class ExecutionRow:
     created_at: str
 
 
-@dataclass(frozen=True)
-class QuestionIndexRow:
-    question_id: str
-    execution_id: str
-    step_id: str | None
-    latest_revision: int
-    status: str
-
-
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (
     key TEXT PRIMARY KEY,
@@ -209,13 +199,6 @@ CREATE TABLE IF NOT EXISTS step_results (
     result_refs_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     PRIMARY KEY (execution_id, step_id, input_digest)
-);
-CREATE TABLE IF NOT EXISTS questions (
-    question_id TEXT PRIMARY KEY,
-    execution_id TEXT NOT NULL,
-    step_id TEXT,
-    latest_revision INTEGER NOT NULL,
-    status TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS counters (
     name TEXT PRIMARY KEY,
@@ -269,28 +252,6 @@ class StoreTransaction:
             "INSERT INTO current_revisions (record_id, revision) VALUES (?, ?)"
             " ON CONFLICT(record_id) DO UPDATE SET revision = excluded.revision",
             (record.record_id, record.revision),
-        )
-        if record.RECORD_NAME == "question":
-            self.conn.execute(
-                "INSERT INTO questions"
-                " (question_id, execution_id, step_id, latest_revision, status)"
-                " VALUES (?, ?, ?, ?, ?)"
-                " ON CONFLICT(question_id) DO UPDATE SET"
-                " latest_revision = excluded.latest_revision,"
-                " status = excluded.status",
-                (
-                    record.record_id,
-                    record.execution_id or "",
-                    None,
-                    record.revision,
-                    record.data.status,
-                ),
-            )
-
-    def set_question_step(self, question_id: str, step_id: str) -> None:
-        self.conn.execute(
-            "UPDATE questions SET step_id = ? WHERE question_id = ?",
-            (step_id, question_id),
         )
 
     def find_receipt(self, operation_key: str) -> ReceiptRow | None:
@@ -666,12 +627,6 @@ class RecordStore:
         with self.transaction() as tx:
             return tx.list_executions()
 
-    def list_questions(
-        self, *, execution_id: str | None = None
-    ) -> list[QuestionIndexRow]:
-        with self.transaction() as tx:
-            return _list_questions(tx, execution_id)
-
     def transaction_read(self, fn):
         """Run queries inside read-only transactions."""
         self._conn.execute("BEGIN DEFERRED")
@@ -759,7 +714,6 @@ class RecordStore:
                     )
                 revisions[record.record_id] = record.revision
                 pending.append(record)
-            _check_question_bindings(tx, pending, request.question_steps)
             if pending:
                 candidate = record_closure(
                     pending,
@@ -781,8 +735,6 @@ class RecordStore:
                 _check_run_artifacts(candidate, self.materials_root)
                 for record in pending:
                     tx.insert_record(record)
-                for question_id, step_id in request.question_steps.items():
-                    tx.set_question_step(question_id, step_id)
                 if request.kind == "step_result" and request.input_digest is not None:
                     tx.insert_step_result(
                         execution_id=request.execution_id or "",
@@ -908,32 +860,6 @@ def _artifact_problems(root: Path, ref: dict, dependencies: dict) -> list[str]:
     return problems
 
 
-def _check_question_bindings(
-    tx: StoreTransaction, pending: list[AnyRecord], question_steps: dict[str, str]
-) -> None:
-    """Initial question saves require atomic execution/step bindings; unbound questions
-    cannot exist.
-
-    Later revisions reuse unchanged original bindings without redeclaration.
-    """
-    for record in pending:
-        if record.RECORD_NAME != "question":
-            continue
-        row = tx.conn.execute(
-            "SELECT step_id FROM questions WHERE question_id = ?",
-            (record.record_id,),
-        ).fetchone()
-        if row is None and record.record_id not in question_steps:
-            raise WorkspaceIntegrityError(
-                f"问题记录必须与步骤绑定一起提交，缺少绑定：{record.record_id}"
-            )
-    for question_id, step_id in question_steps.items():
-        if not isinstance(step_id, str) or not step_id:
-            raise WorkspaceIntegrityError(
-                f"问题 {question_id} 的步骤绑定必须是非空字符串"
-            )
-
-
 def _check_run_artifacts(pending: list[AnyRecord], root: Path | None) -> None:
     """Verify all new-record archives before commit; shared material checks do not cover
     run archives.
@@ -945,29 +871,3 @@ def _check_run_artifacts(pending: list[AnyRecord], root: Path | None) -> None:
         raise WorkspaceIntegrityError(
             "新记录引用的归档文件核验未通过：" + "；".join(problems)
         )
-
-
-def _list_questions(
-    tx: StoreTransaction, execution_id: str | None
-) -> list[QuestionIndexRow]:
-    if execution_id is None:
-        rows = tx.conn.execute(
-            "SELECT question_id, execution_id, step_id, latest_revision, status"
-            " FROM questions ORDER BY question_id"
-        ).fetchall()
-    else:
-        rows = tx.conn.execute(
-            "SELECT question_id, execution_id, step_id, latest_revision, status"
-            " FROM questions WHERE execution_id = ? ORDER BY question_id",
-            (execution_id,),
-        ).fetchall()
-    return [
-        QuestionIndexRow(
-            question_id=row[0],
-            execution_id=row[1],
-            step_id=row[2],
-            latest_revision=row[3],
-            status=row[4],
-        )
-        for row in rows
-    ]

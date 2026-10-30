@@ -1,4 +1,4 @@
-"""Generate the single-file Gold contract; retain historical legacy references."""
+"""Generate the single-file Gold contract."""
 
 import json
 from pathlib import Path
@@ -80,7 +80,7 @@ Only human-confirmed complete answers belong in `data/`. Drafts, unresolved ques
 comparison reports and migration backups belong in `.work/`. Schema and PDF checks
 cannot establish completeness, scientific correctness or human confirmation. These
 are publication prerequisites, not self-reported flags inside the annotation.
-Historical formats are not converted silently. `legacy/` documents earlier formats.
+Historical formats are not converted silently.
 """,
         "README.md": """<!-- Generated from hvs_catalog.evaluation.generate. -->
 # Gold annotations
@@ -127,7 +127,7 @@ its content hash remains authoritative. Historical reports retain their original
 
 def write_gold_outputs(output):
     root = Path(output)
-    # Only retire known generated contracts; never remove legacy references.
+    # Only retire known generated contracts.
     for name in (
         "schemas/gold.answer.json",
         "schemas/gold.metadata.json",
@@ -157,8 +157,6 @@ def check_gold_outputs(output):
     problems.extend(
         f"Unexpected Gold contract: {p.relative_to(root)}"
         for p in root.rglob("*")
-        if p.is_file()
-        and p.relative_to(root).parts[0] != "legacy"
-        and p.relative_to(root).as_posix() not in expected
+        if p.is_file() and p.relative_to(root).as_posix() not in expected
     )
     return problems

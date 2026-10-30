@@ -15,7 +15,6 @@ from ..pipeline.acquisition.lifecycle import AcquisitionService
 from ..records.common import ArtifactRef, RecordRef
 from ..records.runs import RunRecord
 from ..records.source import SourcePackageRecord
-from ..review import ReviewService
 from ..runtime import ExecutionHandle, get_execution, resume_execution
 from ..runtime.execution import (
     build_input_snapshot,
@@ -54,15 +53,12 @@ class PreparationHandle:
 
 @dataclass
 class PreparationReport:
-    """One advancement result: state, steps, questions, and gap summary."""
+    """One advancement result: state, steps, and gap summary."""
 
     execution_id: str
     outcome: str  # paused | finished | failed
     mode: str  # fresh | resumed | already-finished
     state: str
-    pending_question: dict | None = None
-    open_questions: int = 0
-    answered_questions: int = 0
     steps: list[dict] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     summary: dict | None = None
@@ -73,9 +69,6 @@ class PreparationReport:
             "outcome": self.outcome,
             "mode": self.mode,
             "state": self.state,
-            "pending_question": self.pending_question,
-            "open_questions": self.open_questions,
-            "answered_questions": self.answered_questions,
             "steps": list(self.steps),
             "errors": list(self.errors),
             "summary": self.summary,
@@ -282,11 +275,9 @@ class MaterialsService:
     # ---- Queries and consumption ----
 
     def get_preparation(self, execution_id: str) -> dict:
-        """Read-only state/configuration/step/question/gap/summary queries."""
+        """Read-only state/configuration/step/gap/summary queries."""
         handle = get_execution(self._space, execution_id)
         run = self._current_run(handle)
-        review = ReviewService(self._space)
-        questions = review.list_questions(execution_id=execution_id)
         snapshot = handle.input_snapshot
         bundle = None
         errors = [error.message for error in run.data.errors]
@@ -318,16 +309,6 @@ class MaterialsService:
                     ],
                 }
                 for step in run.data.steps
-            ],
-            "questions": [
-                {
-                    "question_ref": view.question_ref.model_dump(mode="json"),
-                    "status": view.status,
-                    "answered_outcome": view.answered_outcome,
-                    "needs_processing": view.needs_processing,
-                    "prompt": view.record.data.prompt,
-                }
-                for view in questions
             ],
             "errors": errors,
             "preparation_issues": bundle.get("preparation_issues", [])
@@ -484,16 +465,6 @@ class MaterialsService:
     ) -> PreparationReport:
         handle = get_execution(self._space, execution_id)
         run = self._current_run(handle)
-        review = ReviewService(self._space)
-        questions = review.list_questions(execution_id=execution_id)
-        pending = None
-        if runtime_report.pending_question is not None:
-            view = runtime_report.pending_question
-            pending = {
-                "question_ref": view.question_ref.model_dump(mode="json"),
-                "status": view.status,
-                "prompt": view.record.data.prompt,
-            }
         summary = None
         if run.data.state == "finished":
             try:
@@ -506,9 +477,6 @@ class MaterialsService:
             outcome=runtime_report.outcome,
             mode=runtime_report.mode,
             state=run.data.state,
-            pending_question=pending,
-            open_questions=sum(1 for q in questions if q.status == "open"),
-            answered_questions=sum(1 for q in questions if q.status == "answered"),
             steps=[
                 {"step_id": s.step_id, "reused": s.reused} for s in runtime_report.steps
             ],

@@ -24,4 +24,4 @@ Only human-confirmed complete answers belong in `data/`. Drafts, unresolved ques
 comparison reports and migration backups belong in `.work/`. Schema and PDF checks
 cannot establish completeness, scientific correctness or human confirmation. These
 are publication prerequisites, not self-reported flags inside the annotation.
-Historical formats are not converted silently. `legacy/` documents earlier formats.
+Historical formats are not converted silently.

@@ -227,7 +227,7 @@ def retire_execution(space, execution_id):
                     "DELETE FROM current_revisions WHERE record_id=?", (key,)
                 )
                 tx.conn.execute("DELETE FROM records WHERE record_id=?", (key,))
-            for table in ("receipts", "step_results", "questions", "executions"):
+            for table in ("receipts", "step_results", "executions"):
                 tx.conn.execute(
                     f"DELETE FROM {table} WHERE execution_id=?", (execution_id,)
                 )

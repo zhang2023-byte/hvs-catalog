@@ -69,7 +69,7 @@ def discard_literature_extractions(space, *, expected_execution_ids):
                     tx.conn.execute(
                         "DELETE FROM records WHERE record_id=?", (record_id,)
                     )
-                for table in ("receipts", "step_results", "questions", "executions"):
+                for table in ("receipts", "step_results", "executions"):
                     tx.conn.execute(
                         f"DELETE FROM {table} WHERE execution_id=?", (execution,)
                     )

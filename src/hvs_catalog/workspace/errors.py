@@ -1,7 +1,7 @@
 """Public workspace errors.
 
 Distinguish
-busy/unknown-format/corruption/stale-revision/conflicting-decision/disallowed-review/inconsistent-recovery
+busy/unknown-format/corruption/stale-revision/inconsistent-recovery
 cases and same-operation-key conflicts. Call sites supply execution, step, or record
 references in diagnostics.
 """
@@ -33,14 +33,6 @@ class WorkspaceIntegrityError(WorkspaceError):
 
 class RevisionStaleError(WorkspaceError):
     """Expected current revision differs from actual; no change committed."""
-
-
-class DecisionConflictError(WorkspaceError):
-    """A different decision exists for this question version; reject this submission."""
-
-
-class AdjudicationNotAllowedError(WorkspaceError):
-    """Execution review configuration disallows this expert decision."""
 
 
 class RecoveryInconsistentError(WorkspaceError):
