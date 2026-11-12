@@ -7,6 +7,7 @@ an area [Maintenance](../maintenance.md) owns, Maintenance wins.
 | File | Role |
 |---|---|
 | [issue-tracker.md](issue-tracker.md) | GitHub Issues via `gh`, including wayfinding operations. |
+| [triage-labels.md](triage-labels.md) | Category and state labels, including the project category `data-defect`. |
 | [domain.md](domain.md) | Single-context `GLOSSARY.md` and `docs/adr/`, and their scope. |
 
 ## Where a problem goes

@@ -15,6 +15,12 @@ All work and data problems live as GitHub issues in `zhang2023-byte/hvs-catalog`
 defect carries the `data-defect` label. See
 [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
 
+### Triage labels
+
+Each issue carries one category (`bug`, `enhancement`, or `data-defect`) and one state
+(`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See
+[docs/agents/triage-labels.md](docs/agents/triage-labels.md).
+
 ### Domain docs
 
 Single-context: `GLOSSARY.md` and `docs/adr/` at the root, created lazily; ADRs record
