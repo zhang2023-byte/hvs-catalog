@@ -205,7 +205,7 @@ def test_browser_search_sort_filters_evidence_navigation_downloads(tmp_path, vie
         expect(page.locator(".about")).to_contain_text("not a best estimate")
         expect(page.locator(".about pre code")).to_contain_text("pd.read_csv")
         expect(page.get_by_role("link", name="Known issues")).to_have_attribute(
-            "href", "https://github.com/a/b/blob/HEAD/catalog-review/KNOWN_ISSUES.md"
+            "href", "https://github.com/a/b/issues?q=is%3Aissue+label%3Adata-defect"
         )
         with page.expect_download() as download:
             page.get_by_role("link", name="stars.csv", exact=True).click()

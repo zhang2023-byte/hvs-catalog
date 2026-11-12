@@ -100,9 +100,9 @@ Commands, review file layout and identity mechanics are in the
   from other surveys stay separate; display names are unique or separated; the queue holds only
   recorded unresolved items; source and evidence counts reconcile with the selection;
   uncorrected values match exactly and corrections reconcile with their decisions.
-- Problems found between releases go to
-  [KNOWN_ISSUES](../catalog-review/KNOWN_ISSUES.md) (object, paper, issue, planned action) and
-  are handled together in the next data version. That file is not a build input.
+- Problems found between releases are GitHub issues labelled `data-defect` (object, paper,
+  value, planned action) and are handled together in the next data version. Issues are not a
+  build input.
 
 ## Website
 
@@ -142,15 +142,17 @@ uv run python -m http.server 8765 --bind 127.0.0.1 --directory NEW_DIRECTORY
 ```
 
 The output directory must not exist; the generator never overwrites. `--repository` sets
-the issue and known-issues links.
+the issue links.
 
 The [deploy workflow](../.github/workflows/deploy-pages.yml) runs only by manual
 `workflow_dispatch`. It installs the locked runtime, verifies the catalog, builds the site
 and deploys it with the official Pages actions. The generated site is never committed, so
 the workflow builds whatever is pushed: push first, then run it. It does not enable Pages;
 before the first deployment the maintainer makes the repository public and selects GitHub
-Actions under Settings → Pages. CI does not run browser tests; run them locally before
-deploying.
+Actions under Settings → Pages. The [CI workflow](../.github/workflows/ci.yml) runs lint,
+the offline suite on Python 3.11 and 3.12, and the integration group with Chromium on every
+push to `main` and every pull request. Deployment is separate and does not wait for it, so
+the website checks below still decide.
 
 ## Verification
 
@@ -171,7 +173,9 @@ open doubts are checked again.
 Common commands: `uv run ruff check .`, `uv run ruff format --check .`, `uv run pytest -q`.
 Distribution checks use `uv run python tools/check_distribution.py 3.11` and `3.12`, never
 `PYTHONPATH` pointing at the source. `-m "not integration"` and `-m integration` do not
-replace the full suite.
+replace the full suite. The website cases drive a real browser and need its build once per
+environment: `uv run playwright install chromium`. The CI workflow installs it on every run.
+Without it those cases fail as unrunnable, which is not a defect in the code.
 
 Offline tests use only synthetic or approved public material: no private Gold, external
 science services or models. HTTP uses loopback fakes; the website uses a real browser.
@@ -201,15 +205,25 @@ files do not prove scientific quality.
 | Maintenance (this file) | Rules for data versions, the website, verification, Git and documentation. |
 | [Pipeline](pipeline.md) | Literature processing commands and their constraints. |
 | [Science rules](science-rules.md), [contracts](../contracts/generated/README.md) | Generated from source definitions. |
-| [KNOWN_ISSUES](../catalog-review/KNOWN_ISSUES.md) | Data problems waiting for the next data version. |
 | [AGENTS](../AGENTS.md) | Entry point for coding agents. |
+| [Agent skills](../docs/agents/README.md) | Issue tracker, domain docs and ADR conventions the coding skills read. |
+
+Where a problem goes. These are different roles, not competing versions of one list:
+
+| What it is | Where it goes | Decided by |
+|---|---|---|
+| A public report of a wrong value | A GitHub issue labelled `data-defect`. The maintainer confirms it against the fixed PDF on the same issue and it stays open until the next data version closes it. | The maintainer, against the fixed PDF. |
+| A data defect found after a release | The same `data-defect` issue. It is not recorded anywhere else. | Fixed in the next data version. |
+| A development task, or a question about the code | GitHub issue with no `data-defect` label. | Whoever does the work. |
+| A decision other people will ask "why this way?" about | An ADR in `docs/adr/`, appended and never rewritten; then this file is edited to state the current rule. | The maintainer. |
+| A rule about data, science, verification or Git | This file. Do not restate it in an ADR. | The maintainer. |
 
 - All documentation, code comments, docstrings, science rules, prompts and review texts are
   in English. Evidence quotes keep the language of the source.
 - Generated files are never edited by hand. After changing rules run
   `uv run python tools/render_science_rules.py` and `--check`; after changing records or
   contracts run `uv run python tools/render_record_contracts.py` and `--check`.
-- There is no progress log. Current state is in Git and KNOWN_ISSUES. A task that must be
+- There is no progress log. Current state is in Git and the open GitHub issues. A task that must be
   handed over between sessions keeps its notes, reports and logs in `.work/<task>/`, which is
   not committed. At the end of a task, remove its temporary logs, duplicate copies and
   rebuildable synthetic material; move only what is still worth tracing to `.work/archive/`.

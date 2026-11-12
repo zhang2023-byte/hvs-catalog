@@ -158,7 +158,7 @@ def test_build_is_reproducible_read_only_and_downloads_are_original(tmp_path):
     assert 'dtype={"gaia_dr3_id": "string"}' in downloads["code"]
     assert downloads["links"][-1]["url"] == "https://github.com/a/b#using-the-catalog"
     assert about["sections"][-1]["links"][0]["url"] == (
-        "https://github.com/a/b/blob/HEAD/catalog-review/KNOWN_ISSUES.md"
+        "https://github.com/a/b/issues?q=is%3Aissue+label%3Adata-defect"
     )
 
 

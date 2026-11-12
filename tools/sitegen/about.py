@@ -1,5 +1,7 @@
 """Public explanations derived from the same catalog summary as the homepage."""
 
+from urllib.parse import urlencode
+
 # Literature search and SIMBAD snapshot for the current data version. The manifest
 # does not record them, so update both when a new data version is released.
 SEARCH_TERMS = (
@@ -183,7 +185,9 @@ def about_view(index):
                 "links": [
                     {
                         "label": "Known issues",
-                        "url": repository + "/blob/HEAD/catalog-review/KNOWN_ISSUES.md",
+                        "url": repository
+                        + "/issues?"
+                        + urlencode({"q": "is:issue label:data-defect"}),
                     },
                     {"label": "Report an error", "url": repository + "/issues/new"},
                 ],

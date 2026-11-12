@@ -11,15 +11,16 @@ what the data are and how to read them. Visit the
 [Maintenance](docs/maintenance.md#website) to build it locally.
 
 The current data version is `2026-10-25-release-review`: 666 objects from 163 of 413 papers
-read. Exact counts are in [manifest.json](catalog/manifest.json); known problems are in
-[KNOWN_ISSUES](catalog-review/KNOWN_ISSUES.md).
+read. Exact counts are in [manifest.json](catalog/manifest.json); known problems are the open
+issues labelled
+[`data-defect`](https://github.com/zhang2023-byte/hvs-catalog/issues?q=is%3Aissue+label%3Adata-defect).
 
 ## Repository
 
 | Path | Contents |
 |---|---|
 | [catalog/](catalog/manifest.json) | The released catalog: one JSON file per star, paper index and provenance. |
-| [catalog-review/](catalog-review) | Approved review inputs (identity, attribution, corrections) and known issues. |
+| [catalog-review/](catalog-review) | Approved review inputs (identity, attribution, corrections). |
 | [src/hvs_catalog/](src/hvs_catalog) | Literature acquisition, PDF parsing, extraction, scoring and catalog build. |
 | [tools/](tools) | Website generator, contract renderers and distribution checks. |
 | [contracts/generated/](contracts/generated/README.md) | Generated formats, schemas, prompts and examples. |
